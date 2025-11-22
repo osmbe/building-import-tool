@@ -1,0 +1,22 @@
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# Docker volumes (data should be in volumes, not git)
+backups/
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
