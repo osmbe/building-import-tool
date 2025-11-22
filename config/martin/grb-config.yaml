@@ -17,24 +17,27 @@ postgres:
   max_feature_count: 10000
   default_srid: 3857
 
-  # Table configuration - Buildings with addresses (materialized view)
+  # Table configuration - Building polygons with addresses (materialized view)
   tables:
     buildings:
       schema: grb
       table: buildings_with_addresses
       srid: 3857
-      geometry_column: geom_mercator
-      id_column: gebouw_id
+      geometry_column: geom
+      id_column: oidn
       clip_geom: true
       buffer: 64
       extent: 4096
       minzoom: 10
       maxzoom: 22
       properties:
+        oidn: oidn
         gebouw_id: gebouw_id
+        polygon_area_m2: polygon_area_m2
+        polygon_type_label: polygon_type_label
         polygon_count: polygon_count
         total_area_m2: total_area_m2
-        type_label: type_label
+        building_type_label: building_type_label
         addresses: addresses
         street_names: street_names
         postcodes: postcodes

@@ -14,6 +14,13 @@ services:
       - nuxt-node-modules:/app/node_modules
     environment:
       NODE_ENV: development
+      POSTGRES_HOST: ${POSTGRES_HOST:-host.docker.internal}
+      POSTGRES_PORT: ${POSTGRES_PORT:-15432}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      OSM_CLIENT_ID: ${OSM_CLIENT_ID}
+      OSM_CLIENT_SECRET: ${OSM_CLIENT_SECRET}
+      OSM_REDIRECT_URI: ${OSM_REDIRECT_URI}
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

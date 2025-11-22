@@ -4,6 +4,9 @@
       <!-- OpenLayers Map Container -->
       <div id="map" ref="mapRef" class="absolute inset-0" :class="currentBaseLayer === 'blank' ? 'bg-white' : ''" style="width: 100%; height: 100%; min-height: 400px;"></div>
 
+      <!-- Match Mode Control -->
+      <MatchModeControl />
+
       <!-- Controls -->
       <div class="absolute right-4 top-4 flex flex-col gap-2 w-48">
         <Card class="p-2 bg-slate-800 text-gray-100 shadow-xl border-slate-600">
@@ -317,17 +320,20 @@ import Badge from '~/components/ui/badge.vue'
 import Switch from '~/components/ui/switch.vue'
 import { Layers, ZoomIn, ZoomOut, RotateCcw, X, ExternalLink, MapPin, GitCompareArrows, Loader2, Building2, MapPinned, Ruler } from 'lucide-vue-next'
 import ObjectInfoPanel from '~/components/ObjectInfoPanel.vue'
+import MatchModeControl from '~/components/MatchModeControl.vue'
 import { mockBuildingData, type BuildingData } from '~/composables/useBuildingData'
 import type { SearchResult } from '~/composables/useSearch'
 import { useJosmExport } from '~/composables/useJosmExport'
 import { extractFeaturesFromLayer } from '~/utils/openlayers'
 import { useMapLayers } from '~/composables/useMapLayers'
 import { useAuth } from '~/composables/useAuth'
+import { useMatchMode } from '~/composables/useMatchMode'
 
 const props = defineProps<{ selectedLocation: SearchResult | null }>()
 
 const mapRef = ref<HTMLElement>()
 const { exportLayerToJosm, testJosmConnection } = useJosmExport()
+const { matchMode } = useMatchMode()
 
 // Use the map layers composable
 const {
@@ -422,6 +428,14 @@ watch(() => props.selectedLocation, (loc) => {
     zoom: 16,
     duration: 1000
   })
+})
+
+// Watch for match mode changes and refetch candidate buildings if they're already loaded
+watch(matchMode, () => {
+  if (candidateBuildingsLayerRef.value) {
+    // Refetch candidate buildings with the new match mode
+    calculateDifference()
+  }
 })
 
 
@@ -1077,7 +1091,7 @@ const calculateDifference = async () => {
     // Call backend API to calculate difference
     const response = await $fetch('/api/buildings/difference', {
       method: 'POST',
-      body: { bounds }
+      body: { bounds, matchMode: matchMode.value }
     })
 
     const candidateGeoJSON = response as any
