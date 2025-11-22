@@ -1,0 +1,37 @@
+# Martin configuration for OSM Belgium data
+# This file configures the Martin tile server to serve OSM buildings as vector tiles
+
+# Listen configuration
+listen_addresses: "0.0.0.0:3002"
+
+# CORS settings for web access
+cors: true
+
+# Performance settings
+cache_size_mb: 512
+
+# PostgreSQL connection for OSM Belgium data
+postgres:
+  connection_string: "postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/osmbe"
+  pool_size: 20
+  max_feature_count: 10000
+  default_srid: 3857
+
+  # Explicit table configuration to control ID column
+  tables:
+    osm_buildings:
+      schema: osm
+      table: osm_buildings
+      srid: 3857
+      geometry_column: geom_mercator
+      id_column: osm_id
+      clip_geom: true
+      buffer: 64
+      extent: 4096
+      minzoom: 10
+      maxzoom: 22
+      # Send complete JSONB tags + minimal metadata
+      # Frontend will flatten tags as top-level properties
+      properties:
+        osm_id: osm_id
+        tags: tags  # Complete JSONB with all OSM tags
