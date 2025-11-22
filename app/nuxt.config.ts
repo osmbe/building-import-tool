@@ -28,10 +28,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Private keys (only available server-side)
     osmClientSecret: process.env.OSM_CLIENT_SECRET,
-    dbHost: process.env.DB_HOST,
-    dbPort: process.env.DB_PORT,
-    dbUsername: process.env.DB_USERNAME,
-    dbPassword: process.env.DB_PASSWORD,
+    dbHost: process.env.POSTGRES_HOST,
+    dbPort: process.env.POSTGRES_PORT,
+    dbUser: process.env.POSTGRES_USER,
+    dbPassword: process.env.POSTGRES_PASSWORD,
 
     // Public keys (exposed to client)
     public: {

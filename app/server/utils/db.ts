@@ -9,11 +9,11 @@ export function getGrbPool(): Pool {
     const config = useRuntimeConfig()
 
     const poolConfig = {
-      host: config.dbHost || process.env.DB_HOST || 'localhost',
-      port: parseInt(config.dbPort || process.env.DB_PORT || '5432'),
-      user: config.dbUsername || process.env.DB_USERNAME || 'postgres',
+      host: config.dbHost || process.env.POSTGRES_HOST || 'localhost',
+      port: parseInt(config.dbPort || process.env.POSTGRES_PORT || '5432'),
+      user: config.dbUser || process.env.POSTGRES_USER || 'postgres',
       // Password will be read from .pgpass file automatically if not provided
-      password: config.dbPassword || process.env.DB_PASSWORD || undefined,
+      password: config.dbPassword || process.env.POSTGRES_PASSWORD || undefined,
       database: 'be2osm'
     }
 
@@ -34,11 +34,11 @@ export function getOsmPool(): Pool {
     const config = useRuntimeConfig()
 
     const poolConfig = {
-      host: config.dbHost || process.env.DB_HOST || 'localhost',
-      port: parseInt(config.dbPort || process.env.DB_PORT || '5432'),
-      user: config.dbUsername || process.env.DB_USERNAME || 'postgres',
+      host: config.dbHost || process.env.POSTGRES_HOST || 'localhost',
+      port: parseInt(config.dbPort || process.env.POSTGRES_PORT || '5432'),
+      user: config.dbUser || process.env.POSTGRES_USER || 'postgres',
       // Password will be read from .pgpass file automatically if not provided
-      password: config.dbPassword || process.env.DB_PASSWORD || undefined,
+      password: config.dbPassword || process.env.POSTGRES_PASSWORD || undefined,
       database: 'osmbe'
     }
 

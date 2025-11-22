@@ -12,7 +12,7 @@ cache_size_mb: 512
 
 # PostgreSQL connection for OSM Belgium data
 postgres:
-  connection_string: "postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/osmbe"
+  connection_string: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/osmbe"
   pool_size: 20
   max_feature_count: 10000
   default_srid: 3857

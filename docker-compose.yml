@@ -14,10 +14,10 @@ services:
       OSM_CLIENT_ID: ${OSM_CLIENT_ID}
       OSM_CLIENT_SECRET: ${OSM_CLIENT_SECRET}
       OSM_REDIRECT_URI: ${OSM_REDIRECT_URI}
-      DB_HOST: ${POSTGRES_HOST:-postgres-db}
-      DB_PORT: ${POSTGRES_PORT:-5432}
-      DB_USERNAME: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       NODE_ENV: production
     restart: unless-stopped
     healthcheck:
@@ -46,10 +46,10 @@ services:
     command: ["--config", "/config.yaml"]
     restart: unless-stopped
     environment:
-      DB_HOST: ${POSTGRES_HOST:-postgres-db}
-      DB_PORT: ${POSTGRES_PORT:-5432}
-      DB_USERNAME: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 30s
@@ -67,10 +67,10 @@ services:
     command: ["--config", "/config.yaml"]
     restart: unless-stopped
     environment:
-      DB_HOST: ${POSTGRES_HOST:-postgres-db}
-      DB_PORT: ${POSTGRES_PORT:-5432}
-      DB_USERNAME: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
       interval: 30s
