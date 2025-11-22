@@ -1,0 +1,606 @@
+# BE2OSM Data Processing
+# Unified task runner for database setup, OSM import, and GRB import
+#
+# Usage:
+#   just <task>              Run a task
+#   just --list              List all available tasks
+#   just --list --unsorted   List tasks in the order they appear (grouped)
+#
+# Task Groups:
+#   Setup:      Database initialization and schema setup
+#   OSM:        OpenStreetMap data import from Geofabrik
+#   GRB:        GRB data import from Digital Vlaanderen API
+#   Database:   Database management and utilities
+#   Maintenance: Optimization and cleanup tasks
+
+# Load environment variables from root .env file
+set dotenv-load := true
+set dotenv-path := "../.env"
+
+# Default task - show help
+default:
+    @echo "BE2OSM Data Processing - Available Task Groups:"
+    @echo ""
+    @echo "📊 Setup Tasks"
+    @echo "  setup-db           - Setup both databases and schemas"
+    @echo "  setup-full         - Complete setup (databases + import OSM + import GRB)"
+    @echo ""
+    @echo "🗺️  OSM Tasks"
+    @echo "  osm-download       - Download Belgium OSM data from Geofabrik"
+    @echo "  osm-import         - Import OSM buildings to database"
+    @echo "  osm-rebuild        - Clean cache and reimport OSM data"
+    @echo "  osm-status         - Show OSM database statistics"
+    @echo ""
+    @echo "🏢 GRB Tasks"
+    @echo "  grb-order-all      - Order all GRB datasets from API"
+    @echo "  grb-download-all   - Download all ready orders"
+    @echo "  grb-import         - Import GRB data to database"
+    @echo "  grb-full           - Complete workflow (order → download → import)"
+    @echo "  grb-status         - Show GRB database statistics"
+    @echo ""
+    @echo "🔧 Database Tasks"
+    @echo "  db-shell-osm       - Open psql shell (osmbe database)"
+    @echo "  db-shell-grb       - Open psql shell (be2osm database)"
+    @echo "  db-sizes           - Show table sizes"
+    @echo "  db-optimize        - Vacuum and optimize databases"
+    @echo ""
+    @echo "🧹 Maintenance"
+    @echo "  clean-osm-cache    - Clean imposm3 cache"
+    @echo "  clean-grb-all      - Clean all GRB downloads and orders"
+    @echo ""
+    @echo "Run 'just --list' to see all available tasks"
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+# Database configuration
+db_host := env_var_or_default('DB_HOST', 'localhost')
+db_port := env_var_or_default('DB_PORT', '15432')
+db_user := env_var_or_default('DB_USER', 'brunomoyse')
+db_password := env_var_or_default('DB_PASSWORD', 'k5zQuoJNG1Vdre8kiNnaWrjajnyAnvF')
+be2osm_db := 'be2osm'
+osmbe_db := 'osmbe'
+
+# OSM configuration
+osm_file := env_var_or_default('OSM_FILE', 'data/osm/belgium-latest.osm.pbf')
+osm_region := env_var_or_default('OSM_REGION', 'europe/belgium')
+mapping_file := env_var_or_default('MAPPING_FILE', 'config/imposm-mapping.yml')
+cache_dir := env_var_or_default('CACHE_DIR', 'data/osm/imposm-cache')
+
+# GRB API configuration (only required for GRB tasks)
+grb_api_key := env_var_or_default('DIGITAL_VLAANDEREN_API_KEY', '')
+grb_api_base := env_var_or_default('DIGITAL_VLAANDEREN_API_BASE_URL', 'https://api.vlaanderen.be/gebouwenregister/v2')
+grb_data_dir := "data/grb"
+grb_orders_dir := "data/grb/orders"
+
+# PostgreSQL connection setup
+export PGPASSWORD := db_password
+psql_osmbe := "psql -h " + db_host + " -p " + db_port + " -U " + db_user + " -d " + osmbe_db
+psql_be2osm := "psql -h " + db_host + " -p " + db_port + " -U " + db_user + " -d " + be2osm_db
+psql_postgres := "psql -h " + db_host + " -p " + db_port + " -U " + db_user + " -d postgres"
+
+# ============================================================================
+# SETUP TASKS - Database Initialization
+# ============================================================================
+
+# Setup both databases and schemas from scratch
+setup-db:
+    @echo "======================================"
+    @echo "BE2OSM Database Setup"
+    @echo "======================================"
+    @echo ""
+    @just _check-server
+    @echo ""
+    @echo "📊 Creating databases..."
+    @{{psql_postgres}} -f sql/setup/01_create_databases.sql
+    @echo "✓ Databases created"
+    @echo ""
+    @echo "📊 Setting up be2osm database (GRB)..."
+    @{{psql_be2osm}} -f sql/setup/02_setup_be2osm.sql
+    @echo "✓ BE2OSM setup complete"
+    @echo ""
+    @echo "📊 Setting up osmbe database (OSM)..."
+    @{{psql_osmbe}} -f sql/setup/03_setup_osmbe.sql
+    @echo "✓ OSMBE setup complete"
+    @echo ""
+    @echo "🔗 Setting up Foreign Data Wrapper..."
+    @{{psql_be2osm}} -f sql/setup/04_foreign_data_wrapper.sql || echo "⚠️  FDW warnings (normal if OSM not imported yet)"
+    @echo ""
+    @echo "======================================"
+    @echo "✅ Setup Complete!"
+    @echo "======================================"
+    @echo ""
+    @echo "Next steps:"
+    @echo "  1. Import OSM: just osm-download && just osm-import"
+    @echo "  2. Import GRB: just grb-full"
+
+# Complete setup workflow (databases + OSM + GRB)
+setup-full:
+    @just setup-db
+    @just osm-download
+    @just osm-import
+    @just grb-full
+
+# ============================================================================
+# OSM TASKS - OpenStreetMap Data Import
+# ============================================================================
+
+# Download Belgium OSM data from Geofabrik
+osm-download:
+    @echo "📥 Downloading OSM data for {{osm_region}}..."
+    @mkdir -p data/osm
+    curl -L -o "{{osm_file}}" "https://download.geofabrik.de/{{osm_region}}-latest.osm.pbf"
+    @echo "✅ Downloaded to {{osm_file}}"
+
+# Import OSM buildings using imposm3 and transform to schema
+osm-import:
+    @echo "🚀 OSM Buildings Import with imposm3"
+    @echo "========================================"
+    @echo "📅 Started at: $(date)"
+    @echo ""
+    @just _check-server
+    @just _check-osm-database
+    @just _check-osm-schema
+    @just _check-osm-file
+    @just _check-imposm
+    @echo ""
+    @echo "📊 Configuration:"
+    @echo "   Database: {{osmbe_db}} @ {{db_host}}:{{db_port}}"
+    @echo "   OSM File: {{osm_file}}"
+    @echo "   Mapping:  {{mapping_file}}"
+    @echo "   Cache:    {{cache_dir}}"
+    @echo ""
+    @just _osm-imposm-read
+    @just _osm-imposm-write
+    @just _osm-transform-schema
+    @just _osm-cleanup-import
+    @just osm-status
+    @echo ""
+    @echo "💡 Next steps:"
+    @echo "   - Import GRB: just grb-full"
+    @echo "   - Check status: just osm-status"
+
+# Clean cache and reimport OSM data
+osm-rebuild:
+    @just clean-osm-cache
+    @just osm-import
+
+# Show OSM database statistics
+osm-status:
+    @echo ""
+    @echo "🎉 OSM Import Complete!"
+    @echo "========================================"
+    @echo "📅 Finished at: $(date)"
+    @echo ""
+    @echo "📈 Statistics:"
+    @{{psql_osmbe}} -c "SELECT 'Total buildings' as metric, COUNT(*)::text as value FROM osm.osm_buildings UNION ALL SELECT 'With GRB reference', COUNT(*)::text FROM osm.osm_buildings WHERE tags ? 'source:geometry:ref' OR oidn IS NOT NULL UNION ALL SELECT 'With addresses', COUNT(*)::text FROM osm.osm_buildings WHERE tags ? 'addr:street' UNION ALL SELECT 'Building types', COUNT(DISTINCT building_type)::text FROM osm.osm_buildings;"
+    @echo ""
+
+# ============================================================================
+# GRB TASKS - Digital Vlaanderen GRB Data Import
+# ============================================================================
+
+# Order all GRB datasets from Digital Vlaanderen API
+grb-order-all:
+    @echo "📦 Creating orders for all GRB products..."
+    @mkdir -p {{grb_orders_dir}}
+    @echo ""
+    @just _grb-order-gbg
+    @just _grb-order-gba
+    @just _grb-order-addresses
+    @just _grb-order-address-links
+    @echo ""
+    @echo "✅ All orders created!"
+    @echo ""
+    @echo "Check status with: just grb-status-orders"
+
+# Download all ready GRB orders
+grb-download-all:
+    @echo "📥 Downloading all ready orders..."
+    @echo ""
+    @just _grb-download-if-ready gbg "$(just _grb-get-order-id gbg)"
+    @just _grb-download-if-ready gba "$(just _grb-get-order-id gba)"
+    @just _grb-download-if-ready address-links "$(just _grb-get-order-id address-links)"
+    @just _grb-download-if-ready addresses "$(just _grb-get-order-id addresses)"
+    @echo ""
+    @echo "✅ All downloads complete!"
+
+# Import GRB data to PostgreSQL database
+grb-import:
+    @echo "🗄️  GRB Data Import to PostgreSQL"
+    @echo "=========================================="
+    @echo "📅 Started at: $(date)"
+    @echo ""
+    @just _check-be2osm-database
+    @just _check-be2osm-schema
+    @echo ""
+    @just _grb-import-building-polygons
+    @just _grb-import-addresses
+    @just _grb-import-address-links
+    @just _grb-aggregate-buildings
+    @just _grb-refresh-materialized-view
+    @echo ""
+    @just grb-status
+    @echo ""
+    @echo "✅ GRB import complete!"
+
+# Complete GRB workflow: order → wait → download → import
+grb-full:
+    @echo "🚀 Complete GRB Import Workflow"
+    @echo "========================================"
+    @just grb-order-all
+    @just _grb-wait-for-orders
+    @just grb-download-all
+    @just grb-import
+
+# Show GRB database statistics
+grb-status:
+    @echo "📈 GRB Database Statistics:"
+    @echo ""
+    @{{psql_be2osm}} -c "SELECT 'Building polygons' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('grb.building_polygons')) as size FROM grb.building_polygons UNION ALL SELECT 'Buildings (aggregated)', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.buildings')) FROM grb.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.addresses')) FROM grb.addresses UNION ALL SELECT 'Address-building links', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.address_building_links')) FROM grb.address_building_links;"
+    @echo ""
+
+# Check status of all GRB orders
+grb-status-orders:
+    @echo "🔍 Checking status of all orders..."
+    @echo ""
+    @just _grb-check-order-status gbg "GBG (Buildings)"
+    @just _grb-check-order-status gba "GBA"
+    @just _grb-check-order-status address-links "Address Links"
+    @just _grb-check-order-status addresses "Addresses"
+
+# ============================================================================
+# DATABASE TASKS - Management and Utilities
+# ============================================================================
+
+# Open PostgreSQL shell (osmbe database)
+db-shell-osm:
+    {{psql_osmbe}}
+
+# Open PostgreSQL shell (be2osm database)
+db-shell-grb:
+    {{psql_be2osm}}
+
+# Show database table sizes
+db-sizes:
+    @echo "📊 Database Table Sizes:"
+    @echo ""
+    @echo "OSM Tables:"
+    @{{psql_osmbe}} -c "SELECT schemaname, tablename, pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size FROM pg_tables WHERE schemaname = 'osm' ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;"
+    @echo ""
+    @echo "GRB Tables:"
+    @{{psql_be2osm}} -c "SELECT schemaname, tablename, pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size FROM pg_tables WHERE schemaname = 'grb' ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;"
+
+# Vacuum and optimize both databases
+db-optimize:
+    @echo "======================================"
+    @echo "Database Optimization"
+    @echo "======================================"
+    @echo "📅 Started at: $(date)"
+    @echo ""
+    @echo "Optimizing osmbe database..."
+    @{{psql_osmbe}} -c "VACUUM ANALYZE osm.osm_buildings; REINDEX INDEX CONCURRENTLY idx_osm_buildings_geom;"
+    @echo "✓ osmbe optimized"
+    @echo ""
+    @echo "Optimizing be2osm database..."
+    @{{psql_be2osm}} -c "VACUUM ANALYZE grb.building_polygons; VACUUM ANALYZE grb.buildings; VACUUM ANALYZE grb.addresses; VACUUM ANALYZE grb.address_building_links; REFRESH MATERIALIZED VIEW grb.buildings_with_addresses;"
+    @echo "✓ be2osm optimized"
+    @echo ""
+    @echo "======================================"
+    @echo "✅ Optimization Complete!"
+    @echo "======================================"
+    @echo "📅 Finished at: $(date)"
+    @echo ""
+    @just db-sizes
+
+# Backup OSM database
+db-backup-osm file="backup-osm-$(date +%Y%m%d-%H%M%S).sql":
+    @echo "💾 Backing up osmbe database..."
+    pg_dump -h {{db_host}} -p {{db_port}} -U {{db_user}} {{osmbe_db}} > {{file}}
+    @echo "✅ Backup complete: {{file}}"
+
+# Backup GRB database
+db-backup-grb file="backup-grb-$(date +%Y%m%d-%H%M%S).sql":
+    @echo "💾 Backing up be2osm database..."
+    pg_dump -h {{db_host}} -p {{db_port}} -U {{db_user}} {{be2osm_db}} > {{file}}
+    @echo "✅ Backup complete: {{file}}"
+
+# ============================================================================
+# MAINTENANCE TASKS - Cleanup and Optimization
+# ============================================================================
+
+# Clean imposm3 cache
+clean-osm-cache:
+    @echo "🧹 Cleaning imposm cache..."
+    rm -rf {{cache_dir}}
+    @echo "✅ Cache cleaned"
+
+# Clean GRB order metadata
+clean-grb-orders:
+    @echo "🧹 Cleaning GRB order metadata..."
+    rm -rf {{grb_orders_dir}}/*.json
+    @echo "✅ Order metadata cleaned"
+
+# Clean GRB downloads
+clean-grb-downloads:
+    @echo "🧹 Cleaning GRB downloaded files..."
+    rm -rf {{grb_data_dir}}/gbg {{grb_data_dir}}/gba {{grb_data_dir}}/address-links {{grb_data_dir}}/addresses
+    @echo "✅ Downloads cleaned"
+
+# Clean all GRB data (orders + downloads)
+clean-grb-all:
+    @just clean-grb-orders
+    @just clean-grb-downloads
+    @echo "✅ All GRB data cleaned"
+
+# Clean imported GRB data from database
+clean-grb-db:
+    @echo "🧹 Cleaning GRB data from database..."
+    @{{psql_be2osm}} -c "TRUNCATE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links CASCADE;"
+    @echo "✅ GRB database tables truncated"
+
+# Clean imported OSM data from database
+clean-osm-db:
+    @echo "🧹 Cleaning OSM data from database..."
+    @{{psql_osmbe}} -c "TRUNCATE osm.osm_buildings CASCADE;"
+    @echo "✅ OSM database tables truncated"
+
+# ============================================================================
+# INTERNAL TASKS - Infrastructure (prefixed with _)
+# ============================================================================
+
+# Check if PostgreSQL server is reachable
+_check-server:
+    #!/usr/bin/env bash
+    echo "🔌 Checking PostgreSQL server..."
+    if ! {{psql_postgres}} -c "SELECT 1;" > /dev/null 2>&1; then
+        echo "❌ Cannot connect to PostgreSQL at {{db_host}}:{{db_port}}"
+        echo ""
+        echo "Troubleshooting:"
+        echo "  1. Check if PostgreSQL is running: docker ps | grep postgres"
+        echo "  2. Verify connection in .env file"
+        exit 1
+    fi
+    echo "✅ Server reachable"
+
+# Check if OSM file exists
+_check-osm-file:
+    #!/usr/bin/env bash
+    if [ ! -f "{{osm_file}}" ]; then
+        echo "❌ OSM file not found: {{osm_file}}"
+        echo ""
+        echo "Download it with: just osm-download"
+        exit 1
+    fi
+    echo "✅ OSM file exists"
+
+# Check if imposm3 is installed
+_check-imposm:
+    #!/usr/bin/env bash
+    if ! command -v imposm &> /dev/null; then
+        echo "❌ imposm3 not installed"
+        echo ""
+        echo "Install: brew install imposm"
+        exit 1
+    fi
+    echo "✅ imposm3 installed ($(imposm version))"
+
+# Check/create osmbe database
+_check-osm-database:
+    #!/usr/bin/env bash
+    if ! {{psql_postgres}} -tAc "SELECT 1 FROM pg_database WHERE datname='{{osmbe_db}}';" | grep -q 1; then
+        echo "⚠️  Creating {{osmbe_db}} database..."
+        {{psql_postgres}} -c "CREATE DATABASE {{osmbe_db}};"
+        {{psql_osmbe}} -c "CREATE EXTENSION IF NOT EXISTS postgis; CREATE EXTENSION IF NOT EXISTS hstore;"
+        echo "✅ Database created"
+    fi
+
+# Check/create osmbe schema
+_check-osm-schema:
+    #!/usr/bin/env bash
+    if ! {{psql_osmbe}} -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='osm' AND table_name='osm_buildings';" | grep -q 1; then
+        echo "⚠️  Creating osm schema..."
+        {{psql_osmbe}} -f sql/setup/03_setup_osmbe.sql
+        echo "✅ Schema created"
+    fi
+
+# Check/create be2osm database
+_check-be2osm-database:
+    #!/usr/bin/env bash
+    if ! {{psql_postgres}} -tAc "SELECT 1 FROM pg_database WHERE datname='{{be2osm_db}}';" | grep -q 1; then
+        echo "⚠️  Creating {{be2osm_db}} database..."
+        {{psql_postgres}} -c "CREATE DATABASE {{be2osm_db}};"
+        {{psql_be2osm}} -c "CREATE EXTENSION IF NOT EXISTS postgis; CREATE EXTENSION IF NOT EXISTS hstore;"
+        echo "✅ Database created"
+    fi
+
+# Check/create be2osm schema
+_check-be2osm-schema:
+    #!/usr/bin/env bash
+    if ! {{psql_be2osm}} -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='grb' AND table_name='buildings';" | grep -q 1; then
+        echo "⚠️  Creating grb schema..."
+        {{psql_be2osm}} -f sql/setup/02_setup_be2osm.sql
+        echo "✅ Schema created"
+    fi
+
+# OSM: imposm3 read step
+_osm-imposm-read:
+    @echo "1️⃣  Reading OSM PBF and creating cache..."
+    @mkdir -p {{cache_dir}}
+    imposm import -mapping {{mapping_file}} -read {{osm_file}} -cachedir {{cache_dir}} -overwritecache
+
+# OSM: imposm3 write step
+_osm-imposm-write:
+    @echo ""
+    @echo "2️⃣  Writing to database (import schema)..."
+    imposm import -mapping {{mapping_file}} -connection "postgis://{{db_user}}:{{db_password}}@{{db_host}}:{{db_port}}/{{osmbe_db}}" -write -cachedir {{cache_dir}} -dbschema-import import
+
+# OSM: Transform to target schema
+_osm-transform-schema:
+    @echo ""
+    @echo "3️⃣  Transforming to target schema..."
+    @{{psql_osmbe}} -f sql/transforms/transform-imposm-to-schema.sql
+
+# OSM: Cleanup import schema
+_osm-cleanup-import:
+    @echo ""
+    @echo "4️⃣  Cleaning up import schema..."
+    @{{psql_osmbe}} -c "DROP SCHEMA IF EXISTS import CASCADE; CREATE SCHEMA import;"
+    @echo "✅ Import schema cleaned"
+
+# GRB: Create order for GBG (buildings)
+_grb-order-gbg:
+    #!/usr/bin/env bash
+    echo "📦 Ordering GBG (Buildings)..."
+    RESPONSE=$(curl -s -H "x-api-key: {{grb_api_key}}" -H "Content-Type: application/json" \
+        -X POST -d '{"productId": 6553, "format": "Shapefile"}' {{grb_api_base}}/orders)
+    echo "$RESPONSE" > {{grb_orders_dir}}/gbg_order.json
+    ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
+    echo "✅ Order ID: $ORDER_ID"
+
+# GRB: Create order for GBA
+_grb-order-gba:
+    #!/usr/bin/env bash
+    echo "📦 Ordering GBA..."
+    RESPONSE=$(curl -s -H "x-api-key: {{grb_api_key}}" -H "Content-Type: application/json" \
+        -X POST -d '{"productId": 6554, "format": "Shapefile"}' {{grb_api_base}}/orders)
+    echo "$RESPONSE" > {{grb_orders_dir}}/gba_order.json
+    ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
+    echo "✅ Order ID: $ORDER_ID"
+
+# GRB: Create order for addresses
+_grb-order-addresses:
+    #!/usr/bin/env bash
+    echo "📦 Ordering Addresses..."
+    RESPONSE=$(curl -s -H "x-api-key: {{grb_api_key}}" -H "Content-Type: application/json" \
+        -X POST -d '{"productId": 10445, "format": "Shapefile"}' {{grb_api_base}}/orders)
+    echo "$RESPONSE" > {{grb_orders_dir}}/addresses_order.json
+    ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
+    echo "✅ Order ID: $ORDER_ID"
+
+# GRB: Create order for address links
+_grb-order-address-links:
+    #!/usr/bin/env bash
+    echo "📦 Ordering Address Links..."
+    RESPONSE=$(curl -s -H "x-api-key: {{grb_api_key}}" -H "Content-Type: application/json" \
+        -X POST -d '{"productId": 10144, "fileIds": ["10144/GRAR_Adreskoppelingen.zip"], "geographicalCrop": {"clip": false, "selectionEntityCode": "Geen_Versnijding"}, "mailOnProcessed": false}' \
+        {{grb_api_base}}/orders)
+    echo "$RESPONSE" > {{grb_orders_dir}}/address_links_order.json
+    ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
+    echo "✅ Order ID: $ORDER_ID"
+
+# GRB: Get order ID from saved file
+_grb-get-order-id product:
+    #!/usr/bin/env bash
+    FILE="{{grb_orders_dir}}/{{product}}_order.json"
+    if [ -f "$FILE" ]; then
+        jq -r '.member[0].orderId' "$FILE"
+    fi
+
+# GRB: Check order status
+_grb-check-order-status product name:
+    #!/usr/bin/env bash
+    ORDER_ID=$(just _grb-get-order-id {{product}})
+    if [ -n "$ORDER_ID" ] && [ "$ORDER_ID" != "null" ]; then
+        echo "{{name}} - Order ID: $ORDER_ID"
+        curl -s -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/$ORDER_ID | jq '{status: .status, files: .files | length}'
+        echo ""
+    fi
+
+# GRB: Download if order is ready
+_grb-download-if-ready product order_id:
+    #!/usr/bin/env bash
+    if [ -z "{{order_id}}" ] || [ "{{order_id}}" = "null" ]; then
+        echo "⚠️  No order found for {{product}}"
+        exit 0
+    fi
+    echo "📥 Downloading {{product}}..."
+    mkdir -p {{grb_data_dir}}/{{product}}
+    ORDER_DATA=$(curl -s -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/{{order_id}})
+    STATUS=$(echo "$ORDER_DATA" | jq -r '.status')
+    if [ "$STATUS" != "Processed" ] && [ "$STATUS" != "Completed" ]; then
+        echo "⚠️  Not ready (Status: $STATUS)"
+        exit 0
+    fi
+    DOWNLOAD_COUNT=$(echo "$ORDER_DATA" | jq -r '.downloads | length')
+    for i in $(seq 0 $((DOWNLOAD_COUNT - 1))); do
+        URL=$(echo "$ORDER_DATA" | jq -r ".downloads[$i][\"@id\"]")
+        FILE=$(echo "$ORDER_DATA" | jq -r ".downloads[$i].name")
+        curl --progress-bar -H "x-api-key: {{grb_api_key}}" -L "https://download.api.vlaanderen.be$URL" -o "{{grb_data_dir}}/{{product}}/$FILE"
+        echo "✅ $FILE"
+    done
+
+# GRB: Wait for all orders to complete
+_grb-wait-for-orders:
+    #!/usr/bin/env bash
+    echo "⏳ Waiting for orders to be processed..."
+    echo "This may take 10-30 minutes..."
+    echo ""
+    while true; do
+        ALL_READY=true
+        for PRODUCT in gbg gba addresses address-links; do
+            ORDER_ID=$(just _grb-get-order-id $PRODUCT)
+            if [ -n "$ORDER_ID" ] && [ "$ORDER_ID" != "null" ]; then
+                STATUS=$(curl -s -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/$ORDER_ID | jq -r '.status')
+                echo "$(date +%H:%M:%S) - $PRODUCT: $STATUS"
+                if [ "$STATUS" != "Processed" ] && [ "$STATUS" != "Completed" ]; then
+                    ALL_READY=false
+                fi
+            fi
+        done
+        echo ""
+        if [ "$ALL_READY" = true ]; then
+            echo "✅ All orders ready!"
+            break
+        fi
+        sleep 60
+    done
+
+# GRB: Import building polygons
+_grb-import-building-polygons:
+    #!/usr/bin/env bash
+    echo "📊 Importing GRB building polygons..."
+    for file in {{grb_data_dir}}/gbg/*.shp; do
+        if [ -f "$file" ]; then
+            ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+                "$file" -nln grb.building_polygons -append -t_srs EPSG:4326
+        fi
+    done
+    echo "✅ Building polygons imported"
+
+# GRB: Import addresses
+_grb-import-addresses:
+    #!/usr/bin/env bash
+    echo "📊 Importing addresses..."
+    for file in {{grb_data_dir}}/addresses/*.shp; do
+        if [ -f "$file" ]; then
+            ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+                "$file" -nln grb.addresses -append -t_srs EPSG:4326
+        fi
+    done
+    echo "✅ Addresses imported"
+
+# GRB: Import address-building links
+_grb-import-address-links:
+    #!/usr/bin/env bash
+    echo "📊 Importing address-building links..."
+    for file in {{grb_data_dir}}/address-links/*.shp; do
+        if [ -f "$file" ]; then
+            ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+                "$file" -nln grb.address_building_links -append -t_srs EPSG:4326
+        fi
+    done
+    echo "✅ Address links imported"
+
+# GRB: Aggregate building polygons into buildings
+_grb-aggregate-buildings:
+    @echo "📊 Aggregating building polygons..."
+    @{{psql_be2osm}} -c "INSERT INTO grb.buildings (gebouw_id, polygon_count, total_area_m2, type_label, geom) SELECT gebouw_id, COUNT(*) as polygon_count, SUM(area_m2)::real as total_area_m2, MAX(type_label) as type_label, ST_Union(geom) as geom FROM grb.building_polygons GROUP BY gebouw_id ON CONFLICT (gebouw_id) DO UPDATE SET polygon_count = EXCLUDED.polygon_count, total_area_m2 = EXCLUDED.total_area_m2, type_label = EXCLUDED.type_label, geom = EXCLUDED.geom;"
+    @echo "✅ Buildings aggregated"
+
+# GRB: Refresh materialized view
+_grb-refresh-materialized-view:
+    @echo "📊 Refreshing materialized view..."
+    @{{psql_be2osm}} -c "REFRESH MATERIALIZED VIEW grb.buildings_with_addresses;"
+    @echo "✅ Materialized view refreshed"

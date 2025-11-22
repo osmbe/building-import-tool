@@ -1,0 +1,18 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+.DS_Store
+
+# Data directories (can be large)
+data/*
+logs/*
+
+# Build artifacts
+target/
+
+# Keep necessary files
+!data/.gitkeep

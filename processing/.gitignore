@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# IDE
+.idea
+.vscode
+
+# Environment
+.env
+
+# Data directories
+/data/*
+/output/*
+/logs/*
+
+# Build artifacts
+/target
+
+# Keep .gitkeep files
+!.gitkeep

@@ -1,0 +1,67 @@
+---
+# Imposm3 mapping for Belgium OSM buildings
+# This configuration imports building polygons with relevant tags
+
+tables:
+  buildings:
+    type: polygon
+    columns:
+      # Core OSM identifiers
+      - name: osm_id
+        type: id
+      - name: geometry
+        type: geometry
+      # Building type (extracted for convenience)
+      - name: building_type
+        type: string
+        key: building
+      # GRB-specific field
+      - name: oidn
+        type: string
+        key: source:geometry:oidn
+      # Store ALL tags as hstore (will convert to JSONB in transformation)
+      - name: tags
+        type: hstore_tags
+    mapping:
+      building:
+        - __any__
+    filters:
+      exclude_tags:
+        - - building
+          - "no"
+
+  building_parts:
+    type: polygon
+    columns:
+      - name: osm_id
+        type: id
+      - name: geometry
+        type: geometry
+      - name: building_part
+        type: string
+        key: building:part
+      - name: building
+        type: string
+      - name: building_levels
+        type: integer
+      - name: roof_levels
+        type: integer
+      - name: height
+        type: string
+      - name: roof_shape
+        type: string
+      - name: min_level
+        type: integer
+      - name: max_level
+        type: integer
+      - name: tags
+        type: hstore_tags
+    mapping:
+      building:part:
+        - __any__
+
+generalized_tables:
+  buildings_gen:
+    source: buildings
+    tolerance: 10.0
+    sql_filter: ST_Area(geometry) > 50
