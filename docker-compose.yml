@@ -1,0 +1,141 @@
+services:
+  # Nuxt 3 Application
+  nuxt-app:
+    # Use NUXT_IMAGE if set (for production deployments), otherwise build locally
+    image: ${NUXT_IMAGE:-}
+    build:
+      context: ./app
+      args:
+        OSM_CLIENT_ID: ${OSM_CLIENT_ID}
+        OSM_CLIENT_SECRET: ${OSM_CLIENT_SECRET}
+        OSM_REDIRECT_URI: ${OSM_REDIRECT_URI}
+    container_name: be2osm-nuxt
+    environment:
+      OSM_CLIENT_ID: ${OSM_CLIENT_ID}
+      OSM_CLIENT_SECRET: ${OSM_CLIENT_SECRET}
+      OSM_REDIRECT_URI: ${OSM_REDIRECT_URI}
+      DB_HOST: ${POSTGRES_HOST:-postgres-db}
+      DB_PORT: ${POSTGRES_PORT:-5432}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      NODE_ENV: production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - infra
+
+  # Martin Tile Server - GRB Data
+  grb-tiles:
+    image: ghcr.io/maplibre/martin:latest
+    container_name: be2osm-grb-tiles
+    volumes:
+      - ./config/martin/grb-config.yaml:/config.yaml:ro,Z
+    command: ["--config", "/config.yaml"]
+    restart: unless-stopped
+    environment:
+      DB_HOST: ${POSTGRES_HOST:-postgres-db}
+      DB_PORT: ${POSTGRES_PORT:-5432}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - infra
+
+  # Martin Tile Server - OSM Data
+  osm-tiles:
+    image: ghcr.io/maplibre/martin:latest
+    container_name: be2osm-osm-tiles
+    volumes:
+      - ./config/martin/osm-config.yaml:/config.yaml:ro,Z
+    command: ["--config", "/config.yaml"]
+    restart: unless-stopped
+    environment:
+      DB_HOST: ${POSTGRES_HOST:-postgres-db}
+      DB_PORT: ${POSTGRES_PORT:-5432}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - infra
+
+  # Data Processing Tools (ogr2ogr, imposm3, Just)
+  processing:
+    build:
+      context: ./processing
+      dockerfile: Dockerfile
+    image: be2osm-processing:latest
+    container_name: be2osm-processing
+    profiles:
+      - processing
+    volumes:
+      - ./processing:/work
+      - ./.env:/work/.env:ro
+      - ./processing/data:/work/data
+      - ./processing/logs:/work/logs
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-be2osm}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - infra
+    stdin_open: true
+    tty: true
+    command: just
+
+  # One-shot service for running specific processing tasks
+  # Usage: docker compose run --rm task osm-download
+  task:
+    extends: processing
+    container_name: be2osm-task
+    profiles:
+      - task
+    entrypoint: ["just"]
+
+  # Caddy reverse proxy
+  caddy:
+    image: caddy:2-alpine
+    container_name: be2osm-caddy
+    ports:
+      - "3000:80"
+    volumes:
+      - ./caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+    restart: unless-stopped
+    networks:
+      - infra
+
+networks:
+  infra:
+    external: true
+
+volumes:
+  osm-downloads:
+  osm-cache:
+  grb-uploads:
+  logs:
