@@ -37,7 +37,7 @@
         </div>
 
         <!-- Location Section -->
-        <div class="space-y-2">
+        <div v-if="hasLocationData" class="space-y-2">
           <div class="flex items-center gap-2 text-sm font-medium text-gray-300">
             <MapPinned class="h-4 w-4" />
             <span>Location</span>
@@ -59,13 +59,13 @@
         </div>
 
         <!-- Building Details Section -->
-        <div class="space-y-2">
+        <div v-if="hasBuildingDetails" class="space-y-2">
           <div class="flex items-center gap-2 text-sm font-medium text-gray-300">
             <Ruler class="h-4 w-4" />
             <span>Building Details</span>
           </div>
           <div class="pl-6 space-y-1 text-sm">
-            <div class="flex justify-between">
+            <div v-if="building.total_area_m2" class="flex justify-between">
               <span class="text-gray-400">Total Area:</span>
               <span class="text-gray-200">{{ formattedArea }}</span>
             </div>
@@ -73,7 +73,7 @@
               <span class="text-gray-400">Polygon Parts:</span>
               <span class="text-gray-200">{{ building.polygon_count }}</span>
             </div>
-            <div class="flex justify-between">
+            <div v-if="building.type_label" class="flex justify-between">
               <span class="text-gray-400">Type:</span>
               <span class="text-gray-200">{{ buildingTypeLabel }}</span>
             </div>
@@ -174,5 +174,19 @@ const buildingTypeLabel = computed(() => {
   }
 
   return translations[type.toLowerCase()] || type
+})
+
+// Check if location section has any data to display
+const hasLocationData = computed(() => {
+  return postcodes.value.length > 0 ||
+         municipalities.value.length > 0 ||
+         streetNames.value.length > 0
+})
+
+// Check if building details section has any data to display
+const hasBuildingDetails = computed(() => {
+  return props.building?.total_area_m2 ||
+         props.building?.polygon_count ||
+         props.building?.type_label
 })
 </script>

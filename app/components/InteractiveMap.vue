@@ -201,7 +201,7 @@
                         GRB ID: {{ feature.gebouw_id || feature.id }}
                       </div>
                     </div>
-                    <Button v-if="isTooltipSticky" variant="ghost" size="icon" @click="closeTooltip">
+                    <Button v-if="isTooltipSticky" variant="ghost" size="icon" @click="removeFeature(index)">
                       <X class="h-4 w-4" />
                     </Button>
                   </div>
@@ -274,7 +274,7 @@
                         OSM ID: {{ feature.osm_id }}
                       </div>
                     </div>
-                    <Button v-if="isTooltipSticky" variant="ghost" size="icon" @click="closeTooltip">
+                    <Button v-if="isTooltipSticky" variant="ghost" size="icon" @click="removeFeature(index)">
                       <X class="h-4 w-4" />
                     </Button>
                   </div>
@@ -372,8 +372,8 @@ const overlayLayers = ref({
   boundaries: false
 })
 
-const currentZoom = ref(13)
-const currentCenter = ref<[number, number]>([4.3047, 50.9087])
+const currentZoom = ref(8)
+const currentCenter = ref<[number, number]>([4.3517, 50.8503])
 const panelOpen = ref(false)
 const activeBuilding = ref<BuildingData | null>(null)
 const showLayersPanel = ref(false)
@@ -444,8 +444,8 @@ const setupMap = () => {
 
   // Initialize map with composable
   const mapInstance = initializeMap(mapRef.value, {
-    center: [4.3047, 50.9087],
-    zoom: 13
+    center: [4.3517, 50.8503],
+    zoom: 8
   })
 
   // Update reactive values when map moves
@@ -486,8 +486,8 @@ const zoomOut = () => {
 const resetView = () => {
   if (!map.value) return
   map.value.getView().animate({
-    center: fromLonLat([4.3047, 50.9087]),
-    zoom: 13,
+    center: fromLonLat([4.3517, 50.8503]),
+    zoom: 8,
     duration: 1000
   })
 }
@@ -1236,6 +1236,16 @@ const exportToJOSM = async () => {
 const onOperationComplete = (res: any) => {
   // Handle operation completion
   console.log('Operation completed:', res)
+}
+
+// Remove a specific feature from the clicked features array
+const removeFeature = (index: number) => {
+  clickedFeatures.value.splice(index, 1)
+
+  // If no features left, close the panel
+  if (clickedFeatures.value.length === 0) {
+    closeTooltip()
+  }
 }
 
 // Close tooltip function

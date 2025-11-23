@@ -31,23 +31,33 @@
 
         <TabsContent value="compare" class="mt-3">
           <div class="text-sm space-y-2">
-            <div class="font-medium mb-2">OSM Tags ({{ osmTagCount }})</div>
-            <div v-if="building.osmData?.tags" class="max-h-96 overflow-y-auto space-y-1">
-              <div v-for="(value, key) in building.osmData.tags" :key="key" class="grid grid-cols-[140px_1fr] gap-x-3 gap-y-1 py-1 border-b border-slate-700/50">
-                <div class="text-gray-400 truncate" :title="String(key)">{{ key }}</div>
-                <div class="text-gray-100 break-words" :title="String(value)">{{ value || '—' }}</div>
+            <div v-if="osmTagCount > 0">
+              <div class="font-medium mb-2">OSM Tags ({{ osmTagCount }})</div>
+              <div class="max-h-96 overflow-y-auto space-y-1">
+                <div v-for="(value, key) in building.osmData.tags" :key="key" class="grid grid-cols-[140px_1fr] gap-x-3 gap-y-1 py-1 border-b border-slate-700/50">
+                  <div class="text-gray-400 truncate" :title="String(key)">{{ key }}</div>
+                  <div class="text-gray-100 break-words" :title="String(value)">{{ value || '—' }}</div>
+                </div>
               </div>
             </div>
-            <div v-else class="text-gray-300">No OSM data.</div>
 
-            <div class="font-medium mt-4 mb-2">Authoritative</div>
-            <div v-if="building.authoritativeData" class="grid grid-cols-2 gap-x-3 gap-y-1">
-              <div>Levels</div><div>{{ building.authoritativeData?.levels ?? '—' }}</div>
-              <div>Height</div><div>{{ building.authoritativeData?.height ?? '—' }}</div>
-              <div>Material</div><div>{{ building.authoritativeData?.buildingMaterial ?? '—' }}</div>
-              <div>Roof</div><div>{{ building.authoritativeData?.roofType ?? '—' }}</div>
+            <div v-if="hasAuthoritativeData">
+              <div class="font-medium mt-4 mb-2">Authoritative</div>
+              <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+                <template v-if="building.authoritativeData?.levels">
+                  <div>Levels</div><div>{{ building.authoritativeData.levels }}</div>
+                </template>
+                <template v-if="building.authoritativeData?.height">
+                  <div>Height</div><div>{{ building.authoritativeData.height }}</div>
+                </template>
+                <template v-if="building.authoritativeData?.buildingMaterial">
+                  <div>Material</div><div>{{ building.authoritativeData.buildingMaterial }}</div>
+                </template>
+                <template v-if="building.authoritativeData?.roofType">
+                  <div>Roof</div><div>{{ building.authoritativeData.roofType }}</div>
+                </template>
+              </div>
             </div>
-            <div v-else class="text-gray-300">No authoritative data.</div>
           </div>
         </TabsContent>
 
@@ -83,5 +93,11 @@ const activeTab = ref('overview')
 const osmTagCount = computed(() => {
   if (!props.building?.osmData?.tags) return 0
   return Object.keys(props.building.osmData.tags).length
+})
+
+// Check if authoritative data section has any data to display
+const hasAuthoritativeData = computed(() => {
+  const auth = props.building?.authoritativeData
+  return auth?.levels || auth?.height || auth?.buildingMaterial || auth?.roofType
 })
 </script>
