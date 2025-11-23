@@ -135,6 +135,87 @@ WHERE geom IS NOT NULL AND geom_mercator IS NULL;
 
 \echo '✓ Web Mercator geometries generated'
 
+-- Import addresses from imposm schema (if available)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'import' AND table_name = 'osm_addresses') THEN
+        RAISE NOTICE 'Importing OSM addresses...';
+
+        -- Drop and recreate addresses table with proper schema
+        DROP TABLE IF EXISTS osm.osm_addresses CASCADE;
+
+        CREATE TABLE osm.osm_addresses (
+            id BIGSERIAL PRIMARY KEY,
+            osm_id BIGINT NOT NULL UNIQUE,
+            housenumber TEXT,
+            street TEXT,
+            postcode TEXT,
+            city TEXT,
+            tags JSONB NOT NULL DEFAULT '{}',
+            geom GEOMETRY(Point, 4326),
+            imported_at TIMESTAMPTZ DEFAULT NOW()
+        );
+
+        -- Truncate and reimport
+        TRUNCATE osm.osm_addresses;
+
+        INSERT INTO osm.osm_addresses (osm_id, housenumber, street, postcode, city, tags, geom)
+        SELECT
+            osm_id,
+            housenumber,
+            street,
+            postcode,
+            city,
+            CASE
+                WHEN tags IS NOT NULL THEN hstore_to_jsonb(tags)
+                ELSE '{}'::jsonb
+            END,
+            ST_Transform(geometry, 4326)
+        FROM import.osm_addresses;
+
+        -- Create spatial index
+        CREATE INDEX IF NOT EXISTS idx_osm_addresses_geom ON osm.osm_addresses USING GIST(geom);
+        CREATE INDEX IF NOT EXISTS idx_osm_addresses_street ON osm.osm_addresses(street);
+        CREATE INDEX IF NOT EXISTS idx_osm_addresses_postcode ON osm.osm_addresses(postcode);
+
+        RAISE NOTICE 'Address import complete: % addresses imported', (SELECT COUNT(*) FROM osm.osm_addresses);
+    ELSE
+        RAISE NOTICE 'No address data found in import schema - skipping address import';
+    END IF;
+END $$;
+
+\echo '✓ Addresses imported (if available)'
+
+-- Spatially join addresses to buildings and update building tags
+DO $$
+DECLARE
+    updated_count INTEGER := 0;
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'osm' AND table_name = 'osm_addresses') THEN
+        RAISE NOTICE 'Spatially joining addresses to buildings (exact intersection)...';
+
+        -- For each building, find addresses that intersect (are contained within) the building polygon
+        WITH building_addresses AS (
+            SELECT DISTINCT ON (b.osm_id)
+                b.osm_id,
+                a.tags
+            FROM osm.osm_buildings b
+            JOIN osm.osm_addresses a ON ST_Contains(b.geom, a.geom)
+            WHERE a.tags IS NOT NULL AND a.tags != '{}'::jsonb
+            ORDER BY b.osm_id, a.osm_id
+        )
+        UPDATE osm.osm_buildings b
+        SET tags = b.tags || ba.tags
+        FROM building_addresses ba
+        WHERE b.osm_id = ba.osm_id;
+
+        GET DIAGNOSTICS updated_count = ROW_COUNT;
+        RAISE NOTICE 'Updated % buildings with address tags', updated_count;
+    END IF;
+END $$;
+
+\echo '✓ Address tags merged into buildings'
+
 -- Analyze table for query optimization
 ANALYZE osm.osm_buildings;
 

@@ -60,6 +60,34 @@ tables:
       building:part:
         - __any__
 
+  addresses:
+    type: point
+    columns:
+      # Core OSM identifiers
+      - name: osm_id
+        type: id
+      - name: geometry
+        type: geometry
+      # Address tags (extracted for convenience)
+      - name: housenumber
+        type: string
+        key: addr:housenumber
+      - name: street
+        type: string
+        key: addr:street
+      - name: postcode
+        type: string
+        key: addr:postcode
+      - name: city
+        type: string
+        key: addr:city
+      # Store ALL tags as hstore
+      - name: tags
+        type: hstore_tags
+    mapping:
+      addr:housenumber:
+        - __any__
+
 generalized_tables:
   buildings_gen:
     source: buildings
