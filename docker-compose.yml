@@ -1,4 +1,34 @@
 services:
+  # PostgreSQL with PostGIS
+  postgres:
+    image: postgis/postgis:18-3.5
+    container_name: be2osm-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-be2osm}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-db.sh:/docker-entrypoint-initdb.d/01-init-db.sh:ro
+      - ./postgres/setup-extensions.sql:/docker-entrypoint-initdb.d/02-setup-extensions.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-be2osm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    networks:
+      - infra
+
   # Nuxt 3 Application
   nuxt-app:
     # Use NUXT_IMAGE if set (for production deployments), otherwise build locally
@@ -14,12 +44,15 @@ services:
       OSM_CLIENT_ID: ${OSM_CLIENT_ID}
       OSM_CLIENT_SECRET: ${OSM_CLIENT_SECRET}
       OSM_REDIRECT_URI: ${OSM_REDIRECT_URI}
-      POSTGRES_HOST: ${POSTGRES_HOST:-postgres-db}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       NODE_ENV: production
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
@@ -39,14 +72,17 @@ services:
 
   # Martin Tile Server - GRB Data
   grb-tiles:
-    image: ghcr.io/maplibre/martin:latest
+    image: ghcr.io/maplibre/martin:1.0.0
     container_name: be2osm-grb-tiles
     volumes:
       - ./config/martin/grb-config.yaml:/config.yaml:ro,Z
     command: ["--config", "/config.yaml"]
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      POSTGRES_HOST: ${POSTGRES_HOST:-postgres-db}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -60,14 +96,17 @@ services:
 
   # Martin Tile Server - OSM Data
   osm-tiles:
-    image: ghcr.io/maplibre/martin:latest
+    image: ghcr.io/maplibre/martin:1.0.0
     container_name: be2osm-osm-tiles
     volumes:
       - ./config/martin/osm-config.yaml:/config.yaml:ro,Z
     command: ["--config", "/config.yaml"]
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      POSTGRES_HOST: ${POSTGRES_HOST:-postgres-db}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -135,6 +174,7 @@ networks:
     external: true
 
 volumes:
+  postgres_data:
   osm-downloads:
   osm-cache:
   grb-uploads:
