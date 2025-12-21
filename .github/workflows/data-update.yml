@@ -1,0 +1,242 @@
+name: Data Updates
+
+on:
+  # Scheduled triggers (disabled for now - manual only)
+  # schedule:
+  #   # OSM: Every day at 4:00 AM UTC (5:00 AM Brussels) - after Geofabrik's ~9PM update
+  #   - cron: '0 4 * * *'
+  #   # GRB: Every Sunday at 5:00 AM UTC (6:00 AM Brussels)
+  #   - cron: '0 5 * * 0'
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'Type of update to run'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - osm
+          - grb
+          - both
+
+jobs:
+  # Determine which updates to run based on trigger
+  setup:
+    name: Determine Update Type
+    runs-on: ubuntu-latest
+    outputs:
+      run_osm: ${{ steps.determine.outputs.run_osm }}
+      run_grb: ${{ steps.determine.outputs.run_grb }}
+    steps:
+      - name: Determine update type
+        id: determine
+        run: |
+          # Manual trigger - use selected option
+          case "${{ inputs.update_type }}" in
+            osm)
+              echo "run_osm=true" >> $GITHUB_OUTPUT
+              echo "run_grb=false" >> $GITHUB_OUTPUT
+              ;;
+            grb)
+              echo "run_osm=false" >> $GITHUB_OUTPUT
+              echo "run_grb=true" >> $GITHUB_OUTPUT
+              ;;
+            both)
+              echo "run_osm=true" >> $GITHUB_OUTPUT
+              echo "run_grb=true" >> $GITHUB_OUTPUT
+              ;;
+          esac
+          # Note: To re-enable scheduled triggers, uncomment the 'schedule' section above
+          # and restore the cron-based logic here
+
+  # OSM Differential Update (daily diffs from Geofabrik)
+  update-osm:
+    name: Update OSM Data (Differential)
+    runs-on: ubuntu-latest
+    needs: setup
+    if: needs.setup.outputs.run_osm == 'true'
+    timeout-minutes: 30  # Much faster with diffs
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Build processing image on VPS
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          cd ~/be2osm
+          docker compose build processing
+          EOF
+
+      - name: Run OSM differential update
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          cd ~/be2osm
+
+          echo "=== OSM Differential Update ==="
+          echo "Started at: $(date)"
+          echo "Using Geofabrik daily diffs (not full PBF download)"
+
+          # Run the differential update
+          docker compose run --rm task osm-update
+
+          echo "=== OSM Update Complete ==="
+          echo "Finished at: $(date)"
+          EOF
+
+      - name: Show OSM statistics
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          cd ~/be2osm
+          docker compose run --rm task osm-status
+          EOF
+
+      - name: Generate summary
+        if: always()
+        run: |
+          echo "## OSM Differential Update" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Type:** Incremental (Geofabrik daily diffs)" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+
+  # GRB Differential Update (temporalCrop from Digital Vlaanderen)
+  update-grb:
+    name: Update GRB Data (Differential)
+    runs-on: ubuntu-latest
+    needs: setup
+    if: needs.setup.outputs.run_grb == 'true'
+    timeout-minutes: 60  # GRB API processing time
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Build processing image on VPS
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          cd ~/be2osm
+          docker compose build processing
+          EOF
+
+      - name: Update .env with GRB API key
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          cd ~/be2osm
+
+          # Add/update GRB API key in .env
+          if ! grep -q "DIGITAL_VLAANDEREN_API_KEY" .env; then
+            echo "" >> .env
+            echo "# Digital Vlaanderen API" >> .env
+            echo "DIGITAL_VLAANDEREN_API_KEY=${{ secrets.DIGITAL_VLAANDEREN_API_KEY }}" >> .env
+          else
+            sed -i "s/DIGITAL_VLAANDEREN_API_KEY=.*/DIGITAL_VLAANDEREN_API_KEY=${{ secrets.DIGITAL_VLAANDEREN_API_KEY }}/" .env
+          fi
+          EOF
+
+      - name: Run GRB differential update
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          cd ~/be2osm
+
+          echo "=== GRB Differential Update ==="
+          echo "Started at: $(date)"
+          echo "Using temporalCrop to fetch only changes since last update"
+
+          # Run the differential update
+          docker compose run --rm task grb-update
+
+          echo "=== GRB Update Complete ==="
+          echo "Finished at: $(date)"
+          EOF
+
+      - name: Show GRB statistics
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          cd ~/be2osm
+          docker compose run --rm task grb-status
+          EOF
+
+      - name: Generate summary
+        if: always()
+        run: |
+          echo "## GRB Differential Update" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Type:** Incremental (temporalCrop from Digital Vlaanderen)" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+
+  # Optimize databases after updates
+  optimize:
+    name: Optimize Databases
+    runs-on: ubuntu-latest
+    needs: [setup, update-osm, update-grb]
+    if: always() && (needs.update-osm.result == 'success' || needs.update-grb.result == 'success')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Optimize databases
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          cd ~/be2osm
+          echo "=== Optimizing databases ==="
+          docker compose run --rm task db-optimize
+          EOF
+
+      - name: Show database sizes
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          cd ~/be2osm
+          docker compose run --rm task db-sizes
+          EOF
+
+  # Final summary
+  summary:
+    name: Generate Report
+    runs-on: ubuntu-latest
+    needs: [setup, update-osm, update-grb, optimize]
+    if: always()
+
+    steps:
+      - name: Generate final summary
+        run: |
+          echo "# Data Update Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Run ID:** ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Update Strategy" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **OSM:** Daily differential updates via Geofabrik (imposm3 run)" >> $GITHUB_STEP_SUMMARY
+          echo "- **GRB:** Weekly differential updates via temporalCrop API filter" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| OSM Update | ${{ needs.update-osm.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GRB Update | ${{ needs.update-grb.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Optimization | ${{ needs.optimize.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
