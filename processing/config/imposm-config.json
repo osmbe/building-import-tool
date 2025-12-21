@@ -1,0 +1,8 @@
+{
+  "cachedir": "data/osm/imposm-cache",
+  "diffdir": "data/osm/imposm-diff",
+  "mapping": "config/imposm-mapping.yml",
+  "replication_url": "https://download.geofabrik.de/europe/belgium-updates/",
+  "replication_interval": "24h",
+  "diff_state_before": "4h"
+}

@@ -28,6 +28,7 @@ default:
     @echo "🗺️  OSM Tasks"
     @echo "  osm-download       - Download Belgium OSM data from Geofabrik"
     @echo "  osm-import         - Import OSM buildings to database"
+    @echo "  osm-update         - Apply daily diff updates (Geofabrik)"
     @echo "  osm-rebuild        - Clean cache and reimport OSM data"
     @echo "  osm-status         - Show OSM database statistics"
     @echo ""
@@ -36,6 +37,7 @@ default:
     @echo "  grb-download-all   - Download all ready orders"
     @echo "  grb-import         - Import GRB data to database"
     @echo "  grb-full           - Complete workflow (order → download → import)"
+    @echo "  grb-update         - Update GRB data (diff since last update)"
     @echo "  grb-status         - Show GRB database statistics"
     @echo ""
     @echo "🔧 Database Tasks"
@@ -166,6 +168,22 @@ osm-rebuild:
     @just clean-osm-cache
     @just osm-import
 
+# Apply daily diff updates from Geofabrik (incremental update)
+osm-update:
+    @echo "🔄 OSM Incremental Update (Geofabrik Daily Diffs)"
+    @echo "========================================"
+    @echo "📅 Started at: $(date)"
+    @echo ""
+    @just _check-server
+    @just _check-osm-database
+    @just _check-imposm
+    @just _osm-setup-replication
+    @just _osm-run-update
+    @just _osm-transform-schema
+    @just osm-status
+    @echo ""
+    @echo "✅ OSM update complete!"
+
 # Show OSM database statistics
 osm-status:
     @echo ""
@@ -233,6 +251,25 @@ grb-full:
     @just _grb-wait-for-orders
     @just grb-download-all
     @just grb-import
+
+# Update GRB data with changes since last update (differential)
+grb-update:
+    @echo "🔄 GRB Differential Update"
+    @echo "========================================"
+    @echo "📅 Started at: $(date)"
+    @echo ""
+    @just _check-server
+    @just _check-be2osm-database
+    @just _grb-order-diff-gbg
+    @just _grb-wait-for-orders
+    @just _grb-download-if-ready gbg-diff "$(just _grb-get-order-id gbg-diff)"
+    @just _grb-import-diff-building-polygons
+    @just _grb-aggregate-buildings
+    @just _grb-refresh-materialized-view
+    @just _grb-save-last-update
+    @just grb-status
+    @echo ""
+    @echo "✅ GRB differential update complete!"
 
 # Show GRB database statistics
 grb-status:
@@ -604,3 +641,192 @@ _grb-refresh-materialized-view:
     @echo "📊 Refreshing materialized view..."
     @{{psql_be2osm}} -c "REFRESH MATERIALIZED VIEW grb.buildings_with_addresses;"
     @echo "✅ Materialized view refreshed"
+
+# ============================================================================
+# INTERNAL TASKS - OSM Differential Updates
+# ============================================================================
+
+# OSM: Setup replication configuration for Geofabrik daily diffs
+_osm-setup-replication:
+    #!/usr/bin/env bash
+    echo "📋 Setting up OSM replication..."
+    mkdir -p data/osm/imposm-diff
+
+    # Check if last.state.txt exists (indicates previous import)
+    if [ ! -f "data/osm/imposm-diff/last.state.txt" ]; then
+        echo "⚠️  No previous state found. Running initial import first..."
+        echo "   Please run 'just osm-download && just osm-import' first"
+        exit 1
+    fi
+    echo "✅ Replication state found"
+
+# OSM: Run imposm3 diff update
+_osm-run-update:
+    @echo "🔄 Running imposm3 diff update..."
+    imposm run \
+        -config config/imposm-config.json \
+        -connection "postgis://{{db_user}}:{{db_password}}@{{db_host}}:{{db_port}}/{{osmbe_db}}" \
+        -dbschema-import import \
+        -expiretiles-dir data/osm/expired-tiles
+    @echo "✅ Diff update applied"
+
+# OSM: Initialize replication state from PBF file timestamp
+_osm-init-replication:
+    #!/usr/bin/env bash
+    echo "🔧 Initializing OSM replication state..."
+    mkdir -p data/osm/imposm-diff
+
+    # Get the timestamp from the PBF file using osmium
+    if command -v osmium &> /dev/null; then
+        TIMESTAMP=$(osmium fileinfo -g header.option.osmosis_replication_timestamp "{{osm_file}}" 2>/dev/null || echo "")
+        if [ -n "$TIMESTAMP" ]; then
+            echo "📅 PBF timestamp: $TIMESTAMP"
+            # Create initial state file
+            echo "timestamp=$TIMESTAMP" > data/osm/imposm-diff/last.state.txt
+            echo "✅ Replication state initialized"
+        else
+            echo "⚠️  Could not extract timestamp from PBF file"
+            echo "   Creating state with current date minus 2 days"
+            TIMESTAMP=$(date -u -v-2d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "2 days ago" +%Y-%m-%dT%H:%M:%SZ)
+            echo "timestamp=$TIMESTAMP" > data/osm/imposm-diff/last.state.txt
+        fi
+    else
+        echo "⚠️  osmium not installed, using fallback timestamp"
+        TIMESTAMP=$(date -u -v-2d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "2 days ago" +%Y-%m-%dT%H:%M:%SZ)
+        echo "timestamp=$TIMESTAMP" > data/osm/imposm-diff/last.state.txt
+    fi
+
+# ============================================================================
+# INTERNAL TASKS - GRB Differential Updates
+# ============================================================================
+
+# GRB: Get last update date (defaults to 7 days ago if not set)
+_grb-get-last-update:
+    #!/usr/bin/env bash
+    STATE_FILE="{{grb_data_dir}}/last_update.txt"
+    if [ -f "$STATE_FILE" ]; then
+        cat "$STATE_FILE"
+    else
+        # Default to 7 days ago if no previous update
+        date -u -v-7d +%Y-%m-%dT00:00:00Z 2>/dev/null || date -u -d "7 days ago" +%Y-%m-%dT00:00:00Z
+    fi
+
+# GRB: Save last update date
+_grb-save-last-update:
+    #!/usr/bin/env bash
+    mkdir -p {{grb_data_dir}}
+    date -u +%Y-%m-%dT00:00:00Z > {{grb_data_dir}}/last_update.txt
+    echo "📅 Saved update timestamp: $(cat {{grb_data_dir}}/last_update.txt)"
+
+# GRB: Create differential order for GBG (buildings) with temporalCrop
+_grb-order-diff-gbg:
+    #!/usr/bin/env bash
+    echo "📦 Ordering GBG differential (Buildings)..."
+    mkdir -p {{grb_orders_dir}}
+
+    PRODUCT_ID=6553
+
+    # First, check if product supports difference files
+    echo "🔍 Checking if product supports differential files..."
+    PRODUCT_INFO=$(curl -s -H "x-api-key: {{grb_api_key}}" "{{grb_api_base}}/products/$PRODUCT_ID")
+
+    ALLOW_DIFF=$(echo "$PRODUCT_INFO" | jq -r '.allowDifferenceFiles // false')
+    if [ "$ALLOW_DIFF" != "true" ]; then
+        echo "⚠️  Product $PRODUCT_ID does not support differential files (allowDifferenceFiles=$ALLOW_DIFF)"
+        echo "   Falling back to full order without temporalCrop..."
+
+        # Create order without temporalCrop
+        PAYLOAD='{"productId": '$PRODUCT_ID', "format": "Shapefile"}'
+        RESPONSE=$(curl -s -H "x-api-key: {{grb_api_key}}" -H "Content-Type: application/json" \
+            -X POST -d "$PAYLOAD" {{grb_api_base}}/orders)
+        echo "$RESPONSE" > {{grb_orders_dir}}/gbg-diff_order.json
+        ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
+
+        if [ "$ORDER_ID" = "null" ] || [ -z "$ORDER_ID" ]; then
+            echo "❌ Failed to create order. Response:"
+            echo "$RESPONSE" | jq .
+            exit 1
+        fi
+        echo "✅ Order ID: $ORDER_ID (full dataset)"
+        exit 0
+    fi
+
+    # Get allowed date range from product info
+    DIFF_MIN_START=$(echo "$PRODUCT_INFO" | jq -r '.DifferenceFileMinStartDate // empty')
+    DIFF_MAX_END=$(echo "$PRODUCT_INFO" | jq -r '.DifferenceFileMaxEndDate // empty')
+
+    echo "✅ Product supports differential files"
+    [ -n "$DIFF_MIN_START" ] && echo "   Min start date: $DIFF_MIN_START"
+    [ -n "$DIFF_MAX_END" ] && echo "   Max end date: $DIFF_MAX_END"
+
+    # Get date range for our request
+    FROM_DATE=$(just _grb-get-last-update)
+    TO_DATE=$(date -u +%Y-%m-%dT23:59:59Z)
+
+    echo "   Requesting from: $FROM_DATE"
+    echo "   Requesting to:   $TO_DATE"
+
+    # Build JSON payload with temporalCrop
+    PAYLOAD=$(cat <<EOF
+{
+    "productId": $PRODUCT_ID,
+    "format": "Shapefile",
+    "temporalCrop": {
+        "from": "$FROM_DATE",
+        "to": "$TO_DATE"
+    }
+}
+EOF
+)
+
+    RESPONSE=$(curl -s -H "x-api-key: {{grb_api_key}}" -H "Content-Type: application/json" \
+        -X POST -d "$PAYLOAD" {{grb_api_base}}/orders)
+    echo "$RESPONSE" > {{grb_orders_dir}}/gbg-diff_order.json
+    ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
+
+    if [ "$ORDER_ID" = "null" ] || [ -z "$ORDER_ID" ]; then
+        echo "❌ Failed to create differential order. Response:"
+        echo "$RESPONSE" | jq .
+        echo ""
+        echo "⚠️  Trying fallback to full order..."
+
+        # Fallback to full order
+        PAYLOAD='{"productId": '$PRODUCT_ID', "format": "Shapefile"}'
+        RESPONSE=$(curl -s -H "x-api-key: {{grb_api_key}}" -H "Content-Type: application/json" \
+            -X POST -d "$PAYLOAD" {{grb_api_base}}/orders)
+        echo "$RESPONSE" > {{grb_orders_dir}}/gbg-diff_order.json
+        ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
+
+        if [ "$ORDER_ID" = "null" ] || [ -z "$ORDER_ID" ]; then
+            echo "❌ Fallback also failed. Response:"
+            echo "$RESPONSE" | jq .
+            exit 1
+        fi
+        echo "✅ Order ID: $ORDER_ID (full dataset fallback)"
+    else
+        echo "✅ Order ID: $ORDER_ID (differential)"
+    fi
+
+# GRB: Import differential building polygons (upsert mode)
+_grb-import-diff-building-polygons:
+    #!/usr/bin/env bash
+    echo "📊 Importing differential GRB building polygons..."
+    DIFF_DIR="{{grb_data_dir}}/gbg-diff"
+
+    if [ ! -d "$DIFF_DIR" ]; then
+        echo "⚠️  No differential data found in $DIFF_DIR"
+        exit 0
+    fi
+
+    for file in "$DIFF_DIR"/*.shp; do
+        if [ -f "$file" ]; then
+            echo "   Processing: $(basename "$file")"
+            ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+                "$file" -nln grb.building_polygons -append -t_srs EPSG:4326 \
+                -lco OVERWRITE=YES
+        fi
+    done
+
+    # Clean up diff download after import
+    rm -rf "$DIFF_DIR"
+    echo "✅ Differential building polygons imported"
