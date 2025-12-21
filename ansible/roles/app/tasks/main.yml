@@ -1,0 +1,95 @@
+---
+# App role - Deploy BE2OSM application
+
+- name: Create application directory
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: "{{ deploy_user | default('root') }}"
+    group: "{{ deploy_group | default('root') }}"
+    mode: "0755"
+
+- name: Clone or update repository
+  ansible.builtin.git:
+    repo: "{{ git_repo }}"
+    dest: "{{ app_dir }}"
+    version: "{{ git_branch | default('main') }}"
+    force: true
+  become_user: "{{ deploy_user | default('root') }}"
+
+- name: Create .env file from template
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: "{{ deploy_user | default('root') }}"
+    group: "{{ deploy_group | default('root') }}"
+    mode: "0600"
+
+- name: Create production Caddyfile
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: "{{ app_dir }}/caddy/Caddyfile.prod"
+    owner: "{{ deploy_user | default('root') }}"
+    group: "{{ deploy_group | default('root') }}"
+    mode: "0644"
+
+- name: Create docker-compose.prod.yml override
+  ansible.builtin.template:
+    src: docker-compose.prod.yml.j2
+    dest: "{{ app_dir }}/docker-compose.prod.yml"
+    owner: "{{ deploy_user | default('root') }}"
+    group: "{{ deploy_group | default('root') }}"
+    mode: "0644"
+
+- name: Create data directories
+  ansible.builtin.file:
+    path: "{{ app_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ deploy_user | default('root') }}"
+    group: "{{ deploy_group | default('root') }}"
+    mode: "0755"
+  loop:
+    - processing/data
+    - processing/logs
+
+- name: Pull Docker images
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_dir }}"
+    files:
+      - docker-compose.yml
+      - docker-compose.prod.yml
+    pull: always
+    state: present
+  environment:
+    COMPOSE_PROJECT_NAME: be2osm
+
+- name: Start application stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_dir }}"
+    files:
+      - docker-compose.yml
+      - docker-compose.prod.yml
+    state: present
+  environment:
+    COMPOSE_PROJECT_NAME: be2osm
+
+- name: Wait for PostgreSQL to be healthy
+  ansible.builtin.command: >
+    docker compose -f docker-compose.yml -f docker-compose.prod.yml
+    exec -T postgres pg_isready -U {{ postgres_user }}
+  args:
+    chdir: "{{ app_dir }}"
+  register: pg_ready
+  until: pg_ready.rc == 0
+  retries: 30
+  delay: 5
+  changed_when: false
+
+- name: Wait for application to be healthy
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/health"
+    status_code: 200
+  register: health_check
+  until: health_check.status == 200
+  retries: 30
+  delay: 5

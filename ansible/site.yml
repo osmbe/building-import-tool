@@ -1,0 +1,39 @@
+---
+# BE2OSM Deployment Playbook
+# Deploy the full BE2OSM stack on a fresh VPS
+#
+# Usage:
+#   ansible-playbook -i inventory.yml site.yml
+#
+# Prerequisites:
+#   - SSH access to the VPS with sudo privileges
+#   - Configure inventory.yml and group_vars/all.yml
+
+- name: Deploy BE2OSM Application
+  hosts: be2osm
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Validate required variables
+      ansible.builtin.assert:
+        that:
+          - domain is defined
+          - postgres_user is defined
+          - postgres_password is defined
+          - osm_client_id is defined
+          - osm_client_secret is defined
+        fail_msg: "Required variables are missing. Check group_vars/all.yml"
+
+  roles:
+    - common
+    - docker
+    - app
+
+  post_tasks:
+    - name: Display deployment info
+      ansible.builtin.debug:
+        msg:
+          - "BE2OSM deployed successfully!"
+          - "Application URL: https://{{ domain }}"
+          - "Remember to import GRB and OSM data using the processing tools"

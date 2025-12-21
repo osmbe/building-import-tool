@@ -1,0 +1,10 @@
+---
+- name: Restart fail2ban
+  ansible.builtin.systemd:
+    name: fail2ban
+    state: restarted
+
+- name: Restart docker
+  ansible.builtin.systemd:
+    name: docker
+    state: restarted
