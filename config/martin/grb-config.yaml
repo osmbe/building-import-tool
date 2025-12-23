@@ -35,6 +35,7 @@ postgres:
         gebouw_id: gebouw_id
         polygon_area_m2: polygon_area_m2
         polygon_type_label: polygon_type_label
+        survey_date: survey_date
         polygon_count: polygon_count
         total_area_m2: total_area_m2
         building_type_label: building_type_label

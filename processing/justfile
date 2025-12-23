@@ -211,6 +211,7 @@ grb-order-all:
     @echo ""
     @echo "✅ All orders created!"
     @echo ""
+    @echo "Note: RltGbgGebouw.dbf (polygon-building relationships) is included in GBG download"
     @echo "Check status with: just grb-status-orders"
 
 # Download all ready GRB orders
@@ -233,7 +234,9 @@ grb-import:
     @just _check-be2osm-database
     @just _check-be2osm-schema
     @echo ""
+    @just _grb-import-gbg-gebouw-rel
     @just _grb-import-building-polygons
+    @just _grb-update-gebouw-ids
     @just _grb-import-addresses
     @just _grb-import-address-links
     @just _grb-aggregate-buildings
@@ -275,7 +278,7 @@ grb-update:
 grb-status:
     @echo "📈 GRB Database Statistics:"
     @echo ""
-    @{{psql_be2osm}} -c "SELECT 'Building polygons' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('grb.building_polygons')) as size FROM grb.building_polygons UNION ALL SELECT 'Buildings (aggregated)', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.buildings')) FROM grb.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.addresses')) FROM grb.addresses UNION ALL SELECT 'Address-building links', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.address_building_links')) FROM grb.address_building_links;"
+    @{{psql_be2osm}} -c "SELECT 'Building polygons' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('grb.building_polygons')) as size FROM grb.building_polygons UNION ALL SELECT '  - with gebouw_id', COUNT(*)::text, '' FROM grb.building_polygons WHERE gebouw_id IS NOT NULL UNION ALL SELECT '  - with survey_date', COUNT(*)::text, '' FROM grb.building_polygons WHERE survey_date IS NOT NULL UNION ALL SELECT 'Polygon-building relations', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.polygon_building_rel')) FROM grb.polygon_building_rel UNION ALL SELECT 'Buildings (aggregated)', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.buildings')) FROM grb.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.addresses')) FROM grb.addresses UNION ALL SELECT 'Address-building links', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.address_building_links')) FROM grb.address_building_links;"
     @echo ""
 
 # Check status of all GRB orders
@@ -594,17 +597,81 @@ _grb-wait-for-orders:
         sleep 60
     done
 
-# GRB: Import building polygons
+# GRB: Import RltGbgGebouw relationship table (polygon OIDN → building GEBOUWID)
+_grb-import-gbg-gebouw-rel:
+    #!/usr/bin/env bash
+    echo "📊 Importing RltGbgGebouw (polygon-building relationships)..."
+
+    # Find the RltGbgGebouw.dbf file in the GBG download
+    # It's included in the GBG shapefile zip as a standalone DBF
+    REL_FILE=""
+    for dir in {{grb_data_dir}}/gbg/*/; do
+        if [ -f "${dir}RltGbgGebouw.dbf" ]; then
+            REL_FILE="${dir}RltGbgGebouw.dbf"
+            break
+        fi
+    done
+
+    # Also check root gbg directory
+    if [ -z "$REL_FILE" ] && [ -f "{{grb_data_dir}}/gbg/RltGbgGebouw.dbf" ]; then
+        REL_FILE="{{grb_data_dir}}/gbg/RltGbgGebouw.dbf"
+    fi
+
+    if [ -z "$REL_FILE" ]; then
+        echo "⚠️  RltGbgGebouw.dbf not found in GBG download"
+        echo "   Trying to find it recursively..."
+        REL_FILE=$(find {{grb_data_dir}}/gbg -name "RltGbgGebouw.dbf" -type f 2>/dev/null | head -1)
+    fi
+
+    if [ -n "$REL_FILE" ] && [ -f "$REL_FILE" ]; then
+        echo "   Found: $REL_FILE"
+        # Import DBF file to PostgreSQL
+        # The DBF contains: OIDN (polygon ID) and GEBOUWID (building ID)
+        ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+            "$REL_FILE" -nln grb.polygon_building_rel -overwrite \
+            -sql "SELECT OIDN as oidn, GEBOUWID as gebouw_id FROM RltGbgGebouw"
+        echo "✅ Polygon-building relationships imported"
+    else
+        echo "⚠️  RltGbgGebouw.dbf not found - gebouw_id will not be populated"
+        echo "   Buildings will be aggregated by polygon geometry instead"
+    fi
+
+# GRB: Import building polygons with field mapping
 _grb-import-building-polygons:
     #!/usr/bin/env bash
     echo "📊 Importing GRB building polygons..."
     for file in {{grb_data_dir}}/gbg/*.shp; do
         if [ -f "$file" ]; then
+            echo "   Processing: $(basename "$file")"
+            # Map GRB shapefile fields to database columns:
+            # OIDN → oidn, UIDN → uidn, LBLTYPE → type_label, TYPE → type_code
+            # OPPERVL → area_m2, LENGTE → length_m
+            # OPNDATUM → survey_date, BEGINDATUM → begin_date, VERSDATUM → version_date
+            # BGNINV → origin_code, LBLBGNINV → origin_label
             ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-                "$file" -nln grb.building_polygons -append -t_srs EPSG:4326
+                "$file" -nln grb.building_polygons -append -t_srs EPSG:4326 \
+                -sql "SELECT
+                    OIDN as oidn,
+                    UIDN as uidn,
+                    TYPE as type_code,
+                    LBLTYPE as type_label,
+                    OPPERVL as area_m2,
+                    LENGTE as length_m,
+                    VERSIE as version,
+                    CAST(SUBSTR(OPNDATUM, 7, 4) || '-' || SUBSTR(OPNDATUM, 4, 2) || '-' || SUBSTR(OPNDATUM, 1, 2) AS DATE) as survey_date,
+                    BGNINV as origin_code,
+                    LBLBGNINV as origin_label
+                FROM \"$(basename "$file" .shp)\""
         fi
     done
     echo "✅ Building polygons imported"
+
+# GRB: Update gebouw_id in building_polygons from relationship table
+_grb-update-gebouw-ids:
+    @echo "📊 Updating gebouw_id from relationship table..."
+    @{{psql_be2osm}} -c "UPDATE grb.building_polygons bp SET gebouw_id = rel.gebouw_id FROM grb.polygon_building_rel rel WHERE bp.oidn = rel.oidn AND bp.gebouw_id IS NULL;"
+    @echo "✅ gebouw_id updated"
+    @{{psql_be2osm}} -c "SELECT 'Polygons with gebouw_id' as metric, COUNT(*)::text as value FROM grb.building_polygons WHERE gebouw_id IS NOT NULL UNION ALL SELECT 'Polygons without gebouw_id', COUNT(*)::text FROM grb.building_polygons WHERE gebouw_id IS NULL;"
 
 # GRB: Import addresses
 _grb-import-addresses:

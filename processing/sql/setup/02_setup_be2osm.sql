@@ -182,6 +182,23 @@ CREATE TABLE IF NOT EXISTS grb.address_building_links (
     imported_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Polygon-Building Relationships (RltGbgGebouw)
+-- Maps individual polygon OIDN to logical building GEBOUWID
+-- This table is essential for correctly aggregating polygons into buildings
+CREATE TABLE IF NOT EXISTS grb.polygon_building_rel (
+    id BIGSERIAL PRIMARY KEY,
+
+    -- Relationship fields (from RltGbgGebouw.dbf)
+    oidn BIGINT NOT NULL,             -- Polygon OIDN (links to building_polygons.oidn)
+    gebouw_id BIGINT NOT NULL,        -- Building ID (the logical building this polygon belongs to)
+
+    -- Import tracking
+    imported_at TIMESTAMPTZ DEFAULT NOW(),
+
+    -- Ensure one-to-one mapping
+    CONSTRAINT uq_polygon_building_rel_oidn UNIQUE (oidn)
+);
+
 \echo '✓ GRB tables created'
 
 -- ============================================================================
@@ -236,6 +253,10 @@ CREATE INDEX IF NOT EXISTS idx_addresses_geom_mercator ON grb.addresses USING GI
 CREATE INDEX IF NOT EXISTS idx_address_building_links_adres_id ON grb.address_building_links(adres_id);
 CREATE INDEX IF NOT EXISTS idx_address_building_links_building_object_id ON grb.address_building_links(building_object_id);
 CREATE INDEX IF NOT EXISTS idx_address_building_links_object_type ON grb.address_building_links(object_type);
+
+-- Polygon-Building Relationship indexes
+CREATE INDEX IF NOT EXISTS idx_polygon_building_rel_oidn ON grb.polygon_building_rel(oidn);
+CREATE INDEX IF NOT EXISTS idx_polygon_building_rel_gebouw_id ON grb.polygon_building_rel(gebouw_id);
 
 -- ============================================================================
 -- FOREIGN KEYS
@@ -435,6 +456,9 @@ SELECT
     bp.area_m2::REAL as polygon_area_m2,
     bp.type_label as polygon_type_label,
 
+    -- Survey date for source:geometry:date OSM tag (format: YYYY-MM-DD)
+    TO_CHAR(bp.survey_date, 'YYYY-MM-DD') as survey_date,
+
     -- Transform to Web Mercator for tile serving (transform once at view creation, not per tile)
     ST_Transform(bp.geom, 3857) as geom,
 
@@ -460,6 +484,7 @@ GROUP BY
     bp.gebouw_id,
     bp.area_m2,
     bp.type_label,
+    bp.survey_date,
     bp.geom,
     b.polygon_count,
     b.total_area_m2,
