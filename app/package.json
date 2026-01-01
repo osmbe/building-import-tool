@@ -29,7 +29,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.13",
     "@types/pg": "^8.15.6",
-    "autoprefixer": "^10.4.21",
+    "autoprefixer": "^10.4.23",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3",
     "vue-tsc": "^3.0.6"
