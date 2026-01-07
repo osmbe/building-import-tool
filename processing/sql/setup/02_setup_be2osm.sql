@@ -81,6 +81,9 @@ CREATE TABLE IF NOT EXISTS grb.building_polygons (
     origin_code INTEGER,              -- Origin code (BGNINV)
     origin_label VARCHAR(32),         -- Origin label (LBLBGNINV)
 
+    -- Temporary field for date conversion during import (DD/MM/YYYY text → DATE)
+    opndatum_raw VARCHAR(10),         -- Raw date string from shapefile
+
     -- Geometry (WGS84 - EPSG:4326)
     geom GEOMETRY(Polygon, 4326) NOT NULL,
 

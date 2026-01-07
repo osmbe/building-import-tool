@@ -31,19 +31,22 @@ RUN apt-get update && apt-get install -y \
 # Install Just task runner
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
-# Install imposm3
-# Download latest release from GitHub
+# Install imposm3 (only available for x86-64, skip on ARM)
 ENV IMPOSM_VERSION=0.11.1
-RUN wget -q https://github.com/omniscale/imposm3/releases/download/v${IMPOSM_VERSION}/imposm-${IMPOSM_VERSION}-linux-x86-64.tar.gz \
-    && tar -xzf imposm-${IMPOSM_VERSION}-linux-x86-64.tar.gz \
-    && mv imposm-${IMPOSM_VERSION}-linux-x86-64/imposm /usr/local/bin/ \
-    && rm -rf imposm-${IMPOSM_VERSION}-linux-x86-64* \
-    && chmod +x /usr/local/bin/imposm
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+        wget -q https://github.com/omniscale/imposm3/releases/download/v${IMPOSM_VERSION}/imposm-${IMPOSM_VERSION}-linux-x86-64.tar.gz \
+        && tar -xzf imposm-${IMPOSM_VERSION}-linux-x86-64.tar.gz \
+        && mv imposm-${IMPOSM_VERSION}-linux-x86-64/imposm /usr/local/bin/ \
+        && rm -rf imposm-${IMPOSM_VERSION}-linux-x86-64* \
+        && chmod +x /usr/local/bin/imposm; \
+    else \
+        echo "Skipping imposm3 installation (only available for x86-64)"; \
+    fi
 
 # Verify installations
 RUN echo "=== Installed versions ===" \
     && ogr2ogr --version \
-    && imposm version \
+    && (imposm version 2>/dev/null || echo "imposm: not installed (ARM architecture)") \
     && psql --version \
     && just --version \
     && jq --version

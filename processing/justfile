@@ -56,11 +56,11 @@ default:
 # CONFIGURATION
 # ============================================================================
 
-# Database configuration
-db_host := env_var_or_default('DB_HOST', 'localhost')
-db_port := env_var_or_default('DB_PORT', '15432')
-db_user := env_var_or_default('DB_USER', 'brunomoyse')
-db_password := env_var_or_default('DB_PASSWORD', 'k5zQuoJNG1Vdre8kiNnaWrjajnyAnvF')
+# Database configuration (uses POSTGRES_* from root .env)
+db_host := env_var_or_default('POSTGRES_HOST', 'localhost')
+db_port := env_var_or_default('POSTGRES_PORT', '5432')
+db_user := env_var_or_default('POSTGRES_USER', 'brunomoyse')
+db_password := env_var_or_default('POSTGRES_PASSWORD', '')
 be2osm_db := 'be2osm'
 osmbe_db := 'osmbe'
 
@@ -602,26 +602,8 @@ _grb-import-gbg-gebouw-rel:
     #!/usr/bin/env bash
     echo "📊 Importing RltGbgGebouw (polygon-building relationships)..."
 
-    # Find the RltGbgGebouw.dbf file in the GBG download
-    # It's included in the GBG shapefile zip as a standalone DBF
-    REL_FILE=""
-    for dir in {{grb_data_dir}}/gbg/*/; do
-        if [ -f "${dir}RltGbgGebouw.dbf" ]; then
-            REL_FILE="${dir}RltGbgGebouw.dbf"
-            break
-        fi
-    done
-
-    # Also check root gbg directory
-    if [ -z "$REL_FILE" ] && [ -f "{{grb_data_dir}}/gbg/RltGbgGebouw.dbf" ]; then
-        REL_FILE="{{grb_data_dir}}/gbg/RltGbgGebouw.dbf"
-    fi
-
-    if [ -z "$REL_FILE" ]; then
-        echo "⚠️  RltGbgGebouw.dbf not found in GBG download"
-        echo "   Trying to find it recursively..."
-        REL_FILE=$(find {{grb_data_dir}}/gbg -name "RltGbgGebouw.dbf" -type f 2>/dev/null | head -1)
-    fi
+    # Find the RltGbgGebouw.dbf file - check multiple locations
+    REL_FILE=$(find {{grb_data_dir}} -name "RltGbgGebouw.dbf" -type f 2>/dev/null | head -1)
 
     if [ -n "$REL_FILE" ] && [ -f "$REL_FILE" ]; then
         echo "   Found: $REL_FILE"
@@ -640,34 +622,57 @@ _grb-import-gbg-gebouw-rel:
 _grb-import-building-polygons:
     #!/usr/bin/env bash
     echo "📊 Importing GRB building polygons..."
-    for file in {{grb_data_dir}}/gbg/*.shp; do
-        if [ -f "$file" ]; then
-            echo "   Processing: $(basename "$file")"
-            # Map GRB shapefile fields to database columns:
-            # OIDN → oidn, UIDN → uidn, LBLTYPE → type_label, TYPE → type_code
-            # OPPERVL → area_m2, LENGTE → length_m
-            # OPNDATUM → survey_date, BEGINDATUM → begin_date, VERSDATUM → version_date
-            # BGNINV → origin_code, LBLBGNINV → origin_label
-            ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-                "$file" -nln grb.building_polygons -append -t_srs EPSG:4326 \
-                -sql "SELECT
-                    OIDN as oidn,
-                    UIDN as uidn,
-                    TYPE as type_code,
-                    LBLTYPE as type_label,
-                    OPPERVL as area_m2,
-                    LENGTE as length_m,
-                    VERSIE as version,
-                    CAST(SUBSTR(OPNDATUM, 7, 4) || '-' || SUBSTR(OPNDATUM, 4, 2) || '-' || SUBSTR(OPNDATUM, 1, 2) AS DATE) as survey_date,
-                    BGNINV as origin_code,
-                    LBLBGNINV as origin_label
-                FROM \"$(basename "$file" .shp)\""
-        fi
-    done
-    echo "✅ Building polygons imported"
+
+    # Find Gbg.shp in multiple locations
+    GBG_FILE=$(find {{grb_data_dir}} -name "Gbg.shp" -type f 2>/dev/null | head -1)
+
+    if [ -n "$GBG_FILE" ] && [ -f "$GBG_FILE" ]; then
+        echo "   Found: $GBG_FILE"
+        echo "   This may take several minutes for 5M+ polygons..."
+        # Import directly - ogr2ogr handles geometry automatically when not using -sql
+        # We'll use field renaming flags or post-import SQL updates
+        ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+            "$GBG_FILE" -nln grb.building_polygons_raw -overwrite -t_srs EPSG:4326 \
+            -lco GEOMETRY_NAME=geom
+
+        echo "   Transforming imported data..."
+        PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c "
+            INSERT INTO grb.building_polygons (oidn, uidn, type_code, type_label, area_m2, length_m, version, origin_code, origin_label, opndatum_raw, geom)
+            SELECT
+                oidn::bigint,
+                uidn::bigint,
+                type::integer as type_code,
+                lbltype as type_label,
+                oppervl::real as area_m2,
+                lengte::real as length_m,
+                versie::integer as version,
+                bgninv::integer as origin_code,
+                lblbgninv as origin_label,
+                opndatum as opndatum_raw,
+                geom
+            FROM grb.building_polygons_raw
+            ON CONFLICT (oidn) DO NOTHING;
+            DROP TABLE IF EXISTS grb.building_polygons_raw;
+        "
+        echo "✅ Building polygons imported"
+
+        # Convert OPNDATUM to proper DATE (try multiple formats)
+        echo "   Converting survey_date..."
+        PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+            "UPDATE grb.building_polygons SET survey_date = opndatum_raw::date WHERE opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\d{4}-\d{2}-\d{2}$';"
+        PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+            "UPDATE grb.building_polygons SET survey_date = TO_DATE(opndatum_raw, 'DD/MM/YYYY') WHERE opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\d{2}/\d{2}/\d{4}$';"
+        echo "✅ Survey dates converted"
+    else
+        echo "❌ Gbg.shp not found in {{grb_data_dir}}"
+        exit 1
+    fi
 
 # GRB: Update gebouw_id in building_polygons from relationship table
 _grb-update-gebouw-ids:
+    @echo "📊 Pre-populating buildings table with unique gebouw_ids..."
+    @{{psql_be2osm}} -c "INSERT INTO grb.buildings (gebouw_id) SELECT DISTINCT gebouw_id FROM grb.polygon_building_rel WHERE gebouw_id IS NOT NULL ON CONFLICT (gebouw_id) DO NOTHING;"
+    @echo "✅ Buildings table pre-populated"
     @echo "📊 Updating gebouw_id from relationship table..."
     @{{psql_be2osm}} -c "UPDATE grb.building_polygons bp SET gebouw_id = rel.gebouw_id FROM grb.polygon_building_rel rel WHERE bp.oidn = rel.oidn AND bp.gebouw_id IS NULL;"
     @echo "✅ gebouw_id updated"
@@ -677,22 +682,76 @@ _grb-update-gebouw-ids:
 _grb-import-addresses:
     #!/usr/bin/env bash
     echo "📊 Importing addresses..."
-    for file in {{grb_data_dir}}/addresses/*.shp; do
+
+    # Find address shapefiles and import to raw table first
+    FIRST=true
+    for file in $(find {{grb_data_dir}} -path "*/addresses/*" -name "Adres*.shp" -type f 2>/dev/null); do
         if [ -f "$file" ]; then
-            ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-                "$file" -nln grb.addresses -append -t_srs EPSG:4326
+            LAYER=$(basename "$file" .shp)
+            echo "   Importing: $LAYER"
+            if [ "$FIRST" = true ]; then
+                ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+                    "$file" -nln grb.addresses_raw -overwrite -t_srs EPSG:4326 -lco GEOMETRY_NAME=geom
+                FIRST=false
+            else
+                ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+                    "$file" -nln grb.addresses_raw -append -t_srs EPSG:4326
+            fi
         fi
     done
+
+    echo "   Transforming imported data..."
+    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c "
+        INSERT INTO grb.addresses (oidn, adres_id, id_string, street_id, street_name, house_number, box_number, postcode, nis_code, municipality, full_address, position_spec_code, position_spec, method_code, method, status_code, status, official_assignment_code, official_assignment, origin_code, origin_label, version_id, version, begin_date, version_date, geom)
+        SELECT
+            oidn::bigint,
+            adresid::bigint as adres_id,
+            id as id_string,
+            straatnmid::bigint as street_id,
+            straatnm as street_name,
+            huisnr as house_number,
+            busnr as box_number,
+            postcode,
+            niscode as nis_code,
+            gemeente as municipality,
+            adresnaam as full_address,
+            posspec::integer as position_spec_code,
+            lblposspec as position_spec,
+            methode::integer as method_code,
+            lblmethode as method,
+            status::integer as status_code,
+            lblstatus as status,
+            offtoeg::integer as official_assignment_code,
+            lblofftoeg as official_assignment,
+            bgninv::integer as origin_code,
+            lblbgninv as origin_label,
+            versieid as version_id,
+            versie::integer as version,
+            begindatum::date as begin_date,
+            versdatum::date as version_date,
+            geom
+        FROM grb.addresses_raw
+        ON CONFLICT (oidn) DO NOTHING;
+        DROP TABLE IF EXISTS grb.addresses_raw;
+    "
     echo "✅ Addresses imported"
 
 # GRB: Import address-building links
 _grb-import-address-links:
     #!/usr/bin/env bash
     echo "📊 Importing address-building links..."
-    for file in {{grb_data_dir}}/address-links/*.shp; do
+
+    # Find RltAdresGebouw.dbf files (address-to-building relationship tables)
+    for file in $(find {{grb_data_dir}} -name "RltAdresGebouw.dbf" -type f 2>/dev/null); do
         if [ -f "$file" ]; then
+            echo "   Importing: $file"
             ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-                "$file" -nln grb.address_building_links -append -t_srs EPSG:4326
+                "$file" -nln grb.address_building_links -append \
+                -sql "SELECT
+                    ADRESID as adres_id,
+                    GEBOUWID as building_object_id,
+                    LBLTYPE as object_type
+                FROM RltAdresGebouw"
         fi
     done
     echo "✅ Address links imported"
@@ -834,17 +893,7 @@ _grb-order-diff-gbg:
     echo "   Requesting to:   $TO_DATE"
 
     # Build JSON payload with temporalCrop
-    PAYLOAD=$(cat <<EOF
-{
-    "productId": $PRODUCT_ID,
-    "format": "Shapefile",
-    "temporalCrop": {
-        "from": "$FROM_DATE",
-        "to": "$TO_DATE"
-    }
-}
-EOF
-)
+    PAYLOAD=$(printf '{"productId": %d, "format": "Shapefile", "temporalCrop": {"from": "%s", "to": "%s"}}' "$PRODUCT_ID" "$FROM_DATE" "$TO_DATE")
 
     RESPONSE=$(curl -s -H "x-api-key: {{grb_api_key}}" -H "Content-Type: application/json" \
         -X POST -d "$PAYLOAD" {{grb_api_base}}/orders)

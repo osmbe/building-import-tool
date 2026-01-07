@@ -22,19 +22,17 @@ DROP DATABASE IF EXISTS osmbe;
 -- Create be2osm database (for GRB data and import management)
 CREATE DATABASE be2osm
     WITH
-    OWNER = CURRENT_USER
     ENCODING = 'UTF8'
-    LC_COLLATE = 'en_US.UTF-8'
-    LC_CTYPE = 'en_US.UTF-8'
+    LC_COLLATE = 'C.UTF-8'
+    LC_CTYPE = 'C.UTF-8'
     TEMPLATE = template0;
 
 -- Create osmbe database (for OSM data from Geofabrik)
 CREATE DATABASE osmbe
     WITH
-    OWNER = CURRENT_USER
     ENCODING = 'UTF8'
-    LC_COLLATE = 'en_US.UTF-8'
-    LC_CTYPE = 'en_US.UTF-8'
+    LC_COLLATE = 'C.UTF-8'
+    LC_CTYPE = 'C.UTF-8'
     TEMPLATE = template0;
 
 \echo '✓ Databases created'
