@@ -84,7 +84,6 @@ jobs:
     needs: build
     environment:
       name: ${{ inputs.environment || 'production' }}
-      url: https://${{ secrets.DOMAIN }}
 
     steps:
       - name: Checkout code
@@ -103,13 +102,12 @@ jobs:
 
       - name: Create .env file on VPS
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cat > ~/be2osm/.env << 'ENVFILE'
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "cat > /opt/docker/buildings/.env" << EOF
           # Database Configuration
           POSTGRES_USER=be2osm
           POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB=be2osm
-          POSTGRES_HOST=localhost
+          POSTGRES_HOST=postgres
           POSTGRES_PORT=5432
 
           # Domain Configuration
@@ -130,22 +128,23 @@ jobs:
 
           # Docker Image
           NUXT_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.sha }}
-          ENVFILE
           EOF
 
       - name: Deploy application
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << EOF
           set -e
 
           # Change to application directory
-          cd ~/be2osm
+          cd /opt/docker/buildings
 
-          # Make deployment script executable
+          # Login to GHCR to pull private images
+          # Uses PAT with read:packages scope stored in GHCR_PAT secret
+          echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+          # Make deployment script executable and run it
           chmod +x /tmp/deploy-vps.sh
-
-          # Run deployment
-          /tmp/deploy-vps.sh
+          APP_DIR=/opt/docker/buildings /tmp/deploy-vps.sh
 
           # Cleanup
           rm /tmp/deploy-vps.sh
@@ -154,7 +153,7 @@ jobs:
       - name: Verify deployment
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cd ~/be2osm
+          cd /opt/docker/buildings
 
           echo "Checking service health..."
 

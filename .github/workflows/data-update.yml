@@ -1,12 +1,11 @@
 name: Data Updates
 
 on:
-  # Scheduled triggers (disabled for now - manual only)
-  # schedule:
-  #   # OSM: Every day at 4:00 AM UTC (5:00 AM Brussels) - after Geofabrik's ~9PM update
-  #   - cron: '0 4 * * *'
-  #   # GRB: Every Sunday at 5:00 AM UTC (6:00 AM Brussels)
-  #   - cron: '0 5 * * 0'
+  schedule:
+    # OSM: Every day at 4:00 AM UTC (5:00 AM Brussels)
+    - cron: '0 4 * * *'
+    # GRB: Every Sunday at 5:00 AM UTC (6:00 AM Brussels)
+    - cron: '0 5 * * 0'
   workflow_dispatch:
     inputs:
       update_type:
@@ -31,23 +30,35 @@ jobs:
       - name: Determine update type
         id: determine
         run: |
-          # Manual trigger - use selected option
-          case "${{ inputs.update_type }}" in
-            osm)
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # Scheduled trigger - determine by cron time
+            HOUR=$(date -u +%H)
+            if [ "$HOUR" = "04" ]; then
+              # 4 AM UTC = OSM daily update
               echo "run_osm=true" >> $GITHUB_OUTPUT
               echo "run_grb=false" >> $GITHUB_OUTPUT
-              ;;
-            grb)
+            elif [ "$HOUR" = "05" ]; then
+              # 5 AM UTC on Sunday = GRB weekly update
               echo "run_osm=false" >> $GITHUB_OUTPUT
               echo "run_grb=true" >> $GITHUB_OUTPUT
-              ;;
-            both)
-              echo "run_osm=true" >> $GITHUB_OUTPUT
-              echo "run_grb=true" >> $GITHUB_OUTPUT
-              ;;
-          esac
-          # Note: To re-enable scheduled triggers, uncomment the 'schedule' section above
-          # and restore the cron-based logic here
+            fi
+          else
+            # Manual trigger - use selected option
+            case "${{ inputs.update_type }}" in
+              osm)
+                echo "run_osm=true" >> $GITHUB_OUTPUT
+                echo "run_grb=false" >> $GITHUB_OUTPUT
+                ;;
+              grb)
+                echo "run_osm=false" >> $GITHUB_OUTPUT
+                echo "run_grb=true" >> $GITHUB_OUTPUT
+                ;;
+              both)
+                echo "run_osm=true" >> $GITHUB_OUTPUT
+                echo "run_grb=true" >> $GITHUB_OUTPUT
+                ;;
+            esac
+          fi
 
   # OSM Differential Update (daily diffs from Geofabrik)
   update-osm:
@@ -68,17 +79,25 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Pull latest code on VPS
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << EOF
+          cd /opt/docker/buildings
+          git fetch https://x-access-token:${{ secrets.GHCR_PAT }}@github.com/${{ github.repository }}.git main
+          git reset --hard FETCH_HEAD
+          EOF
+
       - name: Build processing image on VPS
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cd ~/be2osm
+          cd /opt/docker/buildings
           docker compose build processing
           EOF
 
       - name: Run OSM differential update
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cd ~/be2osm
+          cd /opt/docker/buildings
 
           echo "=== OSM Differential Update ==="
           echo "Started at: $(date)"
@@ -94,7 +113,7 @@ jobs:
       - name: Show OSM statistics
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cd ~/be2osm
+          cd /opt/docker/buildings
           docker compose run --rm task osm-status
           EOF
 
@@ -126,17 +145,25 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Pull latest code on VPS
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << EOF
+          cd /opt/docker/buildings
+          git fetch https://x-access-token:${{ secrets.GHCR_PAT }}@github.com/${{ github.repository }}.git main
+          git reset --hard FETCH_HEAD
+          EOF
+
       - name: Build processing image on VPS
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cd ~/be2osm
+          cd /opt/docker/buildings
           docker compose build processing
           EOF
 
       - name: Update .env with GRB API key
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cd ~/be2osm
+          cd /opt/docker/buildings
 
           # Add/update GRB API key in .env
           if ! grep -q "DIGITAL_VLAANDEREN_API_KEY" .env; then
@@ -151,7 +178,7 @@ jobs:
       - name: Run GRB differential update
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cd ~/be2osm
+          cd /opt/docker/buildings
 
           echo "=== GRB Differential Update ==="
           echo "Started at: $(date)"
@@ -167,7 +194,7 @@ jobs:
       - name: Show GRB statistics
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cd ~/be2osm
+          cd /opt/docker/buildings
           docker compose run --rm task grb-status
           EOF
 
@@ -201,7 +228,7 @@ jobs:
       - name: Optimize databases
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cd ~/be2osm
+          cd /opt/docker/buildings
           echo "=== Optimizing databases ==="
           docker compose run --rm task db-optimize
           EOF
@@ -209,7 +236,7 @@ jobs:
       - name: Show database sizes
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cd ~/be2osm
+          cd /opt/docker/buildings
           docker compose run --rm task db-sizes
           EOF
 
