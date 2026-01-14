@@ -13,10 +13,6 @@
 #   Database:   Database management and utilities
 #   Maintenance: Optimization and cleanup tasks
 
-# Load environment variables from root .env file
-set dotenv-load := true
-set dotenv-path := "../.env"
-
 # Default task - show help
 default:
     @echo "BE2OSM Data Processing - Available Task Groups:"
@@ -72,7 +68,7 @@ cache_dir := env_var_or_default('CACHE_DIR', 'data/osm/imposm-cache')
 
 # GRB API configuration (only required for GRB tasks)
 grb_api_key := env_var_or_default('DIGITAL_VLAANDEREN_API_KEY', '')
-grb_api_base := env_var_or_default('DIGITAL_VLAANDEREN_API_BASE_URL', 'https://api.vlaanderen.be/gebouwenregister/v2')
+grb_api_base := env_var_or_default('DIGITAL_VLAANDEREN_API_BASE_URL', 'https://download.api.vlaanderen.be/v2')
 grb_data_dir := "data/grb"
 grb_orders_dir := "data/grb/orders"
 

@@ -162,7 +162,7 @@ jobs:
 
       - name: Update .env with GRB API key
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << EOF
           cd /opt/docker/buildings
 
           # Add/update GRB API key in .env
