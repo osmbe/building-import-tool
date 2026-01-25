@@ -1,12 +1,11 @@
 {
-	# Global options
+	# Global options for development
 	admin off
-	auto_https disable_redirects
+	auto_https off
 }
 
-{$DOMAIN:localhost} {
-	# Enable compression
-	encode gzip zstd
+:80 {
+	encode zstd gzip
 
 	# Logging
 	log {
@@ -15,53 +14,21 @@
 		level INFO
 	}
 
-	# GRB tile server
+	# Martin GRB Tiles
 	handle /tiles/grb/* {
 		uri strip_prefix /tiles/grb
-		reverse_proxy grb-tiles:3001 {
-			header_up X-Real-IP {remote_host}
-
-			health_uri /health
-			health_interval 30s
-			health_timeout 10s
-		}
+		reverse_proxy grb-tiles:3000
 	}
 
-	# OSM tile server
+	# Martin OSM Tiles
 	handle /tiles/osm/* {
 		uri strip_prefix /tiles/osm
-		reverse_proxy osm-tiles:3002 {
-			header_up X-Real-IP {remote_host}
-
-			health_uri /health
-			health_interval 30s
-			health_timeout 10s
-		}
+		reverse_proxy osm-tiles:3000
 	}
 
-	# Frontend - proxy to Nuxt
-	handle /* {
-		reverse_proxy nuxt-app:3000 {
-			header_up X-Real-IP {remote_host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-		}
-	}
-
-	# Security headers
-	header {
-		X-Content-Type-Options "nosniff"
-		X-Frame-Options "DENY"
-		X-XSS-Protection "1; mode=block"
-		Referrer-Policy "strict-origin-when-cross-origin"
-		-Server
-	}
-
-	# Enable CORS for tile endpoints
-	@tiles path /tiles/*
-	header @tiles {
-		Access-Control-Allow-Origin "*"
-		Access-Control-Allow-Methods "GET, OPTIONS"
-		Access-Control-Allow-Headers "Content-Type"
+	# All other routes (including /api/*) go to Nuxt
+	# Nuxt will handle proxying to Rust API where needed
+	handle {
+		reverse_proxy nuxt-app:3000
 	}
 }

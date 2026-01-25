@@ -34,9 +34,9 @@ docker compose build processing
 docker compose run --rm --profile processing processing bash
 
 # Run specific task
-docker compose run --rm --profile task task osm-download
-docker compose run --rm --profile task task setup-db
-docker compose run --rm --profile task task grb-full
+docker compose run --rm --profile processing processing just osm-download
+docker compose run --rm --profile processing processing just osm-import
+docker compose run --rm --profile processing processing just grb-full
 ```
 
 ## Usage Patterns
@@ -66,19 +66,18 @@ Run a single task and exit:
 # From project root
 
 # OSM tasks
-docker compose run --rm --profile task task osm-download
-docker compose run --rm --profile task task osm-import
-docker compose run --rm --profile task task osm-status
+docker compose run --rm --profile processing processing just osm-download
+docker compose run --rm --profile processing processing just osm-import
+docker compose run --rm --profile processing processing just osm-status
 
 # GRB tasks
-docker compose run --rm --profile task task grb-order-all
-docker compose run --rm --profile task task grb-download-all
-docker compose run --rm --profile task task grb-import
+docker compose run --rm --profile processing processing just grb-order-all
+docker compose run --rm --profile processing processing just grb-download-all
+docker compose run --rm --profile processing processing just grb-import
 
 # Database tasks
-docker compose run --rm --profile task task setup-db
-docker compose run --rm --profile task task db-optimize
-docker compose run --rm --profile task task db-sizes
+docker compose run --rm --profile processing processing just db-optimize
+docker compose run --rm --profile processing processing just db-sizes
 ```
 
 ### Background Service
@@ -145,39 +144,38 @@ All commands should be run from the **project root**.
 
 ```bash
 # Download OSM data
-docker compose run --rm --profile task task osm-download
+docker compose run --rm --profile processing processing just osm-download
 
 # Import to database
-docker compose run --rm --profile task task osm-import
+docker compose run --rm --profile processing processing just osm-import
 
 # Check status
-docker compose run --rm --profile task task osm-status
+docker compose run --rm --profile processing processing just osm-status
 ```
 
 ### Complete GRB Import
 
 ```bash
 # Full workflow (order → wait → download → import)
-docker compose run --rm --profile task task grb-full
+docker compose run --rm --profile processing processing just grb-full
 
 # Or step by step:
-docker compose run --rm --profile task task grb-order-all
+docker compose run --rm --profile processing processing just grb-order-all
 # Wait 10-30 minutes for orders to process
-docker compose run --rm --profile task task grb-status-orders
-docker compose run --rm --profile task task grb-download-all
-docker compose run --rm --profile task task grb-import
+docker compose run --rm --profile processing processing just grb-status-orders
+docker compose run --rm --profile processing processing just grb-download-all
+docker compose run --rm --profile processing processing just grb-import
 ```
 
-### Database Setup
+### Database Access
 
 ```bash
-# Create databases and schemas
-docker compose run --rm --profile task task setup-db
-
 # Open PostgreSQL shell (connects to host machine's PostgreSQL)
 docker compose run --rm --profile processing processing bash
 psql -h host.docker.internal -p 5432 -U be2osm -d osmbe
 ```
+
+**Note**: Database schemas are automatically created by PostgreSQL init scripts in the `postgres/` folder when the database container starts.
 
 ## Troubleshooting
 
@@ -234,7 +232,7 @@ chown -R $USER:$USER data/
 **Solution**: Clear cache and ensure permissions:
 ```bash
 # From project root
-docker compose run --rm --profile task task clean-osm-cache
+docker compose run --rm --profile processing processing just clean-osm-cache
 mkdir -p processing/data/osm/imposm-cache
 chmod 755 processing/data/osm/imposm-cache
 ```

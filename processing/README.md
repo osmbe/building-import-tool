@@ -23,8 +23,8 @@ This folder contains **task automation** and **database management** tools - **n
 docker compose build processing
 
 # Run tasks in container
-docker compose run --rm --profile task task osm-download
-docker compose run --rm --profile task task setup-db
+docker compose run --rm --profile processing processing just osm-download
+docker compose run --rm --profile processing processing just osm-import
 
 # Or use interactive shell
 docker compose run --rm --profile processing processing bash
@@ -51,10 +51,8 @@ cd processing
 
 ```bash
 # Start local PostgreSQL (via Docker)
+# Database schemas are created automatically on first start
 docker compose up -d
-
-# Create databases and schemas
-just setup-db
 ```
 
 ### OSM Data Import
@@ -73,41 +71,35 @@ just db-status
 ### GRB Data Import
 
 ```bash
-# Order and download GRB data from Digital Vlaanderen API
-just --justfile grb-justfile import-all
+# Complete workflow (order → wait → download → import)
+just grb-full
 
-# Import to database
-just --justfile grb-justfile import-to-db
+# Or step-by-step:
+just grb-order-all       # Order all datasets
+just grb-status-orders   # Check order status
+just grb-download-all    # Download ready orders
+just grb-import          # Import to database
 
 # Check status
-just --justfile grb-justfile db-stats
+just grb-status
 ```
 
 ## Folder Structure
 
 ```
 processing/
-├── justfile                   # OSM import tasks
-├── grb-justfile               # GRB import tasks
+├── justfile                   # Unified task runner (OSM + GRB)
 ├── config/
 │   └── imposm-mapping.yml     # imposm3 OSM import mapping
 ├── sql/
-│   ├── setup/                 # Database setup SQL files
-│   │   ├── 01_create_databases.sql
-│   │   ├── 02_setup_be2osm.sql
-│   │   ├── 03_setup_osmbe.sql
-│   │   └── 04_foreign_data_wrapper.sql
 │   └── transforms/            # Data transformation SQL
 │       └── transform-imposm-to-schema.sql
-├── scripts/
-│   ├── setup-databases.sh     # Setup empty databases and schemas
-│   ├── import-osm.sh          # Import OSM data using imposm3
-│   └── optimize-databases.sh  # Optimize database performance
 ├── data/                      # Data directory (git-ignored)
 │   ├── grb/                   # GRB shapefiles
 │   └── osm/                   # OSM PBF files and cache
-├── docker-compose.yml         # Local PostgreSQL setup
 └── README.md
+
+# Database schemas are in postgres/ folder (runs on container init)
 ```
 
 ## Available Commands
@@ -115,33 +107,33 @@ processing/
 ### OSM Import (just)
 
 ```bash
-just setup-db                # Create databases and schemas
-just download-osm            # Download Belgium OSM PBF
-just import-osm              # Full import pipeline
-just db-status               # Show OSM statistics
-just db-shell                # Open psql shell (osmbe)
-just clean-cache             # Clean imposm3 cache
-just rebuild                 # Clean and re-import
+just osm-download            # Download Belgium OSM PBF
+just osm-import              # Full import pipeline
+just osm-status              # Show OSM statistics
+just db-shell-osm            # Open psql shell (osmbe)
+just clean-osm-cache         # Clean imposm3 cache
+just osm-rebuild             # Clean and re-import
 ```
 
-### GRB Import (just --justfile grb-justfile)
+### GRB Import (just)
 
 ```bash
 # Order data from API
-just --justfile grb-justfile order-gbg           # Building polygons
-just --justfile grb-justfile order-addresses     # Addresses
-just --justfile grb-justfile order-address-links # Address-building links
-just --justfile grb-justfile status-all          # Check order status
+just grb-order-all         # Order all GRB datasets
+just grb-status-orders     # Check order status
 
 # Download and import
-just --justfile grb-justfile import-all          # Order → wait → download
-just --justfile grb-justfile import-to-db        # Import to PostgreSQL
-just --justfile grb-justfile import-full         # Complete workflow
+just grb-download-all      # Download ready orders
+just grb-import            # Import to PostgreSQL
+just grb-full              # Complete workflow (order → wait → download → import)
+
+# Updates
+just grb-update            # Differential update (changes since last)
 
 # Utilities
-just --justfile grb-justfile db-stats            # Database statistics
-just --justfile grb-justfile db-shell            # Open psql shell (be2osm)
-just --justfile grb-justfile clean-all           # Clean downloads
+just grb-status            # Database statistics
+just db-shell-grb          # Open psql shell (be2osm)
+just clean-grb-all         # Clean downloads
 ```
 
 ## Data Pipeline

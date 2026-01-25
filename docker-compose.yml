@@ -14,8 +14,9 @@ services:
       - ./postgres/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
       - ./postgres/02-setup-be2osm.sql:/docker-entrypoint-initdb.d/02-setup-be2osm.sql:ro
       - ./postgres/03-setup-osmbe.sql:/docker-entrypoint-initdb.d/03-setup-osmbe.sql:ro
-    ports:
-      - "5432:5432"
+      - ./postgres/04-setup-fdw.sql:/docker-entrypoint-initdb.d/04-setup-fdw.sql:ro
+    # ports:
+    #   - "5432:5432"
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-be2osm}"]
@@ -75,7 +76,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -99,7 +100,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -107,15 +108,17 @@ services:
       - be2osm
 
   # Data Processing Tools (ogr2ogr, imposm3, Just)
+  # Usage:
+  #   docker compose run --rm --profile processing processing just <command>
+  #   docker compose run --rm --profile processing processing bash
   processing:
+    image: ${PROCESSING_IMAGE:-}
     build:
       context: ./processing
       dockerfile: Dockerfile
-    image: be2osm-processing:latest
     container_name: be2osm-processing
     profiles:
       - processing
-    command: just
     env_file:
       - .env
     environment:
@@ -133,13 +136,6 @@ services:
     tty: true
     networks:
       - be2osm
-
-  task:
-    extends: processing
-    container_name: be2osm-task
-    profiles:
-      - task
-    entrypoint: ["just"]
 
   caddy:
     image: caddy:2-alpine
@@ -159,11 +155,13 @@ services:
     restart: unless-stopped
     networks:
       - be2osm
+      # - nginx-proxy-network
 
 networks:
   be2osm:
     driver: bridge
-
+  # nginx-proxy-network:
+  #  external: true
 volumes:
   postgres-data:
   osm-downloads:

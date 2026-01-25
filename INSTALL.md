@@ -84,6 +84,7 @@ Update the following variables:
 | `OSM_CLIENT_SECRET` | From OSM OAuth registration | `your-client-secret` |
 | `OSM_REDIRECT_URI` | OAuth callback URL | `https://new.buildings.osm.be/api/auth/osm-callback` |
 | `NUXT_IMAGE` | Pre-built Nuxt image from GHCR | `ghcr.io/osmbe/building-import-tool/nuxt-app:latest` |
+| `PROCESSING_IMAGE` | Pre-built processing tools from GHCR | `ghcr.io/osmbe/building-import-tool/processing:latest` |
 
 To register an OSM OAuth application, visit: https://www.openstreetmap.org/oauth2/applications
 

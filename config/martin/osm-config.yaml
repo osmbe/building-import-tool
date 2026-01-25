@@ -2,7 +2,7 @@
 # This file configures the Martin tile server to serve OSM buildings as vector tiles
 
 # Listen configuration
-listen_addresses: "0.0.0.0:3002"
+listen_addresses: "0.0.0.0:3000"
 
 # CORS settings for web access
 cors: true

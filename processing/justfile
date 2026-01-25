@@ -1,5 +1,5 @@
 # BE2OSM Data Processing
-# Unified task runner for database setup, OSM import, and GRB import
+# Unified task runner for OSM import and GRB import
 #
 # Usage:
 #   just <task>              Run a task
@@ -7,19 +7,16 @@
 #   just --list --unsorted   List tasks in the order they appear (grouped)
 #
 # Task Groups:
-#   Setup:      Database initialization and schema setup
 #   OSM:        OpenStreetMap data import from Geofabrik
 #   GRB:        GRB data import from Digital Vlaanderen API
 #   Database:   Database management and utilities
 #   Maintenance: Optimization and cleanup tasks
+#
+# Note: Database schema is created automatically by postgres init scripts
 
 # Default task - show help
 default:
     @echo "BE2OSM Data Processing - Available Task Groups:"
-    @echo ""
-    @echo "📊 Setup Tasks"
-    @echo "  setup-db           - Setup both databases and schemas"
-    @echo "  setup-full         - Complete setup (databases + import OSM + import GRB)"
     @echo ""
     @echo "🗺️  OSM Tasks"
     @echo "  osm-download       - Download Belgium OSM data from Geofabrik"
@@ -77,48 +74,6 @@ export PGPASSWORD := db_password
 psql_osmbe := "psql -h " + db_host + " -p " + db_port + " -U " + db_user + " -d " + osmbe_db
 psql_be2osm := "psql -h " + db_host + " -p " + db_port + " -U " + db_user + " -d " + be2osm_db
 psql_postgres := "psql -h " + db_host + " -p " + db_port + " -U " + db_user + " -d postgres"
-
-# ============================================================================
-# SETUP TASKS - Database Initialization
-# ============================================================================
-
-# Setup both databases and schemas from scratch
-setup-db:
-    @echo "======================================"
-    @echo "BE2OSM Database Setup"
-    @echo "======================================"
-    @echo ""
-    @just _check-server
-    @echo ""
-    @echo "📊 Creating databases..."
-    @{{psql_postgres}} -f sql/setup/01_create_databases.sql
-    @echo "✓ Databases created"
-    @echo ""
-    @echo "📊 Setting up be2osm database (GRB)..."
-    @{{psql_be2osm}} -f sql/setup/02_setup_be2osm.sql
-    @echo "✓ BE2OSM setup complete"
-    @echo ""
-    @echo "📊 Setting up osmbe database (OSM)..."
-    @{{psql_osmbe}} -f sql/setup/03_setup_osmbe.sql
-    @echo "✓ OSMBE setup complete"
-    @echo ""
-    @echo "🔗 Setting up Foreign Data Wrapper..."
-    @{{psql_be2osm}} -f sql/setup/04_foreign_data_wrapper.sql || echo "⚠️  FDW warnings (normal if OSM not imported yet)"
-    @echo ""
-    @echo "======================================"
-    @echo "✅ Setup Complete!"
-    @echo "======================================"
-    @echo ""
-    @echo "Next steps:"
-    @echo "  1. Import OSM: just osm-download && just osm-import"
-    @echo "  2. Import GRB: just grb-full"
-
-# Complete setup workflow (databases + OSM + GRB)
-setup-full:
-    @just setup-db
-    @just osm-download
-    @just osm-import
-    @just grb-full
 
 # ============================================================================
 # OSM TASKS - OpenStreetMap Data Import
@@ -432,32 +387,31 @@ _check-osm-database:
         echo "✅ Database created"
     fi
 
-# Check/create osmbe schema
+# Check osmbe schema exists (created by postgres init scripts)
 _check-osm-schema:
     #!/usr/bin/env bash
     if ! {{psql_osmbe}} -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='osm' AND table_name='osm_buildings';" | grep -q 1; then
-        echo "⚠️  Creating osm schema..."
-        {{psql_osmbe}} -f sql/setup/03_setup_osmbe.sql
-        echo "✅ Schema created"
+        echo "❌ OSM schema not found. Database may not be initialized."
+        echo "   Delete the postgres volume and restart: docker compose down -v && docker compose up -d"
+        exit 1
     fi
 
-# Check/create be2osm database
+# Check be2osm database exists
 _check-be2osm-database:
     #!/usr/bin/env bash
     if ! {{psql_postgres}} -tAc "SELECT 1 FROM pg_database WHERE datname='{{be2osm_db}}';" | grep -q 1; then
-        echo "⚠️  Creating {{be2osm_db}} database..."
-        {{psql_postgres}} -c "CREATE DATABASE {{be2osm_db}};"
-        {{psql_be2osm}} -c "CREATE EXTENSION IF NOT EXISTS postgis; CREATE EXTENSION IF NOT EXISTS hstore;"
-        echo "✅ Database created"
+        echo "❌ Database {{be2osm_db}} not found. Database may not be initialized."
+        echo "   Delete the postgres volume and restart: docker compose down -v && docker compose up -d"
+        exit 1
     fi
 
-# Check/create be2osm schema
+# Check be2osm schema exists (created by postgres init scripts)
 _check-be2osm-schema:
     #!/usr/bin/env bash
     if ! {{psql_be2osm}} -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='grb' AND table_name='buildings';" | grep -q 1; then
-        echo "⚠️  Creating grb schema..."
-        {{psql_be2osm}} -f sql/setup/02_setup_be2osm.sql
-        echo "✅ Schema created"
+        echo "❌ GRB schema not found. Database may not be initialized."
+        echo "   Delete the postgres volume and restart: docker compose down -v && docker compose up -d"
+        exit 1
     fi
 
 # OSM: imposm3 read step
