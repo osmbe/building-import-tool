@@ -109,8 +109,7 @@ services:
 
   # Data Processing Tools (ogr2ogr, imposm3, Just)
   # Usage:
-  #   docker compose run --rm --profile processing processing just <command>
-  #   docker compose run --rm --profile processing processing bash
+  #   docker compose run --rm processing just <command>
   processing:
     image: ${PROCESSING_IMAGE:-}
     build:

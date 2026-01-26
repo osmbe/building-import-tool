@@ -26,6 +26,8 @@ RUN apt-get update && apt-get install -y \
     gdal-bin \
     libgdal-dev \
     python3-gdal \
+    # LevelDB (required by imposm3)
+    libleveldb-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Just task runner

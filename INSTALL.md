@@ -75,7 +75,7 @@ Update the following variables:
 |----------|-------------|---------|
 | `POSTGRES_HOST` | Database host (use container name) | `postgres` |
 | `POSTGRES_PORT` | Database port | `5432` |
-| `POSTGRES_USER` | Database username | `myuser` |
+| `POSTGRES_USER` | Database username | `be2osm` |
 | `POSTGRES_PASSWORD` | Database password | `secure-password-here` |
 | `POSTGRES_DB` | Database name | `be2osm` |
 | `DOMAIN` | Your domain name | `new.buildings.osm.be` |
@@ -83,6 +83,9 @@ Update the following variables:
 | `OSM_CLIENT_ID` | From OSM OAuth registration | `your-client-id` |
 | `OSM_CLIENT_SECRET` | From OSM OAuth registration | `your-client-secret` |
 | `OSM_REDIRECT_URI` | OAuth callback URL | `https://new.buildings.osm.be/api/auth/osm-callback` |
+| `OSM_REGION` | OSM region to download from Geofabrik | `europe/belgium` |
+| `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data | `your-api-key` |
+| `DIGITAL_VLAANDEREN_API_BASE_URL` | Digital Vlaanderen API URL | `https://download.api.vlaanderen.be/v2` |
 | `NUXT_IMAGE` | Pre-built Nuxt image from GHCR | `ghcr.io/osmbe/building-import-tool/nuxt-app:latest` |
 | `PROCESSING_IMAGE` | Pre-built processing tools from GHCR | `ghcr.io/osmbe/building-import-tool/processing:latest` |
 
@@ -123,6 +126,60 @@ Verify via public domain:
 curl -f https://new.buildings.osm.be/api/health
 curl -f https://new.buildings.osm.be/tiles/grb/health
 curl -f https://new.buildings.osm.be/tiles/osm/health
+```
+
+## Step 8: Import Data
+
+Use the processing container to import GRB and OSM data. The container includes ogr2ogr, imposm3, and Just task runner.
+
+### OSM Data Import
+
+```bash
+# Download Belgium OSM data from Geofabrik
+docker compose run --rm processing just osm-download
+
+# Import OSM data to database
+docker compose run --rm processing just osm-import
+
+# Or run full pipeline (download + import)
+docker compose run --rm processing just osm-full
+```
+
+### GRB Data Import
+
+```bash
+# Order GRB datasets from Digital Vlaanderen API
+docker compose run --rm processing just grb-order-all
+
+# Check order status (wait until ready)
+docker compose run --rm processing just grb-status-orders
+
+# Download ready orders
+docker compose run --rm processing just grb-download-all
+
+# Import GRB data to database
+docker compose run --rm processing just grb-import
+
+# Or run full workflow (order → wait → download → import)
+docker compose run --rm processing just grb-full
+```
+
+### Verify Data Import
+
+```bash
+# Check OSM database statistics
+docker compose run --rm processing just db-status
+
+# Check GRB database statistics
+docker compose run --rm processing just grb-status
+```
+
+### Available Commands
+
+List all available Just commands:
+
+```bash
+docker compose run --rm processing just --list
 ```
 
 ## Troubleshooting
