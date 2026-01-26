@@ -26,9 +26,8 @@ tables:
       building:
         - __any__
     filters:
-      exclude_tags:
-        - - building
-          - "no"
+      reject:
+        building: ["no"]
 
   building_parts:
     type: polygon
