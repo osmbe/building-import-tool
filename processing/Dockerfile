@@ -27,23 +27,48 @@ RUN apt-get update && apt-get install -y \
     python3-gdal \
     # LevelDB (required by imposm3)
     libleveldb-dev \
+    # GEOS (required by imposm3)
+    libgeos-dev \
     && rm -rf /var/lib/apt/lists/* \
     # Symlink: imposm3 expects libleveldb.so.1, find actual library and link it
-    && ln -sf $(ls /usr/lib/x86_64-linux-gnu/libleveldb.so.1* | head -1) /usr/lib/x86_64-linux-gnu/libleveldb.so.1
+    && ARCH=$(uname -m) \
+    && if [ "$ARCH" = "x86_64" ]; then LIB_DIR="/usr/lib/x86_64-linux-gnu"; \
+       elif [ "$ARCH" = "aarch64" ]; then LIB_DIR="/usr/lib/aarch64-linux-gnu"; \
+       else LIB_DIR="/usr/lib"; fi \
+    && ln -sf $(ls ${LIB_DIR}/libleveldb.so.1* 2>/dev/null | head -1) ${LIB_DIR}/libleveldb.so.1 || true
 
 # Install Just task runner
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
-# Install imposm3 binary (only available for x86-64, skip on ARM)
-ENV IMPOSM_VERSION=0.11.1
-RUN if [ "$(uname -m)" = "x86_64" ]; then \
+# Install Go (needed for building imposm3 on arm64)
+ENV GO_VERSION=1.21.5
+RUN ARCH=$(uname -m) \
+    && if [ "$ARCH" = "aarch64" ]; then \
+        wget -q https://go.dev/dl/go${GO_VERSION}.linux-arm64.tar.gz \
+        && tar -C /usr/local -xzf go${GO_VERSION}.linux-arm64.tar.gz \
+        && rm go${GO_VERSION}.linux-arm64.tar.gz; \
+    fi
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Install imposm3 - download binary for x86-64, build from source for arm64
+ENV IMPOSM_VERSION=0.14.2
+RUN ARCH=$(uname -m) \
+    && if [ "$ARCH" = "x86_64" ]; then \
         wget -q https://github.com/omniscale/imposm3/releases/download/v${IMPOSM_VERSION}/imposm-${IMPOSM_VERSION}-linux-x86-64.tar.gz \
         && tar -xzf imposm-${IMPOSM_VERSION}-linux-x86-64.tar.gz \
         && mv imposm-${IMPOSM_VERSION}-linux-x86-64/imposm /usr/local/bin/ \
         && rm -rf imposm-${IMPOSM_VERSION}-linux-x86-64* \
         && chmod +x /usr/local/bin/imposm; \
-    else \
-        echo "Skipping imposm3 installation (only available for x86-64)"; \
+    elif [ "$ARCH" = "aarch64" ]; then \
+        echo "Building imposm3 from source for arm64..." \
+        && apt-get update && apt-get install -y git build-essential \
+        && git clone --depth 1 --branch v${IMPOSM_VERSION} https://github.com/omniscale/imposm3.git /tmp/imposm3 \
+        && cd /tmp/imposm3 \
+        && go build -o /usr/local/bin/imposm ./cmd/imposm \
+        && rm -rf /tmp/imposm3 \
+        && apt-get purge -y git build-essential \
+        && apt-get autoremove -y \
+        && rm -rf /var/lib/apt/lists/*; \
     fi
 
 # Verify installations (imposm must work - fail build if it doesn't)
@@ -52,11 +77,8 @@ RUN echo "=== Installed versions ===" \
     && psql --version \
     && just --version \
     && jq --version \
-    && if [ "$(uname -m)" = "x86_64" ]; then \
-        echo "=== Verifying imposm3 ===" \
-        && ldd /usr/local/bin/imposm \
-        && imposm version; \
-    fi
+    && echo "=== Verifying imposm3 ===" \
+    && imposm version
 
 # Set working directory
 WORKDIR /work

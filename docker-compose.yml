@@ -113,7 +113,8 @@ services:
   #   docker compose run --rm processing just <command>
   processing:
     image: ${PROCESSING_IMAGE:-}
-    platform: linux/amd64
+    # Note: No platform specified - builds natively for host architecture
+    # imposm3 is built from source on arm64
     build:
       context: ./processing
       dockerfile: Dockerfile
