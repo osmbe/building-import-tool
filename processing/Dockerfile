@@ -25,22 +25,23 @@ RUN apt-get update && apt-get install -y \
     gdal-bin \
     libgdal-dev \
     python3-gdal \
-    && rm -rf /var/lib/apt/lists/*
+    # LevelDB runtime library (required by imposm3)
+    libleveldb1t64 \
+    && rm -rf /var/lib/apt/lists/* \
+    # Symlink: Ubuntu 24.04 renamed libleveldb.so.1 to libleveldb.so.1t64
+    && ln -sf /usr/lib/x86_64-linux-gnu/libleveldb.so.1t64 /usr/lib/x86_64-linux-gnu/libleveldb.so.1
 
 # Install Just task runner
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
-# Install imposm3 (only available for x86-64, skip on ARM)
-# Binary release includes bundled libraries in lib/ folder
+# Install imposm3 binary (only available for x86-64, skip on ARM)
 ENV IMPOSM_VERSION=0.11.1
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
         wget -q https://github.com/omniscale/imposm3/releases/download/v${IMPOSM_VERSION}/imposm-${IMPOSM_VERSION}-linux-x86-64.tar.gz \
         && tar -xzf imposm-${IMPOSM_VERSION}-linux-x86-64.tar.gz \
         && mv imposm-${IMPOSM_VERSION}-linux-x86-64/imposm /usr/local/bin/ \
-        && mv imposm-${IMPOSM_VERSION}-linux-x86-64/lib/* /usr/local/lib/ \
         && rm -rf imposm-${IMPOSM_VERSION}-linux-x86-64* \
-        && chmod +x /usr/local/bin/imposm \
-        && ldconfig; \
+        && chmod +x /usr/local/bin/imposm; \
     else \
         echo "Skipping imposm3 installation (only available for x86-64)"; \
     fi
