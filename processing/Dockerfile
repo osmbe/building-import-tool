@@ -3,8 +3,7 @@
 #
 # Build: docker build -t be2osm-processing .
 # Run:   docker run -it --rm -v $(pwd):/work -v $(pwd)/../.env:/work/.env be2osm-processing
-# Use 22 instead of 24 to avoid issues with some dependencies
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -26,24 +25,22 @@ RUN apt-get update && apt-get install -y \
     gdal-bin \
     libgdal-dev \
     python3-gdal \
-    # LevelDB (required by imposm3) - both dev and runtime
-    libleveldb-dev \
-    libleveldb1d \
-    && rm -rf /var/lib/apt/lists/* \
-    # Verify leveldb library exists
-    && ls -la /usr/lib/x86_64-linux-gnu/libleveldb* || true
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Just task runner
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
 # Install imposm3 (only available for x86-64, skip on ARM)
+# Binary release includes bundled libraries in lib/ folder
 ENV IMPOSM_VERSION=0.11.1
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
         wget -q https://github.com/omniscale/imposm3/releases/download/v${IMPOSM_VERSION}/imposm-${IMPOSM_VERSION}-linux-x86-64.tar.gz \
         && tar -xzf imposm-${IMPOSM_VERSION}-linux-x86-64.tar.gz \
         && mv imposm-${IMPOSM_VERSION}-linux-x86-64/imposm /usr/local/bin/ \
+        && mv imposm-${IMPOSM_VERSION}-linux-x86-64/lib/* /usr/local/lib/ \
         && rm -rf imposm-${IMPOSM_VERSION}-linux-x86-64* \
-        && chmod +x /usr/local/bin/imposm; \
+        && chmod +x /usr/local/bin/imposm \
+        && ldconfig; \
     else \
         echo "Skipping imposm3 installation (only available for x86-64)"; \
     fi
