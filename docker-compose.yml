@@ -11,10 +11,10 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql
       # The following scripts will be executed in alphabetical order during the first initialization of the database
-      - ./postgres/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
-      - ./postgres/02-setup-be2osm.sql:/docker-entrypoint-initdb.d/02-setup-be2osm.sql:ro
-      - ./postgres/03-setup-osmbe.sql:/docker-entrypoint-initdb.d/03-setup-osmbe.sql:ro
-      - ./postgres/04-setup-fdw.sql:/docker-entrypoint-initdb.d/04-setup-fdw.sql:ro
+      - ./postgres/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro,z
+      - ./postgres/02-setup-be2osm.sql:/docker-entrypoint-initdb.d/02-setup-be2osm.sql:ro,z
+      - ./postgres/03-setup-osmbe.sql:/docker-entrypoint-initdb.d/03-setup-osmbe.sql:ro,z
+      - ./postgres/04-setup-fdw.sql:/docker-entrypoint-initdb.d/04-setup-fdw.sql:ro,z
     # ports:
     #   - "5432:5432"
     restart: unless-stopped
@@ -30,6 +30,7 @@ services:
   # Nuxt 3 Application
   nuxt-app:
     image: ${NUXT_IMAGE:-}
+    platform: linux/amd64
     build:
       context: ./app
       args:
@@ -112,6 +113,7 @@ services:
   #   docker compose run --rm processing just <command>
   processing:
     image: ${PROCESSING_IMAGE:-}
+    platform: linux/amd64
     build:
       context: ./processing
       dockerfile: Dockerfile
@@ -125,9 +127,9 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
     volumes:
-      - ./processing:/work
-      - ./processing/data:/work/data
-      - ./processing/logs:/work/logs
+      - ./processing:/work:z
+      - ./processing/data:/work/data:z
+      - ./processing/logs:/work/logs:z
     depends_on:
       postgres:
         condition: service_healthy
@@ -142,7 +144,7 @@ services:
     environment:
       DOMAIN: ${DOMAIN}
     volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
       - caddy_data:/data
     ports:
       - "80:80"
