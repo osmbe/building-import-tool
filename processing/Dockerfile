@@ -26,9 +26,12 @@ RUN apt-get update && apt-get install -y \
     gdal-bin \
     libgdal-dev \
     python3-gdal \
-    # LevelDB (required by imposm3)
+    # LevelDB (required by imposm3) - both dev and runtime
     libleveldb-dev \
-    && rm -rf /var/lib/apt/lists/*
+    libleveldb1d \
+    && rm -rf /var/lib/apt/lists/* \
+    # Verify leveldb library exists
+    && ls -la /usr/lib/x86_64-linux-gnu/libleveldb* || true
 
 # Install Just task runner
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
@@ -45,13 +48,17 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
         echo "Skipping imposm3 installation (only available for x86-64)"; \
     fi
 
-# Verify installations
+# Verify installations (imposm must work - fail build if it doesn't)
 RUN echo "=== Installed versions ===" \
     && ogr2ogr --version \
-    && (imposm version 2>/dev/null || echo "imposm: not installed (ARM architecture)") \
     && psql --version \
     && just --version \
-    && jq --version
+    && jq --version \
+    && if [ "$(uname -m)" = "x86_64" ]; then \
+        echo "=== Verifying imposm3 ===" \
+        && ldd /usr/local/bin/imposm \
+        && imposm version; \
+    fi
 
 # Set working directory
 WORKDIR /work

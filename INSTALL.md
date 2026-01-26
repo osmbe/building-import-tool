@@ -11,19 +11,11 @@ This guide covers setting up the Building Import Tool on a fresh Linux server wi
 
 | Secret | Description |
 |--------|-------------|
-| `VPS_SSH_KEY` | Private SSH key for VPS access |
-| `VPS_HOST` | VPS hostname or IP address |
-| `VPS_USER` | SSH username on the VPS |
-| `GHCR_PAT` | Personal Access Token with `read:packages` and `repo` scopes |
-| `POSTGRES_PASSWORD` | Database password |
-| `DOMAIN` | Your domain (e.g., `new.buildings.osm.be`) |
 | `OSM_CLIENT_ID` | From OSM OAuth registration |
 | `OSM_CLIENT_SECRET` | From OSM OAuth registration |
 | `OSM_REDIRECT_URI` | OAuth callback URL |
-| `JWT_SECRET` | Random 32+ character string |
-| `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data updates |
 
-To create the `GHCR_PAT`: GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate with `read:packages` and `repo` scopes.
+These secrets are used by the CI/CD pipeline to build Docker images with OAuth configuration.
 
 ## Step 1: Install Docker
 
@@ -180,6 +172,50 @@ List all available Just commands:
 
 ```bash
 docker compose run --rm processing just --list
+```
+
+## Step 9: Setup Automated Updates (Optional)
+
+Install cron jobs to automatically update OSM and GRB data.
+
+### Install Cron Jobs
+
+```bash
+cd /opt/docker/buildings
+./processing/cron/install.sh
+```
+
+This installs the following scheduled tasks:
+
+| Task | Schedule | Description |
+|------|----------|-------------|
+| OSM Update | Daily at 4:00 AM UTC | Differential update from Geofabrik |
+| GRB Update | Sunday at 5:00 AM UTC | Differential update from Digital Vlaanderen |
+| DB Optimize | Daily at 6:00 AM UTC | VACUUM and ANALYZE databases |
+
+### View Logs
+
+```bash
+# OSM update logs
+tail -f /var/log/be2osm/osm-update.log
+
+# GRB update logs
+tail -f /var/log/be2osm/grb-update.log
+
+# Database optimization logs
+tail -f /var/log/be2osm/db-optimize.log
+```
+
+### Verify Cron Jobs
+
+```bash
+crontab -l
+```
+
+### Remove Cron Jobs
+
+```bash
+./processing/cron/uninstall.sh
 ```
 
 ## Troubleshooting
