@@ -1,0 +1,14 @@
+---
+# Ansible Inventory
+# The processing_vm host is dynamically added by the droplet role after creation
+
+all:
+  hosts:
+    localhost:
+      ansible_connection: local
+      ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  children:
+    processing:
+      hosts: {}
+      # processing_vm will be added dynamically after droplet creation

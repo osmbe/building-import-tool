@@ -1,0 +1,141 @@
+---
+# Bootstrap Role - Sets up Docker and minimal config for processing
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - ca-certificates
+      - gnupg
+    state: present
+
+- name: Check if Docker is installed
+  ansible.builtin.command: docker --version
+  register: docker_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Install Docker using convenience script
+  ansible.builtin.shell: |
+    curl -fsSL https://get.docker.com | sh
+  args:
+    creates: /usr/bin/docker
+  when: docker_check.rc != 0
+
+- name: Ensure Docker service is running
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+
+# ============================================
+# Create directory structure
+# ============================================
+
+- name: Create project directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ repo_dest }}"
+    - "{{ repo_dest }}/postgres"
+    - "{{ repo_dest }}/processing"
+    - "{{ repo_dest }}/processing/config"
+    - "{{ repo_dest }}/processing/sql/transforms"
+    - "{{ repo_dest }}/processing/data/osm"
+    - "{{ repo_dest }}/processing/data/grb"
+    - "{{ repo_dest }}/processing/logs"
+    - "{{ backup_dir }}"
+
+# ============================================
+# Copy necessary files from control node
+# Note: playbook_dir is /opt/be2osm/ansible on lightweight VPS
+# So ../postgres is /opt/be2osm/postgres
+# ============================================
+
+- name: Copy docker-compose.yml for processing
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ repo_dest }}/docker-compose.yml"
+    mode: '0644'
+
+- name: Copy PostgreSQL init scripts
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ repo_dest }}/postgres/"
+    mode: '0644'
+  with_fileglob:
+    - "{{ playbook_dir }}/../postgres/*.sql"
+
+- name: Copy processing Dockerfile
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../processing/Dockerfile"
+    dest: "{{ repo_dest }}/processing/Dockerfile"
+    mode: '0644'
+
+- name: Copy processing justfile
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../processing/justfile"
+    dest: "{{ repo_dest }}/processing/justfile"
+    mode: '0644'
+
+- name: Copy imposm mapping config files
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ repo_dest }}/processing/config/"
+    mode: '0644'
+  with_fileglob:
+    - "{{ playbook_dir }}/../processing/config/*"
+
+- name: Copy SQL transform scripts
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ repo_dest }}/processing/sql/transforms/"
+    mode: '0644'
+  with_fileglob:
+    - "{{ playbook_dir }}/../processing/sql/transforms/*"
+
+# ============================================
+# Create .env file
+# ============================================
+
+- name: Generate secure PostgreSQL password
+  ansible.builtin.set_fact:
+    postgres_password: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') }}"
+
+- name: Create .env file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ repo_dest }}/.env"
+    mode: '0600'
+
+# ============================================
+# Start PostgreSQL
+# ============================================
+
+- name: Start PostgreSQL container
+  ansible.builtin.command:
+    cmd: docker compose up -d postgres
+    chdir: "{{ repo_dest }}"
+  register: postgres_start
+  changed_when: "'Started' in postgres_start.stderr or 'Creating' in postgres_start.stderr"
+
+- name: Wait for PostgreSQL to be healthy
+  ansible.builtin.command:
+    cmd: docker compose exec -T postgres pg_isready -U {{ postgres_user }} -d {{ postgres_db }}
+    chdir: "{{ repo_dest }}"
+  register: pg_ready
+  until: pg_ready.rc == 0
+  retries: 30
+  delay: 5
+  changed_when: false
+
+- name: Display PostgreSQL status
+  ansible.builtin.debug:
+    msg: "PostgreSQL is ready and accepting connections"

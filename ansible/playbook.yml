@@ -1,0 +1,75 @@
+---
+# BE2OSM Data Processing Playbook
+#
+# This playbook automates the entire data processing workflow:
+# 1. Creates a Digital Ocean VM
+# 2. Installs Docker and clones the repository
+# 3. Runs OSM and GRB data imports
+# 4. Creates database dumps and transfers them to target server
+# 5. Destroys the VM
+#
+# Usage:
+#   ansible-playbook playbook.yml -e "target_path=/opt/be2osm/data/backups"
+#
+# Prerequisites:
+#   - Set DO_API_TOKEN environment variable
+#   - Set DIGITAL_VLAANDEREN_API_KEY environment variable
+#   - Have SSH key registered with Digital Ocean
+#   - Install collections: ansible-galaxy collection install -r requirements.yml
+
+- name: Create Digital Ocean droplet
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - vars.yml
+  roles:
+    - role: droplet
+      tags: [create, droplet]
+
+- name: Bootstrap the processing VM
+  hosts: processing_vm
+  gather_facts: true
+  vars_files:
+    - vars.yml
+  vars:
+    ansible_user: root
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  roles:
+    - role: bootstrap
+      tags: [bootstrap]
+
+- name: Run data processing (OSM + GRB imports)
+  hosts: processing_vm
+  gather_facts: false
+  vars_files:
+    - vars.yml
+  vars:
+    ansible_user: root
+  roles:
+    - role: processing
+      tags: [process, import]
+
+- name: Create dumps and transfer to target server
+  hosts: processing_vm
+  gather_facts: false
+  vars_files:
+    - vars.yml
+  vars:
+    ansible_user: root
+  roles:
+    - role: transfer
+      tags: [transfer, backup]
+
+- name: Destroy Digital Ocean droplet
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Delete the processing droplet
+      community.digitalocean.digital_ocean_droplet:
+        state: absent
+        name: "{{ do_droplet_name }}"
+        oauth_token: "{{ do_api_token }}"
+        unique_name: true
+      tags: [destroy, cleanup]
