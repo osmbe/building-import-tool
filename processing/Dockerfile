@@ -25,11 +25,11 @@ RUN apt-get update && apt-get install -y \
     gdal-bin \
     libgdal-dev \
     python3-gdal \
-    # LevelDB runtime library (required by imposm3)
-    libleveldb1t64 \
+    # LevelDB (required by imposm3)
+    libleveldb-dev \
     && rm -rf /var/lib/apt/lists/* \
-    # Symlink: Ubuntu 24.04 renamed libleveldb.so.1 to libleveldb.so.1t64
-    && ln -sf /usr/lib/x86_64-linux-gnu/libleveldb.so.1t64 /usr/lib/x86_64-linux-gnu/libleveldb.so.1
+    # Symlink: imposm3 expects libleveldb.so.1, find actual library and link it
+    && ln -sf $(ls /usr/lib/x86_64-linux-gnu/libleveldb.so.1* | head -1) /usr/lib/x86_64-linux-gnu/libleveldb.so.1
 
 # Install Just task runner
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
