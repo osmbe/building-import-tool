@@ -346,7 +346,7 @@ clean-osm-db:
 # ============================================================================
 
 # GitHub repository for remote workflows
-gh_repo := env_var_or_default('GH_REPO', 'brunomoyse/be2osm')
+gh_repo := env_var_or_default('GH_REPO', 'osmbe/building-import-tool')
 
 # Trigger OSM import on GitHub Actions, wait, download and restore locally
 osm-import-remote:

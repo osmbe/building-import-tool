@@ -190,7 +190,7 @@ You can also trigger workflows manually from GitHub:
 
 Then download artifacts manually with:
 ```bash
-gh run download <RUN_ID> -R brunomoyse/be2osm -n osmbe-dump
+gh run download <RUN_ID> -R osmbe/building-import-tool -n osmbe-dump
 ```
 
 ## Troubleshooting
