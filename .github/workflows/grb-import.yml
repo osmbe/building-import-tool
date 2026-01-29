@@ -56,7 +56,7 @@ jobs:
 
       - name: Create GRB dump
         run: |
-          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm be2osm | gzip > be2osm.sql.gz
+          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm --clean --if-exists be2osm | gzip > be2osm.sql.gz
           ls -lh be2osm.sql.gz
 
       - name: Upload GRB dump
