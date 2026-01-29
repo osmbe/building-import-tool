@@ -3,6 +3,11 @@ name: GRB Import
 on:
   workflow_dispatch:
 
+env:
+  POSTGRES_USER: be2osm
+  POSTGRES_PASSWORD: be2osm
+  POSTGRES_DB: be2osm
+
 jobs:
   import:
     runs-on: ubuntu-latest
@@ -11,7 +16,7 @@ jobs:
         image: postgis/postgis:16-3.4
         env:
           POSTGRES_USER: be2osm
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_PASSWORD: be2osm
           POSTGRES_DB: be2osm
         options: >-
           --health-cmd pg_isready
@@ -31,7 +36,7 @@ jobs:
         run: |
           for f in postgres/*.sql; do
             echo "Running $f..."
-            PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} psql -h localhost -U be2osm -d be2osm -f "$f"
+            PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f "$f"
           done
 
       - name: Build processing image
@@ -43,14 +48,14 @@ jobs:
             -e POSTGRES_HOST=localhost \
             -e POSTGRES_PORT=5432 \
             -e POSTGRES_USER=be2osm \
-            -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            -e POSTGRES_PASSWORD=be2osm \
             -e DIGITAL_VLAANDEREN_API_KEY=${{ secrets.DIGITAL_VLAANDEREN_API_KEY }} \
             -e DIGITAL_VLAANDEREN_API_BASE_URL="https://download.api.vlaanderen.be/v2" \
             processing just grb-full
 
       - name: Create GRB dump
         run: |
-          PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} pg_dump -h localhost -U be2osm be2osm | gzip > be2osm.sql.gz
+          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm be2osm | gzip > be2osm.sql.gz
           ls -lh be2osm.sql.gz
 
       - name: Upload GRB dump

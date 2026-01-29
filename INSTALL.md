@@ -14,7 +14,6 @@ This guide covers setting up the Building Import Tool on a fresh Linux server wi
 | `OSM_CLIENT_ID` | From OSM OAuth registration |
 | `OSM_CLIENT_SECRET` | From OSM OAuth registration |
 | `OSM_REDIRECT_URI` | OAuth callback URL |
-| `POSTGRES_PASSWORD` | Database password for CI data import |
 | `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data from Digital Vlaanderen |
 
 These secrets are used by the CI/CD pipeline to build Docker images and run data imports.
@@ -163,12 +162,13 @@ docker compose run --rm processing just grb-status
 
 ### Required GitHub Secrets for Data Import
 
-Ensure these secrets are configured in your repository (Settings → Secrets and variables → Actions):
+For GRB import, ensure this secret is configured (Settings → Secrets and variables → Actions):
 
 | Secret | Description |
 |--------|-------------|
-| `POSTGRES_PASSWORD` | Database password for CI environment |
 | `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data from Digital Vlaanderen |
+
+Note: OSM import doesn't require any secrets.
 
 ### Manual Workflow Trigger (Alternative)
 
