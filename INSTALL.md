@@ -125,6 +125,16 @@ curl -f https://new.buildings.osm.be/tiles/osm/health
 
 Data processing is offloaded to GitHub Actions runners (free compute). The VPS triggers the workflow, waits for completion, downloads the result, and restores to the local database.
 
+### Prerequisites
+
+Ensure GitHub CLI is authenticated on your VPS (required for private repo access):
+
+```bash
+gh auth login
+```
+
+This creates `~/.config/gh/` which is mounted into the processing container.
+
 ### Import OSM Data
 
 ```bash

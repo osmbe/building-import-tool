@@ -131,6 +131,8 @@ services:
       - ./processing:/work:z
       - ./processing/data:/work/data:z
       - ./processing/logs:/work/logs:z
+      # Mount gh CLI config for remote import authentication
+      - ~/.config/gh:/root/.config/gh:ro
     depends_on:
       postgres:
         condition: service_healthy

@@ -40,6 +40,14 @@ RUN apt-get update && apt-get install -y \
 # Install Just task runner
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
+# Install GitHub CLI (for remote import workflows)
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && apt-get update \
+    && apt-get install -y gh \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install Go (needed for building imposm3 on arm64)
 ENV GO_VERSION=1.21.5
 RUN ARCH=$(uname -m) \
@@ -77,6 +85,7 @@ RUN echo "=== Installed versions ===" \
     && psql --version \
     && just --version \
     && jq --version \
+    && gh --version \
     && echo "=== Verifying imposm3 ===" \
     && imposm version
 
