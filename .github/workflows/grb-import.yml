@@ -45,6 +45,7 @@ jobs:
       - name: Import GRB data
         run: |
           docker run --network host \
+            -v ${{ github.workspace }}/processing:/work \
             -e POSTGRES_HOST=localhost \
             -e POSTGRES_PORT=5432 \
             -e POSTGRES_USER=be2osm \
