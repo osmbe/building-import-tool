@@ -18,14 +18,18 @@
 default:
     @echo "BE2OSM Data Processing - Available Task Groups:"
     @echo ""
-    @echo "🗺️  OSM Tasks"
+    @echo "☁️  Remote Import (GitHub Actions - recommended for lightweight VPS)"
+    @echo "  osm-import-remote  - Trigger OSM import on GitHub, download result"
+    @echo "  grb-import-remote  - Trigger GRB import on GitHub, download result"
+    @echo ""
+    @echo "🗺️  OSM Tasks (local processing)"
     @echo "  osm-download       - Download Belgium OSM data from Geofabrik"
     @echo "  osm-import         - Import OSM buildings to database"
     @echo "  osm-update         - Apply daily diff updates (Geofabrik)"
     @echo "  osm-rebuild        - Clean cache and reimport OSM data"
     @echo "  osm-status         - Show OSM database statistics"
     @echo ""
-    @echo "🏢 GRB Tasks"
+    @echo "🏢 GRB Tasks (local processing)"
     @echo "  grb-order-all      - Order all GRB datasets from API"
     @echo "  grb-download-all   - Download all ready orders"
     @echo "  grb-import         - Import GRB data to database"
@@ -336,6 +340,143 @@ clean-osm-db:
     @echo "🧹 Cleaning OSM data from database..."
     @{{psql_osmbe}} -c "TRUNCATE osm.osm_buildings CASCADE;"
     @echo "✅ OSM database tables truncated"
+
+# ============================================================================
+# REMOTE IMPORT TASKS - GitHub Actions (heavy processing on free runners)
+# ============================================================================
+
+# GitHub repository for remote workflows
+gh_repo := env_var_or_default('GH_REPO', 'brunomoyse/be2osm')
+
+# Trigger OSM import on GitHub Actions, wait, download and restore locally
+osm-import-remote:
+    #!/usr/bin/env bash
+    set -e
+    echo "🚀 Remote OSM Import via GitHub Actions"
+    echo "========================================"
+    echo ""
+
+    # Check prerequisites
+    if ! command -v gh &> /dev/null; then
+        echo "❌ GitHub CLI (gh) is not installed"
+        echo "   Install: https://cli.github.com/"
+        exit 1
+    fi
+
+    # Trigger the workflow
+    echo "📤 Triggering OSM Import workflow..."
+    gh workflow run osm-import.yml -R "{{gh_repo}}"
+
+    # Wait for run to be created
+    sleep 5
+
+    # Get the run ID
+    RUN_ID=$(gh run list -R "{{gh_repo}}" -w "OSM Import" --limit 1 --json databaseId -q '.[0].databaseId')
+    echo "📋 Workflow run ID: $RUN_ID"
+    echo ""
+
+    # Watch the run (blocks until complete)
+    echo "⏳ Waiting for workflow to complete..."
+    echo "   (This may take 30-60 minutes for Belgium OSM data)"
+    echo ""
+    gh run watch "$RUN_ID" -R "{{gh_repo}}"
+
+    # Check if successful
+    STATUS=$(gh run view "$RUN_ID" -R "{{gh_repo}}" --json conclusion -q '.conclusion')
+    if [ "$STATUS" != "success" ]; then
+        echo ""
+        echo "❌ Workflow failed with status: $STATUS"
+        echo "   View logs: gh run view $RUN_ID -R {{gh_repo}} --log"
+        exit 1
+    fi
+
+    # Download the artifact
+    echo ""
+    echo "📥 Downloading OSM dump artifact..."
+    rm -rf /tmp/osm-restore
+    mkdir -p /tmp/osm-restore
+    gh run download "$RUN_ID" -R "{{gh_repo}}" -n osmbe-dump -D /tmp/osm-restore
+
+    # Show artifact size
+    ls -lh /tmp/osm-restore/osmbe.sql.gz
+
+    # Restore to local database
+    echo ""
+    echo "🔄 Restoring to local database..."
+    gunzip -c /tmp/osm-restore/osmbe.sql.gz | {{psql_osmbe}}
+
+    # Cleanup
+    rm -rf /tmp/osm-restore
+
+    echo ""
+    echo "✅ Remote OSM Import Complete!"
+    echo ""
+    just osm-status
+
+# Trigger GRB import on GitHub Actions, wait, download and restore locally
+grb-import-remote:
+    #!/usr/bin/env bash
+    set -e
+    echo "🚀 Remote GRB Import via GitHub Actions"
+    echo "========================================"
+    echo ""
+
+    # Check prerequisites
+    if ! command -v gh &> /dev/null; then
+        echo "❌ GitHub CLI (gh) is not installed"
+        echo "   Install: https://cli.github.com/"
+        exit 1
+    fi
+
+    # Trigger the workflow
+    echo "📤 Triggering GRB Import workflow..."
+    gh workflow run grb-import.yml -R "{{gh_repo}}"
+
+    # Wait for run to be created
+    sleep 5
+
+    # Get the run ID
+    RUN_ID=$(gh run list -R "{{gh_repo}}" -w "GRB Import" --limit 1 --json databaseId -q '.[0].databaseId')
+    echo "📋 Workflow run ID: $RUN_ID"
+    echo ""
+
+    # Watch the run (blocks until complete)
+    echo "⏳ Waiting for workflow to complete..."
+    echo "   (This may take 1-2 hours for full GRB dataset)"
+    echo ""
+    gh run watch "$RUN_ID" -R "{{gh_repo}}"
+
+    # Check if successful
+    STATUS=$(gh run view "$RUN_ID" -R "{{gh_repo}}" --json conclusion -q '.conclusion')
+    if [ "$STATUS" != "success" ]; then
+        echo ""
+        echo "❌ Workflow failed with status: $STATUS"
+        echo "   View logs: gh run view $RUN_ID -R {{gh_repo}} --log"
+        exit 1
+    fi
+
+    # Download the artifact
+    echo ""
+    echo "📥 Downloading GRB dump artifact..."
+    rm -rf /tmp/grb-restore
+    mkdir -p /tmp/grb-restore
+    gh run download "$RUN_ID" -R "{{gh_repo}}" -n be2osm-dump -D /tmp/grb-restore
+
+    # Show artifact size
+    ls -lh /tmp/grb-restore/be2osm.sql.gz
+
+    # Restore to local database
+    echo ""
+    echo "🔄 Restoring to local database..."
+    gunzip -c /tmp/grb-restore/be2osm.sql.gz | {{psql_be2osm}}
+
+    # Cleanup
+    rm -rf /tmp/grb-restore
+
+    echo ""
+    echo "✅ Remote GRB Import Complete!"
+    echo ""
+    just grb-status
 
 # ============================================================================
 # INTERNAL TASKS - Infrastructure (prefixed with _)

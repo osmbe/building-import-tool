@@ -14,8 +14,10 @@ This guide covers setting up the Building Import Tool on a fresh Linux server wi
 | `OSM_CLIENT_ID` | From OSM OAuth registration |
 | `OSM_CLIENT_SECRET` | From OSM OAuth registration |
 | `OSM_REDIRECT_URI` | OAuth callback URL |
+| `POSTGRES_PASSWORD` | Database password for CI data import |
+| `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data from Digital Vlaanderen |
 
-These secrets are used by the CI/CD pipeline to build Docker images with OAuth configuration.
+These secrets are used by the CI/CD pipeline to build Docker images and run data imports.
 
 ## Step 1: Install Docker
 
@@ -120,102 +122,65 @@ curl -f https://new.buildings.osm.be/tiles/grb/health
 curl -f https://new.buildings.osm.be/tiles/osm/health
 ```
 
-## Step 8: Import Data
+## Step 8: Import Data (Remote Processing)
 
-Use the processing container to import GRB and OSM data. The container includes ogr2ogr, imposm3, and Just task runner.
+Data processing is offloaded to GitHub Actions runners (free compute). The VPS triggers the workflow, waits for completion, downloads the result, and restores to the local database.
 
-### OSM Data Import
-
-```bash
-# Download Belgium OSM data from Geofabrik
-docker compose run --rm processing just osm-download
-
-# Import OSM data to database
-docker compose run --rm processing just osm-import
-
-# Or run full pipeline (download + import)
-docker compose run --rm processing just osm-full
-```
-
-### GRB Data Import
+### Import OSM Data
 
 ```bash
-# Order GRB datasets from Digital Vlaanderen API
-docker compose run --rm processing just grb-order-all
-
-# Check order status (wait until ready)
-docker compose run --rm processing just grb-status-orders
-
-# Download ready orders
-docker compose run --rm processing just grb-download-all
-
-# Import GRB data to database
-docker compose run --rm processing just grb-import
-
-# Or run full workflow (order → wait → download → import)
-docker compose run --rm processing just grb-full
+cd /opt/docker/buildings
+docker compose run --rm processing just osm-import-remote
 ```
+
+This will:
+1. Trigger the OSM Import workflow on GitHub Actions
+2. Wait for the workflow to complete (30-60 minutes)
+3. Download the database dump artifact
+4. Restore to your local PostgreSQL
+
+### Import GRB Data
+
+```bash
+docker compose run --rm processing just grb-import-remote
+```
+
+This will:
+1. Trigger the GRB Import workflow on GitHub Actions
+2. Wait for the workflow to complete (1-2 hours)
+3. Download the database dump artifact
+4. Restore to your local PostgreSQL
 
 ### Verify Data Import
 
 ```bash
-# Check OSM database statistics
-docker compose run --rm processing just db-status
+# Check OSM building count
+docker compose run --rm processing just osm-status
 
-# Check GRB database statistics
+# Check GRB building count
 docker compose run --rm processing just grb-status
 ```
 
-### Available Commands
+### Required GitHub Secrets for Data Import
 
-List all available Just commands:
+Ensure these secrets are configured in your repository (Settings → Secrets and variables → Actions):
 
+| Secret | Description |
+|--------|-------------|
+| `POSTGRES_PASSWORD` | Database password for CI environment |
+| `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data from Digital Vlaanderen |
+
+### Manual Workflow Trigger (Alternative)
+
+You can also trigger workflows manually from GitHub:
+
+1. Go to the repository on GitHub
+2. Navigate to **Actions** → **OSM Import** or **GRB Import**
+3. Click **Run workflow** → **Run workflow**
+
+Then download artifacts manually with:
 ```bash
-docker compose run --rm processing just --list
-```
-
-## Step 9: Setup Automated Updates (Optional)
-
-Install cron jobs to automatically update OSM and GRB data.
-
-### Install Cron Jobs
-
-```bash
-cd /opt/docker/buildings
-./processing/cron/install.sh
-```
-
-This installs the following scheduled tasks:
-
-| Task | Schedule | Description |
-|------|----------|-------------|
-| OSM Update | Daily at 4:00 AM UTC | Differential update from Geofabrik |
-| GRB Update | Sunday at 5:00 AM UTC | Differential update from Digital Vlaanderen |
-| DB Optimize | Daily at 6:00 AM UTC | VACUUM and ANALYZE databases |
-
-### View Logs
-
-```bash
-# OSM update logs
-tail -f /var/log/be2osm/osm-update.log
-
-# GRB update logs
-tail -f /var/log/be2osm/grb-update.log
-
-# Database optimization logs
-tail -f /var/log/be2osm/db-optimize.log
-```
-
-### Verify Cron Jobs
-
-```bash
-crontab -l
-```
-
-### Remove Cron Jobs
-
-```bash
-./processing/cron/uninstall.sh
+gh run download <RUN_ID> -R brunomoyse/be2osm -n osmbe-dump
 ```
 
 ## Troubleshooting

@@ -1,0 +1,61 @@
+name: GRB Import
+
+on:
+  workflow_dispatch:
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: be2osm
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: be2osm
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Run init scripts
+        run: |
+          for f in postgres/*.sql; do
+            echo "Running $f..."
+            PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} psql -h localhost -U be2osm -d be2osm -f "$f"
+          done
+
+      - name: Build processing image
+        run: docker build -t processing ./processing
+
+      - name: Import GRB data
+        run: |
+          docker run --network host \
+            -e POSTGRES_HOST=localhost \
+            -e POSTGRES_PORT=5432 \
+            -e POSTGRES_USER=be2osm \
+            -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            -e DIGITAL_VLAANDEREN_API_KEY=${{ secrets.DIGITAL_VLAANDEREN_API_KEY }} \
+            -e DIGITAL_VLAANDEREN_API_BASE_URL="https://download.api.vlaanderen.be/v2" \
+            processing just grb-full
+
+      - name: Create GRB dump
+        run: |
+          PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} pg_dump -h localhost -U be2osm be2osm | gzip > be2osm.sql.gz
+          ls -lh be2osm.sql.gz
+
+      - name: Upload GRB dump
+        uses: actions/upload-artifact@v4
+        with:
+          name: be2osm-dump
+          path: be2osm.sql.gz
+          retention-days: 7

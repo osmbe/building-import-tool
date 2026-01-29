@@ -1,0 +1,60 @@
+name: OSM Import
+
+on:
+  workflow_dispatch:
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: be2osm
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: be2osm
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Create osmbe database and run init scripts
+        run: |
+          PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} psql -h localhost -U be2osm -d be2osm -c "CREATE DATABASE osmbe;"
+          for f in postgres/*.sql; do
+            echo "Running $f..."
+            PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} psql -h localhost -U be2osm -d be2osm -f "$f"
+          done
+
+      - name: Build processing image
+        run: docker build -t processing ./processing
+
+      - name: Download and import OSM
+        run: |
+          docker run --network host \
+            -e POSTGRES_HOST=localhost \
+            -e POSTGRES_PORT=5432 \
+            -e POSTGRES_USER=be2osm \
+            -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            processing just osm-download osm-import
+
+      - name: Create OSM dump
+        run: |
+          PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} pg_dump -h localhost -U be2osm osmbe | gzip > osmbe.sql.gz
+          ls -lh osmbe.sql.gz
+
+      - name: Upload OSM dump
+        uses: actions/upload-artifact@v4
+        with:
+          name: osmbe-dump
+          path: osmbe.sql.gz
+          retention-days: 7
