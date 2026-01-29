@@ -400,6 +400,11 @@ osm-import-remote:
     # Show artifact size
     ls -lh /tmp/osm-restore/osmbe.sql.gz
 
+    # Clear existing data before restore (data-only dump)
+    echo ""
+    echo "🧹 Clearing existing OSM data..."
+    {{psql_osmbe}} -c "TRUNCATE osm.osm_buildings CASCADE;" || true
+
     # Restore to local database
     echo ""
     echo "🔄 Restoring to local database..."
@@ -464,6 +469,11 @@ grb-import-remote:
 
     # Show artifact size
     ls -lh /tmp/grb-restore/be2osm.sql.gz
+
+    # Clear existing data before restore (data-only dump)
+    echo ""
+    echo "🧹 Clearing existing GRB data..."
+    {{psql_be2osm}} -c "TRUNCATE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links CASCADE;" || true
 
     # Restore to local database
     echo ""

@@ -55,7 +55,7 @@ jobs:
 
       - name: Create OSM dump
         run: |
-          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm --clean --if-exists osmbe | gzip > osmbe.sql.gz
+          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm --data-only --disable-triggers osmbe | gzip > osmbe.sql.gz
           ls -lh osmbe.sql.gz
 
       - name: Upload OSM dump
