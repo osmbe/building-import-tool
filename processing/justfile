@@ -921,6 +921,7 @@ _grb-import-gbg-gebouw-rel:
         # The DBF contains: OIDN (polygon ID) and GEBOUWID (building ID)
         ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
             "$REL_FILE" -nln grb.polygon_building_rel -overwrite \
+            -gt 100000 --config PG_USE_COPY YES \
             -sql "SELECT OIDN as oidn, GEBOUWID as gebouw_id FROM \"$LAYER_NAME\""
         echo "✅ Polygon-building relationships imported"
         # Create index for faster joins
@@ -950,7 +951,8 @@ _grb-import-building-polygons:
         # We'll use field renaming flags or post-import SQL updates
         ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
             "$GBG_FILE" -nln grb.building_polygons_raw -overwrite -t_srs EPSG:4326 \
-            -lco GEOMETRY_NAME=geom
+            -gt 100000 --config PG_USE_COPY YES \
+            -lco GEOMETRY_NAME=geom -lco SPATIAL_INDEX=OFF
 
         echo "   Transforming imported data..."
         PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c "
@@ -1080,11 +1082,14 @@ _grb-import-addresses:
             echo "   Importing: $LAYER"
             if [ "$FIRST" = true ]; then
                 ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-                    "$file" -nln grb.addresses_raw -overwrite -t_srs EPSG:4326 -lco GEOMETRY_NAME=geom
+                    "$file" -nln grb.addresses_raw -overwrite -t_srs EPSG:4326 \
+                    -gt 100000 --config PG_USE_COPY YES \
+                    -lco GEOMETRY_NAME=geom -lco SPATIAL_INDEX=OFF
                 FIRST=false
             else
                 ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-                    "$file" -nln grb.addresses_raw -append -t_srs EPSG:4326
+                    "$file" -nln grb.addresses_raw -append -t_srs EPSG:4326 \
+                    -gt 100000 --config PG_USE_COPY YES
             fi
         fi
     done
@@ -1141,6 +1146,7 @@ _grb-import-address-links:
             LAYER_NAME=$(basename "$file" .dbf)
             ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
                 "$file" -nln grb.address_building_links -append \
+                -gt 100000 --config PG_USE_COPY YES \
                 -sql "SELECT
                     ADRESID as adres_id,
                     GEBOUWID as building_object_id,
