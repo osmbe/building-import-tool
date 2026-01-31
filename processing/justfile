@@ -811,7 +811,7 @@ _grb-import-building-polygons:
         exit 1
     fi
 
-# GRB: Update gebouw_id in building_polygons from relationship table (batched)
+# GRB: Update gebouw_id in building_polygons from relationship table
 _grb-update-gebouw-ids:
     #!/usr/bin/env bash
     set -e
@@ -825,48 +825,38 @@ _grb-update-gebouw-ids:
     PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -c \
         "ANALYZE grb.building_polygons; ANALYZE grb.polygon_building_rel;"
 
-    echo "📊 Updating gebouw_id from relationship table (batched)..."
+    echo "📊 Updating gebouw_id from relationship table (batched by oidn range)..."
 
-    BATCH_SIZE=500000
+    # Get min/max oidn for range-based batching (much faster than scanning for NULLs)
+    MIN_OIDN=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c \
+        "SELECT MIN(oidn)::bigint FROM grb.building_polygons;")
+    MAX_OIDN=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c \
+        "SELECT MAX(oidn)::bigint FROM grb.building_polygons;")
 
-    # Get total count of polygons needing update
-    TOTAL=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c \
-        "SELECT COUNT(*) FROM grb.building_polygons WHERE gebouw_id IS NULL;")
-    echo "   Total polygons to update: $TOTAL"
+    echo "   OIDN range: $MIN_OIDN to $MAX_OIDN"
 
+    BATCH_SIZE=1000000
+    CURRENT=$MIN_OIDN
     BATCH_NUM=1
-    UPDATED=0
+    TOTAL_RANGE=$((MAX_OIDN - MIN_OIDN))
 
-    while true; do
-        # Update a batch using LIMIT
-        RESULT=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c "
-            WITH to_update AS (
-                SELECT bp.oidn
-                FROM grb.building_polygons bp
-                WHERE bp.gebouw_id IS NULL
-                LIMIT $BATCH_SIZE
-            )
+    while [ $CURRENT -lt $MAX_OIDN ]; do
+        BATCH_END=$((CURRENT + BATCH_SIZE))
+        PROGRESS=$(( (CURRENT - MIN_OIDN) * 100 / TOTAL_RANGE ))
+
+        echo "   Batch $BATCH_NUM: oidn $CURRENT-$BATCH_END ($PROGRESS%)..."
+
+        PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -c "
             UPDATE grb.building_polygons bp
             SET gebouw_id = rel.gebouw_id
-            FROM grb.polygon_building_rel rel, to_update
-            WHERE bp.oidn = to_update.oidn
-              AND bp.oidn = rel.oidn;
-        ")
+            FROM grb.polygon_building_rel rel
+            WHERE bp.oidn = rel.oidn
+              AND bp.oidn >= $CURRENT
+              AND bp.oidn < $BATCH_END
+              AND bp.gebouw_id IS NULL;
+        "
 
-        # Get rows affected from UPDATE output
-        ROWS_AFFECTED=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c \
-            "SELECT COUNT(*) FROM grb.building_polygons WHERE gebouw_id IS NULL;")
-
-        REMAINING=$ROWS_AFFECTED
-        UPDATED=$((TOTAL - REMAINING))
-        PERCENT=$((UPDATED * 100 / TOTAL))
-
-        echo "   Batch $BATCH_NUM: $UPDATED/$TOTAL updated ($PERCENT%) - $REMAINING remaining"
-
-        if [ "$REMAINING" -eq 0 ]; then
-            break
-        fi
-
+        CURRENT=$BATCH_END
         BATCH_NUM=$((BATCH_NUM + 1))
     done
 
