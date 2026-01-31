@@ -687,6 +687,9 @@ _grb-download-if-ready product order_id:
             unzip -o -q "{{grb_data_dir}}/{{product}}/$FILE" -d "{{grb_data_dir}}/{{product}}/"
             echo "   📁 Extracted files:"
             unzip -l "{{grb_data_dir}}/{{product}}/$FILE" | grep -E '\.(shp|dbf|shx|prj)$' | awk '{print "      " $4}'
+            # Delete ZIP to save disk space
+            rm "{{grb_data_dir}}/{{product}}/$FILE"
+            echo "   🗑️  Deleted $FILE to save space"
         fi
     done
     echo ""
@@ -737,6 +740,9 @@ _grb-import-gbg-gebouw-rel:
             "$REL_FILE" -nln grb.polygon_building_rel -overwrite \
             -sql "SELECT OIDN as oidn, GEBOUWID as gebouw_id FROM \"$LAYER_NAME\""
         echo "✅ Polygon-building relationships imported"
+        # Clean up to save disk space
+        rm "$REL_FILE"
+        echo "   🗑️  Deleted $REL_FILE"
     else
         echo "⚠️  RltGbgGebouw*.dbf not found - gebouw_id will not be populated"
         echo "   Buildings will be aggregated by polygon geometry instead"
@@ -787,6 +793,10 @@ _grb-import-building-polygons:
         PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
             "UPDATE grb.building_polygons SET survey_date = TO_DATE(opndatum_raw, 'DD/MM/YYYY') WHERE opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\d{2}/\d{2}/\d{4}$';"
         echo "✅ Survey dates converted"
+
+        # Clean up gbg directory to save disk space
+        echo "   🗑️  Cleaning up gbg data..."
+        rm -rf {{grb_data_dir}}/gbg
     else
         echo "❌ Gbg*.shp not found in {{grb_data_dir}}"
         exit 1
@@ -860,6 +870,10 @@ _grb-import-addresses:
     "
     echo "✅ Addresses imported"
 
+    # Clean up addresses directory to save disk space
+    echo "   🗑️  Cleaning up addresses data..."
+    rm -rf {{grb_data_dir}}/addresses
+
 # GRB: Import address-building links
 _grb-import-address-links:
     #!/usr/bin/env bash
@@ -880,6 +894,10 @@ _grb-import-address-links:
         fi
     done
     echo "✅ Address links imported"
+
+    # Clean up address-links directory to save disk space
+    echo "   🗑️  Cleaning up address-links data..."
+    rm -rf {{grb_data_dir}}/address-links
 
 # GRB: Aggregate building polygons into buildings
 _grb-aggregate-buildings:
