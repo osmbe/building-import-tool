@@ -811,17 +811,68 @@ _grb-import-building-polygons:
         exit 1
     fi
 
-# GRB: Update gebouw_id in building_polygons from relationship table
+# GRB: Update gebouw_id in building_polygons from relationship table (batched)
 _grb-update-gebouw-ids:
-    @echo "📊 Pre-populating buildings table with unique gebouw_ids..."
-    @{{psql_be2osm}} -c "INSERT INTO grb.buildings (gebouw_id) SELECT DISTINCT gebouw_id FROM grb.polygon_building_rel WHERE gebouw_id IS NOT NULL ON CONFLICT (gebouw_id) DO NOTHING;"
-    @echo "✅ Buildings table pre-populated"
-    @echo "📊 Analyzing tables for query optimization..."
-    @{{psql_be2osm}} -c "ANALYZE grb.building_polygons; ANALYZE grb.polygon_building_rel;"
-    @echo "📊 Updating gebouw_id from relationship table..."
-    @{{psql_be2osm}} -c "UPDATE grb.building_polygons bp SET gebouw_id = rel.gebouw_id FROM grb.polygon_building_rel rel WHERE bp.oidn = rel.oidn AND bp.gebouw_id IS NULL;"
-    @echo "✅ gebouw_id updated"
-    @{{psql_be2osm}} -c "SELECT 'Polygons with gebouw_id' as metric, COUNT(*)::text as value FROM grb.building_polygons WHERE gebouw_id IS NOT NULL UNION ALL SELECT 'Polygons without gebouw_id', COUNT(*)::text FROM grb.building_polygons WHERE gebouw_id IS NULL;"
+    #!/usr/bin/env bash
+    set -e
+
+    echo "📊 Pre-populating buildings table with unique gebouw_ids..."
+    PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -c \
+        "INSERT INTO grb.buildings (gebouw_id) SELECT DISTINCT gebouw_id FROM grb.polygon_building_rel WHERE gebouw_id IS NOT NULL ON CONFLICT (gebouw_id) DO NOTHING;"
+    echo "✅ Buildings table pre-populated"
+
+    echo "📊 Analyzing tables for query optimization..."
+    PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -c \
+        "ANALYZE grb.building_polygons; ANALYZE grb.polygon_building_rel;"
+
+    echo "📊 Updating gebouw_id from relationship table (batched)..."
+
+    BATCH_SIZE=500000
+
+    # Get total count of polygons needing update
+    TOTAL=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c \
+        "SELECT COUNT(*) FROM grb.building_polygons WHERE gebouw_id IS NULL;")
+    echo "   Total polygons to update: $TOTAL"
+
+    BATCH_NUM=1
+    UPDATED=0
+
+    while true; do
+        # Update a batch using LIMIT
+        RESULT=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c "
+            WITH to_update AS (
+                SELECT bp.oidn
+                FROM grb.building_polygons bp
+                WHERE bp.gebouw_id IS NULL
+                LIMIT $BATCH_SIZE
+            )
+            UPDATE grb.building_polygons bp
+            SET gebouw_id = rel.gebouw_id
+            FROM grb.polygon_building_rel rel, to_update
+            WHERE bp.oidn = to_update.oidn
+              AND bp.oidn = rel.oidn;
+        ")
+
+        # Get rows affected from UPDATE output
+        ROWS_AFFECTED=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c \
+            "SELECT COUNT(*) FROM grb.building_polygons WHERE gebouw_id IS NULL;")
+
+        REMAINING=$ROWS_AFFECTED
+        UPDATED=$((TOTAL - REMAINING))
+        PERCENT=$((UPDATED * 100 / TOTAL))
+
+        echo "   Batch $BATCH_NUM: $UPDATED/$TOTAL updated ($PERCENT%) - $REMAINING remaining"
+
+        if [ "$REMAINING" -eq 0 ]; then
+            break
+        fi
+
+        BATCH_NUM=$((BATCH_NUM + 1))
+    done
+
+    echo "✅ gebouw_id updated"
+    PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -c \
+        "SELECT 'Polygons with gebouw_id' as metric, COUNT(*)::text as value FROM grb.building_polygons WHERE gebouw_id IS NOT NULL UNION ALL SELECT 'Polygons without gebouw_id', COUNT(*)::text FROM grb.building_polygons WHERE gebouw_id IS NULL;"
 
 # GRB: Import addresses
 _grb-import-addresses:
@@ -929,7 +980,12 @@ _grb-aggregate-buildings:
     TOTAL_BATCHES=$(( (TOTAL + BATCH_SIZE - 1) / BATCH_SIZE ))
 
     while [ $OFFSET -lt $TOTAL ]; do
-        echo "   Processing batch $BATCH_NUM/$TOTAL_BATCHES (offset $OFFSET)..."
+        PROCESSED=$((OFFSET + BATCH_SIZE))
+        if [ $PROCESSED -gt $TOTAL ]; then
+            PROCESSED=$TOTAL
+        fi
+        PERCENT=$((PROCESSED * 100 / TOTAL))
+        echo "   Batch $BATCH_NUM/$TOTAL_BATCHES: processing gebouw_ids $((OFFSET + 1))-$PROCESSED ($PERCENT%)..."
 
         PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -c "
             INSERT INTO grb.buildings (gebouw_id, polygon_count, total_area_m2, type_label, geom)
@@ -962,9 +1018,28 @@ _grb-aggregate-buildings:
 
 # GRB: Refresh materialized view
 _grb-refresh-materialized-view:
-    @echo "📊 Refreshing materialized view..."
-    @{{psql_be2osm}} -c "REFRESH MATERIALIZED VIEW grb.buildings_with_addresses;"
-    @echo "✅ Materialized view refreshed"
+    #!/usr/bin/env bash
+    set -e
+    echo "📊 Refreshing materialized view..."
+    echo "   This joins building_polygons with buildings and addresses..."
+
+    # Show expected row count
+    POLYGONS=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c \
+        "SELECT COUNT(*) FROM grb.building_polygons;")
+    echo "   Expected rows: ~$POLYGONS (one per polygon)"
+
+    START_TIME=$(date +%s)
+
+    PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -c \
+        "REFRESH MATERIALIZED VIEW grb.buildings_with_addresses;"
+
+    END_TIME=$(date +%s)
+    DURATION=$((END_TIME - START_TIME))
+
+    # Show final count
+    FINAL_COUNT=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c \
+        "SELECT COUNT(*) FROM grb.buildings_with_addresses;")
+    echo "✅ Materialized view refreshed: $FINAL_COUNT rows in ${DURATION}s"
 
 # ============================================================================
 # INTERNAL TASKS - OSM Differential Updates
