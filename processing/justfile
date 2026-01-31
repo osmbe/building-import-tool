@@ -682,6 +682,81 @@ grb-import-remote:
     echo ""
     just grb-status
 
+# Trigger PICC import on GitHub Actions, wait, download and restore locally
+picc-import-remote:
+    #!/usr/bin/env bash
+    set -e
+    echo "🚀 Remote PICC Import via GitHub Actions"
+    echo "========================================"
+    echo ""
+
+    # Check prerequisites
+    if ! command -v gh &> /dev/null; then
+        echo "❌ GitHub CLI (gh) is not installed"
+        echo "   Install: https://cli.github.com/"
+        exit 1
+    fi
+
+    # Trigger the workflow
+    echo "📤 Triggering PICC Import workflow..."
+    gh workflow run picc-import.yml -R "{{gh_repo}}"
+
+    # Wait for run to be created
+    sleep 5
+
+    # Get the run ID
+    RUN_ID=$(gh run list -R "{{gh_repo}}" -w "PICC Import" --limit 1 --json databaseId -q '.[0].databaseId')
+    echo "📋 Workflow run ID: $RUN_ID"
+    echo ""
+
+    # Watch the run (blocks until complete)
+    echo "⏳ Waiting for workflow to complete..."
+    echo "   (This may take 20-40 minutes for Wallonia data)"
+    echo ""
+    gh run watch "$RUN_ID" -R "{{gh_repo}}"
+
+    # Check if successful
+    STATUS=$(gh run view "$RUN_ID" -R "{{gh_repo}}" --json conclusion -q '.conclusion')
+    if [ "$STATUS" != "success" ]; then
+        echo ""
+        echo "❌ Workflow failed with status: $STATUS"
+        echo "   View logs: gh run view $RUN_ID -R {{gh_repo}} --log"
+        exit 1
+    fi
+
+    # Download the artifact
+    echo ""
+    echo "📥 Downloading PICC dump artifact..."
+    rm -rf /tmp/picc-restore
+    mkdir -p /tmp/picc-restore
+    gh run download "$RUN_ID" -R "{{gh_repo}}" -n picc-dump -D /tmp/picc-restore
+
+    # Show artifact size
+    ls -lh /tmp/picc-restore/picc.sql.gz
+
+    # Clear existing data before restore (data-only dump)
+    echo ""
+    echo "🧹 Clearing existing PICC data..."
+    {{psql_be2osm}} -c "TRUNCATE picc.building_polygons, picc.addresses RESTART IDENTITY CASCADE;" || true
+
+    # Restore to local database
+    echo ""
+    echo "🔄 Restoring to local database..."
+    gunzip -c /tmp/picc-restore/picc.sql.gz | {{psql_be2osm}}
+
+    # Post-restore: update statistics
+    echo ""
+    echo "📊 Updating database statistics..."
+    {{psql_be2osm}} -c "ANALYZE picc.building_polygons, picc.addresses;"
+
+    # Cleanup
+    rm -rf /tmp/picc-restore
+
+    echo ""
+    echo "✅ Remote PICC Import Complete!"
+    echo ""
+    just picc-status
+
 # ============================================================================
 # INTERNAL TASKS - Infrastructure (prefixed with _)
 # ============================================================================

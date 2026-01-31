@@ -1,0 +1,65 @@
+name: PICC Import
+
+on:
+  workflow_dispatch:
+
+env:
+  POSTGRES_USER: be2osm
+  POSTGRES_PASSWORD: be2osm
+  POSTGRES_DB: be2osm
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: be2osm
+          POSTGRES_PASSWORD: be2osm
+          POSTGRES_DB: be2osm
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Run init scripts
+        run: |
+          for f in postgres/*.sql; do
+            echo "Running $f..."
+            PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f "$f"
+          done
+
+      - name: Build processing image
+        run: docker build -t processing ./processing
+
+      - name: Import PICC data
+        run: |
+          docker run --network host \
+            -v ${{ github.workspace }}/processing:/work \
+            -e POSTGRES_HOST=localhost \
+            -e POSTGRES_PORT=5432 \
+            -e POSTGRES_USER=be2osm \
+            -e POSTGRES_PASSWORD=be2osm \
+            processing just picc-download-addresses picc-import
+
+      - name: Create PICC dump
+        run: |
+          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm --data-only --disable-triggers -n picc be2osm | gzip > picc.sql.gz
+          ls -lh picc.sql.gz
+
+      - name: Upload PICC dump
+        uses: actions/upload-artifact@v4
+        with:
+          name: picc-dump
+          path: picc.sql.gz
+          retention-days: 7
