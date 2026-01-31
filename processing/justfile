@@ -890,8 +890,8 @@ _grb-import-address-links:
     #!/usr/bin/env bash
     echo "📊 Importing address-building links..."
 
-    # Find RltAdresGebouw*.dbf files (address-to-building relationship tables, handles date-stamped names)
-    for file in $(find {{grb_data_dir}} -name "RltAdresGebouw*.dbf" -type f 2>/dev/null); do
+    # Find RltAdresGebouw*.dbf files (exclude Lkt lookup tables)
+    for file in $(find {{grb_data_dir}} -name "RltAdresGebouw*.dbf" -type f 2>/dev/null | grep -v "Lkt"); do
         if [ -f "$file" ]; then
             echo "   Importing: $file"
             LAYER_NAME=$(basename "$file" .dbf)
