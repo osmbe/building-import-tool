@@ -910,11 +910,55 @@ _grb-import-address-links:
     echo "   🗑️  Cleaning up address-links data..."
     rm -rf {{grb_data_dir}}/address-links
 
-# GRB: Aggregate building polygons into buildings
+# GRB: Aggregate building polygons into buildings (batched to avoid OOM)
 _grb-aggregate-buildings:
-    @echo "📊 Aggregating building polygons..."
-    @{{psql_be2osm}} -c "INSERT INTO grb.buildings (gebouw_id, polygon_count, total_area_m2, type_label, geom) SELECT gebouw_id, COUNT(*) as polygon_count, SUM(area_m2)::real as total_area_m2, MAX(type_label) as type_label, ST_Union(geom) as geom FROM grb.building_polygons GROUP BY gebouw_id ON CONFLICT (gebouw_id) DO UPDATE SET polygon_count = EXCLUDED.polygon_count, total_area_m2 = EXCLUDED.total_area_m2, type_label = EXCLUDED.type_label, geom = EXCLUDED.geom;"
-    @echo "✅ Buildings aggregated"
+    #!/usr/bin/env bash
+    set -e
+    echo "📊 Aggregating building polygons (batched)..."
+
+    BATCH_SIZE=100000
+
+    # Get total count of unique gebouw_ids
+    TOTAL=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c \
+        "SELECT COUNT(DISTINCT gebouw_id) FROM grb.building_polygons;")
+    echo "   Total unique gebouw_ids: $TOTAL"
+
+    # Process in batches
+    OFFSET=0
+    BATCH_NUM=1
+    TOTAL_BATCHES=$(( (TOTAL + BATCH_SIZE - 1) / BATCH_SIZE ))
+
+    while [ $OFFSET -lt $TOTAL ]; do
+        echo "   Processing batch $BATCH_NUM/$TOTAL_BATCHES (offset $OFFSET)..."
+
+        PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -c "
+            INSERT INTO grb.buildings (gebouw_id, polygon_count, total_area_m2, type_label, geom)
+            SELECT
+                bp.gebouw_id,
+                COUNT(*) as polygon_count,
+                SUM(bp.area_m2)::real as total_area_m2,
+                MAX(bp.type_label) as type_label,
+                ST_Union(bp.geom) as geom
+            FROM grb.building_polygons bp
+            WHERE bp.gebouw_id IN (
+                SELECT DISTINCT gebouw_id
+                FROM grb.building_polygons
+                ORDER BY gebouw_id
+                LIMIT $BATCH_SIZE OFFSET $OFFSET
+            )
+            GROUP BY bp.gebouw_id
+            ON CONFLICT (gebouw_id) DO UPDATE SET
+                polygon_count = EXCLUDED.polygon_count,
+                total_area_m2 = EXCLUDED.total_area_m2,
+                type_label = EXCLUDED.type_label,
+                geom = EXCLUDED.geom;
+        "
+
+        OFFSET=$((OFFSET + BATCH_SIZE))
+        BATCH_NUM=$((BATCH_NUM + 1))
+    done
+
+    echo "✅ Buildings aggregated"
 
 # GRB: Refresh materialized view
 _grb-refresh-materialized-view:
