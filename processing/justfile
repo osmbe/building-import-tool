@@ -807,6 +807,8 @@ _grb-update-gebouw-ids:
     @echo "📊 Pre-populating buildings table with unique gebouw_ids..."
     @{{psql_be2osm}} -c "INSERT INTO grb.buildings (gebouw_id) SELECT DISTINCT gebouw_id FROM grb.polygon_building_rel WHERE gebouw_id IS NOT NULL ON CONFLICT (gebouw_id) DO NOTHING;"
     @echo "✅ Buildings table pre-populated"
+    @echo "📊 Analyzing tables for query optimization..."
+    @{{psql_be2osm}} -c "ANALYZE grb.building_polygons; ANALYZE grb.polygon_building_rel;"
     @echo "📊 Updating gebouw_id from relationship table..."
     @{{psql_be2osm}} -c "UPDATE grb.building_polygons bp SET gebouw_id = rel.gebouw_id FROM grb.polygon_building_rel rel WHERE bp.oidn = rel.oidn AND bp.gebouw_id IS NULL;"
     @echo "✅ gebouw_id updated"
