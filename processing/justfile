@@ -29,13 +29,19 @@ default:
     @echo "  osm-rebuild        - Clean cache and reimport OSM data"
     @echo "  osm-status         - Show OSM database statistics"
     @echo ""
-    @echo "🏢 GRB Tasks (local processing)"
+    @echo "🏢 GRB Tasks (Flanders - local processing)"
     @echo "  grb-order-all      - Order all GRB datasets from API"
     @echo "  grb-download-all   - Download all ready orders"
     @echo "  grb-import         - Import GRB data to database"
     @echo "  grb-full           - Complete workflow (order → download → import)"
     @echo "  grb-update         - Update GRB data (diff since last update)"
     @echo "  grb-status         - Show GRB database statistics"
+    @echo ""
+    @echo "🏛️  PICC Tasks (Wallonia - WFS import)"
+    @echo "  picc-download-addresses - Download ICAR addresses shapefile"
+    @echo "  picc-import             - Import PICC buildings (WFS) + addresses"
+    @echo "  picc-status             - Show PICC database statistics"
+    @echo "  clean-picc              - Clean PICC data"
     @echo ""
     @echo "🔧 Database Tasks"
     @echo "  db-shell-osm       - Open psql shell (osmbe database)"
@@ -72,6 +78,11 @@ grb_api_key := env_var_or_default('DIGITAL_VLAANDEREN_API_KEY', '')
 grb_api_base := env_var_or_default('DIGITAL_VLAANDEREN_API_BASE_URL', 'https://download.api.vlaanderen.be/v2')
 grb_data_dir := "data/grb"
 grb_orders_dir := "data/grb/orders"
+
+# PICC configuration (Wallonia - no API key required, uses WFS)
+picc_wfs_buildings := "WFS:https://geoservices.wallonie.be/geoserver/inspire_bu/ows"
+picc_buildings_layer := "inspire_bu:BU.Building_building_emprise"
+picc_data_dir := "data/picc"
 
 # PostgreSQL connection setup
 export PGPASSWORD := db_password
@@ -244,6 +255,178 @@ grb-status-orders:
     @just _grb-check-order-status gba "GBA"
     @just _grb-check-order-status address-links "Address Links"
     @just _grb-check-order-status addresses "Addresses"
+
+# ============================================================================
+# PICC TASKS - Wallonia PICC Data Import (WFS + ICAR shapefile)
+# ============================================================================
+
+# Download ICAR addresses shapefile from Wallonia geoportal
+picc-download-addresses:
+    #!/usr/bin/env bash
+    set -e
+    echo "📥 Downloading ICAR addresses shapefile..."
+    mkdir -p {{picc_data_dir}}
+    echo "   Downloading from geoportail.wallonie.be (~98MB)..."
+    curl -L --progress-bar -o "{{picc_data_dir}}/ICAR_ADR_PT.zip" \
+        "https://geoservices.wallonie.be/geotraitement/spwdatadownload/results/2998bccd-dae4-49fb-b6a5-867e6c37680f/ICAR_ADR_PT_SHAPE_31370.zip"
+    echo "   Extracting..."
+    unzip -o "{{picc_data_dir}}/ICAR_ADR_PT.zip" -d "{{picc_data_dir}}"
+    rm "{{picc_data_dir}}/ICAR_ADR_PT.zip"
+    echo "✅ ICAR addresses downloaded to {{picc_data_dir}}"
+    echo ""
+    echo "📋 Files extracted:"
+    ls -la {{picc_data_dir}}/*.shp 2>/dev/null || echo "   No shapefiles found"
+
+# Import all PICC data (buildings from WFS + addresses from shapefile)
+picc-import:
+    @echo "🏛️  PICC (Wallonia) Data Import"
+    @echo "=========================================="
+    @echo "📅 Started at: $(date)"
+    @echo ""
+    @just _check-be2osm-database
+    @just _check-picc-schema
+    @echo ""
+    @just _picc-import-buildings
+    @just _picc-import-addresses
+    @echo ""
+    @just picc-status
+    @echo ""
+    @echo "✅ PICC import complete!"
+
+# Show PICC database statistics
+picc-status:
+    @echo ""
+    @echo "📊 PICC (Wallonia) Statistics:"
+    @{{psql_be2osm}} -c "SELECT 'Building polygons' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('picc.building_polygons')) as size FROM picc.building_polygons UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('picc.addresses')) FROM picc.addresses;" 2>/dev/null || echo "   (PICC tables not yet created - run postgres/05-setup-picc.sql first)"
+    @echo ""
+
+# Clean PICC data from database
+clean-picc:
+    @echo "🧹 Cleaning PICC data from database..."
+    @{{psql_be2osm}} -c "TRUNCATE picc.building_polygons, picc.addresses RESTART IDENTITY CASCADE;" 2>/dev/null || echo "   PICC tables not found"
+    @echo "✅ PICC database tables truncated"
+
+# Clean PICC downloaded files
+clean-picc-downloads:
+    @echo "🧹 Cleaning PICC downloads..."
+    rm -rf {{picc_data_dir}}
+    @echo "✅ PICC downloads cleaned"
+
+# Check PICC schema exists
+_check-picc-schema:
+    #!/usr/bin/env bash
+    echo "Checking PICC schema..."
+    if ! {{psql_be2osm}} -tAc "SELECT 1 FROM information_schema.schemata WHERE schema_name = 'picc'" | grep -q 1; then
+        echo "❌ PICC schema not found."
+        echo ""
+        echo "Run this to create the schema:"
+        echo "  {{psql_be2osm}} -f ../postgres/05-setup-picc.sql"
+        exit 1
+    fi
+    echo "✓ PICC schema exists"
+
+# Import PICC buildings from WFS (no download required)
+_picc-import-buildings:
+    #!/usr/bin/env bash
+    set -e
+    echo "📥 Importing PICC buildings from WFS..."
+    echo "   Source: {{picc_wfs_buildings}}"
+    echo "   Layer:  {{picc_buildings_layer}}"
+    echo "   Note: This may take 10-20 minutes for ~1.5M buildings"
+    echo ""
+
+    ogr2ogr -f PostgreSQL \
+        "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+        "{{picc_wfs_buildings}}" \
+        "{{picc_buildings_layer}}" \
+        -nln picc.building_polygons_raw \
+        -overwrite \
+        -t_srs EPSG:4326 \
+        -lco GEOMETRY_NAME=geom \
+        -progress
+
+    echo ""
+    echo "🔄 Transforming to final schema..."
+
+    {{psql_be2osm}} -c "
+        INSERT INTO picc.building_polygons (inspire_id, object_id, building_nature, current_use, construction_date, condition, height_m, num_dwellings, num_floors, geom)
+        SELECT
+            inspireid_localid,
+            objectid::bigint,
+            buildingnature,
+            currentuse,
+            dateofconstruction,
+            conditionofconstruction,
+            NULLIF(heightaboveground, '')::real,
+            NULLIF(numberofdwellings, '')::integer,
+            NULLIF(numberoffloorsaboveground, '')::integer,
+            geom
+        FROM picc.building_polygons_raw
+        WHERE inspireid_localid IS NOT NULL
+        ON CONFLICT (inspire_id) DO NOTHING;
+
+        DROP TABLE IF EXISTS picc.building_polygons_raw;
+    "
+
+    echo "✅ Buildings imported"
+
+# Import ICAR addresses from shapefile (requires picc-download-addresses first)
+_picc-import-addresses:
+    #!/usr/bin/env bash
+    set -e
+    echo "📥 Importing ICAR addresses from shapefile..."
+
+    # Find shapefile
+    ICAR_FILE=$(find {{picc_data_dir}} -name "*.shp" -type f 2>/dev/null | head -1)
+
+    if [ -z "$ICAR_FILE" ]; then
+        echo "❌ ICAR shapefile not found in {{picc_data_dir}}"
+        echo ""
+        echo "Run this first to download the addresses:"
+        echo "  just picc-download-addresses"
+        exit 1
+    fi
+
+    echo "   Source: $ICAR_FILE"
+
+    # Import raw data
+    ogr2ogr -f PostgreSQL \
+        "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+        "$ICAR_FILE" \
+        -nln picc.addresses_raw \
+        -overwrite \
+        -t_srs EPSG:4326 \
+        -lco GEOMETRY_NAME=geom \
+        -progress
+
+    echo ""
+    echo "🔄 Inspecting raw table columns..."
+    {{psql_be2osm}} -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'picc' AND table_name = 'addresses_raw' ORDER BY ordinal_position;"
+
+    echo ""
+    echo "🔄 Transforming to final schema..."
+
+    # The ICAR shapefile uses French column names
+    # Expected columns: RUE, NUMERO, BOITE, CODE_POSTA, COMMUNE, INS, ADRESSE
+    {{psql_be2osm}} -c "
+        INSERT INTO picc.addresses (icar_id, street_name, house_number, box_number, postcode, municipality, nis_code, full_address, geom)
+        SELECT
+            ogc_fid::bigint,
+            rue,
+            numero,
+            boite,
+            code_posta,
+            commune,
+            ins,
+            adresse,
+            geom
+        FROM picc.addresses_raw
+        ON CONFLICT (icar_id) DO NOTHING;
+
+        DROP TABLE IF EXISTS picc.addresses_raw;
+    "
+
+    echo "✅ Addresses imported"
 
 # ============================================================================
 # DATABASE TASKS - Management and Utilities
@@ -791,11 +974,31 @@ _grb-import-building-polygons:
         echo "✅ Building polygons imported"
 
         # Convert OPNDATUM to proper DATE (try multiple formats)
-        echo "   Converting survey_date..."
-        PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
-            "UPDATE grb.building_polygons SET survey_date = opndatum_raw::date WHERE opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\d{4}-\d{2}-\d{2}$';"
-        PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
-            "UPDATE grb.building_polygons SET survey_date = TO_DATE(opndatum_raw, 'DD/MM/YYYY') WHERE opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\d{2}/\d{2}/\d{4}$';"
+        echo "   Converting survey_date (batched)..."
+        # Get min/max oidn for range-based batching
+        MIN_OIDN=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d "{{be2osm_db}}" -t -A -c \
+            "SELECT MIN(oidn)::bigint FROM grb.building_polygons;")
+        MAX_OIDN=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d "{{be2osm_db}}" -t -A -c \
+            "SELECT MAX(oidn)::bigint FROM grb.building_polygons;")
+
+        BATCH_SIZE=1000000
+        CURRENT=$MIN_OIDN
+        BATCH_NUM=1
+        TOTAL_RANGE=$((MAX_OIDN - MIN_OIDN))
+
+        while [ $CURRENT -lt $MAX_OIDN ]; do
+            BATCH_END=$((CURRENT + BATCH_SIZE))
+            PROGRESS=$(( (CURRENT - MIN_OIDN) * 100 / TOTAL_RANGE ))
+            echo "      Batch $BATCH_NUM: oidn $CURRENT-$BATCH_END ($PROGRESS%)..."
+
+            PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+                "UPDATE grb.building_polygons SET survey_date = opndatum_raw::date WHERE oidn >= $CURRENT AND oidn < $BATCH_END AND opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\d{4}-\d{2}-\d{2}$';"
+            PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+                "UPDATE grb.building_polygons SET survey_date = TO_DATE(opndatum_raw, 'DD/MM/YYYY') WHERE oidn >= $CURRENT AND oidn < $BATCH_END AND opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\d{2}/\d{2}/\d{4}$';"
+
+            CURRENT=$BATCH_END
+            BATCH_NUM=$((BATCH_NUM + 1))
+        done
         echo "✅ Survey dates converted"
 
         # Create index for faster joins
