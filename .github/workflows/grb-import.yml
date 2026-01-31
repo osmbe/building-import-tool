@@ -51,7 +51,7 @@ jobs:
             -e POSTGRES_USER=be2osm \
             -e POSTGRES_PASSWORD=be2osm \
             -e DIGITAL_VLAANDEREN_API_KEY=${{ secrets.DIGITAL_VLAANDEREN_API_KEY }} \
-            -e DIGITAL_VLAANDEREN_API_BASE_URL="https://download.api.vlaanderen.be/v2" \
+            -e DIGITAL_VLAANDEREN_API_BASE_URL=${{ vars.DIGITAL_VLAANDEREN_API_BASE_URL }} \
             processing just grb-full
 
       - name: Create GRB dump
