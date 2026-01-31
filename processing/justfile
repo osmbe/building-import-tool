@@ -740,6 +740,10 @@ _grb-import-gbg-gebouw-rel:
             "$REL_FILE" -nln grb.polygon_building_rel -overwrite \
             -sql "SELECT OIDN as oidn, GEBOUWID as gebouw_id FROM \"$LAYER_NAME\""
         echo "✅ Polygon-building relationships imported"
+        # Create index for faster joins
+        echo "   📇 Creating index on polygon_building_rel.oidn..."
+        PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+            "CREATE INDEX IF NOT EXISTS idx_polygon_building_rel_oidn ON grb.polygon_building_rel(oidn);"
         # Clean up to save disk space
         rm "$REL_FILE"
         echo "   🗑️  Deleted $REL_FILE"
@@ -793,6 +797,11 @@ _grb-import-building-polygons:
         PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
             "UPDATE grb.building_polygons SET survey_date = TO_DATE(opndatum_raw, 'DD/MM/YYYY') WHERE opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\d{2}/\d{2}/\d{4}$';"
         echo "✅ Survey dates converted"
+
+        # Create index for faster joins
+        echo "   📇 Creating index on building_polygons.oidn..."
+        PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+            "CREATE INDEX IF NOT EXISTS idx_building_polygons_oidn ON grb.building_polygons(oidn);"
 
         # Clean up gbg directory to save disk space
         echo "   🗑️  Cleaning up gbg data..."
