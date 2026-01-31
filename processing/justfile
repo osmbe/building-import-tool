@@ -680,8 +680,18 @@ _grb-download-if-ready product order_id:
         URL=$(echo "$ORDER_DATA" | jq -r ".downloads[$i][\"@id\"]")
         FILE=$(echo "$ORDER_DATA" | jq -r ".downloads[$i].name")
         curl --progress-bar -H "x-api-key: {{grb_api_key}}" -L "https://download.api.vlaanderen.be$URL" -o "{{grb_data_dir}}/{{product}}/$FILE"
-        echo "✅ $FILE"
+        echo "✅ Downloaded: $FILE"
+        # Extract if ZIP
+        if [[ "$FILE" == *.zip ]]; then
+            echo "   📦 Extracting $FILE..."
+            unzip -o -q "{{grb_data_dir}}/{{product}}/$FILE" -d "{{grb_data_dir}}/{{product}}/"
+            echo "   📁 Extracted files:"
+            unzip -l "{{grb_data_dir}}/{{product}}/$FILE" | grep -E '\.(shp|dbf|shx|prj)$' | awk '{print "      " $4}'
+        fi
     done
+    echo ""
+    echo "📋 All files in {{grb_data_dir}}/{{product}}:"
+    find "{{grb_data_dir}}/{{product}}" -type f \( -name "*.shp" -o -name "*.dbf" \) | while read f; do echo "   $f"; done
 
 # GRB: Wait for all orders to complete
 _grb-wait-for-orders:
@@ -714,19 +724,21 @@ _grb-import-gbg-gebouw-rel:
     #!/usr/bin/env bash
     echo "📊 Importing RltGbgGebouw (polygon-building relationships)..."
 
-    # Find the RltGbgGebouw.dbf file - check multiple locations
-    REL_FILE=$(find {{grb_data_dir}} -name "RltGbgGebouw.dbf" -type f 2>/dev/null | head -1)
+    # Find the RltGbgGebouw*.dbf file (handles date-stamped names)
+    REL_FILE=$(find {{grb_data_dir}} -name "RltGbgGebouw*.dbf" -type f 2>/dev/null | head -1)
 
     if [ -n "$REL_FILE" ] && [ -f "$REL_FILE" ]; then
         echo "   Found: $REL_FILE"
+        # Get layer name from filename (without .dbf extension)
+        LAYER_NAME=$(basename "$REL_FILE" .dbf)
         # Import DBF file to PostgreSQL
         # The DBF contains: OIDN (polygon ID) and GEBOUWID (building ID)
         ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
             "$REL_FILE" -nln grb.polygon_building_rel -overwrite \
-            -sql "SELECT OIDN as oidn, GEBOUWID as gebouw_id FROM RltGbgGebouw"
+            -sql "SELECT OIDN as oidn, GEBOUWID as gebouw_id FROM \"$LAYER_NAME\""
         echo "✅ Polygon-building relationships imported"
     else
-        echo "⚠️  RltGbgGebouw.dbf not found - gebouw_id will not be populated"
+        echo "⚠️  RltGbgGebouw*.dbf not found - gebouw_id will not be populated"
         echo "   Buildings will be aggregated by polygon geometry instead"
     fi
 
@@ -735,8 +747,8 @@ _grb-import-building-polygons:
     #!/usr/bin/env bash
     echo "📊 Importing GRB building polygons..."
 
-    # Find Gbg.shp in multiple locations
-    GBG_FILE=$(find {{grb_data_dir}} -name "Gbg.shp" -type f 2>/dev/null | head -1)
+    # Find Gbg*.shp (handles date-stamped names like Gbg_20260129.shp)
+    GBG_FILE=$(find {{grb_data_dir}} -name "Gbg*.shp" -type f 2>/dev/null | head -1)
 
     if [ -n "$GBG_FILE" ] && [ -f "$GBG_FILE" ]; then
         echo "   Found: $GBG_FILE"
@@ -776,7 +788,7 @@ _grb-import-building-polygons:
             "UPDATE grb.building_polygons SET survey_date = TO_DATE(opndatum_raw, 'DD/MM/YYYY') WHERE opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\d{2}/\d{2}/\d{4}$';"
         echo "✅ Survey dates converted"
     else
-        echo "❌ Gbg.shp not found in {{grb_data_dir}}"
+        echo "❌ Gbg*.shp not found in {{grb_data_dir}}"
         exit 1
     fi
 
@@ -853,17 +865,18 @@ _grb-import-address-links:
     #!/usr/bin/env bash
     echo "📊 Importing address-building links..."
 
-    # Find RltAdresGebouw.dbf files (address-to-building relationship tables)
-    for file in $(find {{grb_data_dir}} -name "RltAdresGebouw.dbf" -type f 2>/dev/null); do
+    # Find RltAdresGebouw*.dbf files (address-to-building relationship tables, handles date-stamped names)
+    for file in $(find {{grb_data_dir}} -name "RltAdresGebouw*.dbf" -type f 2>/dev/null); do
         if [ -f "$file" ]; then
             echo "   Importing: $file"
+            LAYER_NAME=$(basename "$file" .dbf)
             ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
                 "$file" -nln grb.address_building_links -append \
                 -sql "SELECT
                     ADRESID as adres_id,
                     GEBOUWID as building_object_id,
                     LBLTYPE as object_type
-                FROM RltAdresGebouw"
+                FROM \"$LAYER_NAME\""
         fi
     done
     echo "✅ Address links imported"
