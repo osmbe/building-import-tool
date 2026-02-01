@@ -668,10 +668,9 @@ grb-import-remote:
     echo "🔄 Restoring to local database..."
     gunzip -c /tmp/grb-restore/be2osm.sql.gz | {{psql_be2osm}}
 
-    # Post-restore: refresh materialized view and update statistics
+    # Post-restore: update statistics (skip mat view refresh for speed)
     echo ""
-    echo "📊 Refreshing materialized view and updating statistics..."
-    {{psql_be2osm}} -c "REFRESH MATERIALIZED VIEW grb.buildings_with_addresses;"
+    echo "📊 Updating database statistics..."
     {{psql_be2osm}} -c "ANALYZE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links;"
 
     # Cleanup
@@ -681,6 +680,18 @@ grb-import-remote:
     echo "✅ Remote GRB Import Complete!"
     echo ""
     just grb-status
+    echo ""
+    echo "⚠️  Note: Materialized view not refreshed (takes 20-30 min)"
+    echo "   Tiles will work without it, but refresh improves performance."
+    echo "   Run when ready: just grb-refresh-view"
+
+# Refresh GRB materialized view (slow - run separately)
+grb-refresh-view:
+    @echo "📊 Refreshing GRB materialized view..."
+    @echo "   This joins 5M+ building polygons with addresses"
+    @echo "   Expected time: 20-30 minutes on 4GB VPS"
+    @echo ""
+    @just _grb-refresh-materialized-view
 
 # Trigger PICC import on GitHub Actions, wait, download and restore locally
 picc-import-remote:
