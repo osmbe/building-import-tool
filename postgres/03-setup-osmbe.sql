@@ -51,6 +51,41 @@ CREATE TABLE IF NOT EXISTS osm.osm_buildings (
 
 \echo '✓ OSM buildings table created (OSM format)'
 
+-- OSM Addresses table
+-- Imported from OSM via imposm3 (addr:* tags)
+CREATE TABLE IF NOT EXISTS osm.osm_addresses (
+    -- Internal primary key
+    id BIGSERIAL PRIMARY KEY,
+
+    -- OSM element ID
+    osm_id BIGINT NOT NULL UNIQUE,
+
+    -- Address fields
+    housenumber TEXT,
+    street TEXT,
+    postcode TEXT,
+    city TEXT,
+
+    -- All tags stored as JSONB
+    tags JSONB NOT NULL DEFAULT '{}',
+
+    -- Geometry (WGS84 - EPSG:4326)
+    geom GEOMETRY(Point, 4326),
+
+    -- Import tracking
+    imported_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+\echo '✓ OSM addresses table created'
+
+-- Indexes for addresses
+CREATE INDEX IF NOT EXISTS idx_osm_addresses_geom ON osm.osm_addresses USING GIST(geom);
+CREATE INDEX IF NOT EXISTS idx_osm_addresses_street ON osm.osm_addresses(street);
+CREATE INDEX IF NOT EXISTS idx_osm_addresses_postcode ON osm.osm_addresses(postcode);
+CREATE INDEX IF NOT EXISTS idx_osm_addresses_tags ON osm.osm_addresses USING GIN(tags);
+
+\echo '✓ Address indexes created'
+
 -- Indexes for performance (osm_id already has unique index)
 CREATE INDEX idx_osm_buildings_imported ON osm.osm_buildings(imported_at);
 
@@ -174,6 +209,7 @@ COMMENT ON COLUMN osm.osm_buildings.geom_mercator IS 'Auto-generated Web Mercato
 \echo ''
 \echo 'Tables created:'
 \echo '  - osm.osm_buildings (OSM format with JSONB tags)'
+\echo '  - osm.osm_addresses (OSM addresses with addr:* tags)'
 \echo '  - osm.import_log'
 \echo ''
 \echo 'Views created:'
