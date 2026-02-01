@@ -62,7 +62,7 @@ services:
 
   # Martin Tile Server - GRB Data
   grb-tiles:
-    image: ghcr.io/maplibre/martin:1.1.0
+    image: ghcr.io/maplibre/martin:1.3.0
     container_name: be2osm-grb-tiles
     command: ["--config", "/config.yaml"]
     environment:
@@ -86,7 +86,7 @@ services:
 
   # Martin Tile Server - OSM Data
   osm-tiles:
-    image: ghcr.io/maplibre/martin:1.1.0
+    image: ghcr.io/maplibre/martin:1.3.0
     container_name: be2osm-osm-tiles
     command: ["--config", "/config.yaml"]
     environment:
