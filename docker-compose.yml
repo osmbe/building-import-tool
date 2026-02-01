@@ -15,6 +15,7 @@ services:
       - ./postgres/02-setup-be2osm.sql:/docker-entrypoint-initdb.d/02-setup-be2osm.sql:ro,z
       - ./postgres/03-setup-osmbe.sql:/docker-entrypoint-initdb.d/03-setup-osmbe.sql:ro,z
       - ./postgres/04-setup-fdw.sql:/docker-entrypoint-initdb.d/04-setup-fdw.sql:ro,z
+      - ./postgres/05-setup-picc.sql:/docker-entrypoint-initdb.d/05-setup-picc.sql:ro,z
     # ports:
     #   - "5432:5432"
     restart: unless-stopped
