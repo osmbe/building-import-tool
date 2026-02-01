@@ -132,7 +132,10 @@ services:
       - ./processing/data:/work/data:z
       - ./processing/logs:/work/logs:z
       # Mount gh CLI config for remote import authentication
-      - ~/.config/gh:/root/.config/gh:ro
+      # Note: Update this path to match your system's gh config location
+      # Linux: /home/username/.config/gh
+      # macOS: /Users/username/.config/gh
+      - ${HOME}/.config/gh:/root/.config/gh:ro
     depends_on:
       postgres:
         condition: service_healthy
