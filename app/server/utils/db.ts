@@ -10,7 +10,7 @@ export function getGrbPool(): Pool {
 
     const poolConfig = {
       host: config.dbHost || process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(config.dbPort || process.env.POSTGRES_PORT || '5432'),
+      port: parseInt(config.dbPort || process.env.POSTGRES_PORT || '5432', 10),
       user: config.dbUser || process.env.POSTGRES_USER || 'postgres',
       // Password will be read from .pgpass file automatically if not provided
       password: config.dbPassword || process.env.POSTGRES_PASSWORD || undefined,
@@ -35,7 +35,7 @@ export function getOsmPool(): Pool {
 
     const poolConfig = {
       host: config.dbHost || process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(config.dbPort || process.env.POSTGRES_PORT || '5432'),
+      port: parseInt(config.dbPort || process.env.POSTGRES_PORT || '5432', 10),
       user: config.dbUser || process.env.POSTGRES_USER || 'postgres',
       // Password will be read from .pgpass file automatically if not provided
       password: config.dbPassword || process.env.POSTGRES_PASSWORD || undefined,

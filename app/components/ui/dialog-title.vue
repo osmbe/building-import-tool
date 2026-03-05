@@ -1,6 +1,6 @@
 <template>
   <DialogTitle
-    :class="cn('text-lg font-semibold leading-none tracking-tight', props.class)"
+    :class="cn('text-lg font-semibold leading-none tracking-tight', className)"
     v-bind="$attrs"
   >
     <slot />
@@ -11,7 +11,7 @@
 import { DialogTitle } from 'radix-vue'
 import { cn } from '~/lib/utils'
 
-const props = defineProps<{
+const { class: className } = defineProps<{
   class?: string
 }>()
 </script>

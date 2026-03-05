@@ -1,4 +1,3 @@
-import { ref } from 'vue'
 
 export type Provider = 'osm' | 'google'
 

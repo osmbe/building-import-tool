@@ -8,10 +8,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import Navigation from '~/components/Navigation.vue'
 import InteractiveMap from '~/components/InteractiveMap.vue'
+import Navigation from '~/components/Navigation.vue'
 import type { SearchResult } from '~/composables/useSearch'
+import { ref } from 'vue'
 
 const selectedLocation = ref<SearchResult | null>(null)
 

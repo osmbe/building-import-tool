@@ -1,5 +1,5 @@
-import { readFile } from 'fs/promises'
 import { join } from 'path'
+import { readFile } from 'fs/promises'
 
 export default defineEventHandler(async (event) => {
   const filename = getRouterParam(event, 'filename')

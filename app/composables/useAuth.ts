@@ -1,4 +1,4 @@
-import { ref, onMounted, computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 export interface OSMUser {
   id: number
@@ -43,7 +43,7 @@ export function useAuth() {
     }
   })
 
-  async function signIn(): Promise<void> {
+  function signIn(): void {
     // Redirect to OSM OAuth flow
     window.location.href = '/api/auth/osm-login'
   }
@@ -60,7 +60,7 @@ export function useAuth() {
   return {
     user,
     isLoading,
-    isAuthenticated: computed(() => !!user.value),
+    isAuthenticated: computed(() => Boolean(user.value)),
     signIn,
     signOut
   }

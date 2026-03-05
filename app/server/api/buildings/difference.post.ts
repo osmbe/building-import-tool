@@ -108,7 +108,7 @@ export default defineEventHandler(async (event) => {
       const geometry = JSON.parse(row.geometry)
 
       // Extract all properties except geometry and internal stats
-      const { geometry: _, total_grb, total_osm, ...properties } = row
+      const { geometry: _, total_grb: _total_grb, total_osm: _total_osm, ...properties } = row
 
       return {
         type: 'Feature',

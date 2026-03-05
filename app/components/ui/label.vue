@@ -2,7 +2,7 @@
   <Label
     :class="cn(
       'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
-      props.class
+      className
     )"
     v-bind="$attrs"
   >
@@ -14,7 +14,7 @@
 import { Label } from 'radix-vue'
 import { cn } from '~/lib/utils'
 
-const props = defineProps<{
+const { class: className } = defineProps<{
   class?: string
 }>()
 </script>

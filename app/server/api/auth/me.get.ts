@@ -1,4 +1,4 @@
-export default defineEventHandler(async (event) => {
+export default defineEventHandler((event) => {
   const userCookie = getCookie(event, 'osm_user')
 
   if (!userCookie) {
@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   try {
     const user = JSON.parse(userCookie)
     return { user }
-  } catch (error) {
+  } catch {
     return { user: null }
   }
 })

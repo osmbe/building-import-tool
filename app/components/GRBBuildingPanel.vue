@@ -85,10 +85,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import Card from '~/components/ui/card.vue'
+import { Building2, MapPin, MapPinned, Ruler, X } from 'lucide-vue-next'
 import Button from '~/components/ui/button.vue'
-import { X, Building2, MapPin, MapPinned, Ruler } from 'lucide-vue-next'
+import Card from '~/components/ui/card.vue'
+import { computed } from 'vue'
 
 interface GRBBuilding {
   gebouw_id: number
@@ -102,7 +102,7 @@ interface GRBBuilding {
   address_count?: number
 }
 
-const props = defineProps<{
+const { building, isOpen } = defineProps<{
   building: GRBBuilding | null
   isOpen: boolean
 }>()
@@ -125,8 +125,7 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
     let current = ''
     let inQuotes = false
 
-    for (let i = 0; i < inner.length; i++) {
-      const char = inner[i]
+    for (const char of inner) {
       if (char === '"') {
         inQuotes = !inQuotes
       } else if (char === ',' && !inQuotes) {
@@ -145,14 +144,14 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
 }
 
 // Computed properties for formatted data
-const addresses = computed(() => parsePostgresArray(props.building?.addresses))
-const streetNames = computed(() => parsePostgresArray(props.building?.street_names))
-const postcodes = computed(() => parsePostgresArray(props.building?.postcodes))
-const municipalities = computed(() => parsePostgresArray(props.building?.municipalities))
+const addresses = computed(() => parsePostgresArray(building?.addresses))
+const streetNames = computed(() => parsePostgresArray(building?.street_names))
+const postcodes = computed(() => parsePostgresArray(building?.postcodes))
+const municipalities = computed(() => parsePostgresArray(building?.municipalities))
 
 const formattedArea = computed(() => {
-  if (!props.building?.total_area_m2) return '—'
-  const area = props.building.total_area_m2
+  if (!building?.total_area_m2) return '—'
+  const area = building.total_area_m2
   if (area >= 1000) {
     return `${(area / 1000).toFixed(2)} km²`
   }
@@ -160,7 +159,7 @@ const formattedArea = computed(() => {
 })
 
 const buildingTypeLabel = computed(() => {
-  const type = props.building?.type_label
+  const type = building?.type_label
   if (!type) return 'Building'
 
   // Translate common Dutch building types
@@ -177,16 +176,16 @@ const buildingTypeLabel = computed(() => {
 })
 
 // Check if location section has any data to display
-const hasLocationData = computed(() => {
-  return postcodes.value.length > 0 ||
+const hasLocationData = computed(() =>
+  postcodes.value.length > 0 ||
          municipalities.value.length > 0 ||
          streetNames.value.length > 0
-})
+)
 
 // Check if building details section has any data to display
-const hasBuildingDetails = computed(() => {
-  return props.building?.total_area_m2 ||
-         props.building?.polygon_count ||
-         props.building?.type_label
-})
+const hasBuildingDetails = computed(() =>
+  building?.total_area_m2 ||
+         building?.polygon_count ||
+         building?.type_label
+)
 </script>

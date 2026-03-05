@@ -2,7 +2,7 @@
   <SliderRoot
     :class="cn(
       'relative flex w-full touch-none select-none items-center',
-      props.class
+      className
     )"
     v-bind="$attrs"
   >
@@ -18,10 +18,10 @@
 </template>
 
 <script setup lang="ts">
-import { SliderRoot, SliderTrack, SliderRange, SliderThumb } from 'radix-vue'
+import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'radix-vue'
 import { cn } from '~/lib/utils'
 
-const props = defineProps<{
+const { class: className } = defineProps<{
   class?: string
 }>()
 </script>

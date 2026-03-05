@@ -61,10 +61,9 @@ export function useVectorData() {
 
       if (source.format === 'geojson') {
         return await response.json()
-      } else {
-        // Handle MVT format if needed
-        return await response.arrayBuffer()
       }
+      // Handle MVT format if needed
+      return await response.arrayBuffer()
     } catch (error) {
       console.error(`Error fetching data from ${source.name}:`, error)
       throw error
@@ -74,8 +73,8 @@ export function useVectorData() {
   async function fetchAllVectorData(
     sources: MartinDataSource[],
     bounds: VectorTileBounds
-  ): Promise<{ [key: string]: any }> {
-    const results: { [key: string]: any } = {}
+  ): Promise<Record<string, any>> {
+    const results: Record<string, any> = {}
 
     await Promise.allSettled(
       sources.map(async (source) => {
@@ -92,7 +91,7 @@ export function useVectorData() {
     return results
   }
 
-  function combineGeoJSONFeatures(datasets: { [key: string]: any }): any {
+  function combineGeoJSONFeatures(datasets: Record<string, any>): any {
     const combined = {
       type: 'FeatureCollection',
       features: []
@@ -123,13 +122,14 @@ export function useVectorData() {
     return combineGeoJSONFeatures(datasets)
   }
 
-  function createMartinSource(
-    name: string,
-    endpoint: string,
-    layer: string,
-    format: 'mvt' | 'geojson' = 'geojson',
+  function createMartinSource(options: {
+    name: string
+    endpoint: string
+    layer: string
+    format?: 'mvt' | 'geojson'
     baseUrl?: string
-  ): MartinDataSource {
+  }): MartinDataSource {
+    const { name, endpoint, layer, format = 'geojson', baseUrl } = options
     // Determine base URL: use provided baseUrl, or auto-detect based on endpoint name
     let url: string
     if (baseUrl) {

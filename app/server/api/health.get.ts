@@ -1,4 +1,4 @@
-export default defineEventHandler(async (event) => {
+export default defineEventHandler((event) => {
   // Basic health check - returns 200 OK if server is running
   // Add more sophisticated checks if needed (DB connection, etc.)
 

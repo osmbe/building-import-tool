@@ -5,9 +5,7 @@ export const useJosmExport = () => {
   const useSSL = ref(false)
 
   // Update JOSM URL based on SSL preference
-  const getJosmUrl = () => {
-    return useSSL.value ? 'https://127.0.0.1:8112' : 'http://127.0.0.1:8111'
-  }
+  const getJosmUrl = () => useSSL.value ? 'https://127.0.0.1:8112' : 'http://127.0.0.1:8111'
 
   /**
    * Test if JOSM is running and compatible
@@ -160,7 +158,7 @@ export const useJosmExport = () => {
       return osmXml
     } catch (error: any) {
       console.error('Error converting GeoJSON to OSM-XML:', error)
-      throw new Error(`Failed to convert to OSM-XML: ${error.message}`)
+      throw new Error(`Failed to convert to OSM-XML: ${error.message}`, { cause: error })
     }
   }
 
@@ -169,7 +167,7 @@ export const useJosmExport = () => {
    */
   const exportLayerToJosm = async (
     features: Feature[],
-    layerName: string = 'export-layer',
+    layerName = 'export-layer',
     options: {
       includeMeta?: boolean
       simplify?: boolean
@@ -294,7 +292,7 @@ export const useJosmExport = () => {
         }
       } catch (error: any) {
         console.error('Failed to upload to backend:', error)
-        throw new Error(`Backend upload failed: ${error.message}`)
+        throw new Error(`Backend upload failed: ${error.message}`, { cause: error })
       }
     }
 
@@ -360,18 +358,16 @@ export const useJosmExport = () => {
   /**
    * Get JOSM setup instructions
    */
-  const getJosmInstructions = (): string[] => {
-    return [
-      '1. Download and install JOSM from https://josm.openstreetmap.de/',
-      '2. Start JOSM application',
-      '3. Go to Edit → Preferences (or press F12)',
-      '4. Navigate to "Remote Control" in the left panel',
-      '5. Check "Enable remote control"',
-      '6. Optionally check "Load data from API" for automatic data loading',
-      '7. Click OK to save settings',
-      '8. JOSM is now ready to receive data from this application'
-    ]
-  }
+  const getJosmInstructions = (): string[] => [
+    '1. Download and install JOSM from https://josm.openstreetmap.de/',
+    '2. Start JOSM application',
+    '3. Go to Edit → Preferences (or press F12)',
+    '4. Navigate to "Remote Control" in the left panel',
+    '5. Check "Enable remote control"',
+    '6. Optionally check "Load data from API" for automatic data loading',
+    '7. Click OK to save settings',
+    '8. JOSM is now ready to receive data from this application'
+  ]
 
   return {
     josmBaseUrl,

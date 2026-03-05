@@ -1,6 +1,6 @@
 <template>
   <AvatarImage
-    :class="cn('aspect-square h-full w-full', props.class)"
+    :class="cn('aspect-square h-full w-full', className)"
     v-bind="$attrs"
   />
 </template>
@@ -9,7 +9,7 @@
 import { AvatarImage } from 'radix-vue'
 import { cn } from '~/lib/utils'
 
-const props = defineProps<{
+const { class: className } = defineProps<{
   class?: string
 }>()
 </script>

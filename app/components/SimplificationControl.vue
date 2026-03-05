@@ -58,12 +58,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import Card from '~/components/ui/card.vue'
-import Button from '~/components/ui/button.vue'
 import Badge from '~/components/ui/badge.vue'
+import Button from '~/components/ui/button.vue'
+import Card from '~/components/ui/card.vue'
 import Slider from '~/components/ui/slider.vue'
 import { X } from 'lucide-vue-next'
+import { ref } from 'vue'
 
 const emit = defineEmits<{
   close: []

@@ -1,14 +1,14 @@
+import type { Feature } from 'geojson'
 import GeoJSON from 'ol/format/GeoJSON'
 import type VectorLayer from 'ol/layer/Vector'
 import type VectorSource from 'ol/source/Vector'
-import type { Feature } from 'geojson'
 
 /**
  * Extract GeoJSON features from OpenLayers vector layer
  */
 export const extractFeaturesFromLayer = (
   layer: VectorLayer<VectorSource>,
-  targetProjection: string = 'EPSG:4326'
+  targetProjection = 'EPSG:4326'
 ): Feature[] => {
   const source = layer.getSource()
   if (!source) {
@@ -32,8 +32,8 @@ export const extractFeaturesFromLayer = (
  */
 export const extractFeaturesFromSource = (
   source: VectorSource,
-  sourceProjection: string = 'EPSG:3857',
-  targetProjection: string = 'EPSG:4326'
+  sourceProjection = 'EPSG:3857',
+  targetProjection = 'EPSG:4326'
 ): Feature[] => {
   const features = source.getFeatures()
   const geoJsonFormat = new GeoJSON()

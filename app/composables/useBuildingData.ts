@@ -15,7 +15,7 @@ export interface BuildingData {
     constructionYear?: number
     lastModified?: string
     contributor?: string
-    qaIssues?: Array<{ id: string; type: string; severity: 'low'|'medium'|'high'; message: string }>
+    qaIssues?: { id: string; type: string; severity: 'low'|'medium'|'high'; message: string }[]
   }
   osmData?: {
     levels?: number

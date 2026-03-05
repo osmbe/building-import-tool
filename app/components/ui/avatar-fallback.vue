@@ -1,6 +1,6 @@
 <template>
   <AvatarFallback
-    :class="cn('flex h-full w-full items-center justify-center rounded-full bg-muted', props.class)"
+    :class="cn('flex h-full w-full items-center justify-center rounded-full bg-muted', className)"
     v-bind="$attrs"
   >
     <slot />
@@ -11,7 +11,7 @@
 import { AvatarFallback } from 'radix-vue'
 import { cn } from '~/lib/utils'
 
-const props = defineProps<{
+const { class: className } = defineProps<{
   class?: string
 }>()
 </script>
