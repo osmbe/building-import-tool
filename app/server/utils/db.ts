@@ -17,13 +17,6 @@ export function getGrbPool(): Pool {
       database: 'be2osm'
     }
 
-    console.log('GRB Pool Config:', {
-      host: poolConfig.host,
-      port: poolConfig.port,
-      user: poolConfig.user,
-      database: poolConfig.database
-    })
-
     grbPool = new Pool(poolConfig)
   }
   return grbPool
@@ -41,13 +34,6 @@ export function getOsmPool(): Pool {
       password: config.dbPassword || process.env.POSTGRES_PASSWORD || undefined,
       database: 'osmbe'
     }
-
-    console.log('OSM Pool Config:', {
-      host: poolConfig.host,
-      port: poolConfig.port,
-      user: poolConfig.user,
-      database: poolConfig.database
-    })
 
     osmPool = new Pool(poolConfig)
   }

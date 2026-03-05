@@ -29,7 +29,8 @@
     "no-continue": "off",
     "no-await-in-loop": "off",
     "unicorn/no-nested-ternary": "off",
-    "capitalized-comments": "off"
+    "capitalized-comments": "off",
+    "sort-imports": ["warn", { "ignoreDeclarationSort": true }]
   },
   "env": {
     "browser": true

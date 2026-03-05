@@ -14,14 +14,12 @@ RUN npm ci --only=production=false
 FROM node:24.11-alpine3.21 AS builder
 WORKDIR /app
 
-# Accept build arguments for OSM configuration
+# Accept build arguments for OSM configuration (public values only, no secrets)
 ARG OSM_CLIENT_ID
-ARG OSM_CLIENT_SECRET
 ARG OSM_REDIRECT_URI
 
 # Set as environment variables for the build
 ENV OSM_CLIENT_ID=$OSM_CLIENT_ID \
-    OSM_CLIENT_SECRET=$OSM_CLIENT_SECRET \
     OSM_REDIRECT_URI=$OSM_REDIRECT_URI
 
 # Copy dependencies from previous stage

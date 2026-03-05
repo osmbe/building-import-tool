@@ -27,6 +27,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     // Private keys (only available server-side)
+    jwtSecret: process.env.JWT_SECRET,
     osmClientSecret: process.env.OSM_CLIENT_SECRET,
     dbHost: process.env.POSTGRES_HOST,
     dbPort: process.env.POSTGRES_PORT,

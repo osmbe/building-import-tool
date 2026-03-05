@@ -147,10 +147,6 @@ export const useJosmExport = () => {
       const { default: geojsonToOsm } = await import('geojsontoosm')
       const osmXml = geojsonToOsm(geojson)
 
-      // Debug: Log first 500 chars to see what was generated
-      console.log('Generated OSM-XML (first 500 chars):', osmXml.substring(0, 500))
-      console.log('OSM-XML length:', osmXml.length)
-
       if (!osmXml || osmXml.length === 0) {
         throw new Error('geojsontoosm generated empty output')
       }
@@ -237,7 +233,6 @@ export const useJosmExport = () => {
     // Use backend upload for large exports, then fetch and send via load_data
     if (useFallback || uploadToBackend) {
       try {
-        console.log('Export too large for direct transfer. Uploading to backend...')
         const response = await $fetch<any>(backendUrl, {
           method: 'POST',
           body: osmXml,
@@ -251,9 +246,6 @@ export const useJosmExport = () => {
         const browserProtocol = window.location.protocol
         const browserHost = window.location.host
         fileUrl = `${browserProtocol}//${browserHost}/exports/${filename}`
-
-        console.log('File uploaded to:', fileUrl)
-        console.log('Fetching file content to send directly to JOSM...')
 
         // Fetch the file content ourselves
         const fileResponse = await fetch(fileUrl)
@@ -271,14 +263,11 @@ export const useJosmExport = () => {
           data: fileContent
         })
 
-        console.log('Sending data directly to JOSM via /load_data...')
         const importResponse = await fetch(`${josmUrl}?${params.toString()}`, {
           method: 'GET'
         })
 
-        console.log('JOSM response status:', importResponse.status)
         const responseText = await importResponse.text()
-        console.log('JOSM response:', responseText)
 
         if (!importResponse.ok) {
           throw new Error(`JOSM import failed (${importResponse.status}): ${responseText}`)
@@ -298,7 +287,6 @@ export const useJosmExport = () => {
 
     // Direct transfer for small exports
     try {
-      console.log('Using direct transfer to JOSM...')
       const josmUrl = `${getJosmUrl()}/load_data`
       const params = new URLSearchParams({
         upload_policy: 'never',

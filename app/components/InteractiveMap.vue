@@ -307,8 +307,7 @@
 </template>
 
 <script setup lang="ts">
-import { Building2, ExternalLink, GitCompareArrows, Layers, Loader2, MapPin, MapPinned, RotateCcw, Ruler, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
-import { type BuildingData, mockBuildingData } from '~/composables/useBuildingData'
+import { Building2, ExternalLink, GitCompareArrows, Loader2, MapPin, MapPinned, RotateCcw, Ruler, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
 import { Fill, Stroke, Style } from 'ol/style'
 import { GeoJSON, MVT } from 'ol/format'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -319,6 +318,7 @@ import Card from '~/components/ui/card.vue'
 import Feature from 'ol/Feature'
 import MatchModeControl from '~/components/MatchModeControl.vue'
 import ObjectInfoPanel from '~/components/ObjectInfoPanel.vue'
+import type { BuildingData } from '~/composables/useBuildingData'
 import type { SearchResult } from '~/composables/useSearch'
 import Switch from '~/components/ui/switch.vue'
 import VectorTileLayer from 'ol/layer/VectorTile'
@@ -346,11 +346,9 @@ const {
 
 // OSM Buildings layer state
 const osmBuildingsLayerRef = ref<any>(null)
-const osmLoadedCount = ref(0)
 
 // GRB Buildings layer state
 const grbBuildingsLayerRef = ref<any>(null)
-const grbLoadedCount = ref(0)
 const isLoadingGRB = ref(false)
 
 // Candidate Buildings layer state
@@ -376,7 +374,6 @@ const currentZoom = ref(8)
 const currentCenter = ref<[number, number]>([4.3517, 50.8503])
 const panelOpen = ref(false)
 const activeBuilding = ref<BuildingData | null>(null)
-const showLayersPanel = ref(false)
 
 // Matching stats state
 const matchingStats = ref<{
@@ -389,11 +386,6 @@ const matchingStats = ref<{
 // Candidate buildings state
 const originalCandidateFeatures = ref<any[]>([]) // Store original features for reset
 const isCalculatingDifference = ref(false) // Loading state for Get Difference button
-
-// Computed values for building counts
-const qaIssueCount = computed(() =>
-  mockBuildingData.filter(b => b.type === 'conflict').length
-)
 
 // Computed property to check if Get Difference button should be enabled
 const canCalculateDifference = computed(() => {
@@ -578,7 +570,6 @@ const handleLoadOSM = () => {
 
     // Update UI state
     overlayLayers.value.osmBuildings = true
-    osmLoadedCount.value = 1 // Vector tiles don't have a direct count
 
     // Set initial visibility based on current zoom level
     const currentZoomLevel = Math.round(map.value.getView().getZoom() || 13)
@@ -667,7 +658,6 @@ const handleLoadGRB = () => {
 
     // Update UI state
     overlayLayers.value.grbBuildings = true
-    grbLoadedCount.value = 1 // Vector tiles don't have a direct count, so show as loaded
 
     // Set initial visibility based on current zoom level
     const currentZoomLevel = Math.round(map.value.getView().getZoom() || 13)
@@ -780,7 +770,6 @@ const hasMatchingOSMFeature = (grbFeature: any, osmFeatures: any[]): boolean => 
 
     // Check if polygons overlap
     if (polygonsOverlap(grbCoords, osmCoords)) {
-      console.log(`Match found: GRB polygon overlaps with OSM polygon`)
       return true
     }
   }
@@ -1009,7 +998,6 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
 
       // First priority: merge by ID if both have IDs and they match
       if (featureId && otherFeatureId && featureId === otherFeatureId) {
-        console.log(`Merging fragments by ID: ${featureId}`)
         fragmentsToMerge.push({ coords: otherCoords, properties: otherFeature.properties })
         processed.add(j)
       } else if (!featureId && !otherFeatureId) {
@@ -1027,7 +1015,6 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
 
     // Merge all found fragments
     if (fragmentsToMerge.length > 1) {
-      console.log(`Merging ${fragmentsToMerge.length} building fragments (ID: ${featureId || 'none'})`)
       const coordsToMerge = fragmentsToMerge.map(f => f.coords)
       // Merge all fragments by combining coordinates and reconstructing polygon
       const mergedCoords = mergePolygonFragments(coordsToMerge)
@@ -1044,7 +1031,6 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
     }
   }
 
-  console.log(`Building merge complete: ${features.length} features → ${merged.length} features`)
   return merged
 }
 
@@ -1082,8 +1068,6 @@ const calculateDifference = async () => {
 
     // Send Web Mercator bounds to API - PostGIS will handle transformation
     const bounds = [mapExtent[0], mapExtent[1], mapExtent[2], mapExtent[3]]
-
-    console.log('Map extent (EPSG:3857):', bounds)
 
     // Call backend API to calculate difference
     const response = await $fetch('/api/buildings/difference', {

@@ -379,7 +379,7 @@ GROUP BY
     b.type_label;
 
 -- Indexes on materialized view
-CREATE INDEX idx_mv_buildings_with_addresses_oidn ON grb.buildings_with_addresses(oidn);
+CREATE UNIQUE INDEX idx_mv_buildings_with_addresses_oidn ON grb.buildings_with_addresses(oidn);
 CREATE INDEX idx_mv_buildings_with_addresses_gebouw_id ON grb.buildings_with_addresses(gebouw_id);
 CREATE INDEX idx_mv_buildings_with_addresses_polygon_type ON grb.buildings_with_addresses(polygon_type_label);
 CREATE INDEX idx_mv_buildings_with_addresses_geom ON grb.buildings_with_addresses USING GIST(geom);
@@ -396,7 +396,7 @@ $$ LANGUAGE plpgsql;
 \echo '✓ Views and Materialized View created'
 
 -- Import statistics table (simplified)
-CREATE TABLE IF NOT EXISTS import_statistics (
+CREATE TABLE IF NOT EXISTS grb.import_statistics (
     id SERIAL PRIMARY KEY,
     import_date TIMESTAMPTZ DEFAULT NOW(),
     source_file VARCHAR(255),
@@ -452,7 +452,7 @@ COMMENT ON COLUMN grb.address_building_links.building_object_id IS 'Building obj
 \echo '  - grb.buildings (aggregated buildings with unified geometries)'
 \echo '  - grb.addresses (1.3M+ GRAR address points)'
 \echo '  - grb.address_building_links (3.9M+ address-building relationships)'
-\echo '  - import_statistics'
+\echo '  - grb.import_statistics'
 \echo ''
 \echo 'Views created:'
 \echo '  - grb.building_polygons_summary'

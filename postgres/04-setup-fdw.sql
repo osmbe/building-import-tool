@@ -29,8 +29,7 @@ CREATE SERVER osmbe_server
 -- Create user mapping
 -- Replace 'CURRENT_USER' with your actual username if needed
 CREATE USER MAPPING IF NOT EXISTS FOR CURRENT_USER
-    SERVER osmbe_server
-    OPTIONS (user 'CURRENT_USER');
+    SERVER osmbe_server;
 
 \echo '✓ User mapping created'
 

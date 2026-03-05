@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-be2osm}
     volumes:
-      - postgres-data:/var/lib/postgresql
+      - postgres-data:/var/lib/postgresql/data
       # The following scripts will be executed in alphabetical order during the first initialization of the database
       - ./postgres/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro,z
       - ./postgres/02-setup-be2osm.sql:/docker-entrypoint-initdb.d/02-setup-be2osm.sql:ro,z
@@ -36,13 +36,13 @@ services:
       context: ./app
       args:
         OSM_CLIENT_ID: ${OSM_CLIENT_ID}
-        OSM_CLIENT_SECRET: ${OSM_CLIENT_SECRET}
         OSM_REDIRECT_URI: ${OSM_REDIRECT_URI}
     container_name: be2osm-nuxt
     environment:
       OSM_CLIENT_ID: ${OSM_CLIENT_ID}
       OSM_CLIENT_SECRET: ${OSM_CLIENT_SECRET}
       OSM_REDIRECT_URI: ${OSM_REDIRECT_URI}
+      JWT_SECRET: ${JWT_SECRET}
       POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -157,9 +157,12 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - nuxt-app
-      - grb-tiles
-      - osm-tiles
+      nuxt-app:
+        condition: service_healthy
+      grb-tiles:
+        condition: service_healthy
+      osm-tiles:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - be2osm
@@ -172,8 +175,4 @@ networks:
   #  external: true
 volumes:
   postgres-data:
-  osm-downloads:
-  osm-cache:
-  grb-uploads:
-  logs:
   caddy_data:

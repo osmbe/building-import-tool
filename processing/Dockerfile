@@ -98,12 +98,6 @@ SHELL ["/bin/bash", "-c"]
 # Default command shows help
 CMD ["just"]
 
-# Default environment variables for database connection
-# Override these when running the container
-ENV DB_HOST=localhost \
-    DB_PORT=5432 \
-    DB_USER=be2osm
-
 # Labels
 LABEL org.opencontainers.image.title="BE2OSM Data Processing" \
       org.opencontainers.image.description="Container with ogr2ogr, imposm3, and processing tools" \

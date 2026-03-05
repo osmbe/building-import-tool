@@ -28,8 +28,6 @@ export default defineEventHandler(async (event) => {
     if (matchMode === 'source') {
       // Source tag matching: Show GRB buildings that DON'T have matching OSM source:geometry:oidn
 
-      console.log('[SOURCE MODE] Query bounds:', { minX, minY, maxX, maxY })
-
       // Step 1: Get OSM buildings with source:geometry:oidn in the extent
       const osmQuery = `
         SELECT DISTINCT
@@ -43,10 +41,6 @@ export default defineEventHandler(async (event) => {
       const osmRows = await queryOsm(osmQuery, [minX, minY, maxX, maxY])
       const oidnList = osmRows.map((row: any) => row.oidn).filter(Boolean)
       totalOsm = oidnList.length
-
-      console.log('[SOURCE MODE] Found OSM buildings with source:geometry:oidn:', totalOsm)
-      console.log('[SOURCE MODE] OIDNs to exclude:', oidnList.slice(0, 10), oidnList.length > 10 ? `... and ${oidnList.length - 10} more` : '')
-      console.log('[SOURCE MODE] Is 1021532 in exclusion list?', oidnList.includes('1021532'))
 
       // Step 2: Get GRB polygons that DON'T have matching OIDNs
       const grbQuery = `
@@ -70,11 +64,6 @@ export default defineEventHandler(async (event) => {
       `
 
       grbRows = await queryGrb(grbQuery, [minX, minY, maxX, maxY, totalOsm, oidnList.length > 0 ? oidnList : ['-1']])
-
-      console.log('[SOURCE MODE] GRB polygons returned:', grbRows.length)
-      const returnedOidns = grbRows.map((row: any) => row.oidn)
-      console.log('[SOURCE MODE] First 10 oidns returned:', returnedOidns.slice(0, 10))
-      console.log('[SOURCE MODE] Is 1021532 in returned oidns?', returnedOidns.includes('1021532') || returnedOidns.includes(1021532))
     } else {
       // Geometry matching: Show all GRB polygons (original behavior)
       const candidateQuery = `

@@ -34,10 +34,6 @@ import { type Provider, type SearchResult, addToSearchHistory, getSearchHistory,
 import { Search, X } from 'lucide-vue-next'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import Button from '~/components/ui/button.vue'
-import DropdownMenu from '~/components/ui/dropdown-menu.vue'
-import DropdownMenuContent from '~/components/ui/dropdown-menu-content.vue'
-import DropdownMenuItem from '~/components/ui/dropdown-menu-item.vue'
-import DropdownMenuTrigger from '~/components/ui/dropdown-menu-trigger.vue'
 import Input from '~/components/ui/input.vue'
 import SearchResults from '~/components/SearchResults.vue'
 

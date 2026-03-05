@@ -31,11 +31,10 @@ export default defineEventHandler(async (event) => {
 
     // In production, write to .output/public/exports (served as static files)
     // In development, write to public/exports
-    const publicPath = process.env.NODE_ENV === 'production'
+    const exportsDir = process.env.NODE_ENV === 'production'
       ? join(process.cwd(), '.output', 'public', 'exports')
       : join(process.cwd(), 'public', 'exports')
 
-    const exportsDir = publicPath
     const filePath = join(exportsDir, filename)
 
     // Ensure directory exists
@@ -50,8 +49,6 @@ export default defineEventHandler(async (event) => {
                      (process.env.NODE_ENV === 'production' ? 'https' : 'http')
     const host = getRequestHeader(event, 'host') || 'localhost:3000'
     const baseUrl = `${protocol}://${host}`
-
-    console.log(`Generated file URL: ${baseUrl}/exports/${filename}`)
 
     return {
       status: 'stored',
