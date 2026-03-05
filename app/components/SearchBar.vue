@@ -30,16 +30,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
-import Input from '~/components/ui/input.vue'
+import { type Provider, type SearchResult, addToSearchHistory, getSearchHistory, searchLocations } from '~/composables/useSearch'
+import { Search, X } from 'lucide-vue-next'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import Button from '~/components/ui/button.vue'
 import DropdownMenu from '~/components/ui/dropdown-menu.vue'
 import DropdownMenuContent from '~/components/ui/dropdown-menu-content.vue'
 import DropdownMenuItem from '~/components/ui/dropdown-menu-item.vue'
 import DropdownMenuTrigger from '~/components/ui/dropdown-menu-trigger.vue'
-import { Search, X } from 'lucide-vue-next'
+import Input from '~/components/ui/input.vue'
 import SearchResults from '~/components/SearchResults.vue'
-import { searchLocations, getSearchHistory, addToSearchHistory, type SearchResult, type Provider } from '~/composables/useSearch'
 
 const emit = defineEmits<{ (e: 'select', result: SearchResult): void }>()
 
@@ -68,7 +68,7 @@ function clear() {
 }
 
 // Debounced search to avoid too many API calls
-watch([query, provider], async ([q, p]) => {
+watch([query, provider], ([q, p]) => {
   // Clear previous timer
   if (debounceTimer) {
     clearTimeout(debounceTimer)

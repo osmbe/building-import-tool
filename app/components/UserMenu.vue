@@ -50,7 +50,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { History, LogOut, Settings, User } from 'lucide-vue-next'
+import Avatar from '~/components/ui/avatar.vue'
+import AvatarFallback from '~/components/ui/avatar-fallback.vue'
+import AvatarImage from '~/components/ui/avatar-image.vue'
+import Badge from '~/components/ui/badge.vue'
 import Button from '~/components/ui/button.vue'
 import DropdownMenu from '~/components/ui/dropdown-menu.vue'
 import DropdownMenuContent from '~/components/ui/dropdown-menu-content.vue'
@@ -58,17 +62,13 @@ import DropdownMenuItem from '~/components/ui/dropdown-menu-item.vue'
 import DropdownMenuLabel from '~/components/ui/dropdown-menu-label.vue'
 import DropdownMenuSeparator from '~/components/ui/dropdown-menu-separator.vue'
 import DropdownMenuTrigger from '~/components/ui/dropdown-menu-trigger.vue'
-import Avatar from '~/components/ui/avatar.vue'
-import AvatarFallback from '~/components/ui/avatar-fallback.vue'  
-import AvatarImage from '~/components/ui/avatar-image.vue'
-import Badge from '~/components/ui/badge.vue'
-import { User, History, Settings, LogOut } from 'lucide-vue-next'
 import type { OSMUser } from '~/composables/useAuth'
+import { computed } from 'vue'
 
-const props = defineProps<{ user: OSMUser }>()
+const { user } = defineProps<{ user: OSMUser }>()
 
 const initials = computed(() => {
-  const n = props.user.displayName || props.user.username
+  const n = user.displayName || user.username
   return n.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase()
 })
 </script>

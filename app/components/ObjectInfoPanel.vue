@@ -70,18 +70,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import Card from '~/components/ui/card.vue'
+import { Building, Calendar, Layers, Ruler, X } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import type { BuildingData } from '~/composables/useBuildingData'
 import Button from '~/components/ui/button.vue'
+import Card from '~/components/ui/card.vue'
+import QAToolsPanel from '~/components/QAToolsPanel.vue'
 import Tabs from '~/components/ui/tabs.vue'
 import TabsContent from '~/components/ui/tabs-content.vue'
 import TabsList from '~/components/ui/tabs-list.vue'
 import TabsTrigger from '~/components/ui/tabs-trigger.vue'
-import { X, Building, Calendar, Ruler, Layers } from 'lucide-vue-next'
-import QAToolsPanel from '~/components/QAToolsPanel.vue'
-import type { BuildingData } from '~/composables/useBuildingData'
 
-const props = defineProps<{
+const { building, isOpen } = defineProps<{
   building: BuildingData | null
   isOpen: boolean
 }>()
@@ -91,13 +91,13 @@ const activeTab = ref('overview')
 
 // Count OSM tags
 const osmTagCount = computed(() => {
-  if (!props.building?.osmData?.tags) return 0
-  return Object.keys(props.building.osmData.tags).length
+  if (!building?.osmData?.tags) return 0
+  return Object.keys(building.osmData.tags).length
 })
 
 // Check if authoritative data section has any data to display
 const hasAuthoritativeData = computed(() => {
-  const auth = props.building?.authoritativeData
+  const auth = building?.authoritativeData
   return auth?.levels || auth?.height || auth?.buildingMaterial || auth?.roofType
 })
 </script>

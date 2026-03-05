@@ -36,13 +36,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import Card from '~/components/ui/card.vue'
+import { Building, Clock, Home, MapPin, Star } from 'lucide-vue-next'
 import Badge from '~/components/ui/badge.vue'
-import { MapPin, Building, Home, Star, Clock } from 'lucide-vue-next'
+import Card from '~/components/ui/card.vue'
 import type { SearchResult } from '~/composables/useSearch'
+import { computed } from 'vue'
 
-const props = defineProps<{
+const { results, isLoading, searchHistory, query } = defineProps<{
   results: SearchResult[]
   isLoading: boolean
   searchHistory: SearchResult[]

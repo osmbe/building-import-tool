@@ -1,11 +1,11 @@
 <template>
-  <div :class="cn(badgeVariants({ variant }), props.class)">
+  <div :class="cn(badgeVariants({ variant }), className)">
     <slot />
   </div>
 </template>
 
 <script setup lang="ts">
-import { cva, type VariantProps } from 'class-variance-authority'
+import { type VariantProps, cva } from 'class-variance-authority'
 import { cn } from '~/lib/utils'
 
 const badgeVariants = cva(
@@ -30,10 +30,8 @@ const badgeVariants = cva(
 
 export type BadgeVariants = VariantProps<typeof badgeVariants>
 
-const props = withDefaults(defineProps<{
+const { variant = 'default', class: className } = defineProps<{
   variant?: BadgeVariants['variant']
   class?: string
-}>(), {
-  variant: 'default',
-})
+}>()
 </script>

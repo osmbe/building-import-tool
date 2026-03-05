@@ -43,22 +43,22 @@
 </template>
 
 <script setup lang="ts">
+import { ExternalLink, Loader2, Map as MapIcon, MapPin, Shield, Users } from 'lucide-vue-next'
+import Badge from '~/components/ui/badge.vue'
 import Button from '~/components/ui/button.vue'
 import Dialog from '~/components/ui/dialog.vue'
 import DialogContent from '~/components/ui/dialog-content.vue'
 import DialogDescription from '~/components/ui/dialog-description.vue'
 import DialogHeader from '~/components/ui/dialog-header.vue'
 import DialogTitle from '~/components/ui/dialog-title.vue'
-import Badge from '~/components/ui/badge.vue'
-import { ExternalLink, Shield, Users, MapPin, Loader2, Map as MapIcon } from 'lucide-vue-next'
 
-const props = defineProps<{
+const { open, onSignIn, isLoading } = defineProps<{
   open: boolean
   onSignIn: () => Promise<void>
   isLoading: boolean
 }>()
 
 function handleSignIn() {
-  props.onSignIn?.()
+  onSignIn?.()
 }
 </script>

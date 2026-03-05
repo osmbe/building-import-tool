@@ -42,19 +42,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import Button from '~/components/ui/button.vue'
+import { Circle, Square, Triangle } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
 import Badge from '~/components/ui/badge.vue'
-import Progress from '~/components/ui/progress.vue'
+import type { BuildingData } from '~/composables/useBuildingData'
+import Button from '~/components/ui/button.vue'
 import Dialog from '~/components/ui/dialog.vue'
 import DialogContent from '~/components/ui/dialog-content.vue'
 import DialogDescription from '~/components/ui/dialog-description.vue'
 import DialogHeader from '~/components/ui/dialog-header.vue'
 import DialogTitle from '~/components/ui/dialog-title.vue'
-import { Square, Triangle, Circle } from 'lucide-vue-next'
-import type { BuildingData } from '~/composables/useBuildingData'
+import Progress from '~/components/ui/progress.vue'
 
-const props = defineProps<{ building: BuildingData }>()
+const { building } = defineProps<{ building: BuildingData }>()
 
 type Category = 'simplify' | 'fix' | 'validate'
 interface Operation { id: string; title: string; description: string; icon: any; category: Category; progress: number }
@@ -65,7 +65,7 @@ const operations = ref<Operation[]>([
   { id: 'op3', title: 'Validate metadata', description: 'Check height/levels consistency.', icon: Circle, category: 'validate', progress: 0 },
 ])
 
-const issuesCount = computed(() => props.building.properties.qaIssues?.length || 0)
+const issuesCount = computed(() => building.properties.qaIssues?.length || 0)
 
 const issueBadgeClass = computed(() => {
   if (issuesCount.value === 0) return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
@@ -87,9 +87,9 @@ const lastResult = ref<{ title: string; status: string; details: string } | null
 
 async function runOperation(op: Operation) {
   op.progress = 10
-  await new Promise(r => setTimeout(r, 300))
+  await new Promise(r => { setTimeout(r, 300) })
   op.progress = 60
-  await new Promise(r => setTimeout(r, 300))
+  await new Promise(r => { setTimeout(r, 300) })
   op.progress = 100
   lastResult.value = { title: op.title, status: 'success', details: 'Operation completed successfully.' }
   openSummary.value = true

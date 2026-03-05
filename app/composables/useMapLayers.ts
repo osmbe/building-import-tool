@@ -1,17 +1,13 @@
-import { ref, type Ref } from 'vue'
-import OLMap from 'ol/Map'
-import View from 'ol/View'
-import TileLayer from 'ol/layer/Tile'
-import VectorLayer from 'ol/layer/Vector'
-import VectorSource from 'ol/source/Vector'
-import OSM from 'ol/source/OSM'
-import WMTS from 'ol/source/WMTS'
-import TileWMS from 'ol/source/TileWMS'
-import XYZ from 'ol/source/XYZ'
-import WMTSTileGrid from 'ol/tilegrid/WMTS'
-import { fromLonLat, get as getProjection, type ProjectionLike } from 'ol/proj'
+import { type ProjectionLike, fromLonLat, get as getProjection } from 'ol/proj'
+import { type Ref, ref } from 'vue'
 import { getTopLeft, getWidth } from 'ol/extent'
-import type { Options as WMTSOptions } from 'ol/source/WMTS'
+import OLMap from 'ol/Map'
+import TileLayer from 'ol/layer/Tile'
+import TileWMS from 'ol/source/TileWMS'
+import View from 'ol/View'
+import WMTS from 'ol/source/WMTS'
+import WMTSTileGrid from 'ol/tilegrid/WMTS'
+import XYZ from 'ol/source/XYZ'
 
 // Types
 export interface BaseLayerConfig {
@@ -28,77 +24,6 @@ export interface MapConfig {
   maxZoom?: number
   minZoom?: number
   projection?: ProjectionLike
-}
-
-// Layer configurations following geo community standards
-const LAYER_CONFIGS: Record<string, BaseLayerConfig> = {
-  osm: {
-    id: 'osm',
-    name: 'OpenStreetMap',
-    type: 'osm',
-    visible: true
-  }
-}
-
-// Factory function to create WMTS tile grid
-const createWMTSTileGrid = (projection: any) => {
-  const projectionExtent = projection.getExtent()
-  const size = getWidth(projectionExtent) / 256
-  const resolutions = new Array(19)
-  const matrixIds = new Array(19)
-
-  for (let z = 0; z < 19; ++z) {
-    resolutions[z] = size / Math.pow(2, z)
-    matrixIds[z] = z.toString()
-  }
-
-  return new WMTSTileGrid({
-    origin: getTopLeft(projectionExtent),
-    resolutions: resolutions,
-    matrixIds: matrixIds
-  })
-}
-
-// Factory functions for different layer types
-const layerFactories = {
-  osm: (config: BaseLayerConfig) => {
-    return new TileLayer({
-      source: new OSM(),
-      visible: config.visible ?? false,
-      properties: { id: config.id, name: config.name }
-    })
-  },
-
-  wmts: (config: BaseLayerConfig) => {
-    const projection = getProjection('EPSG:3857')!
-    const options: WMTSOptions = {
-      ...config.options,
-      projection: projection,
-      tileGrid: createWMTSTileGrid(projection)
-    }
-
-    return new TileLayer({
-      source: new WMTS(options),
-      visible: config.visible ?? false,
-      properties: { id: config.id, name: config.name }
-    })
-  },
-
-  xyz: (config: BaseLayerConfig) => {
-    return new TileLayer({
-      source: new XYZ(config.options),
-      visible: config.visible ?? false,
-      properties: { id: config.id, name: config.name }
-    })
-  },
-
-  vector: (config: BaseLayerConfig) => {
-    return new VectorLayer({
-      source: new VectorSource(config.options),
-      visible: config.visible ?? false,
-      properties: { id: config.id, name: config.name }
-    })
-  }
 }
 
 // Main composable
@@ -133,7 +58,7 @@ export const useMapLayers = () => {
     const matrixIds = new Array(19)
 
     for (let z = 0; z < 19; ++z) {
-      resolutions[z] = size / Math.pow(2, z)
+      resolutions[z] = size / 2 ** z
       matrixIds[z] = z.toString()
     }
 
@@ -240,16 +165,18 @@ export const useMapLayers = () => {
       controls: []
     })
 
-    // Patch canvas context to set willReadFrequently
+    // Patch canvas contexts to set willReadFrequently
     // This is needed for OpenLayers hit detection to avoid Canvas2D warnings
-    const originalGetContext = HTMLCanvasElement.prototype.getContext
-    HTMLCanvasElement.prototype.getContext = function(contextType: string, contextAttributes?: any) {
-      if (contextType === '2d') {
-        contextAttributes = contextAttributes || {}
-        contextAttributes.willReadFrequently = true
+    const patchCanvasContexts = () => {
+      const viewport = mapInstance.getViewport()
+      if (viewport) {
+        const canvases = viewport.querySelectorAll('canvas')
+        for (const canvas of canvases) {
+          canvas.getContext('2d', { willReadFrequently: true })
+        }
       }
-      return originalGetContext.call(this, contextType, contextAttributes)
-    } as any
+    }
+    mapInstance.once('postrender', patchCanvasContexts)
 
     map.value = mapInstance
 

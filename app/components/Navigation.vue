@@ -29,17 +29,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useAuth } from '~/composables/useAuth'
-import SearchBar from '~/components/SearchBar.vue'
-import UserMenu from '~/components/UserMenu.vue'
+import { Download, HelpCircle, History as HistoryIcon, Laptop, Layers, Map, Moon, Settings, Sun, User as UserIcon } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
 import AuthDialog from '~/components/AuthDialog.vue'
 import Button from '~/components/ui/button.vue'
 import DropdownMenu from '~/components/ui/dropdown-menu.vue'
 import DropdownMenuContent from '~/components/ui/dropdown-menu-content.vue'
 import DropdownMenuItem from '~/components/ui/dropdown-menu-item.vue'
 import DropdownMenuTrigger from '~/components/ui/dropdown-menu-trigger.vue'
-import { Map, Settings, Download, History as HistoryIcon, HelpCircle, Moon, Sun, Laptop, User as UserIcon, Layers } from 'lucide-vue-next'
+import SearchBar from '~/components/SearchBar.vue'
+import UserMenu from '~/components/UserMenu.vue'
+import { useAuth } from '~/composables/useAuth'
 
 const emit = defineEmits<{ (e: 'location-select', result: any): void }>()
 

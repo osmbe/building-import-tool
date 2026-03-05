@@ -307,29 +307,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
+import { Building2, ExternalLink, GitCompareArrows, Layers, Loader2, MapPin, MapPinned, RotateCcw, Ruler, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
+import { type BuildingData, mockBuildingData } from '~/composables/useBuildingData'
+import { Fill, Stroke, Style } from 'ol/style'
+import { GeoJSON, MVT } from 'ol/format'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { fromLonLat, toLonLat } from 'ol/proj'
+import Badge from '~/components/ui/badge.vue'
+import Button from '~/components/ui/button.vue'
+import Card from '~/components/ui/card.vue'
 import Feature from 'ol/Feature'
+import MatchModeControl from '~/components/MatchModeControl.vue'
+import ObjectInfoPanel from '~/components/ObjectInfoPanel.vue'
+import type { SearchResult } from '~/composables/useSearch'
+import Switch from '~/components/ui/switch.vue'
 import VectorTileLayer from 'ol/layer/VectorTile'
 import VectorTileSource from 'ol/source/VectorTile'
-import { MVT, GeoJSON } from 'ol/format'
-import { Style, Fill, Stroke } from 'ol/style'
-import Card from '~/components/ui/card.vue'
-import Button from '~/components/ui/button.vue'
-import Badge from '~/components/ui/badge.vue'
-import Switch from '~/components/ui/switch.vue'
-import { Layers, ZoomIn, ZoomOut, RotateCcw, X, ExternalLink, MapPin, GitCompareArrows, Loader2, Building2, MapPinned, Ruler } from 'lucide-vue-next'
-import ObjectInfoPanel from '~/components/ObjectInfoPanel.vue'
-import MatchModeControl from '~/components/MatchModeControl.vue'
-import { mockBuildingData, type BuildingData } from '~/composables/useBuildingData'
-import type { SearchResult } from '~/composables/useSearch'
-import { useJosmExport } from '~/composables/useJosmExport'
 import { extractFeaturesFromLayer } from '~/utils/openlayers'
-import { useMapLayers } from '~/composables/useMapLayers'
 import { useAuth } from '~/composables/useAuth'
+import { useJosmExport } from '~/composables/useJosmExport'
+import { useMapLayers } from '~/composables/useMapLayers'
 import { useMatchMode } from '~/composables/useMatchMode'
 
-const props = defineProps<{ selectedLocation: SearchResult | null }>()
+const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
 
 const mapRef = ref<HTMLElement>()
 const { exportLayerToJosm, testJosmConnection } = useJosmExport()
@@ -414,13 +414,12 @@ const canCalculateDifference = computed(() => {
 })
 
 // Computed property to check if JOSM export button should be enabled
-const canExportToJOSM = computed(() => {
-  
+const canExportToJOSM = computed(() =>
   // Check if there are candidate buildings
-  return candidateBuildingCount.value > 0
-})
+  candidateBuildingCount.value > 0
+)
 
-watch(() => props.selectedLocation, (loc) => {
+watch(() => selectedLocation, (loc) => {
   if (!loc || !map.value) return
   const coords = fromLonLat(loc.coordinates)
   map.value.getView().animate({
@@ -510,7 +509,7 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
 
 
 // Handle Load OSM Buildings using Vector Tiles from Martin
-const handleLoadOSM = async () => {
+const handleLoadOSM = () => {
   if (!map.value) {
     console.error('Map not initialized')
     return
@@ -591,7 +590,7 @@ const handleLoadOSM = async () => {
 }
 
 // Handle Load GRB Buildings using Vector Tiles
-const handleLoadGRB = async () => {
+const handleLoadGRB = () => {
   if (!map.value) {
     console.error('Map not initialized')
     return
@@ -728,8 +727,8 @@ const pointInPolygon = (point: [number, number], polygon: [number, number][]): b
   let inside = false
 
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i][0], yi = polygon[i][1]
-    const xj = polygon[j][0], yj = polygon[j][1]
+    const [xi, yi] = polygon[i]
+    const [xj, yj] = polygon[j]
 
     const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)
     if (intersect) inside = !inside
@@ -762,7 +761,7 @@ const hasMatchingOSMFeature = (grbFeature: any, osmFeatures: any[]): boolean => 
   const grbGeom = grbFeature.geometry
   if (!grbGeom || !grbGeom.coordinates || grbGeom.type !== 'Polygon') return false
 
-  const grbCoords = grbGeom.coordinates[0] // exterior ring
+  const [grbCoords] = grbGeom.coordinates // exterior ring
 
   // Check if any OSM feature overlaps with this GRB feature
   for (const osmFeature of osmFeatures) {
@@ -777,7 +776,7 @@ const hasMatchingOSMFeature = (grbFeature: any, osmFeatures: any[]): boolean => 
     const osmGeom = osmFeature.geometry
     if (!osmGeom || !osmGeom.coordinates || osmGeom.type !== 'Polygon') continue
 
-    const osmCoords = osmGeom.coordinates[0] // exterior ring
+    const [osmCoords] = osmGeom.coordinates // exterior ring
 
     // Check if polygons overlap
     if (polygonsOverlap(grbCoords, osmCoords)) {
@@ -815,7 +814,7 @@ const isFeatureInExtent = (geometry: any, extent: number[]): boolean => {
   if (!geometry || !geometry.coordinates) return false
 
   // Get bounding box of geometry
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  let maxX = -Infinity, maxY = -Infinity, minX = Infinity, minY = Infinity
 
   const coords = geometry.type === 'Polygon' ? geometry.coordinates[0] : geometry.coordinates
 
@@ -874,7 +873,7 @@ const isPolygonContainedInOther = (polygon1: any, otherPolygons: any[]): boolean
 // Helper function to get bounding box of a polygon
 const getBoundingBox = (coords: [number, number][]): [number, number, number, number] => {
   if (!coords || coords.length === 0) return [0, 0, 0, 0]
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  let maxX = -Infinity, maxY = -Infinity, minX = Infinity, minY = Infinity
   for (const [x, y] of coords) {
     minX = Math.min(minX, x)
     minY = Math.min(minY, y)
@@ -885,14 +884,13 @@ const getBoundingBox = (coords: [number, number][]): [number, number, number, nu
 }
 
 // Helper function to check if two bounding boxes overlap or are very close
-const boundingBoxesIntersect = (bbox1: [number, number, number, number], bbox2: [number, number, number, number], tolerance: number = 5): boolean => {
+const boundingBoxesIntersect = (bbox1: [number, number, number, number], bbox2: [number, number, number, number], tolerance = 5): boolean =>
   // tolerance in map units (meters in EPSG:31370)
-  return !(bbox1[2] + tolerance < bbox2[0] || bbox1[0] - tolerance > bbox2[2] || bbox1[3] + tolerance < bbox2[1] || bbox1[1] - tolerance > bbox2[3])
-}
+  !(bbox1[2] + tolerance < bbox2[0] || bbox1[0] - tolerance > bbox2[2] || bbox1[3] + tolerance < bbox2[1] || bbox1[1] - tolerance > bbox2[3])
 
 // Helper function to merge polygon fragments properly
 // Combines all coordinates from fragments and reconstructs the polygon
-const mergePolygonFragments = (polygons: Array<[number, number][]>): [number, number][] => {
+const mergePolygonFragments = (polygons: [number, number][][]): [number, number][] => {
   if (polygons.length === 0) return []
   if (polygons.length === 1) return polygons[0]
 
@@ -930,7 +928,7 @@ const concaveHull = (points: [number, number][]): [number, number][] => {
   if (points.length <= 3) return points
 
   // Find the leftmost point
-  let leftmost = points[0]
+  let [leftmost] = points
   let leftmostIdx = 0
   for (let i = 1; i < points.length; i++) {
     if (points[i][0] < leftmost[0]) {
@@ -951,9 +949,8 @@ const concaveHull = (points: [number, number][]): [number, number][] => {
     for (let i = 0; i < points.length; i++) {
       if (i === current || i === previous) continue
 
-      const cross = (a: [number, number], b: [number, number], c: [number, number]) => {
-        return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
-      }
+      const cross = (a: [number, number], b: [number, number], c: [number, number]) =>
+        (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
 
       const curr = points[current]
       const nxt = points[next]
@@ -1066,7 +1063,7 @@ const calculateDifference = async () => {
   const zoom = view.getZoom() || 13
   const roundedZoom = Math.round(zoom)
   if (roundedZoom < 16) {
-    alert('Please zoom in to at least level 16 to calculate differences.\n\nCurrent zoom: ' + roundedZoom)
+    alert(`Please zoom in to at least level 16 to calculate differences.\n\nCurrent zoom: ${roundedZoom}`)
     return
   }
 
@@ -1147,17 +1144,15 @@ const calculateDifference = async () => {
     const candidateSource = new VectorSource({ features })
 
     // Style function for candidate buildings
-    const candidateStyleFunction = () => {
-      return new Style({
-        fill: new Fill({
-          color: 'rgba(251, 146, 60, 0.4)' // Orange with 40% opacity
-        }),
-        stroke: new Stroke({
-          color: 'rgba(251, 146, 60, 1.0)', // Orange with 100% opacity
-          width: 2
-        })
+    const candidateStyleFunction = () => new Style({
+      fill: new Fill({
+        color: 'rgba(251, 146, 60, 0.4)' // Orange with 40% opacity
+      }),
+      stroke: new Stroke({
+        color: 'rgba(251, 146, 60, 1.0)', // Orange with 100% opacity
+        width: 2
       })
-    }
+    })
 
     // Create vector layer for candidate buildings
     const candidateLayer = new VectorLayer({
@@ -1179,7 +1174,7 @@ const calculateDifference = async () => {
 
   } catch (error) {
     console.error('Error calculating difference:', error)
-    alert('Error calculating difference:\n\n' + (error instanceof Error ? error.message : String(error)))
+    alert(`Error calculating difference:\n\n${error instanceof Error ? error.message : String(error)}`)
   } finally {
     // Reset loading state
     isCalculatingDifference.value = false
@@ -1229,7 +1224,7 @@ const exportToJOSM = async () => {
     alert(`Candidate buildings exported to JOSM successfully!\n\nExported ${result.featureCount} building${result.featureCount === 1 ? '' : 's'}.\n\nThe buildings have been loaded in JOSM as a new layer.`)
   } catch (error: any) {
     console.error('Error exporting candidate buildings to JOSM:', error)
-    alert('Error exporting to JOSM:\n\n' + error.message + '\n\nPlease check:\n1. JOSM is running with remote control enabled\n2. Port 8111 is not blocked by firewall\n3. Network connectivity')
+    alert(`Error exporting to JOSM:\n\n${error.message}\n\nPlease check:\n1. JOSM is running with remote control enabled\n2. Port 8111 is not blocked by firewall\n3. Network connectivity`)
   }
 }
 
@@ -1271,8 +1266,7 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
     let current = ''
     let inQuotes = false
 
-    for (let i = 0; i < inner.length; i++) {
-      const char = inner[i]
+    for (const char of inner) {
       if (char === '"') {
         inQuotes = !inQuotes
       } else if (char === ',' && !inQuotes) {
@@ -1316,14 +1310,12 @@ const formatGRBBuildingType = (type: string | undefined): string => {
 }
 
 // Helper function to sort features - GRB first, then OSM
-const sortFeatures = (features: any[]): any[] => {
-  return [...features].sort((a, b) => {
-    // GRB features (_layer_type === 'grb') come first
-    if (a._layer_type === 'grb' && b._layer_type !== 'grb') return -1
-    if (a._layer_type !== 'grb' && b._layer_type === 'grb') return 1
-    return 0
-  })
-}
+const sortFeatures = (features: any[]): any[] => [...features].sort((a, b) => {
+  // GRB features (_layer_type === 'grb') come first
+  if (a._layer_type === 'grb' && b._layer_type !== 'grb') return -1
+  if (a._layer_type !== 'grb' && b._layer_type === 'grb') return 1
+  return 0
+})
 
 // Helper function to parse PostgreSQL hstore tags format
 const parseHstoreTags = (tagsString: string): Record<string, string> => {
@@ -1334,8 +1326,7 @@ const parseHstoreTags = (tagsString: string): Record<string, string> => {
   let match
 
   while ((match = regex.exec(tagsString)) !== null) {
-    const key = match[1]
-    const value = match[2]
+    const [, key, value] = match
     tags[key] = value
   }
 
@@ -1404,16 +1395,16 @@ const getDisplayableProperties = (feature: any) => {
 
   // First, add all regular properties (including source)
   Object.entries(feature)
-    .filter(([key, value]) => {
+    .filter(([key, value]) =>
       // Exclude internal properties and empty values
-      return !excludedProps.includes(key) &&
+      !excludedProps.includes(key) &&
              value !== null &&
              value !== undefined &&
              value !== ''
-    })
+    )
     .forEach(([key, value]) => {
       // Apply GRB mapping if it's a GRB feature
-      if (isGrb && grbPropertyMapping.hasOwnProperty(key)) {
+      if (isGrb && Object.hasOwn(grbPropertyMapping, key)) {
         const mappedKey = grbPropertyMapping[key]
         if (mappedKey !== null) {
           properties.push([mappedKey, value])
@@ -1439,11 +1430,11 @@ const getDisplayableProperties = (feature: any) => {
 
     // For OSM features, show all tags
     Object.entries(parsedTags)
-      .filter(([key, value]) => {
-        return value !== null &&
+      .filter(([, value]) =>
+        value !== null &&
                value !== undefined &&
                value !== ''
-      })
+      )
       .forEach(([key, value]) => {
         properties.push([key, value])
       })
@@ -1486,6 +1477,25 @@ const formatPropertyKey = (key: string) => {
     .trim()
 }
 
+// Helper to format a valid Date as a localized string
+const formatDateValue = (date: Date, includeTime: boolean): string => {
+  if (includeTime) {
+    return new Intl.DateTimeFormat('nl-BE', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }).format(date)
+  }
+  return new Intl.DateTimeFormat('nl-BE', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date)
+}
+
 const formatPropertyValue = (value: any): string => {
   if (value === null || value === undefined) {
     return ''
@@ -1501,29 +1511,10 @@ const formatPropertyValue = (value: any): string => {
 
         // Check if it's a valid date
         if (!isNaN(date.getTime())) {
-          // Check if it includes time (has T or space followed by time)
           const hasTime = value.includes('T') || /\d{2}:\d{2}/.test(value)
-
-          if (hasTime) {
-            // Format as datetime
-            return new Intl.DateTimeFormat('nl-BE', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit'
-            }).format(date)
-          } else {
-            // Format as date only
-            return new Intl.DateTimeFormat('nl-BE', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit'
-            }).format(date)
-          }
+          return formatDateValue(date, hasTime)
         }
-      } catch (e) {
+      } catch {
         // If parsing fails, return original value
       }
     }
@@ -1537,7 +1528,7 @@ const setupHoverInteraction = () => {
   if (!map.value) return
 
   let currentHoveredFeatureObj: any = null
-  let hoverTimeout: any = null
+  const hoverTimeout: any = null
   let debounceTimeout: any = null
 
   // Add click interaction for sticky tooltip

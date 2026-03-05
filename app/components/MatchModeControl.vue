@@ -33,9 +33,9 @@
 </template>
 
 <script setup lang="ts">
-import { useMatchMode } from '~/composables/useMatchMode'
-import Button from '~/components/ui/button.vue'
 import { MapPin, Tag } from 'lucide-vue-next'
+import Button from '~/components/ui/button.vue'
+import { useMatchMode } from '~/composables/useMatchMode'
 
 const { matchMode, setMatchMode } = useMatchMode()
 </script>
