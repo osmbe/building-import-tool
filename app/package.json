@@ -10,28 +10,24 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@turf/simplify": "^7.3.1",
-    "@turf/turf": "^7.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "geojsontoosm": "^0.0.4",
-    "lucide-vue-next": "^0.543.0",
+    "lucide-vue-next": "^0.577.0",
     "mapshaper": "^0.6.113",
-    "nuxt": "^4.1.1",
-    "ol": "^10.7.0",
-    "pg": "^8.16.3",
-    "proj4": "^2.20.2",
+    "nuxt": "^4.3.1",
+    "ol": "^10.8.0",
+    "pg": "^8.20.0",
     "radix-vue": "^1.9.17",
-    "tailwind-merge": "^3.4.0",
-    "vue": "^3.5.24",
-    "vue-router": "^4.6.4"
+    "tailwind-merge": "^3.5.0",
+    "vue": "^3.5.29"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.13",
-    "@types/pg": "^8.15.6",
-    "autoprefixer": "^10.4.21",
-    "tailwindcss": "^4.1.17",
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/pg": "^8.18.0",
+    "oxlint": "^1.51.0",
+    "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
-    "vue-tsc": "^3.0.6"
+    "vue-tsc": "^3.2.5"
   }
 }
