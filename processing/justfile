@@ -973,18 +973,43 @@ _grb-download-if-ready product order_id:
     fi
     DOWNLOAD_COUNT=$(echo "$ORDER_DATA" | jq -r '.downloads | length')
     for i in $(seq 0 $((DOWNLOAD_COUNT - 1))); do
-        URL=$(echo "$ORDER_DATA" | jq -r ".downloads[$i][\"@id\"]")
         FILE=$(echo "$ORDER_DATA" | jq -r ".downloads[$i].name")
         DEST="{{grb_data_dir}}/{{product}}/$FILE"
-        wget -q --show-progress --continue --tries=10 --waitretry=30 \
-            --header "x-api-key: {{grb_api_key}}" \
-            -O "$DEST" \
-            "https://download.api.vlaanderen.be$URL"
-        WGET_EXIT=$?
-        if [ $WGET_EXIT -ne 0 ]; then
-            echo "❌ Download failed for $FILE (wget exit $WGET_EXIT)" >&2
-            exit 1
-        fi
+        # Retry loop: fetch fresh URL on each attempt (CDN pre-signed URLs can expire)
+        MAX_ATTEMPTS=5
+        for ATTEMPT in $(seq 1 $MAX_ATTEMPTS); do
+            echo "   Downloading $FILE (attempt $ATTEMPT/$MAX_ATTEMPTS)..."
+            FRESH_ORDER=$(curl -s --retry 3 --retry-all-errors --retry-delay 10 \
+                -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/{{order_id}})
+            URL=$(echo "$FRESH_ORDER" | jq -r ".downloads[$i][\"@id\"]")
+            rm -f "$DEST"
+            wget -q --show-progress --tries=3 --waitretry=15 \
+                --header "x-api-key: {{grb_api_key}}" \
+                -O "$DEST" \
+                "https://download.api.vlaanderen.be$URL"
+            WGET_EXIT=$?
+            if [ $WGET_EXIT -ne 0 ]; then
+                echo "   wget failed (exit $WGET_EXIT), retrying in 60s..."
+                sleep 60
+                continue
+            fi
+            # Validate zip integrity before accepting
+            if [[ "$FILE" == *.zip ]]; then
+                if unzip -t "$DEST" > /dev/null 2>&1; then
+                    break  # Valid zip
+                else
+                    FILE_SIZE=$(stat -c%s "$DEST" 2>/dev/null || echo 0)
+                    echo "   Downloaded zip is invalid ($(numfmt --to=iec $FILE_SIZE)), retrying in 60s..."
+                    sleep 60
+                fi
+            else
+                break  # Non-zip, no validation needed
+            fi
+            if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+                echo "❌ Download failed for $FILE after $MAX_ATTEMPTS attempts" >&2
+                exit 1
+            fi
+        done
         FILE_SIZE=$(stat -c%s "$DEST" 2>/dev/null || echo 0)
         echo "✅ Downloaded: $FILE ($(numfmt --to=iec $FILE_SIZE))"
         # Extract if ZIP
