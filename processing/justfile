@@ -1265,6 +1265,8 @@ _grb-import-address-links:
     for file in $(find {{grb_data_dir}} -name "RltAdresGebouw*.dbf" -type f 2>/dev/null | grep -v "Lkt"); do
         if [ -f "$file" ]; then
             echo "   Importing: $file"
+            echo "   Schema (field names):"
+            ogrinfo -al -so "$file" | grep -E "^\s+\w+" || true
             LAYER_NAME=$(basename "$file" .dbf)
             ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
                 "$file" -nln grb.address_building_links -append \
