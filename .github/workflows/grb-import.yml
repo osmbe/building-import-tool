@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgis/postgis:16-3.4
+        image: postgis/postgis:18-3.6
         env:
           POSTGRES_USER: be2osm
           POSTGRES_PASSWORD: be2osm
@@ -31,7 +31,6 @@ jobs:
         run: |
           echo "Before cleanup:"
           df -h /
-          # Remove unnecessary pre-installed software
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
@@ -42,15 +41,21 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
-      - name: Run init scripts
+      - name: Install PostgreSQL 18 client
         run: |
-          for f in postgres/*.sql; do
-            echo "Running $f..."
-            PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f "$f"
-          done
+          sudo apt-get install -y curl ca-certificates
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18
+
+      - name: Initialize be2osm database
+        run: |
+          # Only run scripts needed for GRB import.
+          # 02: sets up grb schema in be2osm database
+          # Skipping 01 (creates osmbe, not needed), 03/04/05: OSM/FDW/PICC not needed here
+          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f postgres/02-setup-be2osm.sql
 
       - name: Build processing image
         run: docker build -t processing ./processing
@@ -69,7 +74,11 @@ jobs:
 
       - name: Create GRB dump
         run: |
-          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm --data-only --disable-triggers be2osm | gzip > be2osm.sql.gz
+          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm \
+            --data-only --disable-triggers \
+            --no-owner --no-acl \
+            -n grb \
+            be2osm | gzip > be2osm.sql.gz
           ls -lh be2osm.sql.gz
 
       - name: Upload GRB dump
@@ -78,3 +87,11 @@ jobs:
           name: be2osm-dump
           path: be2osm.sql.gz
           retention-days: 7
+
+      - name: Notify server to restore dump
+        if: ${{ vars.WEBHOOK_URL != '' }}
+        run: |
+          curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/grb-restore" \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
+            -d "{\"run_id\": \"${{ github.run_id }}\"}"

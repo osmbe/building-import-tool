@@ -12,8 +12,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY server.py /server.py
-COPY restore.sh /restore.sh
-RUN chmod +x /restore.sh
+COPY restore-osm.sh /restore-osm.sh
+COPY restore-grb.sh /restore-grb.sh
+COPY restore-picc.sh /restore-picc.sh
+RUN chmod +x /restore-osm.sh /restore-grb.sh /restore-picc.sh
 
 EXPOSE 9000
 CMD ["python", "/server.py"]

@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgis/postgis:16-3.4
+        image: postgis/postgis:18-3.6
         env:
           POSTGRES_USER: be2osm
           POSTGRES_PASSWORD: be2osm
@@ -29,15 +29,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
-      - name: Run init scripts
+      - name: Install PostgreSQL 18 client
         run: |
-          for f in postgres/*.sql; do
-            echo "Running $f..."
-            PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f "$f"
-          done
+          sudo apt-get install -y curl ca-certificates
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18
+
+      - name: Initialize be2osm database
+        run: |
+          # Only run scripts needed for PICC import.
+          # 05: sets up picc schema in be2osm database
+          # Skipping 01-04: not needed here
+          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f postgres/05-setup-picc.sql
 
       - name: Build processing image
         run: docker build -t processing ./processing
@@ -54,7 +60,11 @@ jobs:
 
       - name: Create PICC dump
         run: |
-          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm --data-only --disable-triggers -n picc be2osm | gzip > picc.sql.gz
+          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm \
+            --data-only --disable-triggers \
+            --no-owner --no-acl \
+            -n picc \
+            be2osm | gzip > picc.sql.gz
           ls -lh picc.sql.gz
 
       - name: Upload PICC dump
@@ -63,3 +73,11 @@ jobs:
           name: picc-dump
           path: picc.sql.gz
           retention-days: 7
+
+      - name: Notify server to restore dump
+        if: ${{ vars.WEBHOOK_URL != '' }}
+        run: |
+          curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/picc-restore" \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
+            -d "{\"run_id\": \"${{ github.run_id }}\"}"

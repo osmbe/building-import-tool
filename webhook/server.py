@@ -7,23 +7,30 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 SECRET = os.environ.get('WEBHOOK_SECRET', '')
 REPO = os.environ.get('GH_REPO', 'osmbe/building-import-tool')
 
+ROUTES = {
+    '/osm-restore': '/restore-osm.sh',
+    '/grb-restore': '/restore-grb.sh',
+    '/picc-restore': '/restore-picc.sh',
+}
 
-def run_restore(run_id: str) -> None:
-    print(f"[restore] Starting OSM restore from run {run_id}", flush=True)
+
+def run_restore(script: str, run_id: str) -> None:
+    print(f"[restore] Starting {script} from run {run_id}", flush=True)
     result = subprocess.run(
-        ['/restore.sh', run_id, REPO],
+        [script, run_id, REPO],
         env=os.environ.copy(),
         capture_output=False,
     )
     if result.returncode == 0:
-        print(f"[restore] Completed successfully", flush=True)
+        print(f"[restore] {script} completed successfully", flush=True)
     else:
-        print(f"[restore] Failed with exit code {result.returncode}", flush=True)
+        print(f"[restore] {script} failed with exit code {result.returncode}", flush=True)
 
 
 class WebhookHandler(BaseHTTPRequestHandler):
     def do_POST(self):
-        if self.path != '/osm-restore':
+        script = ROUTES.get(self.path)
+        if script is None:
             self._respond(404, 'Not found')
             return
 
@@ -39,7 +46,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             self._respond(400, 'Missing run_id')
             return
 
-        threading.Thread(target=run_restore, args=(run_id,), daemon=True).start()
+        threading.Thread(target=run_restore, args=(script, run_id), daemon=True).start()
         self._respond(202, f'Restore started for run {run_id}')
 
     def _respond(self, code: int, message: str) -> None:
@@ -55,4 +62,5 @@ class WebhookHandler(BaseHTTPRequestHandler):
 if __name__ == '__main__':
     port = int(os.environ.get('WEBHOOK_PORT', 9000))
     print(f"[webhook] Listening on port {port}", flush=True)
+    print(f"[webhook] Routes: {list(ROUTES.keys())}", flush=True)
     HTTPServer(('0.0.0.0', port), WebhookHandler).serve_forever()
