@@ -153,12 +153,16 @@ services:
     environment:
       WEBHOOK_SECRET: ${WEBHOOK_SECRET}
       WEBHOOK_PORT: 9000
-      GH_TOKEN: ${GH_TOKEN}
+      GH_TOKEN: ${GH_TOKEN:-}
       GH_REPO: ${GH_REPO:-osmbe/building-import-tool}
       POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      # gh CLI config for artifact download authentication
+      # Linux: /home/username/.config/gh  |  macOS: /Users/username/.config/gh
+      - ${HOME}/.config/gh:/root/.config/gh:ro
     depends_on:
       postgres:
         condition: service_healthy
