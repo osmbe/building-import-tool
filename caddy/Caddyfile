@@ -1,5 +1,7 @@
 {
 	admin off
+	# TLS is handled by Nginx Proxy Manager upstream; Caddy only needs HTTP
+	auto_https off
 }
 
 {$DOMAIN} {
