@@ -221,6 +221,30 @@ grb-full:
     @just grb-download-all
     @just grb-import
 
+# Targeted patch: re-download Addresses product and re-import only address-building links.
+# Use when address_building_links needs repopulating without a full re-import.
+grb-patch-address-links:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p {{grb_orders_dir}}
+    echo "📦 Ordering Addresses product (contains RltAdresGebouw link files)..."
+    RESPONSE=$(curl -s -H "x-api-key: {{grb_api_key}}" -H "Content-Type: application/json" \
+        -X POST -d '{"productId": 10445, "format": "Shapefile"}' {{grb_api_base}}/orders)
+    ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
+    echo "✅ Order ID: $ORDER_ID"
+    echo "⏳ Waiting for order to be processed..."
+    while true; do
+        STATUS=$(curl -s -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/$ORDER_ID | jq -r '.status')
+        echo "$(date +%H:%M:%S) - addresses: $STATUS"
+        if [ "$STATUS" = "Processed" ] || [ "$STATUS" = "Completed" ]; then
+            break
+        fi
+        sleep 60
+    done
+    just _grb-download-if-ready addresses $ORDER_ID
+    just _grb-import-address-links
+    echo "✅ Address-building links patched!"
+
 # Update GRB data with changes since last update (differential)
 grb-update:
     @echo "🔄 GRB Differential Update"
@@ -1229,10 +1253,6 @@ _grb-import-addresses:
     "
     echo "✅ Addresses imported"
 
-    # Clean up addresses directory to save disk space
-    echo "   🗑️  Cleaning up addresses data..."
-    rm -rf {{grb_data_dir}}/addresses
-
 # GRB: Import address-building links
 _grb-import-address-links:
     #!/usr/bin/env bash
@@ -1255,9 +1275,10 @@ _grb-import-address-links:
     done
     echo "✅ Address links imported"
 
-    # Clean up address-links directory to save disk space
-    echo "   🗑️  Cleaning up address-links data..."
+    # Clean up data directories to save disk space
+    echo "   🗑️  Cleaning up address-links and addresses data..."
     rm -rf {{grb_data_dir}}/address-links
+    rm -rf {{grb_data_dir}}/addresses
 
 # GRB: Aggregate building polygons into buildings (batched to avoid OOM)
 _grb-aggregate-buildings:

@@ -11,6 +11,7 @@ ROUTES = {
     '/osm-restore': '/restore-osm.sh',
     '/grb-restore': '/restore-grb.sh',
     '/picc-restore': '/restore-picc.sh',
+    '/address-links-patch': '/patch-address-links.sh',
 }
 
 
