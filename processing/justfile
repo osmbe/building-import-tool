@@ -959,8 +959,12 @@ _grb-download-if-ready product order_id:
         # Extract if ZIP
         if [[ "$FILE" == *.zip ]]; then
             echo "   📦 Extracting $FILE..."
-            if ! unzip -o -q "$DEST" -d "{{grb_data_dir}}/{{product}}/"; then
-                echo "❌ Extraction failed for $FILE (file may be corrupt or incomplete)" >&2
+            # unzip exit code 1 = warnings only (e.g. Windows backslash paths) — treat as success
+            # exit code >= 2 = actual failure (corrupt file, read error, etc.)
+            unzip -o -q "$DEST" -d "{{grb_data_dir}}/{{product}}/"
+            UNZIP_EXIT=$?
+            if [ $UNZIP_EXIT -ge 2 ]; then
+                echo "❌ Extraction failed for $FILE (unzip exit code $UNZIP_EXIT)" >&2
                 exit 1
             fi
             echo "   📁 Extracted files:"
