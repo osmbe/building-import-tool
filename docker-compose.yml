@@ -145,6 +145,27 @@ services:
     networks:
       - be2osm
 
+  # Webhook service: receives POST /osm-restore from GitHub Actions and restores the OSM dump
+  webhook:
+    build:
+      context: ./webhook
+    container_name: be2osm-webhook
+    environment:
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      WEBHOOK_PORT: 9000
+      GH_TOKEN: ${GH_TOKEN}
+      GH_REPO: ${GH_REPO:-osmbe/building-import-tool}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - be2osm
+
   caddy:
     image: caddy:2-alpine
     container_name: be2osm-caddy
@@ -160,6 +181,8 @@ services:
         condition: service_healthy
       osm-tiles:
         condition: service_healthy
+      webhook:
+        condition: service_started
     restart: unless-stopped
     networks:
       - be2osm

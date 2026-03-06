@@ -24,6 +24,12 @@
 		reverse_proxy osm-tiles:3000
 	}
 
+	# Webhook service
+	handle /webhook/* {
+		uri strip_prefix /webhook
+		reverse_proxy webhook:9000
+	}
+
 	# All other routes (including /api/*) go to Nuxt
 	# Nuxt will handle proxying to Rust API where needed
 	handle {
