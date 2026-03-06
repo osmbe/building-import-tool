@@ -234,7 +234,8 @@ grb-patch-address-links:
     echo "✅ Order ID: $ORDER_ID"
     echo "⏳ Waiting for order to be processed..."
     while true; do
-        STATUS=$(curl -s -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/$ORDER_ID | jq -r '.status')
+        STATUS=$(curl -s --retry 5 --retry-all-errors --retry-delay 10 \
+            -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/$ORDER_ID | jq -r '.status')
         echo "$(date +%H:%M:%S) - addresses: $STATUS"
         if [ "$STATUS" = "Processed" ] || [ "$STATUS" = "Completed" ]; then
             break
@@ -963,7 +964,8 @@ _grb-download-if-ready product order_id:
     fi
     echo "📥 Downloading {{product}}..."
     mkdir -p {{grb_data_dir}}/{{product}}
-    ORDER_DATA=$(curl -s -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/{{order_id}})
+    ORDER_DATA=$(curl -s --retry 5 --retry-all-errors --retry-delay 10 \
+        -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/{{order_id}})
     STATUS=$(echo "$ORDER_DATA" | jq -r '.status')
     if [ "$STATUS" != "Processed" ] && [ "$STATUS" != "Completed" ]; then
         echo "⚠️  Not ready (Status: $STATUS)"
@@ -1016,7 +1018,8 @@ _grb-wait-for-orders:
         for PRODUCT in gbg gba addresses address-links; do
             ORDER_ID=$(just _grb-get-order-id $PRODUCT)
             if [ -n "$ORDER_ID" ] && [ "$ORDER_ID" != "null" ]; then
-                STATUS=$(curl -s -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/$ORDER_ID | jq -r '.status')
+                STATUS=$(curl -s --retry 5 --retry-all-errors --retry-delay 10 \
+                    -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/$ORDER_ID | jq -r '.status')
                 echo "$(date +%H:%M:%S) - $PRODUCT: $STATUS"
                 if [ "$STATUS" != "Processed" ] && [ "$STATUS" != "Completed" ]; then
                     ALL_READY=false
