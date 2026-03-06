@@ -173,8 +173,6 @@ services:
   caddy:
     image: caddy:2-alpine
     container_name: be2osm-caddy
-    environment:
-      DOMAIN: ${DOMAIN}
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
       - caddy_data:/data

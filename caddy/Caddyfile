@@ -4,7 +4,7 @@
 	auto_https off
 }
 
-{$DOMAIN} {
+:80 {
 	encode zstd gzip
 
 	# Logging
