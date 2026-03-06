@@ -974,12 +974,13 @@ _grb-download-if-ready product order_id:
         URL=$(echo "$ORDER_DATA" | jq -r ".downloads[$i][\"@id\"]")
         FILE=$(echo "$ORDER_DATA" | jq -r ".downloads[$i].name")
         DEST="{{grb_data_dir}}/{{product}}/$FILE"
-        HTTP_CODE=$(curl --fail --progress-bar -H "x-api-key: {{grb_api_key}}" -L \
-            -w "%{http_code}" \
-            "https://download.api.vlaanderen.be$URL" -o "$DEST" 2>&1) || {
-            echo "❌ Download failed for $FILE (HTTP $HTTP_CODE)" >&2
+        curl -L -# -H "x-api-key: {{grb_api_key}}" \
+            "https://download.api.vlaanderen.be$URL" -o "$DEST"
+        CURL_EXIT=$?
+        if [ $CURL_EXIT -ne 0 ]; then
+            echo "❌ Download failed for $FILE (curl exit $CURL_EXIT)" >&2
             exit 1
-        }
+        fi
         FILE_SIZE=$(stat -c%s "$DEST" 2>/dev/null || echo 0)
         echo "✅ Downloaded: $FILE ($(numfmt --to=iec $FILE_SIZE))"
         # Extract if ZIP
