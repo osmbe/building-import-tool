@@ -976,12 +976,13 @@ _grb-download-if-ready product order_id:
         URL=$(echo "$ORDER_DATA" | jq -r ".downloads[$i][\"@id\"]")
         FILE=$(echo "$ORDER_DATA" | jq -r ".downloads[$i].name")
         DEST="{{grb_data_dir}}/{{product}}/$FILE"
-        curl -L -# -C - --retry 5 --retry-all-errors --retry-delay 30 \
-            -H "x-api-key: {{grb_api_key}}" \
-            "https://download.api.vlaanderen.be$URL" -o "$DEST"
-        CURL_EXIT=$?
-        if [ $CURL_EXIT -ne 0 ]; then
-            echo "❌ Download failed for $FILE (curl exit $CURL_EXIT)" >&2
+        wget -q --show-progress --continue --tries=10 --waitretry=30 \
+            --header "x-api-key: {{grb_api_key}}" \
+            -O "$DEST" \
+            "https://download.api.vlaanderen.be$URL"
+        WGET_EXIT=$?
+        if [ $WGET_EXIT -ne 0 ]; then
+            echo "❌ Download failed for $FILE (wget exit $WGET_EXIT)" >&2
             exit 1
         fi
         FILE_SIZE=$(stat -c%s "$DEST" 2>/dev/null || echo 0)
