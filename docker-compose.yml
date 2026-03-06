@@ -153,9 +153,6 @@ services:
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
       - caddy_data:/data
-    ports:
-      - "80:80"
-      - "443:443"
     depends_on:
       nuxt-app:
         condition: service_healthy
@@ -166,13 +163,13 @@ services:
     restart: unless-stopped
     networks:
       - be2osm
-      # - nginx-proxy-network
+      - nginx-proxy-network
 
 networks:
   be2osm:
     driver: bridge
-  # nginx-proxy-network:
-  #  external: true
+  nginx-proxy-network:
+    external: true
 volumes:
   postgres-data:
   caddy_data:

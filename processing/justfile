@@ -583,10 +583,11 @@ osm-import-remote:
     # Show artifact size
     ls -lh /tmp/osm-restore/osmbe.sql.gz
 
-    # Clear existing data before restore (data-only dump)
+    # Clear existing data before restore (data-only dump covers the full osm schema)
     echo ""
     echo "🧹 Clearing existing OSM data..."
     {{psql_osmbe}} -c "TRUNCATE osm.osm_buildings CASCADE;" || true
+    {{psql_osmbe}} -c "TRUNCATE osm.osm_addresses CASCADE;" || true
 
     # Restore to local database
     echo ""
@@ -596,7 +597,7 @@ osm-import-remote:
     # Post-restore: update statistics
     echo ""
     echo "📊 Updating database statistics..."
-    {{psql_osmbe}} -c "ANALYZE osm.osm_buildings;"
+    {{psql_osmbe}} -c "ANALYZE osm.osm_buildings; ANALYZE osm.osm_addresses;"
 
     # Cleanup
     rm -rf /tmp/osm-restore

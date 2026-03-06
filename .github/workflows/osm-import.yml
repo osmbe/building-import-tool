@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgis/postgis:16-3.4
+        image: postgis/postgis:18-3.6
         env:
           POSTGRES_USER: be2osm
           POSTGRES_PASSWORD: be2osm
@@ -32,13 +32,15 @@ jobs:
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      - name: Create osmbe database and run init scripts
+      - name: Initialize osmbe database
         run: |
-          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -c "CREATE DATABASE osmbe;"
-          for f in postgres/*.sql; do
-            echo "Running $f..."
-            PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f "$f"
-          done
+          # Only run scripts needed for OSM import.
+          # 01: creates the osmbe database
+          # 03: sets up the osm schema inside osmbe (uses \c osmbe internally)
+          # Skipping 02/04/05: GRB, FDW, PICC are not needed here and 04 would
+          # fail trying to query grb.buildings which doesn't exist in CI.
+          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f postgres/01-init-db.sql
+          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f postgres/03-setup-osmbe.sql
 
       - name: Build processing image
         run: docker build -t processing ./processing
@@ -55,7 +57,13 @@ jobs:
 
       - name: Create OSM dump
         run: |
-          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm --data-only --disable-triggers osmbe | gzip > osmbe.sql.gz
+          # Dump only the osm schema (not the import scratch schema).
+          # --no-owner --no-acl: avoid permission issues when restoring on production.
+          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm \
+            --data-only --disable-triggers \
+            --no-owner --no-acl \
+            -n osm \
+            osmbe | gzip > osmbe.sql.gz
           ls -lh osmbe.sql.gz
 
       - name: Upload OSM dump

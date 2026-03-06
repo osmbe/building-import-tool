@@ -348,7 +348,8 @@ SELECT
     TO_CHAR(bp.survey_date, 'YYYY-MM-DD') as survey_date,
 
     -- Transform to Web Mercator for tile serving (transform once at view creation, not per tile)
-    ST_Transform(bp.geom, 3857) as geom,
+    -- Explicit cast so PostGIS registers SRID=3857 in geometry_columns (required by Martin)
+    ST_Transform(bp.geom, 3857)::geometry(Geometry, 3857) as geom,
 
     -- Parent building aggregated stats (for context)
     b.polygon_count,

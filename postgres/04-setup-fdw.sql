@@ -27,9 +27,14 @@ CREATE SERVER osmbe_server
 \echo '✓ Foreign server created (osmbe_server)'
 
 -- Create user mapping
--- Replace 'CURRENT_USER' with your actual username if needed
+-- postgres_fdw opens a real TCP connection to osmbe and needs credentials.
+-- POSTGRES_PASSWORD from .env is injected into the container, but SQL init scripts
+-- can't read env vars directly. The password below must match POSTGRES_PASSWORD.
+-- On a fresh deploy, if this script fails (e.g. osmbe not ready yet), re-run:
+--   docker exec be2osm-postgres psql -U <user> -d be2osm -f /docker-entrypoint-initdb.d/04-setup-fdw.sql
 CREATE USER MAPPING IF NOT EXISTS FOR CURRENT_USER
-    SERVER osmbe_server;
+    SERVER osmbe_server
+    OPTIONS (user 'be2osm', password 'be2osm');
 
 \echo '✓ User mapping created'
 
@@ -38,8 +43,9 @@ CREATE SCHEMA IF NOT EXISTS osm;
 
 \echo '✓ Schema created (osm)'
 
--- Import the osm_buildings table from osmbe database
-IMPORT FOREIGN SCHEMA osm LIMIT TO (osm_buildings)
+-- Import osm_buildings and osm_addresses from osmbe.
+-- Requires 03-setup-osmbe.sql to have run first (creates the tables in osmbe).
+IMPORT FOREIGN SCHEMA osm LIMIT TO (osm_buildings, osm_addresses)
     FROM SERVER osmbe_server INTO osm;
 
 \echo '✓ Foreign table imported (osm.osm_buildings)'
