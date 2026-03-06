@@ -976,7 +976,8 @@ _grb-download-if-ready product order_id:
         URL=$(echo "$ORDER_DATA" | jq -r ".downloads[$i][\"@id\"]")
         FILE=$(echo "$ORDER_DATA" | jq -r ".downloads[$i].name")
         DEST="{{grb_data_dir}}/{{product}}/$FILE"
-        curl -L -# -H "x-api-key: {{grb_api_key}}" \
+        curl -L -# -C - --retry 5 --retry-all-errors --retry-delay 30 \
+            -H "x-api-key: {{grb_api_key}}" \
             "https://download.api.vlaanderen.be$URL" -o "$DEST"
         CURL_EXIT=$?
         if [ $CURL_EXIT -ne 0 ]; then
