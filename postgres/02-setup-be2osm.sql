@@ -367,7 +367,8 @@ SELECT
 FROM
     grb.building_polygons bp
     LEFT JOIN grb.buildings b ON bp.gebouw_id = b.gebouw_id
-    LEFT JOIN grb.addresses a ON ST_DWithin(a.geom, bp.geom, 0.0001)  -- ~10m buffer for spatial proximity
+    LEFT JOIN grb.address_building_links abl ON bp.gebouw_id = abl.building_object_id::BIGINT
+    LEFT JOIN grb.addresses a ON abl.adres_id = a.adres_id
 GROUP BY
     bp.oidn,
     bp.gebouw_id,
@@ -429,7 +430,7 @@ COMMENT ON COLUMN grb.addresses.geom IS 'Point geometry in WGS84 (EPSG:4326)';
 
 COMMENT ON TABLE grb.address_building_links IS 'Links between addresses and building objects - 3.9M+ links';
 COMMENT ON COLUMN grb.address_building_links.adres_id IS 'Address ID (foreign key to addresses.adres_id)';
-COMMENT ON COLUMN grb.address_building_links.building_object_id IS 'Building object ID (Gebouweenheid)';
+COMMENT ON COLUMN grb.address_building_links.building_object_id IS 'Building ID (GEBOUWID) — links to buildings.gebouw_id and building_polygons.gebouw_id';
 
 \echo ''
 \echo '======================================'

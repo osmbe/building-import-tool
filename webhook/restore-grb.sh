@@ -28,7 +28,7 @@ ${PSQL} -c "TRUNCATE grb.addresses CASCADE;" || true
 
 gunzip -c "${DUMP_FILE}" | ${PSQL}
 
-${PSQL} -c "ANALYZE grb.building_polygons; ANALYZE grb.buildings; ANALYZE grb.addresses;"
+${PSQL} -c "ANALYZE grb.building_polygons; ANALYZE grb.buildings; ANALYZE grb.addresses; ANALYZE grb.address_building_links;"
 
 rm -rf "${WORK_DIR}"
 echo "[restore-grb] Done."
