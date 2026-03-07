@@ -166,8 +166,8 @@ CREATE TABLE IF NOT EXISTS grb.polygon_building_rel (
     oidn BIGINT NOT NULL,             -- Polygon OIDN (links to building_polygons.oidn)
     gebouw_id BIGINT NOT NULL,        -- Building ID (the logical building this polygon belongs to)
 
-    -- Ensure one-to-one mapping
-    CONSTRAINT uq_polygon_building_rel_oidn UNIQUE (oidn)
+    -- Note: no UNIQUE constraint on oidn — DBF source may have duplicates;
+    -- _grb-update-gebouw-ids handles this via DISTINCT in the UPDATE join
 );
 
 \echo '✓ GRB tables created'
