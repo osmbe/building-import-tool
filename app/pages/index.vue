@@ -1,7 +1,7 @@
 <template>
   <div class="h-screen w-full overflow-hidden">
     <Navigation @location-select="onLocationSelect" />
-    <main class="pt-16" style="height: calc(100vh - 4rem);">
+    <main class="pt-12" style="height: calc(100vh - 3rem);">
       <InteractiveMap :selected-location="selectedLocation" />
     </main>
   </div>

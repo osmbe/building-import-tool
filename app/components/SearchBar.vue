@@ -1,20 +1,22 @@
 <template>
   <div class="relative w-full">
-    <div class="flex gap-2 items-center">
-      <div class="flex-1 relative">
-        <Input
-          v-model="query"
-          placeholder="Search locations"
-          class="pl-9"
-          @focus="open = true"
-          @keydown.esc="open = false"
-        />
-        <Search class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      </div>
-      <Button variant="outline" size="sm" disabled>OSM</Button>
-      <Button variant="ghost" size="icon" v-if="query" @click="clear">
-        <X class="h-4 w-4" />
-      </Button>
+    <div class="relative">
+      <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+      <input
+        v-model="query"
+        type="text"
+        placeholder="Search locations in Belgium…"
+        class="w-full h-8 pl-8 pr-7 text-xs bg-white/[0.05] border border-white/[0.07] rounded text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/40 focus:bg-white/[0.08] transition-all font-[inherit]"
+        @focus="open = true"
+        @keydown.esc="open = false"
+      />
+      <button
+        v-if="query"
+        class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+        @click="clear"
+      >
+        <X class="h-3 w-3" />
+      </button>
     </div>
 
     <SearchResults
@@ -23,7 +25,7 @@
       :is-loading="isLoading"
       :search-history="history"
       :query="query"
-      @close="open=false"
+      @close="open = false"
       @select="selectResult"
     />
   </div>
@@ -33,8 +35,6 @@
 import { type Provider, type SearchResult, addToSearchHistory, getSearchHistory, searchLocations } from '~/composables/useSearch'
 import { Search, X } from 'lucide-vue-next'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import Button from '~/components/ui/button.vue'
-import Input from '~/components/ui/input.vue'
 import SearchResults from '~/components/SearchResults.vue'
 
 const emit = defineEmits<{ (e: 'select', result: SearchResult): void }>()
@@ -63,9 +63,7 @@ function clear() {
   results.value = []
 }
 
-// Debounced search to avoid too many API calls
 watch([query, provider], ([q, p]) => {
-  // Clear previous timer
   if (debounceTimer) {
     clearTimeout(debounceTimer)
   }
@@ -76,10 +74,8 @@ watch([query, provider], ([q, p]) => {
     return
   }
 
-  // Show loading state immediately
   isLoading.value = true
 
-  // Debounce the actual search
   debounceTimer = setTimeout(async () => {
     try {
       const searchResults = await searchLocations(q, p)
@@ -90,7 +86,7 @@ watch([query, provider], ([q, p]) => {
     } finally {
       isLoading.value = false
     }
-  }, 500) // 500ms debounce
+  }, 500)
 })
 
 function selectResult(result: SearchResult) {

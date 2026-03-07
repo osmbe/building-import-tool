@@ -1,93 +1,89 @@
 <template>
-  <div v-if="isOpen && building" class="absolute right-4 top-20 w-[420px]">
-    <Card class="p-4 shadow-xl bg-slate-800 text-gray-100 border-slate-600">
+  <div v-if="isOpen && building" class="absolute right-4 top-16 w-[380px] animate-fade-up">
+    <div class="glass-panel rounded-lg overflow-hidden">
       <!-- Header -->
-      <div class="flex items-start justify-between mb-4">
-        <div>
-          <div class="flex items-center gap-2">
-            <Building2 class="h-5 w-5 text-blue-400" />
-            <h2 class="text-lg font-semibold">{{ buildingTypeLabel }}</h2>
+      <div class="px-4 pt-4 pb-3 border-b border-white/[0.05]">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded mb-2">
+              <Building2 class="h-2.5 w-2.5" />
+              GRB Building
+            </div>
+            <h2 class="text-sm font-semibold text-foreground">{{ buildingTypeLabel }}</h2>
+            <p class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ building.gebouw_id }}</p>
           </div>
-          <div class="text-xs text-gray-400 mt-1">
-            GRB ID: {{ building.gebouw_id }}
-          </div>
+          <button class="text-muted-foreground hover:text-foreground transition-colors mt-1" @click="$emit('close')">
+            <X class="h-4 w-4" />
+          </button>
         </div>
-        <Button variant="ghost" size="icon" @click="$emit('close')">
-          <X class="h-4 w-4" />
-        </Button>
       </div>
 
-      <!-- Building Info -->
-      <div class="space-y-4">
-        <!-- Addresses Section -->
-        <div v-if="addresses.length > 0" class="space-y-2">
-          <div class="flex items-center gap-2 text-sm font-medium text-gray-300">
-            <MapPin class="h-4 w-4" />
-            <span>Addresses ({{ addresses.length }})</span>
+      <!-- Body -->
+      <div class="p-4 space-y-4">
+        <!-- Addresses -->
+        <div v-if="addresses.length > 0">
+          <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5">
+            <MapPin class="h-3 w-3" /> Addresses ({{ addresses.length }})
           </div>
-          <div class="pl-6 space-y-1">
+          <div class="space-y-0.5 pl-0">
             <div
               v-for="(address, idx) in addresses"
               :key="idx"
-              class="text-sm text-gray-200 py-1"
+              class="text-xs text-foreground/80 py-0.5"
             >
               {{ address }}
             </div>
           </div>
         </div>
 
-        <!-- Location Section -->
-        <div v-if="hasLocationData" class="space-y-2">
-          <div class="flex items-center gap-2 text-sm font-medium text-gray-300">
-            <MapPinned class="h-4 w-4" />
-            <span>Location</span>
+        <!-- Location -->
+        <div v-if="hasLocationData">
+          <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5">
+            <MapPinned class="h-3 w-3" /> Location
           </div>
-          <div class="pl-6 space-y-1 text-sm">
-            <div v-if="postcodes.length > 0" class="flex justify-between">
-              <span class="text-gray-400">Postcode:</span>
-              <span class="text-gray-200">{{ postcodes.join(', ') }}</span>
+          <div class="space-y-1.5 text-xs">
+            <div v-if="postcodes.length > 0" class="flex gap-4">
+              <span class="text-muted-foreground w-24 shrink-0">Postcode</span>
+              <span class="text-foreground/80">{{ postcodes.join(', ') }}</span>
             </div>
-            <div v-if="municipalities.length > 0" class="flex justify-between">
-              <span class="text-gray-400">Municipality:</span>
-              <span class="text-gray-200">{{ municipalities.join(', ') }}</span>
+            <div v-if="municipalities.length > 0" class="flex gap-4">
+              <span class="text-muted-foreground w-24 shrink-0">Municipality</span>
+              <span class="text-foreground/80">{{ municipalities.join(', ') }}</span>
             </div>
-            <div v-if="streetNames.length > 0" class="flex justify-between">
-              <span class="text-gray-400">Street:</span>
-              <span class="text-gray-200">{{ streetNames.join(', ') }}</span>
+            <div v-if="streetNames.length > 0" class="flex gap-4">
+              <span class="text-muted-foreground w-24 shrink-0">Street</span>
+              <span class="text-foreground/80">{{ streetNames.join(', ') }}</span>
             </div>
           </div>
         </div>
 
-        <!-- Building Details Section -->
-        <div v-if="hasBuildingDetails" class="space-y-2">
-          <div class="flex items-center gap-2 text-sm font-medium text-gray-300">
-            <Ruler class="h-4 w-4" />
-            <span>Building Details</span>
+        <!-- Building details -->
+        <div v-if="hasBuildingDetails">
+          <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Ruler class="h-3 w-3" /> Building Details
           </div>
-          <div class="pl-6 space-y-1 text-sm">
-            <div v-if="building.total_area_m2" class="flex justify-between">
-              <span class="text-gray-400">Total Area:</span>
-              <span class="text-gray-200">{{ formattedArea }}</span>
+          <div class="space-y-1.5 text-xs">
+            <div v-if="building.total_area_m2" class="flex gap-4">
+              <span class="text-muted-foreground w-24 shrink-0">Total area</span>
+              <span class="text-foreground/80 font-mono">{{ formattedArea }}</span>
             </div>
-            <div v-if="building.polygon_count" class="flex justify-between">
-              <span class="text-gray-400">Polygon Parts:</span>
-              <span class="text-gray-200">{{ building.polygon_count }}</span>
+            <div v-if="building.polygon_count" class="flex gap-4">
+              <span class="text-muted-foreground w-24 shrink-0">Parts</span>
+              <span class="text-foreground/80 font-mono">{{ building.polygon_count }}</span>
             </div>
-            <div v-if="building.type_label" class="flex justify-between">
-              <span class="text-gray-400">Type:</span>
-              <span class="text-gray-200">{{ buildingTypeLabel }}</span>
+            <div v-if="building.type_label" class="flex gap-4">
+              <span class="text-muted-foreground w-24 shrink-0">Type</span>
+              <span class="text-foreground/80">{{ buildingTypeLabel }}</span>
             </div>
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Building2, MapPin, MapPinned, Ruler, X } from 'lucide-vue-next'
-import Button from '~/components/ui/button.vue'
-import Card from '~/components/ui/card.vue'
 import { computed } from 'vue'
 
 interface GRBBuilding {
@@ -109,18 +105,15 @@ const { building, isOpen } = defineProps<{
 
 defineEmits<{ (e: 'close'): void }>()
 
-// Helper function to parse PostgreSQL array format {item1,item2} to JS array
 const parsePostgresArray = (value: string[] | string | undefined): string[] => {
   if (!value) return []
   if (Array.isArray(value)) return value
 
-  // Handle PostgreSQL array format: {item1,item2,"item with spaces"}
   const str = String(value).trim()
   if (str.startsWith('{') && str.endsWith('}')) {
     const inner = str.slice(1, -1)
     if (inner === '') return []
 
-    // Split by comma, but respect quoted strings
     const items: string[] = []
     let current = ''
     let inQuotes = false
@@ -143,49 +136,38 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
   return [str]
 }
 
-// Computed properties for formatted data
-const addresses = computed(() => parsePostgresArray(building?.addresses))
-const streetNames = computed(() => parsePostgresArray(building?.street_names))
-const postcodes = computed(() => parsePostgresArray(building?.postcodes))
+const addresses     = computed(() => parsePostgresArray(building?.addresses))
+const streetNames   = computed(() => parsePostgresArray(building?.street_names))
+const postcodes     = computed(() => parsePostgresArray(building?.postcodes))
 const municipalities = computed(() => parsePostgresArray(building?.municipalities))
 
 const formattedArea = computed(() => {
   if (!building?.total_area_m2) return '—'
   const area = building.total_area_m2
-  if (area >= 1000) {
-    return `${(area / 1000).toFixed(2)} km²`
-  }
-  return `${area.toFixed(0)} m²`
+  return area >= 1000
+    ? `${(area / 1000).toFixed(2)} km²`
+    : `${area.toFixed(0)} m²`
 })
 
 const buildingTypeLabel = computed(() => {
   const type = building?.type_label
   if (!type) return 'Building'
-
-  // Translate common Dutch building types
   const translations: Record<string, string> = {
     'hoofdgebouw': 'Main Building',
-    'bijgebouw': 'Outbuilding',
-    'afdak': 'Shelter',
-    'garage': 'Garage',
-    'berging': 'Storage',
-    'serre': 'Conservatory'
+    'bijgebouw':   'Outbuilding',
+    'afdak':       'Shelter',
+    'garage':      'Garage',
+    'berging':     'Storage',
+    'serre':       'Conservatory'
   }
-
   return translations[type.toLowerCase()] || type
 })
 
-// Check if location section has any data to display
 const hasLocationData = computed(() =>
-  postcodes.value.length > 0 ||
-         municipalities.value.length > 0 ||
-         streetNames.value.length > 0
+  postcodes.value.length > 0 || municipalities.value.length > 0 || streetNames.value.length > 0
 )
 
-// Check if building details section has any data to display
 const hasBuildingDetails = computed(() =>
-  building?.total_area_m2 ||
-         building?.polygon_count ||
-         building?.type_label
+  building?.total_area_m2 || building?.polygon_count || building?.type_label
 )
 </script>

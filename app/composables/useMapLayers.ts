@@ -1,4 +1,4 @@
-import { type ProjectionLike, fromLonLat, get as getProjection } from 'ol/proj'
+import { type ProjectionLike, fromLonLat, get as getProjection, transformExtent } from 'ol/proj'
 import { type Ref, ref } from 'vue'
 import { getTopLeft, getWidth } from 'ol/extent'
 import OLMap from 'ol/Map'
@@ -29,11 +29,12 @@ export interface MapConfig {
 // Main composable
 export const useMapLayers = () => {
   const map = ref<OLMap | null>(null)
-  const currentBaseLayer = ref<'osm' | 'flanders' | 'wallonia' | 'brussels' | 'blank'>('osm')
+  const currentBaseLayer = ref<'osm' | 'flanders' | 'wallonia' | 'brussels' | 'esri' | 'blank'>('osm')
   const osmLayer = ref<TileLayer<XYZ>>()
   const flandersLayer = ref<TileLayer<WMTS>>()
   const walloniaLayer = ref<TileLayer<TileWMS>>()
-  const brusselsLayer = ref<TileLayer<WMTS>>()
+  const brusselsLayer = ref<TileLayer<TileWMS>>()
+  const esriLayer = ref<TileLayer<XYZ>>()
 
   // Initialize layers first (separate from map creation)
   const initializeLayers = () => {
@@ -84,12 +85,12 @@ export const useMapLayers = () => {
       }
     })
 
-    // Wallonia WMS layer - hidden by default (2021 version)
+    // Wallonia WMS layer - hidden by default (2024 version)
     walloniaLayer.value = new TileLayer({
       source: new TileWMS({
-        url: 'https://geoservices.wallonie.be/INSPIRE/WMS/OI/MapServer/WMSServer',
+        url: 'https://geoservices.wallonie.be/arcgis/services/IMAGERIE/ORTHO_2024/MapServer/WMSServer',
         params: {
-          'LAYERS': '1', // OI.OrthoimageCoverage.2021
+          'LAYERS': '0',
           'TILED': true,
           'VERSION': '1.3.0',
           'FORMAT': 'image/png'
@@ -99,30 +100,43 @@ export const useMapLayers = () => {
       }),
       visible: false,
       properties: {
-        title: 'Wallonia Orthophoto 2021',
+        title: 'Wallonia Orthophoto 2024',
         type: 'base'
       }
     })
 
-    // Brussels WMTS layer - hidden by default
+    // Esri World Imagery - hidden by default, restricted to Belgium extent
+    const belgiumExtent = transformExtent([2.54, 49.49, 6.41, 51.51], 'EPSG:4326', 'EPSG:3857')
+    esriLayer.value = new TileLayer({
+      source: new XYZ({
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attributions: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+        maxZoom: 19
+      }),
+      extent: belgiumExtent,
+      visible: false,
+      properties: {
+        title: 'Esri World Imagery',
+        type: 'base'
+      }
+    })
+
+    // Brussels WMS layer - hidden by default (2024 version, nadir/vertical)
     brusselsLayer.value = new TileLayer({
-      source: new WMTS({
-        url: 'https://geoservices-urbis.irisnet.be/geowebcache/service/wmts',
-        layer: 'Ortho2017',
-        matrixSet: 'EPSG:900913',
-        format: 'image/jpeg',
-        projection: projection,
-        tileGrid: new WMTSTileGrid({
-          origin: getTopLeft(projectionExtent),
-          resolutions: resolutions,
-          matrixIds: matrixIds
-        }),
-        style: 'default',
-        wrapX: true
+      source: new TileWMS({
+        url: '/api/proxy/brussels-wms',
+        params: {
+          'LAYERS': 'Ortho2024Ns',
+          'TILED': true,
+          'VERSION': '1.1.1',
+          'FORMAT': 'image/jpeg'
+        },
+        serverType: 'geoserver',
+        crossOrigin: 'anonymous'
       }),
       visible: false,
       properties: {
-        title: 'Brussels Orthophoto 2017',
+        title: 'Brussels Orthophoto 2024',
         type: 'base'
       }
     })
@@ -188,13 +202,14 @@ export const useMapLayers = () => {
     map.value.addLayer(flandersLayer.value!)
     map.value.addLayer(walloniaLayer.value!)
     map.value.addLayer(brusselsLayer.value!)
+    map.value.addLayer(esriLayer.value!)
 
     return mapInstance
   }
 
   // Switch base layer following OpenLayers best practices
-  const switchBaseLayer = (layerName: 'osm' | 'flanders' | 'wallonia' | 'brussels' | 'blank') => {
-    if (!osmLayer.value || !flandersLayer.value || !walloniaLayer.value || !brusselsLayer.value || !map.value) {
+  const switchBaseLayer = (layerName: 'osm' | 'flanders' | 'wallonia' | 'brussels' | 'esri' | 'blank') => {
+    if (!osmLayer.value || !flandersLayer.value || !walloniaLayer.value || !brusselsLayer.value || !esriLayer.value || !map.value) {
       console.warn('Layers or map not initialized')
       return
     }
@@ -204,6 +219,7 @@ export const useMapLayers = () => {
     flandersLayer.value.setVisible(false)
     walloniaLayer.value.setVisible(false)
     brusselsLayer.value.setVisible(false)
+    esriLayer.value.setVisible(false)
 
     // Show selected layer (or keep all hidden for blank)
     if (layerName === 'osm') {
@@ -214,6 +230,8 @@ export const useMapLayers = () => {
       walloniaLayer.value.setVisible(true)
     } else if (layerName === 'brussels') {
       brusselsLayer.value.setVisible(true)
+    } else if (layerName === 'esri') {
+      esriLayer.value.setVisible(true)
     }
     // For 'blank', all layers stay hidden
 

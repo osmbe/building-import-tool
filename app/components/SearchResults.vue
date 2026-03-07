@@ -1,46 +1,61 @@
 <template>
-  <Card class="absolute top-full left-0 right-0 mt-1 p-2 z-[100] bg-background shadow-lg border">
-    <div v-if="isLoading" class="flex items-center justify-center py-6">
-      <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-      <span class="ml-2 text-sm text-muted-foreground">Searching Nominatim...</span>
+  <div class="absolute top-full left-0 right-0 mt-1 z-[100] glass-panel rounded-lg overflow-hidden animate-fade-up">
+    <!-- Loading -->
+    <div v-if="isLoading" class="flex items-center justify-center gap-2 py-6">
+      <div class="h-3.5 w-3.5 rounded-full border-2 border-primary/25 border-t-primary animate-spin"></div>
+      <span class="text-[11px] text-muted-foreground">Searching Nominatim…</span>
     </div>
 
     <template v-else>
-      <div v-if="!query && searchHistory.length" class="px-2 py-1 text-xs font-medium text-muted-foreground flex items-center gap-2">
-        <Clock class="h-3 w-3" /> Recent searches
+      <!-- Recent header -->
+      <div v-if="!query && searchHistory.length" class="px-3 pt-3 pb-1 flex items-center gap-1.5">
+        <Clock class="h-3 w-3 text-muted-foreground" />
+        <span class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Recent</span>
       </div>
-      <div v-if="query && query.length < 3" class="px-3 py-4 text-sm text-muted-foreground">
-        Type at least 3 characters to search...
+
+      <!-- Min chars hint -->
+      <div v-if="query && query.length < 3" class="px-3 py-4 text-[11px] text-muted-foreground text-center">
+        Type at least 3 characters…
       </div>
-      <div class="space-y-1 max-h-[420px] overflow-auto">
+
+      <!-- Results list -->
+      <div class="max-h-80 overflow-auto">
         <template v-if="query && query.length >= 3 && results.length === 0">
-          <div class="px-3 py-6 text-sm text-muted-foreground">No results found for "{{ query }}"</div>
+          <div class="px-3 py-6 text-[11px] text-muted-foreground text-center">
+            No results for "{{ query }}"
+          </div>
         </template>
         <template v-else>
-          <div v-for="item in (query && query.length >= 3 ? results : searchHistory)" :key="item.id"
-               class="flex items-center justify-between px-2 py-2 rounded hover:bg-accent transition cursor-pointer"
-               @click="$emit('select', item)">
-            <div class="flex items-center gap-2">
-              <component :is="iconFor(item.type)" class="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <div class="flex flex-col">
-                <span class="text-sm">{{ item.displayName }}</span>
-                <span class="text-xs text-muted-foreground">{{ item.details?.postcode || item.details?.region || item.provider.toUpperCase() }}</span>
+          <button
+            v-for="item in (query && query.length >= 3 ? results : searchHistory)"
+            :key="item.id"
+            class="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-white/[0.05] transition-colors group border-t border-white/[0.04] first:border-t-0"
+            @click="$emit('select', item)"
+          >
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="h-6 w-6 rounded flex items-center justify-center bg-white/[0.04] text-muted-foreground shrink-0">
+                <component :is="iconFor(item.type)" class="h-3.5 w-3.5" />
+              </div>
+              <div class="min-w-0">
+                <div class="text-xs text-foreground/90 truncate">{{ item.displayName }}</div>
+                <div class="text-[10px] text-muted-foreground truncate mt-0.5">
+                  {{ item.details?.postcode || item.details?.region || '' }}
+                </div>
               </div>
             </div>
-            <Badge variant="secondary" class="text-[10px]">{{ item.provider.toUpperCase() }}</Badge>
-          </div>
+            <span class="text-[9px] font-mono text-muted-foreground/50 ml-2 shrink-0 group-hover:text-muted-foreground/80 transition-colors">
+              {{ item.provider.toUpperCase() }}
+            </span>
+          </button>
         </template>
       </div>
     </template>
-  </Card>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { Building, Clock, Home, MapPin, Star } from 'lucide-vue-next'
-import Badge from '~/components/ui/badge.vue'
-import Card from '~/components/ui/card.vue'
 import type { SearchResult } from '~/composables/useSearch'
-import { computed } from 'vue'
 
 const { results, isLoading, searchHistory, query } = defineProps<{
   results: SearchResult[]
@@ -48,6 +63,8 @@ const { results, isLoading, searchHistory, query } = defineProps<{
   searchHistory: SearchResult[]
   query: string
 }>()
+
+defineEmits<{ (e: 'select', item: SearchResult): void }>()
 
 const iconFor = (type: SearchResult['type']) => {
   switch (type) {

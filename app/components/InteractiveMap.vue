@@ -2,319 +2,271 @@
   <div class="h-full w-full">
     <div class="h-full w-full relative">
       <!-- OpenLayers Map Container -->
-      <div id="map" ref="mapRef" class="absolute inset-0" :class="currentBaseLayer === 'blank' ? 'bg-white' : ''" style="width: 100%; height: 100%; min-height: 400px;"></div>
+      <div id="map" ref="mapRef" class="absolute inset-0" :class="currentBaseLayer === 'blank' ? 'bg-[#f5f0e8]' : ''" style="width: 100%; height: 100%; min-height: 400px;"></div>
 
-      <!-- Match Mode Control -->
-      <MatchModeControl />
-
-      <!-- Controls -->
-      <div class="absolute right-4 top-4 flex flex-col gap-2 w-48">
-        <Card class="p-2 bg-slate-800 text-gray-100 shadow-xl border-slate-600">
-          <div class="flex items-center gap-1 mb-2">
-            <Button variant="outline" size="icon" class="h-6 w-6" @click="zoomIn">
-              <ZoomIn class="h-3 w-3" />
-            </Button>
-            <Button variant="outline" size="icon" class="h-6 w-6" @click="zoomOut">
-              <ZoomOut class="h-3 w-3" />
-            </Button>
-            <Button variant="outline" size="icon" class="h-6 w-6" @click="resetView">
-              <RotateCcw class="h-3 w-3" />
-            </Button>
+      <!-- Top-right: Map Controls Panel -->
+      <div class="absolute right-4 top-4 flex flex-col gap-2 w-44">
+        <div class="glass-panel rounded-lg overflow-hidden">
+          <!-- Zoom controls -->
+          <div class="flex items-center gap-1 p-2 border-b border-white/[0.05]">
+            <button class="map-icon-btn" @click="zoomIn" title="Zoom in">
+              <ZoomIn class="h-3.5 w-3.5" />
+            </button>
+            <button class="map-icon-btn" @click="zoomOut" title="Zoom out">
+              <ZoomOut class="h-3.5 w-3.5" />
+            </button>
+            <button class="map-icon-btn" @click="resetView" title="Reset view">
+              <RotateCcw class="h-3.5 w-3.5" />
+            </button>
           </div>
 
-          <!-- Base Layer Selection -->
-          <div class="border-t border-slate-600 pt-2 mb-2">
-            <div class="text-xs font-medium text-gray-300 uppercase tracking-wide mb-1">Base</div>
-            <div class="space-y-1">
-              <Button
-                variant="outline"
-                size="sm"
-                class="w-full justify-start text-xs px-2 py-1 h-7"
-                :class="currentBaseLayer === 'blank' ? 'bg-blue-600 hover:bg-blue-700' : ''"
-                @click="switchBaseLayer('blank')"
-              >
-                Blank
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                class="w-full justify-start text-xs px-2 py-1 h-7"
-                :class="currentBaseLayer === 'osm' ? 'bg-blue-600 hover:bg-blue-700' : ''"
-                @click="switchBaseLayer('osm')"
-              >
-                OSM
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                class="w-full justify-start text-xs px-2 py-1 h-7"
-                :class="currentBaseLayer === 'flanders' ? 'bg-blue-600 hover:bg-blue-700' : ''"
-                @click="switchBaseLayer('flanders')"
-              >
-                Flanders
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                class="w-full justify-start text-xs px-2 py-1 h-7"
-                :class="currentBaseLayer === 'wallonia' ? 'bg-blue-600 hover:bg-blue-700' : ''"
-                @click="switchBaseLayer('wallonia')"
-              >
-                Wallonia
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                class="w-full justify-start text-xs px-2 py-1 h-7"
-                :class="currentBaseLayer === 'brussels' ? 'bg-blue-600 hover:bg-blue-700' : ''"
-                @click="switchBaseLayer('brussels')"
-              >
-                Brussels
-              </Button>
+          <!-- Base layer selection -->
+          <div class="p-2 border-b border-white/[0.05]">
+            <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Basemap</div>
+            <div class="flex flex-wrap gap-1">
+              <button class="layer-btn" :class="currentBaseLayer === 'blank'    ? 'layer-btn-active' : ''" @click="switchBaseLayer('blank')"    title="No background">Blank</button>
+              <button class="layer-btn" :class="currentBaseLayer === 'osm'      ? 'layer-btn-active' : ''" @click="switchBaseLayer('osm')"      title="OpenStreetMap Belgium (tile.openstreetmap.be)">OSM</button>
+              <button class="layer-btn" :class="currentBaseLayer === 'esri'     ? 'layer-btn-active' : ''" @click="switchBaseLayer('esri')"     title="Esri World Imagery (Maxar/Earthstar) — mosaic, dates vary by area — Belgium only">Esri</button>
+              <button class="layer-btn" :class="currentBaseLayer === 'flanders' ? 'layer-btn-active' : ''" @click="switchBaseLayer('flanders')" title="Orthophoto Vlaanderen — Digitaal Vlaanderen (OFW, always latest)">Flanders <span class="opacity-60">latest</span></button>
+              <button class="layer-btn" :class="currentBaseLayer === 'brussels' ? 'layer-btn-active' : ''" @click="switchBaseLayer('brussels')" title="Ortho UrbIS 2024 (nadir) — geoservices-urbis.irisnet.be">Brussels <span class="opacity-60">'24</span></button>
+              <button class="layer-btn" :class="currentBaseLayer === 'wallonia' ? 'layer-btn-active' : ''" @click="switchBaseLayer('wallonia')" title="Orthophoto Wallonie 2024 — geoservices.wallonie.be">Wallonia <span class="opacity-60">'24</span></button>
             </div>
           </div>
 
-          <div class="border-t border-slate-600 pt-2 space-y-1">
-            <Button variant="outline" size="sm" class="w-full justify-start text-xs px-2 py-1 h-7" :disabled="!canCalculateDifference || isCalculatingDifference" @click="calculateDifference">
-              <Loader2 v-if="isCalculatingDifference" class="h-3 w-3 mr-1 animate-spin" />
-              <GitCompareArrows v-else class="h-3 w-3 mr-1" />
-              {{ isCalculatingDifference ? 'Calculating...' : 'Get Difference' }}
-            </Button>
-            <Button variant="outline" size="sm" class="w-full justify-start text-xs px-2 py-1 h-7" :disabled="!canExportToJOSM" @click="exportToJOSM">
-              <ExternalLink class="h-3 w-3 mr-1" />
-              JOSM
-            </Button>
+          <!-- Actions -->
+          <div class="p-2 space-y-1">
+            <button
+              class="action-btn w-full"
+              :disabled="!canCalculateDifference || isCalculatingDifference"
+              @click="calculateDifference"
+            >
+              <Loader2 v-if="isCalculatingDifference" class="h-3 w-3 animate-spin shrink-0" />
+              <GitCompareArrows v-else class="h-3 w-3 shrink-0" />
+              <span>{{ isCalculatingDifference ? 'Calculating…' : 'Get Difference' }}</span>
+            </button>
+            <button
+              class="action-btn w-full"
+              :disabled="!canExportToJOSM"
+              @click="exportToJOSM"
+            >
+              <ExternalLink class="h-3 w-3 shrink-0" />
+              <span>Open in JOSM</span>
+            </button>
           </div>
-        </Card>
+        </div>
       </div>
 
-      <!-- Bottom left panel showing active layers -->
-      <div class="absolute bottom-4 left-4 flex flex-col gap-2">
-        <Card class="p-3 bg-slate-800/95 backdrop-blur text-gray-100 shadow-xl border-slate-600 min-w-[240px]">
-          <h3 class="text-sm font-semibold mb-3 text-gray-200">Layers</h3>
-          <div class="space-y-3">
-            <!-- Overlay Layers with toggles -->
-            <div class="flex items-center justify-between gap-3">
-              <div class="flex items-center gap-2 flex-1">
-                <div class="w-3 h-3 bg-orange-400 rounded flex-shrink-0"></div>
-                <span class="text-xs text-gray-200">Candidate Buildings</span>
+      <!-- Bottom-left: Layers Panel -->
+      <div class="absolute bottom-4 left-4">
+        <div class="glass-panel rounded-lg p-3 min-w-[220px]">
+          <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Layers</h3>
+          <div class="space-y-2.5">
+            <div class="layer-row">
+              <div class="flex items-center gap-2">
+                <span class="layer-dot" style="background: #f59e0b; box-shadow: 0 0 6px #f59e0b4d;"></span>
+                <span class="text-xs text-foreground/85">Candidate Buildings</span>
               </div>
-              <div class="flex items-center gap-2 flex-shrink-0">
-                <Badge variant="secondary" class="text-xs px-1.5 py-0.5 bg-slate-700 text-gray-300 border-slate-600">{{ candidateBuildingCount }}</Badge>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono text-muted-foreground">{{ candidateBuildingCount }}</span>
                 <Switch v-model:checked="overlayLayers.candidateBuildings" @update:checked="toggleCandidateBuildings" />
               </div>
             </div>
-
-            <div class="flex items-center justify-between gap-3">
-              <div class="flex items-center gap-2 flex-1">
-                <div class="w-3 h-3 bg-orange-600 rounded flex-shrink-0"></div>
-                <span class="text-xs text-gray-200">OSM Buildings</span>
+            <div class="layer-row">
+              <div class="flex items-center gap-2">
+                <span class="layer-dot" style="background: #0ec8e4; box-shadow: 0 0 6px #0ec8e44d;"></span>
+                <span class="text-xs text-foreground/85">OSM Buildings</span>
               </div>
-              <div class="flex-shrink-0">
-                <Switch v-model:checked="overlayLayers.osmBuildings" @update:checked="toggleOsmBuildings" />
-              </div>
+              <Switch v-model:checked="overlayLayers.osmBuildings" @update:checked="toggleOsmBuildings" />
             </div>
-
-            <div class="flex items-center justify-between gap-3">
-              <div class="flex items-center gap-2 flex-1">
-                <div class="w-3 h-3 bg-green-500 rounded flex-shrink-0"></div>
-                <span class="text-xs text-gray-200">GRB Buildings</span>
+            <div class="layer-row">
+              <div class="flex items-center gap-2">
+                <span class="layer-dot" style="background: #34d399; box-shadow: 0 0 6px #34d3994d;"></span>
+                <span class="text-xs text-foreground/85">GRB Buildings</span>
               </div>
-              <div class="flex-shrink-0">
-                <Switch v-model:checked="overlayLayers.grbBuildings" @update:checked="toggleGrbBuildings" />
-              </div>
+              <Switch v-model:checked="overlayLayers.grbBuildings" @update:checked="toggleGrbBuildings" />
             </div>
           </div>
-
-          <div class="border-t border-slate-600/60 pt-2.5 mt-3 space-y-1">
-            <div class="text-[11px] text-gray-400">
-              <span class="text-gray-500">Zoom:</span> <span class="font-mono">{{ currentZoom }}</span>
+          <div class="mt-3 pt-3 border-t border-white/[0.05] space-y-1">
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="text-muted-foreground">Zoom</span>
+              <span class="font-mono text-foreground/55">{{ currentZoom }}</span>
             </div>
-            <div class="text-[11px] text-gray-400">
-              <span class="text-gray-500">Center:</span> <span class="font-mono">{{ currentCenter[1].toFixed(4) }}, {{ currentCenter[0].toFixed(4) }}</span>
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="text-muted-foreground">Center</span>
+              <span class="font-mono text-foreground/55">{{ currentCenter[1].toFixed(4) }}, {{ currentCenter[0].toFixed(4) }}</span>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
-      <!-- Right panel showing Matching Stats and Simplification Control -->
-      <div class="absolute bottom-4 right-4 flex flex-col gap-2 w-48">
-        <!-- Matching Stats Panel -->
-        <Card v-if="matchingStats" class="p-3 bg-slate-800 text-gray-100 shadow-xl border-slate-600">
+      <!-- Bottom-right: Match Mode + Stats stacked -->
+      <div class="absolute bottom-4 right-4 flex flex-col gap-2 w-56">
+        <!-- Matching Stats (shown after Get Difference) -->
+        <div v-if="matchingStats" class="glass-panel rounded-lg p-3">
           <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-medium">Matching Stats</h3>
-            <Button variant="ghost" size="icon" class="h-5 w-5 p-0" @click="matchingStats = null">
+            <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Match Stats</h3>
+            <button class="text-muted-foreground hover:text-foreground transition-colors" @click="matchingStats = null">
               <X class="h-3 w-3" />
-            </Button>
+            </button>
           </div>
-          <div class="space-y-2 text-xs">
+          <div class="space-y-1.5 text-[11px]">
             <div class="flex items-center justify-between">
-              <span class="text-gray-400">Total GRB</span>
-              <Badge variant="secondary" class="text-xs">{{ matchingStats.totalGrb }}</Badge>
+              <span class="text-muted-foreground">GRB total</span>
+              <span class="font-mono text-foreground/65">{{ matchingStats.totalGrb }}</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-gray-400">Total OSM</span>
-              <Badge variant="secondary" class="text-xs">{{ matchingStats.totalOsm }}</Badge>
+              <span class="text-muted-foreground">OSM total</span>
+              <span class="font-mono text-foreground/65">{{ matchingStats.totalOsm }}</span>
             </div>
-            <div class="border-t border-slate-600 pt-2 mt-2">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-green-400">✓ Matched</span>
-                <Badge class="text-xs bg-green-600">{{ matchingStats.matched }}</Badge>
+            <div class="pt-2 mt-1 border-t border-white/[0.05] space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-emerald-400/90">Matched</span>
+                <span class="font-mono font-medium text-emerald-400">{{ matchingStats.matched }}</span>
               </div>
               <div class="flex items-center justify-between">
-                <span class="text-blue-400">→ Unmatched</span>
-                <Badge class="text-xs bg-blue-600">{{ matchingStats.unmatched }}</Badge>
+                <span class="text-sky-400/90">Unmatched</span>
+                <span class="font-mono font-medium text-sky-400">{{ matchingStats.unmatched }}</span>
               </div>
             </div>
-            <div class="text-xs text-gray-400 pt-2 border-t border-slate-600">
-              {{ Math.round((matchingStats.matched / matchingStats.totalGrb) * 100) }}% coverage
+            <div class="pt-2 border-t border-white/[0.05]">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-muted-foreground">Coverage</span>
+                <span class="font-mono text-primary font-medium">{{ Math.round((matchingStats.matched / matchingStats.totalGrb) * 100) }}%</span>
+              </div>
+              <div class="h-1 bg-white/[0.05] rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-primary/75 rounded-full transition-all duration-700"
+                  :style="{ width: Math.round((matchingStats.matched / matchingStats.totalGrb) * 100) + '%' }"
+                ></div>
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
 
+        <!-- Match Mode Control -->
+        <MatchModeControl />
       </div>
 
       <ObjectInfoPanel :building="activeBuilding" :is-open="panelOpen" @close="panelOpen=false" @operation-complete="onOperationComplete" />
 
-      <!-- Building Feature Info Panel -->
+      <!-- Feature Info Panel (hover / click) -->
       <div
         v-if="hoveredFeatures.length > 0 || isTooltipSticky"
         :class="isTooltipSticky ? 'pointer-events-auto' : 'pointer-events-none'"
         class="absolute top-4 left-4 z-50 w-80"
       >
-        <Card class="p-4 bg-slate-900/95 backdrop-blur text-gray-100 shadow-2xl border-slate-700">
-          <div class="space-y-4">
-            <!-- Display all features (GRB first, then OSM) -->
-            <template v-if="(isTooltipSticky ? clickedFeatures : hoveredFeatures).length > 0">
-              <div v-for="(feature, index) in sortFeatures(isTooltipSticky ? clickedFeatures : hoveredFeatures)" :key="index"
-                   :class="{ 'pt-4 border-t border-slate-600': index > 0 }">
-                <!-- GRB Building Display -->
-                <template v-if="feature._layer_type === 'grb'">
-                  <!-- Header -->
-                  <div class="flex items-start justify-between mb-4">
-                    <div>
-                      <div class="flex items-center gap-2">
-                        <Building2 class="h-5 w-5 text-green-400" />
-                        <h2 class="text-lg font-semibold">{{ formatGRBBuildingType(feature.type_label) }}</h2>
-                      </div>
-                      <div class="text-xs text-gray-400 mt-1">
-                        GRB ID: {{ feature.gebouw_id || feature.id }}
-                      </div>
+        <div class="glass-panel rounded-lg overflow-hidden">
+          <template v-if="(isTooltipSticky ? clickedFeatures : hoveredFeatures).length > 0">
+            <div
+              v-for="(feature, index) in sortFeatures(isTooltipSticky ? clickedFeatures : hoveredFeatures)"
+              :key="index"
+              :class="{ 'border-t border-white/[0.05]': index > 0 }"
+              class="p-4"
+            >
+              <!-- GRB Building -->
+              <template v-if="feature._layer_type === 'grb'">
+                <div class="flex items-start justify-between mb-3">
+                  <div>
+                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded mb-1.5">
+                      <Building2 class="h-2.5 w-2.5" />GRB
                     </div>
-                    <Button v-if="isTooltipSticky" variant="ghost" size="icon" @click="removeFeature(index)">
-                      <X class="h-4 w-4" />
-                    </Button>
+                    <h2 class="text-sm font-semibold text-foreground">{{ formatGRBBuildingType(feature.type_label) }}</h2>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ feature.gebouw_id || feature.id }}</div>
                   </div>
+                  <button v-if="isTooltipSticky" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="removeFeature(index)">
+                    <X class="h-3.5 w-3.5" />
+                  </button>
+                </div>
 
-                  <!-- Addresses Section -->
-                  <div v-if="feature.addresses" class="space-y-2 mb-4">
-                    <div class="flex items-center gap-2 text-sm font-medium text-gray-300">
-                      <MapPin class="h-4 w-4" />
-                      <span>Addresses</span>
-                    </div>
-                    <div class="pl-6 space-y-1">
-                      <div
-                        v-for="(address, idx) in parsePostgresArray(feature.addresses)"
-                        :key="idx"
-                        class="text-sm text-gray-200 py-1"
-                      >
-                        {{ address }}
-                      </div>
+                <!-- Addresses -->
+                <div v-if="feature.addresses" class="mb-3">
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Addresses</div>
+                  <div class="space-y-0.5">
+                    <div v-for="(addr, idx) in parsePostgresArray(feature.addresses)" :key="idx" class="text-xs text-foreground/80">
+                      {{ addr }}
                     </div>
                   </div>
+                </div>
 
-                  <!-- Location Section -->
-                  <div v-if="!feature.addresses && (feature.street_names || feature.postcodes || feature.municipalities)" class="space-y-2 mb-4">
-                    <div class="flex items-center gap-2 text-sm font-medium text-gray-300">
-                      <MapPinned class="h-4 w-4" />
-                      <span>Location</span>
+                <!-- Location -->
+                <div v-if="!feature.addresses && (feature.street_names || feature.postcodes || feature.municipalities)" class="mb-3">
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Location</div>
+                  <div class="space-y-1 text-xs">
+                    <div v-if="feature.street_names" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Street</span>
+                      <span class="text-foreground/80">{{ parsePostgresArray(feature.street_names).join(', ') }}</span>
                     </div>
-                    <div class="pl-6 space-y-1.5 text-sm">
-                      <div v-if="feature.street_names" class="text-gray-200">
-                        <span class="text-gray-400">Street: </span>{{ parsePostgresArray(feature.street_names).join(', ') }}
-                      </div>
-                      <div v-if="feature.postcodes" class="text-gray-200">
-                        <span class="text-gray-400">Postcode: </span>{{ parsePostgresArray(feature.postcodes).join(', ') }}
-                      </div>
-                      <div v-if="feature.municipalities" class="text-gray-200">
-                        <span class="text-gray-400">Municipality: </span>{{ parsePostgresArray(feature.municipalities).join(', ') }}
-                      </div>
+                    <div v-if="feature.postcodes" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Postcode</span>
+                      <span class="text-foreground/80">{{ parsePostgresArray(feature.postcodes).join(', ') }}</span>
+                    </div>
+                    <div v-if="feature.municipalities" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Municipality</span>
+                      <span class="text-foreground/80">{{ parsePostgresArray(feature.municipalities).join(', ') }}</span>
                     </div>
                   </div>
+                </div>
 
-                  <!-- Building Details Section -->
-                  <div class="space-y-2">
-                    <div class="flex items-center gap-2 text-sm font-medium text-gray-300">
-                      <Ruler class="h-4 w-4" />
-                      <span>Building Details</span>
+                <!-- Details -->
+                <div>
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Details</div>
+                  <div class="space-y-1 text-xs">
+                    <div v-if="feature.total_area_m2" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Area</span>
+                      <span class="text-foreground/80 font-mono">{{ formatArea(feature.total_area_m2) }}</span>
                     </div>
-                    <div class="pl-6 space-y-1.5 text-sm">
-                      <div v-if="feature.total_area_m2" class="text-gray-200">
-                        <span class="text-gray-400">Total Area: </span>{{ formatArea(feature.total_area_m2) }}
-                      </div>
-                      <div v-if="feature.polygon_count" class="text-gray-200">
-                        <span class="text-gray-400">Polygon Parts: </span>{{ feature.polygon_count }}
-                      </div>
+                    <div v-if="feature.polygon_count" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Parts</span>
+                      <span class="text-foreground/80 font-mono">{{ feature.polygon_count }}</span>
                     </div>
                   </div>
-                </template>
+                </div>
+              </template>
 
-                <!-- OSM Building Display -->
-                <template v-else>
-                  <!-- Header -->
-                  <div class="flex items-start justify-between mb-4">
-                    <div>
-                      <div class="flex items-center gap-2">
-                        <Building2 class="h-5 w-5 text-orange-400" />
-                        <h2 class="text-lg font-semibold">
-                          {{ (feature.building && feature.building !== 'yes' ? feature.building : null) || 'Building' }}
-                        </h2>
-                      </div>
-                      <div class="text-xs text-gray-400 mt-1">
-                        OSM ID: {{ feature.osm_id }}
-                      </div>
+              <!-- OSM Building -->
+              <template v-else>
+                <div class="flex items-start justify-between mb-3">
+                  <div>
+                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded mb-1.5">
+                      <Building2 class="h-2.5 w-2.5" />OSM
                     </div>
-                    <Button v-if="isTooltipSticky" variant="ghost" size="icon" @click="removeFeature(index)">
-                      <X class="h-4 w-4" />
-                    </Button>
+                    <h2 class="text-sm font-semibold text-foreground">
+                      {{ (feature.building && feature.building !== 'yes' ? feature.building : null) || 'Building' }}
+                    </h2>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ feature.osm_id }}</div>
                   </div>
-
-                  <!-- OSM Properties -->
-                  <div v-if="getDisplayableProperties(feature).length > 0" class="space-y-2">
-                    <div class="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
-                      <MapPin class="h-4 w-4" />
-                      <span>Properties</span>
-                    </div>
-                    <div class="pl-6 space-y-1.5 text-sm">
-                      <div v-for="[key, value] in getDisplayableProperties(feature)" :key="key" class="text-gray-200">
-                        <span class="text-gray-400">{{ formatPropertyKey(key) }}: </span>{{ formatPropertyValue(value) }}
-                      </div>
+                  <button v-if="isTooltipSticky" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="removeFeature(index)">
+                    <X class="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div v-if="getDisplayableProperties(feature).length > 0">
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Properties</div>
+                  <div class="space-y-1 text-xs">
+                    <div v-for="[key, value] in getDisplayableProperties(feature)" :key="key" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{ formatPropertyKey(key) }}</span>
+                      <span class="text-foreground/80 font-mono truncate" :title="String(value)">{{ formatPropertyValue(value) }}</span>
                     </div>
                   </div>
-                </template>
-              </div>
-            </template>
-
-            <!-- Action hint for non-sticky panel -->
-            <div v-if="!isTooltipSticky" class="text-xs text-gray-500 pt-2 border-t border-slate-600 text-center">
-              Click to pin this panel
+                </div>
+              </template>
             </div>
+          </template>
+
+          <div v-if="!isTooltipSticky" class="px-4 py-2 border-t border-white/[0.05]">
+            <p class="text-[9px] text-muted-foreground text-center tracking-wide">Click to pin · Esc to close</p>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Building2, ExternalLink, GitCompareArrows, Loader2, MapPin, MapPinned, RotateCcw, Ruler, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
+import { Building2, ExternalLink, GitCompareArrows, Loader2, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
 import { Fill, Stroke, Style } from 'ol/style'
 import { GeoJSON, MVT } from 'ol/format'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { fromLonLat, toLonLat } from 'ol/proj'
-import Badge from '~/components/ui/badge.vue'
-import Button from '~/components/ui/button.vue'
-import Card from '~/components/ui/card.vue'
 import Feature from 'ol/Feature'
 import MatchModeControl from '~/components/MatchModeControl.vue'
 import ObjectInfoPanel from '~/components/ObjectInfoPanel.vue'

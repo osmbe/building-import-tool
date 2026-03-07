@@ -1,71 +1,122 @@
 <template>
-  <div v-if="isOpen && building" class="absolute right-4 top-20 w-[420px]">
-    <Card class="p-4 shadow-xl bg-slate-800 text-gray-100 border-slate-600">
-      <div class="flex items-start justify-between">
-        <div>
-          <h2 class="text-lg font-semibold">Building #{{ building.id }}</h2>
-          <div class="text-xs text-gray-300 mt-1">
-            {{ building.properties.buildingType || '—' }} • Levels: {{ building.properties.levels ?? '—' }}
+  <div v-if="isOpen && building" class="absolute right-4 top-16 w-[400px] animate-fade-up">
+    <div class="glass-panel rounded-lg overflow-hidden">
+      <!-- Header -->
+      <div class="px-4 pt-4 pb-3 border-b border-white/[0.05]">
+        <div class="flex items-start justify-between">
+          <div>
+            <h2 class="text-sm font-semibold text-foreground">Building #{{ building.id }}</h2>
+            <p class="text-[10px] text-muted-foreground mt-0.5">
+              {{ building.properties.buildingType || '—' }}
+              <span v-if="building.properties.levels" class="ml-2">· {{ building.properties.levels }} levels</span>
+            </p>
           </div>
+          <button class="text-muted-foreground hover:text-foreground transition-colors mt-1" @click="$emit('close')">
+            <X class="h-4 w-4" />
+          </button>
         </div>
-        <Button variant="ghost" size="icon" @click="$emit('close')">
-          <X class="h-4 w-4" />
-        </Button>
       </div>
 
-      <Tabs v-model="activeTab" class="mt-3">
-        <TabsList class="grid grid-cols-3 bg-slate-700 text-gray-300">
-          <TabsTrigger value="overview" class="data-[state=active]:bg-slate-600 data-[state=active]:text-white">Overview</TabsTrigger>
-          <TabsTrigger value="compare" class="data-[state=active]:bg-slate-600 data-[state=active]:text-white">Compare</TabsTrigger>
-          <TabsTrigger value="qa" class="data-[state=active]:bg-slate-600 data-[state=active]:text-white">QA</TabsTrigger>
+      <!-- Tabs -->
+      <Tabs v-model="activeTab" class="w-full">
+        <TabsList class="w-full rounded-none border-b border-white/[0.05] bg-transparent p-0 h-9">
+          <TabsTrigger
+            value="overview"
+            class="flex-1 h-9 rounded-none text-[11px] font-medium data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-1px_0_0_hsl(192_90%_46%)] data-[state=active]:bg-transparent text-muted-foreground hover:text-foreground/70 transition-colors"
+          >
+            Overview
+          </TabsTrigger>
+          <TabsTrigger
+            value="compare"
+            class="flex-1 h-9 rounded-none text-[11px] font-medium data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-1px_0_0_hsl(192_90%_46%)] data-[state=active]:bg-transparent text-muted-foreground hover:text-foreground/70 transition-colors"
+          >
+            Compare
+          </TabsTrigger>
+          <TabsTrigger
+            value="qa"
+            class="flex-1 h-9 rounded-none text-[11px] font-medium data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-1px_0_0_hsl(192_90%_46%)] data-[state=active]:bg-transparent text-muted-foreground hover:text-foreground/70 transition-colors"
+          >
+            QA Tools
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" class="mt-3">
-          <div class="space-y-2 text-sm">
-            <div class="flex items-center gap-2"><Building class="h-4 w-4" /> Type: {{ building.properties.buildingType || '—' }}</div>
-            <div class="flex items-center gap-2"><Ruler class="h-4 w-4" /> Height: {{ building.properties.height ?? '—' }} m</div>
-            <div class="flex items-center gap-2"><Layers class="h-4 w-4" /> Levels: {{ building.properties.levels ?? '—' }}</div>
-            <div class="flex items-center gap-2"><Calendar class="h-4 w-4" /> Source date: {{ building.properties.sourceDate || '—' }}</div>
+        <!-- Overview tab -->
+        <TabsContent value="overview" class="p-4 mt-0">
+          <div class="space-y-2 text-xs">
+            <div class="flex gap-4">
+              <span class="text-muted-foreground w-20 shrink-0 flex items-center gap-1.5"><Building class="h-3 w-3" /> Type</span>
+              <span class="text-foreground/80">{{ building.properties.buildingType || '—' }}</span>
+            </div>
+            <div class="flex gap-4">
+              <span class="text-muted-foreground w-20 shrink-0 flex items-center gap-1.5"><Ruler class="h-3 w-3" /> Height</span>
+              <span class="text-foreground/80 font-mono">{{ building.properties.height ?? '—' }} m</span>
+            </div>
+            <div class="flex gap-4">
+              <span class="text-muted-foreground w-20 shrink-0 flex items-center gap-1.5"><Layers class="h-3 w-3" /> Levels</span>
+              <span class="text-foreground/80 font-mono">{{ building.properties.levels ?? '—' }}</span>
+            </div>
+            <div class="flex gap-4">
+              <span class="text-muted-foreground w-20 shrink-0 flex items-center gap-1.5"><Calendar class="h-3 w-3" /> Source date</span>
+              <span class="text-foreground/80 font-mono">{{ building.properties.sourceDate || '—' }}</span>
+            </div>
           </div>
         </TabsContent>
 
-        <TabsContent value="compare" class="mt-3">
-          <div class="text-sm space-y-2">
+        <!-- Compare tab -->
+        <TabsContent value="compare" class="p-4 mt-0">
+          <div class="space-y-4 text-xs">
             <div v-if="osmTagCount > 0">
-              <div class="font-medium mb-2">OSM Tags ({{ osmTagCount }})</div>
-              <div class="max-h-96 overflow-y-auto space-y-1">
-                <div v-for="(value, key) in building.osmData.tags" :key="key" class="grid grid-cols-[140px_1fr] gap-x-3 gap-y-1 py-1 border-b border-slate-700/50">
-                  <div class="text-gray-400 truncate" :title="String(key)">{{ key }}</div>
-                  <div class="text-gray-100 break-words" :title="String(value)">{{ value || '—' }}</div>
+              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                OSM Tags ({{ osmTagCount }})
+              </div>
+              <div class="max-h-72 overflow-y-auto space-y-1 pr-1">
+                <div
+                  v-for="(value, key) in building.osmData.tags"
+                  :key="key"
+                  class="flex gap-4 py-1 border-b border-white/[0.04] last:border-0"
+                >
+                  <span class="text-muted-foreground w-32 shrink-0 truncate font-mono" :title="String(key)">{{ key }}</span>
+                  <span class="text-foreground/80 break-words" :title="String(value)">{{ value || '—' }}</span>
                 </div>
               </div>
             </div>
 
             <div v-if="hasAuthoritativeData">
-              <div class="font-medium mt-4 mb-2">Authoritative</div>
-              <div class="grid grid-cols-2 gap-x-3 gap-y-1">
-                <template v-if="building.authoritativeData?.levels">
-                  <div>Levels</div><div>{{ building.authoritativeData.levels }}</div>
-                </template>
-                <template v-if="building.authoritativeData?.height">
-                  <div>Height</div><div>{{ building.authoritativeData.height }}</div>
-                </template>
-                <template v-if="building.authoritativeData?.buildingMaterial">
-                  <div>Material</div><div>{{ building.authoritativeData.buildingMaterial }}</div>
-                </template>
-                <template v-if="building.authoritativeData?.roofType">
-                  <div>Roof</div><div>{{ building.authoritativeData.roofType }}</div>
-                </template>
+              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                Authoritative Data
               </div>
+              <div class="space-y-1.5">
+                <div v-if="building.authoritativeData?.levels" class="flex gap-4">
+                  <span class="text-muted-foreground w-20 shrink-0">Levels</span>
+                  <span class="text-foreground/80 font-mono">{{ building.authoritativeData.levels }}</span>
+                </div>
+                <div v-if="building.authoritativeData?.height" class="flex gap-4">
+                  <span class="text-muted-foreground w-20 shrink-0">Height</span>
+                  <span class="text-foreground/80 font-mono">{{ building.authoritativeData.height }}</span>
+                </div>
+                <div v-if="building.authoritativeData?.buildingMaterial" class="flex gap-4">
+                  <span class="text-muted-foreground w-20 shrink-0">Material</span>
+                  <span class="text-foreground/80">{{ building.authoritativeData.buildingMaterial }}</span>
+                </div>
+                <div v-if="building.authoritativeData?.roofType" class="flex gap-4">
+                  <span class="text-muted-foreground w-20 shrink-0">Roof</span>
+                  <span class="text-foreground/80">{{ building.authoritativeData.roofType }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="osmTagCount === 0 && !hasAuthoritativeData" class="text-muted-foreground text-center py-4">
+              No comparison data available
             </div>
           </div>
         </TabsContent>
 
-        <TabsContent value="qa" class="mt-3">
+        <!-- QA tab -->
+        <TabsContent value="qa" class="p-4 mt-0">
           <QAToolsPanel :building="building" @operation-complete="$emit('operation-complete', $event)" />
         </TabsContent>
       </Tabs>
-    </Card>
+    </div>
   </div>
 </template>
 
@@ -73,8 +124,6 @@
 import { Building, Calendar, Layers, Ruler, X } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import type { BuildingData } from '~/composables/useBuildingData'
-import Button from '~/components/ui/button.vue'
-import Card from '~/components/ui/card.vue'
 import QAToolsPanel from '~/components/QAToolsPanel.vue'
 import Tabs from '~/components/ui/tabs.vue'
 import TabsContent from '~/components/ui/tabs-content.vue'
@@ -89,13 +138,11 @@ defineEmits<{ (e: 'close'): void; (e: 'operation-complete', payload: any): void 
 
 const activeTab = ref('overview')
 
-// Count OSM tags
 const osmTagCount = computed(() => {
   if (!building?.osmData?.tags) return 0
   return Object.keys(building.osmData.tags).length
 })
 
-// Check if authoritative data section has any data to display
 const hasAuthoritativeData = computed(() => {
   const auth = building?.authoritativeData
   return auth?.levels || auth?.height || auth?.buildingMaterial || auth?.roofType
