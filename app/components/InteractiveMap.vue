@@ -7,93 +7,118 @@
       <!-- Top-right: Map Controls Panel -->
       <div class="absolute right-4 top-4 flex flex-col gap-2 w-44">
         <div class="glass-panel rounded-lg overflow-hidden">
-          <!-- Zoom controls -->
-          <div class="flex items-center gap-1 p-2 border-b border-white/[0.05]">
-            <button class="map-icon-btn" @click="zoomIn" title="Zoom in">
-              <ZoomIn class="h-3.5 w-3.5" />
-            </button>
-            <button class="map-icon-btn" @click="zoomOut" title="Zoom out">
-              <ZoomOut class="h-3.5 w-3.5" />
-            </button>
-            <button class="map-icon-btn" @click="resetView" title="Reset view">
-              <RotateCcw class="h-3.5 w-3.5" />
-            </button>
+          <!-- Header -->
+          <div
+            class="flex items-center justify-between px-2.5 py-2 cursor-pointer select-none"
+            :class="!controlsCollapsed ? 'border-b border-white/[0.05]' : ''"
+            @click="controlsCollapsed = !controlsCollapsed"
+          >
+            <span class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Controls</span>
+            <ChevronDown class="h-3 w-3 text-muted-foreground transition-transform duration-200" :class="controlsCollapsed ? '-rotate-90' : ''" />
           </div>
 
-          <!-- Base layer selection -->
-          <div class="p-2 border-b border-white/[0.05]">
-            <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Basemap</div>
-            <div class="flex flex-wrap gap-1">
-              <button class="layer-btn" :class="currentBaseLayer === 'blank'    ? 'layer-btn-active' : ''" @click="switchBaseLayer('blank')"    title="No background">Blank</button>
-              <button class="layer-btn" :class="currentBaseLayer === 'osm'      ? 'layer-btn-active' : ''" @click="switchBaseLayer('osm')"      title="OpenStreetMap Belgium (tile.openstreetmap.be)">OSM</button>
-              <button class="layer-btn" :class="currentBaseLayer === 'esri'     ? 'layer-btn-active' : ''" @click="switchBaseLayer('esri')"     title="Esri World Imagery (Maxar/Earthstar) — mosaic, dates vary by area — Belgium only">Esri</button>
-              <button class="layer-btn" :class="currentBaseLayer === 'flanders' ? 'layer-btn-active' : ''" @click="switchBaseLayer('flanders')" title="Orthophoto Vlaanderen — Digitaal Vlaanderen (OFW, always latest)">Flanders <span class="opacity-60">latest</span></button>
-              <button class="layer-btn" :class="currentBaseLayer === 'brussels' ? 'layer-btn-active' : ''" @click="switchBaseLayer('brussels')" title="Ortho UrbIS 2024 (nadir) — geoservices-urbis.irisnet.be">Brussels <span class="opacity-60">'24</span></button>
-              <button class="layer-btn" :class="currentBaseLayer === 'wallonia' ? 'layer-btn-active' : ''" @click="switchBaseLayer('wallonia')" title="Orthophoto Wallonie 2024 — geoservices.wallonie.be">Wallonia <span class="opacity-60">'24</span></button>
+          <!-- Collapsible body -->
+          <div v-show="!controlsCollapsed">
+            <!-- Zoom controls -->
+            <div class="flex items-center gap-1 p-2 border-b border-white/[0.05]">
+              <button class="map-icon-btn" @click="zoomIn" title="Zoom in">
+                <ZoomIn class="h-3.5 w-3.5" />
+              </button>
+              <button class="map-icon-btn" @click="zoomOut" title="Zoom out">
+                <ZoomOut class="h-3.5 w-3.5" />
+              </button>
+              <button class="map-icon-btn" @click="resetView" title="Reset view">
+                <RotateCcw class="h-3.5 w-3.5" />
+              </button>
             </div>
-          </div>
 
-          <!-- Actions -->
-          <div class="p-2 space-y-1">
-            <button
-              class="action-btn w-full"
-              :disabled="!canCalculateDifference || isCalculatingDifference"
-              @click="calculateDifference"
-            >
-              <Loader2 v-if="isCalculatingDifference" class="h-3 w-3 animate-spin shrink-0" />
-              <GitCompareArrows v-else class="h-3 w-3 shrink-0" />
-              <span>{{ isCalculatingDifference ? 'Calculating…' : 'Get Difference' }}</span>
-            </button>
-            <button
-              class="action-btn w-full"
-              :disabled="!canExportToJOSM"
-              @click="exportToJOSM"
-            >
-              <ExternalLink class="h-3 w-3 shrink-0" />
-              <span>Open in JOSM</span>
-            </button>
+            <!-- Base layer selection -->
+            <div class="p-2 border-b border-white/[0.05]">
+              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Basemap</div>
+              <div class="flex flex-wrap gap-1">
+                <button class="layer-btn" :class="currentBaseLayer === 'blank'    ? 'layer-btn-active' : ''" @click="switchBaseLayer('blank')"    title="No background">Blank</button>
+                <button class="layer-btn" :class="currentBaseLayer === 'osm'      ? 'layer-btn-active' : ''" @click="switchBaseLayer('osm')"      title="OpenStreetMap Belgium (tile.openstreetmap.be)">OSM</button>
+                <button class="layer-btn" :class="currentBaseLayer === 'esri'     ? 'layer-btn-active' : ''" @click="switchBaseLayer('esri')"     title="Esri World Imagery (Maxar/Earthstar) — mosaic, dates vary by area — Belgium only">Esri</button>
+                <button class="layer-btn" :class="currentBaseLayer === 'flanders' ? 'layer-btn-active' : ''" @click="switchBaseLayer('flanders')" title="Orthophoto Vlaanderen — Digitaal Vlaanderen (OFW, always latest)">Flanders <span class="opacity-60">latest</span></button>
+                <button class="layer-btn" :class="currentBaseLayer === 'brussels' ? 'layer-btn-active' : ''" @click="switchBaseLayer('brussels')" title="Ortho UrbIS 2024 (nadir) — geoservices-urbis.irisnet.be">Brussels <span class="opacity-60">'24</span></button>
+                <button class="layer-btn" :class="currentBaseLayer === 'wallonia' ? 'layer-btn-active' : ''" @click="switchBaseLayer('wallonia')" title="Orthophoto Wallonie 2024 — geoservices.wallonie.be">Wallonia <span class="opacity-60">'24</span></button>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="p-2 space-y-1">
+              <button
+                class="action-btn w-full"
+                :disabled="!canCalculateDifference || isCalculatingDifference"
+                @click="calculateDifference"
+              >
+                <Loader2 v-if="isCalculatingDifference" class="h-3 w-3 animate-spin shrink-0" />
+                <GitCompareArrows v-else class="h-3 w-3 shrink-0" />
+                <span>{{ isCalculatingDifference ? 'Calculating…' : 'Get Difference' }}</span>
+              </button>
+              <button
+                class="action-btn w-full"
+                :disabled="!canExportToJOSM"
+                @click="exportToJOSM"
+              >
+                <ExternalLink class="h-3 w-3 shrink-0" />
+                <span>Open in JOSM</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Bottom-left: Layers Panel -->
       <div class="absolute bottom-4 left-4">
-        <div class="glass-panel rounded-lg p-3 min-w-[220px]">
-          <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Layers</h3>
-          <div class="space-y-2.5">
-            <div class="layer-row">
-              <div class="flex items-center gap-2">
-                <span class="layer-dot" style="background: #f59e0b; box-shadow: 0 0 6px #f59e0b4d;"></span>
-                <span class="text-xs text-foreground/85">Candidate Buildings</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-mono text-muted-foreground">{{ candidateBuildingCount }}</span>
-                <Switch v-model:checked="overlayLayers.candidateBuildings" @update:checked="toggleCandidateBuildings" />
-              </div>
-            </div>
-            <div class="layer-row">
-              <div class="flex items-center gap-2">
-                <span class="layer-dot" style="background: #0ec8e4; box-shadow: 0 0 6px #0ec8e44d;"></span>
-                <span class="text-xs text-foreground/85">OSM Buildings</span>
-              </div>
-              <Switch v-model:checked="overlayLayers.osmBuildings" @update:checked="toggleOsmBuildings" />
-            </div>
-            <div class="layer-row">
-              <div class="flex items-center gap-2">
-                <span class="layer-dot" style="background: #34d399; box-shadow: 0 0 6px #34d3994d;"></span>
-                <span class="text-xs text-foreground/85">GRB Buildings</span>
-              </div>
-              <Switch v-model:checked="overlayLayers.grbBuildings" @update:checked="toggleGrbBuildings" />
-            </div>
+        <div class="glass-panel rounded-lg overflow-hidden">
+          <!-- Header -->
+          <div
+            class="flex items-center justify-between px-3 py-2.5 cursor-pointer select-none"
+            :class="!layersCollapsed ? 'border-b border-white/[0.05]' : ''"
+            @click="layersCollapsed = !layersCollapsed"
+          >
+            <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Layers</h3>
+            <ChevronDown class="h-3 w-3 text-muted-foreground transition-transform duration-200" :class="layersCollapsed ? '-rotate-90' : ''" />
           </div>
-          <div class="mt-3 pt-3 border-t border-white/[0.05] space-y-1">
-            <div class="flex items-center justify-between text-[10px]">
-              <span class="text-muted-foreground">Zoom</span>
-              <span class="font-mono text-foreground/55">{{ currentZoom }}</span>
+
+          <!-- Collapsible body -->
+          <div v-show="!layersCollapsed" class="p-3 min-w-[220px]">
+            <div class="space-y-2.5">
+              <div class="layer-row">
+                <div class="flex items-center gap-2">
+                  <span class="layer-dot" style="background: #f59e0b; box-shadow: 0 0 6px #f59e0b4d;"></span>
+                  <span class="text-xs text-foreground/85">Candidate Buildings</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-mono text-muted-foreground">{{ candidateBuildingCount }}</span>
+                  <Switch v-model:checked="overlayLayers.candidateBuildings" @update:checked="toggleCandidateBuildings" />
+                </div>
+              </div>
+              <div class="layer-row">
+                <div class="flex items-center gap-2">
+                  <span class="layer-dot" style="background: #0ec8e4; box-shadow: 0 0 6px #0ec8e44d;"></span>
+                  <span class="text-xs text-foreground/85">OSM Buildings</span>
+                </div>
+                <Switch v-model:checked="overlayLayers.osmBuildings" @update:checked="toggleOsmBuildings" />
+              </div>
+              <div class="layer-row">
+                <div class="flex items-center gap-2">
+                  <span class="layer-dot" style="background: #34d399; box-shadow: 0 0 6px #34d3994d;"></span>
+                  <span class="text-xs text-foreground/85">GRB Buildings</span>
+                </div>
+                <Switch v-model:checked="overlayLayers.grbBuildings" @update:checked="toggleGrbBuildings" />
+              </div>
             </div>
-            <div class="flex items-center justify-between text-[10px]">
-              <span class="text-muted-foreground">Center</span>
-              <span class="font-mono text-foreground/55">{{ currentCenter[1].toFixed(4) }}, {{ currentCenter[0].toFixed(4) }}</span>
+            <div class="mt-3 pt-3 border-t border-white/[0.05] space-y-1">
+              <div class="flex items-center justify-between text-[10px]">
+                <span class="text-muted-foreground">Zoom</span>
+                <span class="font-mono text-foreground/55">{{ currentZoom }}</span>
+              </div>
+              <div class="flex items-center justify-between text-[10px]">
+                <span class="text-muted-foreground">Center</span>
+                <span class="font-mono text-foreground/55">{{ currentCenter[1].toFixed(4) }}, {{ currentCenter[0].toFixed(4) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -262,7 +287,7 @@
 </template>
 
 <script setup lang="ts">
-import { Building2, ExternalLink, GitCompareArrows, Loader2, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
+import { Building2, ChevronDown, ExternalLink, GitCompareArrows, Loader2, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
 import { Fill, Stroke, Style } from 'ol/style'
 import { GeoJSON, MVT } from 'ol/format'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -311,6 +336,9 @@ const candidateBuildingCount = ref(0)
 const hoveredFeatures = ref<any[]>([])
 const clickedFeatures = ref<any[]>([])
 const isTooltipSticky = ref(false)
+
+const controlsCollapsed = ref(false)
+const layersCollapsed = ref(false)
 
 // Overlay layers (can be combined)
 const overlayLayers = ref({
