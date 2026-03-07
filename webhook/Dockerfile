@@ -15,7 +15,8 @@ COPY server.py /server.py
 COPY restore-osm.sh /restore-osm.sh
 COPY restore-grb.sh /restore-grb.sh
 COPY restore-picc.sh /restore-picc.sh
-RUN chmod +x /restore-osm.sh /restore-grb.sh /restore-picc.sh
+COPY patch-address-links.sh /patch-address-links.sh
+RUN chmod +x /restore-osm.sh /restore-grb.sh /restore-picc.sh /patch-address-links.sh
 
 EXPOSE 9000
 CMD ["python", "/server.py"]
