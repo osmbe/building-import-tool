@@ -179,15 +179,26 @@ grb-order-all:
     @echo "Note: RltGbgGebouw*.dbf (polygon-building relationships) and RltAdresGebouw*.dbf (address links) are both included in their respective downloads"
     @echo "Check status with: just grb-status-orders"
 
-# Download all ready GRB orders
+# Download all ready GRB orders (parallel)
 grb-download-all:
-    @echo "📥 Downloading all ready orders..."
-    @echo ""
-    @just _grb-download-if-ready gbg "$(just _grb-get-order-id gbg)"
-    @just _grb-download-if-ready gba "$(just _grb-get-order-id gba)"
-    @just _grb-download-if-ready addresses "$(just _grb-get-order-id addresses)"
-    @echo ""
-    @echo "✅ All downloads complete!"
+    #!/usr/bin/env bash
+    echo "📥 Downloading all ready orders in parallel..."
+    echo ""
+    just _grb-download-if-ready gbg "$(just _grb-get-order-id gbg)" &
+    PID_GBG=$!
+    just _grb-download-if-ready gba "$(just _grb-get-order-id gba)" &
+    PID_GBA=$!
+    just _grb-download-if-ready addresses "$(just _grb-get-order-id addresses)" &
+    PID_ADDR=$!
+    wait $PID_GBG; EXIT_GBG=$?
+    wait $PID_GBA; EXIT_GBA=$?
+    wait $PID_ADDR; EXIT_ADDR=$?
+    if [ $EXIT_GBG -ne 0 ] || [ $EXIT_GBA -ne 0 ] || [ $EXIT_ADDR -ne 0 ]; then
+        echo "❌ One or more downloads failed" >&2
+        exit 1
+    fi
+    echo ""
+    echo "✅ All downloads complete!"
 
 # Import GRB data to PostgreSQL database
 grb-import:
