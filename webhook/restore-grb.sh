@@ -23,9 +23,7 @@ echo "[restore-grb] Restoring to be2osm database..."
 PSQL="psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d be2osm"
 export PGPASSWORD="${POSTGRES_PASSWORD}"
 
-${PSQL} -c "TRUNCATE grb.building_polygons CASCADE;" || true
-${PSQL} -c "TRUNCATE grb.addresses CASCADE;" || true
-${PSQL} -c "TRUNCATE grb.polygon_building_rel;" || true
+${PSQL} -c "TRUNCATE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links, grb.polygon_building_rel RESTART IDENTITY CASCADE;" || true
 
 gunzip -c "${DUMP_FILE}" | ${PSQL}
 
