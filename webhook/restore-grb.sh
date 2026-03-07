@@ -25,10 +25,11 @@ export PGPASSWORD="${POSTGRES_PASSWORD}"
 
 ${PSQL} -c "TRUNCATE grb.building_polygons CASCADE;" || true
 ${PSQL} -c "TRUNCATE grb.addresses CASCADE;" || true
+${PSQL} -c "TRUNCATE grb.polygon_building_rel;" || true
 
 gunzip -c "${DUMP_FILE}" | ${PSQL}
 
-${PSQL} -c "ANALYZE grb.building_polygons; ANALYZE grb.buildings; ANALYZE grb.addresses; ANALYZE grb.address_building_links;"
+${PSQL} -c "ANALYZE grb.building_polygons; ANALYZE grb.buildings; ANALYZE grb.addresses; ANALYZE grb.address_building_links; ANALYZE grb.polygon_building_rel;"
 
 rm -rf "${WORK_DIR}"
 echo "[restore-grb] Done."
