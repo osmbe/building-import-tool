@@ -5,6 +5,9 @@ set -euo pipefail
 COMPOSE_DIR="/compose"
 IMAGE="ghcr.io/osmbe/building-import-tool/nuxt-app:latest"
 
+echo "[deploy-nuxt] Pulling latest config..."
+git -C "${COMPOSE_DIR}" pull --ff-only || true
+
 echo "[deploy-nuxt] Authenticating with GHCR..."
 gh auth token | docker login ghcr.io -u oauth2accesstoken --password-stdin
 
