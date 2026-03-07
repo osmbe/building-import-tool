@@ -972,21 +972,31 @@ _grb-download-if-ready product order_id:
     for i in $(seq 0 $((DOWNLOAD_COUNT - 1))); do
         FILE=$(echo "$ORDER_DATA" | jq -r ".downloads[$i].name")
         DEST="{{grb_data_dir}}/{{product}}/$FILE"
-        # Retry loop: fetch fresh URL on each attempt (CDN pre-signed URLs can expire)
-        MAX_ATTEMPTS=5
+        # Retry loop: resume partial downloads with curl -C -
+        # The @id path is stable per order, so resuming makes sense across attempts
+        MAX_ATTEMPTS=10
         for ATTEMPT in $(seq 1 $MAX_ATTEMPTS); do
-            echo "   Downloading $FILE (attempt $ATTEMPT/$MAX_ATTEMPTS)..."
             FRESH_ORDER=$(curl -s --retry 3 --retry-all-errors --retry-delay 10 \
                 -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/{{order_id}})
             URL=$(echo "$FRESH_ORDER" | jq -r ".downloads[$i][\"@id\"]")
-            rm -f "$DEST"
-            wget -q --show-progress --tries=3 --waitretry=15 \
-                --header "x-api-key: {{grb_api_key}}" \
-                -O "$DEST" \
+            ALREADY=$(stat -c%s "$DEST" 2>/dev/null || echo 0)
+            echo "   Downloading $FILE (attempt $ATTEMPT/$MAX_ATTEMPTS, $(numfmt --to=iec $ALREADY) already)..."
+            curl -L --progress-bar \
+                -H "x-api-key: {{grb_api_key}}" \
+                --max-time 1800 \
+                -C - \
+                -o "$DEST" \
                 "https://download.api.vlaanderen.be$URL"
-            WGET_EXIT=$?
-            if [ $WGET_EXIT -ne 0 ]; then
-                echo "   wget failed (exit $WGET_EXIT), retrying in 60s..."
+            CURL_EXIT=$?
+            # Exit 33 = server rejected Range request (no resume support); clear partial file and retry
+            if [ $CURL_EXIT -eq 33 ]; then
+                echo "   Server does not support resume, restarting..."
+                rm -f "$DEST"
+                sleep 30
+                continue
+            fi
+            if [ $CURL_EXIT -ne 0 ]; then
+                echo "   curl failed (exit $CURL_EXIT), retrying in 60s..."
                 sleep 60
                 continue
             fi
@@ -996,7 +1006,8 @@ _grb-download-if-ready product order_id:
                     break  # Valid zip
                 else
                     FILE_SIZE=$(stat -c%s "$DEST" 2>/dev/null || echo 0)
-                    echo "   Downloaded zip is invalid ($(numfmt --to=iec $FILE_SIZE)), retrying in 60s..."
+                    echo "   Downloaded zip is invalid ($(numfmt --to=iec $FILE_SIZE)), clearing and retrying in 60s..."
+                    rm -f "$DEST"
                     sleep 60
                 fi
             else
