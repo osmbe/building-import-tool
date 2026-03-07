@@ -37,8 +37,17 @@ RUN apt-get update && apt-get install -y \
        else LIB_DIR="/usr/lib"; fi \
     && ln -sf $(ls ${LIB_DIR}/libleveldb.so.1* 2>/dev/null | head -1) ${LIB_DIR}/libleveldb.so.1 || true
 
-# Install Just task runner
-RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+# Install Just task runner (pinned version from GitHub releases - more reliable than install.sh CDN)
+ENV JUST_VERSION=1.40.0
+RUN ARCH=$(uname -m) \
+    && if [ "$ARCH" = "x86_64" ]; then JUST_ARCH="x86_64-unknown-linux-musl"; \
+       elif [ "$ARCH" = "aarch64" ]; then JUST_ARCH="aarch64-unknown-linux-musl"; \
+       else echo "Unsupported arch: $ARCH" && exit 1; fi \
+    && wget -q "https://github.com/casey/just/releases/download/${JUST_VERSION}/just-${JUST_VERSION}-${JUST_ARCH}.tar.gz" \
+    && tar -xzf "just-${JUST_VERSION}-${JUST_ARCH}.tar.gz" just \
+    && mv just /usr/local/bin/ \
+    && chmod +x /usr/local/bin/just \
+    && rm "just-${JUST_VERSION}-${JUST_ARCH}.tar.gz"
 
 # Install GitHub CLI (for remote import workflows)
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
