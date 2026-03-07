@@ -11,6 +11,7 @@ gh auth token | docker login ghcr.io -u oauth2accesstoken --password-stdin
 echo "[deploy-nuxt] Pulling and recreating nuxt-app..."
 docker compose -f "${COMPOSE_DIR}/docker-compose.yml" \
     --env-file "${COMPOSE_DIR}/.env" \
+    --project-name "${COMPOSE_PROJECT_NAME:-building-import-tool-local}" \
     up -d --pull always --no-build --no-deps nuxt-app
 
 echo "[deploy-nuxt] Done. Container restarted with latest image."
