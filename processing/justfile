@@ -211,6 +211,7 @@ grb-import:
     @echo ""
     @just _grb-import-gbg-gebouw-rel
     @just _grb-import-building-polygons
+    @just _grb-import-gba
     @just _grb-update-gebouw-ids
     @just _grb-import-addresses
     @just _grb-import-address-links
@@ -1200,6 +1201,44 @@ _grb-import-building-polygons:
         echo "❌ Gbg*.shp not found in {{grb_data_dir}}"
         exit 1
     fi
+
+# GRB: Import GBA (Gebouwaanhorigheid / building attachments) into building_polygons
+# GBA has the same field structure as GBG and is appended to the same table.
+# gebouw_id will be NULL for these polygons (no RltGbaGebouw relationship file).
+_grb-import-gba:
+    #!/usr/bin/env bash
+    GBA_FILE=$(find {{grb_data_dir}} -path "*/gba/*" -name "Gba*.shp" -type f 2>/dev/null | head -1)
+    if [ -z "$GBA_FILE" ]; then
+        echo "⚠️  Gba*.shp not found — skipping GBA import"
+        exit 0
+    fi
+    echo "📊 Importing GBA building attachments (Gebouwaanhorigheid)..."
+    echo "   Found: $GBA_FILE"
+    ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+        "$GBA_FILE" -nln grb.building_polygons_raw -overwrite -t_srs EPSG:4326 \
+        -gt 100000 --config PG_USE_COPY YES \
+        -lco GEOMETRY_NAME=geom -lco SPATIAL_INDEX=OFF
+    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c "
+        INSERT INTO grb.building_polygons (oidn, uidn, type_code, type_label, area_m2, length_m, version, origin_code, origin_label, opndatum_raw, geom)
+        SELECT
+            oidn::bigint,
+            uidn::bigint,
+            type::integer as type_code,
+            lbltype as type_label,
+            oppervl::real as area_m2,
+            lengte::real as length_m,
+            versie::integer as version,
+            bgninv::integer as origin_code,
+            lblbgninv as origin_label,
+            opndatum as opndatum_raw,
+            geom
+        FROM grb.building_polygons_raw
+        ON CONFLICT (oidn) DO NOTHING;
+        DROP TABLE IF EXISTS grb.building_polygons_raw;
+    "
+    echo "✅ GBA building attachments imported"
+    echo "   🗑️  Cleaning up gba data..."
+    rm -rf {{grb_data_dir}}/gba
 
 # GRB: Update gebouw_id in building_polygons from relationship table
 _grb-update-gebouw-ids:
