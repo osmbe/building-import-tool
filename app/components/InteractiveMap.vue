@@ -182,7 +182,7 @@
                 <div v-if="feature.addresses" class="mb-3">
                   <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Addresses</div>
                   <div class="space-y-0.5">
-                    <div v-for="(addr, idx) in parsePostgresArray(feature.addresses)" :key="idx" class="text-xs text-foreground/80">
+                    <div v-for="(addr, idx) in parsePostgresArray(feature.addresses)" :key="idx" class="text-xs text-foreground font-medium">
                       {{ addr }}
                     </div>
                   </div>
@@ -194,15 +194,15 @@
                   <div class="space-y-1 text-xs">
                     <div v-if="feature.street_names" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Street</span>
-                      <span class="text-foreground/80">{{ parsePostgresArray(feature.street_names).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{ parsePostgresArray(feature.street_names).join(', ') }}</span>
                     </div>
                     <div v-if="feature.postcodes" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Postcode</span>
-                      <span class="text-foreground/80">{{ parsePostgresArray(feature.postcodes).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{ parsePostgresArray(feature.postcodes).join(', ') }}</span>
                     </div>
                     <div v-if="feature.municipalities" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Municipality</span>
-                      <span class="text-foreground/80">{{ parsePostgresArray(feature.municipalities).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{ parsePostgresArray(feature.municipalities).join(', ') }}</span>
                     </div>
                   </div>
                 </div>
@@ -213,11 +213,11 @@
                   <div class="space-y-1 text-xs">
                     <div v-if="feature.total_area_m2" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Area</span>
-                      <span class="text-foreground/80 font-mono">{{ formatArea(feature.total_area_m2) }}</span>
+                      <span class="text-foreground font-medium font-mono">{{ formatArea(feature.total_area_m2) }}</span>
                     </div>
                     <div v-if="feature.polygon_count" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Parts</span>
-                      <span class="text-foreground/80 font-mono">{{ feature.polygon_count }}</span>
+                      <span class="text-foreground font-medium font-mono">{{ feature.polygon_count }}</span>
                     </div>
                   </div>
                 </div>
@@ -244,7 +244,7 @@
                   <div class="space-y-1 text-xs">
                     <div v-for="[key, value] in getDisplayableProperties(feature)" :key="key" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{ formatPropertyKey(key) }}</span>
-                      <span class="text-foreground/80 font-mono truncate" :title="String(value)">{{ formatPropertyValue(value) }}</span>
+                      <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{ formatPropertyValue(value) }}</span>
                     </div>
                   </div>
                 </div>
