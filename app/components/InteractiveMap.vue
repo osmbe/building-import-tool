@@ -97,7 +97,7 @@
               </div>
               <div class="layer-row">
                 <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="background: #0ec8e4; box-shadow: 0 0 6px #0ec8e44d;"></span>
+                  <span class="layer-dot" style="background: #ea580c; box-shadow: 0 0 6px #ea580c4d;"></span>
                   <span class="text-xs text-foreground/85">OSM Buildings</span>
                 </div>
                 <Switch v-model:checked="overlayLayers.osmBuildings" @update:checked="toggleOsmBuildings" />
