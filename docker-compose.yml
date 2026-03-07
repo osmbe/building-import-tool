@@ -39,15 +39,16 @@ services:
         OSM_REDIRECT_URI: ${OSM_REDIRECT_URI}
     container_name: be2osm-nuxt
     environment:
-      OSM_CLIENT_ID: ${OSM_CLIENT_ID}
-      OSM_CLIENT_SECRET: ${OSM_CLIENT_SECRET}
-      OSM_REDIRECT_URI: ${OSM_REDIRECT_URI}
-      JWT_SECRET: ${JWT_SECRET}
-      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
-      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       NODE_ENV: production
+      # Nuxt runtimeConfig overrides (NUXT_PUBLIC_* for public, NUXT_* for private)
+      NUXT_PUBLIC_OSM_CLIENT_ID: ${OSM_CLIENT_ID}
+      NUXT_PUBLIC_OSM_REDIRECT_URI: ${OSM_REDIRECT_URI}
+      NUXT_OSM_CLIENT_SECRET: ${OSM_CLIENT_SECRET}
+      NUXT_JWT_SECRET: ${JWT_SECRET}
+      NUXT_DB_HOST: ${POSTGRES_HOST:-postgres}
+      NUXT_DB_PORT: ${POSTGRES_PORT:-5432}
+      NUXT_DB_USER: ${POSTGRES_USER}
+      NUXT_DB_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
