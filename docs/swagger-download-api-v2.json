@@ -1,0 +1,4309 @@
+{
+  "x-generator": "NSwag v14.0.7.0 (NJsonSchema v11.0.1.0 (Newtonsoft.Json v13.0.0.0))",
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Download API",
+    "description": "This API uses a X-Correlation-ID header. Every request that hits the API without this header, gets a new random UUID as correlation id. If you as a client pass this id yourself, the API will use your value (use UUID format). Providing this value enables distributed request correlation & tracing. If a User-Agent header is set, the value cannot be empty. ",
+    "version": "v2"
+  },
+  "servers": [
+    {
+      "url": "https://download.api.vlaanderen.be"
+    }
+  ],
+  "paths": {
+    "/v2/apiinfo": {
+      "get": {
+        "tags": [
+          "ApiInfo"
+        ],
+        "summary": "Request Info about this api",
+        "operationId": "GetApiInfo",
+        "responses": {
+          "200": {
+            "description": "Get ApiInfo result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiInfo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Lists all product categories.",
+        "operationId": "GetCategories",
+        "responses": {
+          "200": {
+            "description": "Get Categories result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryHydraCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/categories/{categoryId}": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Lists all products associated with the provided category.",
+        "operationId": "GetCategoryById",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of a category",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get CategoryDetail result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/client/clientinfo": {
+      "get": {
+        "tags": [
+          "Client"
+        ],
+        "summary": "Provides information of the current client.",
+        "operationId": "GetClientInfo",
+        "responses": {
+          "200": {
+            "description": "Get Client info result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientInfo"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/datasetgroups": {
+      "get": {
+        "tags": [
+          "DatasetGroups"
+        ],
+        "summary": "Lists all datasetgroups",
+        "operationId": "GetDatasetGroups",
+        "parameters": [
+          {
+            "name": "Offset",
+            "in": "query",
+            "description": "Elements offset, 0 - based",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "Limit",
+            "in": "query",
+            "description": "Elements limit (page size)",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get DatasetGroupHydraCollection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetGroupHydraCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/datasetgroups/{datasetGroupId}": {
+      "get": {
+        "tags": [
+          "DatasetGroups"
+        ],
+        "summary": "Provides a description of a dataset group.",
+        "operationId": "GetDatasetGroupById",
+        "parameters": [
+          {
+            "name": "datasetGroupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get DatasetGroup result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/orders/{orderId}/status": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Returns the status of the order.",
+        "operationId": "GetOrderStatusById",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of the order",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get OrderStatus.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/orders": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Places an order. An orderid is returned upon successfull validation of the order configuration. The order is then processed async.",
+        "description": "Example requests :\n            \n1) Minimal request\n            \n```\n{\n  \"productId\": 1,\n  \"format\": \"Shapefile\"\n}\n```\n\n2) Request with Geographical crop (SelectionEntity)\n            \n```\n{\n  \"productId\": 1,\n  \"format\": \"Shapefile\",\n  \"geographicalCrop\": {\n    \"selectionEntityCode\": \"Provincie\",\n    \"selectionEntityCodeValue\": [\"10000\"],\n  }\n}\n```\n            \n3) Request with Geographical crop (Polygon)\n            \n```\n{\n  \"productId\": 1454,\n  \"format\": \"Shapefile\",\n  \"geographicalCrop\": {\n    \"polygon\": {\n        \"coordinates\": [[187085.4939025,201638.5090496],[186000.8878598,191395.0075346],[171599.7298475,200312.8794418],[187085.4939025,201638.5090496]]\n     }\n  }\n}\n```\n            \n            \n4) Request a predefined file\n            \n```\n{\n  \"productId\":4450,\n  \"format\":\"GML\",\n  \"fileIds\": [\"4450/Landbouwgebruikspercelen_LV_2018_GewVLA_GML.zip\"]\n}\n```\n            \n5) Request with Temporal crop\n            \n```\n{\n  \"productId\":1454,\n  \"format\":\"Shapefile\",\n  \"TemporalCrop\" : {\n     \"from\" : \"2022-01-01T00:00:00\",\n     \"to\" : \"2022-01-30T00:00:00\"\n   }\n}\n```\n            \n6) Request a specific version of a product\n            \n```\n{\n  \"productId\":9753,\n  \"format\":\"Shapefile\",\n  \"datasetVersionIds\" : [ \"1493346a-25b3-40db-b5c7-00b4a7336146\" ] \n}\n```",
+        "operationId": "CreateOrder",
+        "requestBody": {
+          "x-name": "orderCreate",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderConfigurationRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "The Order is created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderCreatedHydraCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Lists all Orders based on owner claims",
+        "operationId": "GetOrders",
+        "parameters": [
+          {
+            "name": "productNr",
+            "in": "query",
+            "description": "The number of the product to filter on",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "description": "The version of the product to filter on (freetext)",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          },
+          {
+            "name": "versnijding",
+            "in": "query",
+            "description": "The versnijding of the product to filter on (freetext)",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 3
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "description": "The status of the order to filter on",
+            "schema": {
+              "type": "array",
+              "nullable": true,
+              "items": {
+                "$ref": "#/components/schemas/EnumOrderStatus"
+              }
+            },
+            "x-position": 4
+          },
+          {
+            "name": "Sort",
+            "in": "query",
+            "description": "sort the results by orderTimeStamp, Id, Status (default = orderTimeStamp:desc) ascending or descending: eg title:asc / title:desc (default = asc)",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 5
+          },
+          {
+            "name": "Limit",
+            "in": "query",
+            "description": "Maximum number of records to return (used for paging) (default: 50)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 6
+          },
+          {
+            "name": "Offset",
+            "in": "query",
+            "description": "The number of records to skip before the requested list is returned (used for paging)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 7
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get OrderHydraCollection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderHydraCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/orders/{orderId}/download/{fileId}": {
+      "head": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Returns a file containing the requested orderitem binaries.",
+        "operationId": "GetOrderDownloadFileByIdHEAD",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of the order",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "fileId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of the file",
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get Order download filestream.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "Partial content."
+          },
+          "304": {
+            "description": "Not Modified."
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Precondition Failed."
+          },
+          "416": {
+            "description": "Range Not Satisfiable."
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Returns a file containing the requested orderitem binaries.",
+        "operationId": "GetOrderDownloadFileByIdGET",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of the order",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "fileId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of the file",
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get Order download filestream.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "Partial content."
+          },
+          "304": {
+            "description": "Not Modified."
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Precondition Failed."
+          },
+          "416": {
+            "description": "Range Not Satisfiable."
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/orders/getorderproducts": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Lists all Orders Products based on owner claims",
+        "operationId": "GetOrderProducts",
+        "parameters": [
+          {
+            "name": "Sort",
+            "in": "query",
+            "description": "sort the results by orderTimeStamp, Id, Status (default = orderTimeStamp:desc) ascending or descending: eg title:asc / title:desc (default = asc)",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "Limit",
+            "in": "query",
+            "description": "Maximum number of records to return (used for paging) (default: 50)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 2
+          },
+          {
+            "name": "Offset",
+            "in": "query",
+            "description": "The number of records to skip before the requested list is returned (used for paging)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 3
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get OrderProductsHydraCollection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderProductHydraCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/orders/{orderId}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Provides the details of the requested order.",
+        "operationId": "GetOrderById",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identification of the order",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get Order result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/orders/mostdownloaded": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Returns the top 5 most downloaded products",
+        "operationId": "GetMostDownloadedProducts",
+        "responses": {
+          "200": {
+            "description": "Get most downloaded products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSummaryHydraCollection"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/products": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Lists all products available for download.",
+        "operationId": "GetProducts",
+        "parameters": [
+          {
+            "name": "ProductTypes",
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "description": "Filter the result on the given product types (optional, a list of product types is possible)\nPossibilities are \"Dataset\", \"Entity\"",
+            "schema": {
+              "type": "array",
+              "nullable": true,
+              "example": "Dataset",
+              "items": {
+                "$ref": "#/components/schemas/EnumProductType"
+              }
+            },
+            "x-position": 1
+          },
+          {
+            "name": "Categories",
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "description": "Filter the result on the category where the product belongs to. (optional)\nThis can be passed as an id",
+            "schema": {
+              "type": "array",
+              "nullable": true,
+              "example": [
+                10
+              ],
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "x-position": 2
+          },
+          {
+            "name": "DatasetGroupId",
+            "in": "query",
+            "description": "Filter the result on the id of a datasetgroup (optional)",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "nullable": true
+            },
+            "x-position": 3
+          },
+          {
+            "name": "IsOpenData",
+            "in": "query",
+            "description": "Filter the resultset on opendata products or not (optional)",
+            "schema": {
+              "type": "boolean",
+              "nullable": true,
+              "example": true
+            },
+            "x-position": 4
+          },
+          {
+            "name": "IsDataAllowedForOrganisation",
+            "in": "query",
+            "description": "Filter the resultset on products that are accessible for current logged in user or not (optional)\nIf not logged in, this flag doesn't do anything",
+            "schema": {
+              "type": "boolean",
+              "nullable": true,
+              "example": true
+            },
+            "x-position": 5
+          },
+          {
+            "name": "SearchTerm",
+            "in": "query",
+            "description": "Filter the resultset on search terms.\nFull text search is used on the name, description and keywords.\nSearch ranking relevance is in this same order, So hits on the name are weightened more then on keywords",
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "example": "CRAB adres"
+            },
+            "x-position": 6
+          },
+          {
+            "name": "Sort",
+            "in": "query",
+            "description": "sort the results by relevance, title or modified (default = relevance) ascending or descending: eg title:asc / title:desc (default = asc)",
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "example": "title:asc"
+            },
+            "x-position": 7
+          },
+          {
+            "name": "Limit",
+            "in": "query",
+            "description": "Maximum number of records to return (used for paging) (default: 50)",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 50
+            },
+            "x-position": 8
+          },
+          {
+            "name": "Offset",
+            "in": "query",
+            "description": "The number of records to skip before the requested list is returned (used for paging)",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 0
+            },
+            "x-position": 9
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get ProductHydraCollection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductHydraCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/products/{productId}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Provides a description of a product.",
+        "operationId": "GetProductById",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of a product",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get Product result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/products/{productId}/exampleimages/{exampleImageId}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Returns a file containing the requested example image.",
+        "operationId": "GetProductExampleImageById",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of a product",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "exampleImageId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of the example image to download",
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get Product example image filestream.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/products/{productId}/documents/{documentId}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Returns a file containing the requested document.",
+        "operationId": "GetProductDocumentById",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of a product",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of the document to download",
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get Product document filestream.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/products/newandmodified": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Returns the top 5 newest and updated products",
+        "operationId": "GetNewAndModifiedProducts",
+        "responses": {
+          "200": {
+            "description": "Get newest and updated products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSummaryHydraCollection"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/selectionentities": {
+      "get": {
+        "tags": [
+          "SelectionEntities"
+        ],
+        "summary": "Lists all entities that may be used for geographical selection.",
+        "operationId": "GetSelectionEntities",
+        "responses": {
+          "200": {
+            "description": "Get SelectionEntityHydraCollection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionEntityHydraCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/selectionentities/{selectionEntityId}": {
+      "get": {
+        "tags": [
+          "SelectionEntities"
+        ],
+        "summary": "Lists the allowed values of the provided selection entity with WKT information",
+        "operationId": "GetSelectionEntityById",
+        "parameters": [
+          {
+            "name": "selectionEntityId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of a selection entity",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "Version",
+            "in": "query",
+            "description": "Get the result for the given selection entity version (optional)",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get SelectionEntity result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/v2/selectionentities/versions": {
+      "get": {
+        "tags": [
+          "SelectionEntities"
+        ],
+        "summary": "Lists all selection entity versions",
+        "operationId": "GetAllSelectionEntityVersions",
+        "responses": {
+          "200": {
+            "description": "Get All SelectionEntityVersions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionEntityVersionHydraCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to perform the operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenResponseBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "environment": {
+            "type": "string",
+            "description": "Api Environment\n            ",
+            "example": "Beta"
+          },
+          "buildTag": {
+            "type": "string",
+            "description": "BuildTag of the Api.\nwhich is «major release»-«BuildDate».«BuildOfTheDay»",
+            "example": "1.0-20230306.2"
+          }
+        }
+      },
+      "BadRequestResponseBody": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "errors": {
+                "type": "array",
+                "nullable": true,
+                "items": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "x-abstract": true,
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      },
+      "UnauthorizedResponseBody": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false
+          }
+        ]
+      },
+      "ForbiddenResponseBody": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false
+          }
+        ]
+      },
+      "NotFoundResponseBody": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false
+          }
+        ]
+      },
+      "InternalServerErrorResponseBody": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false
+          }
+        ]
+      },
+      "CategoryHydraCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the categories",
+            "example": "/v2/categories"
+          },
+          "@context": {
+            "type": "array",
+            "description": "the context of the categories",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "@type": {
+            "type": "string",
+            "description": "the type of response",
+            "example": "Collection"
+          },
+          "member": {
+            "type": "array",
+            "description": "Array of Category objects",
+            "items": {
+              "$ref": "#/components/schemas/CategoryHydraItem"
+            }
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "The amount of Categories in the collection",
+            "format": "int32",
+            "example": 1
+          }
+        }
+      },
+      "CategoryHydraItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the category",
+            "example": "/v2/categories/10"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "HydraItem"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "categoryId": {
+            "type": "integer",
+            "description": "the unique id of the category",
+            "format": "int32",
+            "example": 10
+          },
+          "name": {
+            "type": "string",
+            "description": "the name of the category",
+            "example": "Beelden, basiskaarten, grondgebruik"
+          },
+          "totalProducts": {
+            "type": "integer",
+            "description": "the total amount of products related to the category",
+            "format": "int32",
+            "example": 98
+          }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the category",
+            "example": "/v2/category/10"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "Category"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "nullable": true,
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "categoryId": {
+            "type": "integer",
+            "description": "the unique id of the category",
+            "format": "int32",
+            "example": 10
+          },
+          "name": {
+            "type": "string",
+            "description": "the name of the category",
+            "example": "Beelden, basiskaarten, grondgebruik"
+          }
+        }
+      },
+      "ClientInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the product",
+            "example": "/v2/client/clientinfo"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "ClientInfo"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "claims": {
+            "type": "array",
+            "description": "Assigned claims\n            ",
+            "items": {
+              "$ref": "#/components/schemas/Claim"
+            }
+          }
+        }
+      },
+      "Claim": {
+        "type": "object",
+        "description": "Claim",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The claim type",
+            "example": "Role descriptive name"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value for the claim",
+            "example": "Role code"
+          }
+        }
+      },
+      "DatasetGroupHydraCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the datasetgroups",
+            "example": "/v2/datasetgroups"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "Collection"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "view": {
+            "description": "the view response of the response",
+            "$ref": "#/components/schemas/HydraPartialCollectionView"
+          },
+          "member": {
+            "type": "array",
+            "description": "Array of DatasetGroup objects",
+            "items": {
+              "$ref": "#/components/schemas/DatasetGroupHydraItem"
+            }
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "The amount of Categories in the collection",
+            "format": "int32",
+            "example": 10
+          }
+        }
+      },
+      "HydraPartialCollectionView": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the view",
+            "nullable": true,
+            "example": "/v2/..."
+          },
+          "@type": {
+            "type": "string",
+            "description": "the type of response",
+            "nullable": true,
+            "example": "PartialCollectionView"
+          },
+          "first": {
+            "type": "string",
+            "description": "the first element of the view",
+            "nullable": true,
+            "example": "/v2/...?offset=0&limit=50"
+          },
+          "previous": {
+            "type": "string",
+            "description": "the previous element of the view",
+            "nullable": true,
+            "example": "/v2/...?offset=0&limit=50"
+          },
+          "next": {
+            "type": "string",
+            "description": "the next element of the view",
+            "nullable": true,
+            "example": "/v2/...?offset=50&limit=50"
+          },
+          "last": {
+            "type": "string",
+            "description": "the last element of the view",
+            "nullable": true,
+            "example": "/v2/...?offset=250&limit=50"
+          }
+        }
+      },
+      "DatasetGroupHydraItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the datasetgroup",
+            "example": "/v2/datasetgroups/336"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "HydraItem"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "datasetGroupId": {
+            "type": "integer",
+            "description": "the unique if of the datasetgroup",
+            "format": "int32",
+            "example": 336
+          },
+          "name": {
+            "type": "string",
+            "description": "the name of the datasetgroup",
+            "example": "DHM-Vlaanderen"
+          },
+          "description": {
+            "type": "string",
+            "description": "the description of the datasetgroup",
+            "example": "De datasetgroep DHM-Vlaanderen omvat de 4 DHM-Vlaanderen datasets en kan zo in zijn geheel besteld worden."
+          }
+        }
+      },
+      "DatasetGroup": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the datasetgroup",
+            "example": "/v2/datasetgroups/336"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "DatasetGroup"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "datasetGroupId": {
+            "type": "integer",
+            "description": "the unique if of the datasetgroup",
+            "format": "int32",
+            "example": 336
+          },
+          "name": {
+            "type": "string",
+            "description": "the name of the datasetgroup",
+            "example": "DHM-Vlaanderen"
+          },
+          "description": {
+            "type": "string",
+            "description": "the description of the datasetgroup",
+            "example": "De datasetgroep DHM-Vlaanderen omvat de 4 DHM-Vlaanderen datasets en kan zo in zijn geheel besteld worden."
+          },
+          "datasets": {
+            "type": "array",
+            "description": "the datasets related to the datasetgroup",
+            "items": {
+              "$ref": "#/components/schemas/ProductOverview"
+            }
+          }
+        }
+      },
+      "ProductOverview": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the product",
+            "example": "/v2/products/56"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "ProductOverview"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "productId": {
+            "type": "integer",
+            "description": "the unique id of the product",
+            "format": "int32",
+            "example": 56
+          },
+          "name": {
+            "type": "string",
+            "description": "the name of the product",
+            "example": "DHM-Vlaanderen, punten"
+          },
+          "description": {
+            "type": "string",
+            "description": "the description of the product",
+            "example": "Het digitaal hoogtemodel (DHM) is een driedimensionele, digitale beschrijving van het aardoppervlak, opgesteld onder impuls van het Ministerie van de Vlaamse Gemeenschap (AWZ - Afdeling Waterbouwkundig Laboratorium en AMINAL - Afdeling Water) Het model wordt weergegeven door punten met x, y en z coordinaten gepositioneerd op maaiveldhoogte, dwz zonder gebouwen noch vegetatie. Kenmerkend zijn de hoge nauwkeurigheid van de opgemeten punten en de hoge puntendichtheid, gemiddeld 1 punt per 20 vierkante meter."
+          },
+          "isOpenData": {
+            "type": "boolean",
+            "description": "Tells if the product is open data",
+            "nullable": true,
+            "example": true
+          },
+          "isOrderAllowed": {
+            "type": "boolean",
+            "description": "Tells if the product is downloadeable for the current user",
+            "nullable": true,
+            "example": true
+          },
+          "temporaryUnavailable": {
+            "type": "boolean",
+            "description": "Tells if the product is temporary unavailable",
+            "example": false
+          },
+          "orderAllowedRoles": {
+            "type": "array",
+            "description": "Allowed roles for the product",
+            "nullable": true,
+            "example": [
+              "role"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "OrderStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "description": "status of the order",
+            "example": "Completed",
+            "$ref": "#/components/schemas/EnumOrderStatus"
+          }
+        }
+      },
+      "EnumOrderStatus": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "Received",
+          "Processing",
+          "Completed",
+          "Error"
+        ],
+        "enum": [
+          "Received",
+          "Processing",
+          "Completed",
+          "Error"
+        ]
+      },
+      "OrderCreatedHydraCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the orders"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "items": {
+              "type": "string"
+            }
+          },
+          "view": {
+            "description": "the view response of the response",
+            "$ref": "#/components/schemas/HydraPartialCollectionView"
+          },
+          "member": {
+            "type": "array",
+            "description": "Array of Order objects",
+            "items": {
+              "$ref": "#/components/schemas/OrderCreatedHydraItem"
+            }
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "The amount of Categories in the collection",
+            "format": "int32"
+          }
+        }
+      },
+      "OrderCreatedHydraItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "orderId": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "OrderConfigurationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "integer",
+            "description": "The unique id of the product for the order creation",
+            "format": "int32",
+            "example": 1
+          },
+          "format": {
+            "type": "string",
+            "description": "The format for the order creation.\neg. Shapefile, GML, DXF, KML, AccessDB, ...\nNot All products support every format.",
+            "nullable": true,
+            "example": "Shapefile"
+          },
+          "discreteVersionIds": {
+            "type": "array",
+            "description": "The discrete versions to include. This identifier defines the historical version of this dataset back in time.\nTo obtain the proper id's for a product, look at DiscreteVersions property of product detail /v2/Products/{id}.",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "fileIds": {
+            "type": "array",
+            "description": "If this order is for predefined files, This is a list of the file id's to order.\nTo obtain the proper id's for a product, look at Files property of product detail /v2/Products/{id}.\nIf ordering predefined files, leave GeographicalCrop and TemporalCrop empty.",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "geographicalCrop": {
+            "description": "The geographical crop for the order creation.\nCrop the dataset on selection entity or define a custom polygon.",
+            "nullable": true,
+            "$ref": "#/components/schemas/GeographicalCropRequest"
+          },
+          "temporalCrop": {
+            "description": "Crop the dataset based on a time period. It's possible to define historical data. ",
+            "nullable": true,
+            "$ref": "#/components/schemas/TemporalCrop"
+          },
+          "email": {
+            "type": "string",
+            "description": "The email on which you want to receive notifications.",
+            "nullable": true,
+            "example": "person@mail.com"
+          },
+          "mailOnProcessed": {
+            "type": "boolean",
+            "description": "Set to true if you want to be emailed when the order is processed.",
+            "nullable": true,
+            "example": false
+          }
+        }
+      },
+      "GeographicalCropRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "clip": {
+            "type": "boolean",
+            "description": "Tells to clip the geographical crop or not",
+            "example": false
+          },
+          "selectionEntityCode": {
+            "type": "string",
+            "description": "the selection entity code of the geographical crop.\neg. Provincie, Gemeente, KaartBlad_NGI_1_1_Numeriek, ...",
+            "nullable": true,
+            "example": "Provincie"
+          },
+          "selectionEntityCodeValue": {
+            "type": "array",
+            "description": "the selection entity value of the geographical crop.\neg. 10000 for Antwerpen when code is Provincie,\nniscode 44021 for Gent when code is Gemeente,\nkaartblad 01 when code is KaartBlad_NGI_1_1_Numeriek",
+            "nullable": true,
+            "example": 10000,
+            "items": {
+              "type": "string"
+            }
+          },
+          "polygon": {
+            "description": "the polygon value of the geographical crop",
+            "nullable": true,
+            "$ref": "#/components/schemas/Polygon"
+          }
+        }
+      },
+      "Polygon": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "type": "array",
+            "description": "the coordinates of the polygon",
+            "example": [
+              [
+                187085.4939025,
+                201638.5090496
+              ],
+              [
+                186000.8878598,
+                191395.0075346
+              ],
+              [
+                171599.7298475,
+                200312.8794418
+              ],
+              [
+                187085.4939025,
+                201638.5090496
+              ]
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "format": "double"
+              }
+            }
+          }
+        }
+      },
+      "TemporalCrop": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "the startdate of the data to be taken, is optional.\nIn case of historical data, fill in null",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2023-01-01T12:00Z"
+          },
+          "to": {
+            "type": "string",
+            "description": "the enddate of the data to be taken, is required.\nIn case of historical data, fill in the date until changes need to be gathered",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2023-02-28T12:00Z"
+          }
+        }
+      },
+      "OrderHydraCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the orders",
+            "example": "v2/orders"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "Collection"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "view": {
+            "description": "the view response of the response",
+            "$ref": "#/components/schemas/HydraPartialCollectionView"
+          },
+          "member": {
+            "type": "array",
+            "description": "Array of Order objects",
+            "items": {
+              "$ref": "#/components/schemas/OrderHydraItem"
+            }
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "The amount of Categories in the collection",
+            "format": "int32",
+            "example": 1
+          }
+        }
+      },
+      "OrderHydraItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the order",
+            "example": "/v2/orders/123"
+          },
+          "orderId": {
+            "type": "integer",
+            "description": "the id path of the order",
+            "format": "int32",
+            "example": 123
+          },
+          "orderTimestamp": {
+            "type": "string",
+            "description": "the timestamp when the order was created",
+            "format": "date-time",
+            "example": "2023-01-01T13:00Z"
+          },
+          "productName": {
+            "type": "string",
+            "description": "the product name",
+            "nullable": true,
+            "example": "GRB gis"
+          },
+          "productId": {
+            "type": "integer",
+            "description": "the product number",
+            "format": "int32",
+            "nullable": true,
+            "example": 1
+          },
+          "productType": {
+            "description": "the product type",
+            "example": "Dataset",
+            "$ref": "#/components/schemas/EnumProductType"
+          },
+          "format": {
+            "type": "string",
+            "description": "the format",
+            "example": "Shapefile"
+          },
+          "version": {
+            "type": "string",
+            "description": "the current version",
+            "nullable": true
+          },
+          "orderConfiguration": {
+            "description": "The configuration of the order",
+            "nullable": true,
+            "$ref": "#/components/schemas/OrderConfigurationResponse"
+          },
+          "expireDate": {
+            "type": "string",
+            "description": "the timestamp when the order expires",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2023-01-11T12:00Z"
+          },
+          "download": {
+            "description": "the file which can be downloaded",
+            "nullable": true,
+            "$ref": "#/components/schemas/OrderDownloadFile"
+          },
+          "status": {
+            "description": "status of the order",
+            "example": "Completed",
+            "$ref": "#/components/schemas/EnumOrderStatus"
+          },
+          "statusTimestamp": {
+            "type": "string",
+            "description": "the timestamp of the latest order status update",
+            "format": "date-time"
+          }
+        }
+      },
+      "EnumProductType": {
+        "type": "string",
+        "description": "the type of a product",
+        "x-enumNames": [
+          "Dataset",
+          "Entity"
+        ],
+        "enum": [
+          "Dataset",
+          "Entity"
+        ]
+      },
+      "OrderConfigurationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "integer",
+            "description": "the unique id of the product for the order creation",
+            "format": "int32",
+            "example": 1
+          },
+          "format": {
+            "type": "string",
+            "description": "the format for the order creation\neg. Shapefile, GML, DXF, KML, AccessDB, ...\nNot All products support every format",
+            "nullable": true,
+            "example": "Shapefile"
+          },
+          "discreteVersionIds": {
+            "type": "array",
+            "description": "the discrete versions to include\nTo obtain the proper id's for a product, look at DiscreteVersions property of product detail /v2/Products/{id}",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "fileIds": {
+            "type": "array",
+            "description": "If this order is for predefined files, This is a list of the file id's to order.\nTo obtain the proper id's for a product, look at Files property of product detail /v2/Products/{id}\nIf ordering predefined files, leave GeographicalCrop and TemporalCrop empty",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "geographicalCrop": {
+            "description": "the geographical crop for the order creation",
+            "nullable": true,
+            "$ref": "#/components/schemas/GeographicalCropResponse"
+          },
+          "temporalCrop": {
+            "description": "crop the dataset based on timestamp ",
+            "nullable": true,
+            "$ref": "#/components/schemas/TemporalCrop"
+          },
+          "email": {
+            "type": "string",
+            "description": "The email on which you want to receive notifications",
+            "nullable": true,
+            "example": "person@mail.com"
+          },
+          "mailOnProcessed": {
+            "type": "boolean",
+            "description": "Set to true if you want to be emailed when the order is processed",
+            "nullable": true,
+            "example": false
+          }
+        }
+      },
+      "GeographicalCropResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "clip": {
+            "type": "boolean",
+            "description": "Tells to clip the geographical crop or not",
+            "example": false
+          },
+          "selectionEntityCode": {
+            "type": "string",
+            "description": "the selection entity code of the geographical crop.\neg. Provincie, Gemeente, KaartBlad_NGI_1_1_Numeriek, ...",
+            "nullable": true,
+            "example": "Provincie"
+          },
+          "selectionEntityCodeValue": {
+            "type": "array",
+            "description": "the selection entity value of the geographical crop.\neg. 10000 for Antwerpen when code is Provincie,\nniscode 44021 for Gent when code is Gemeente,\nkaartblad 01 when code is KaartBlad_NGI_1_1_Numeriek",
+            "nullable": true,
+            "example": 10000,
+            "items": {
+              "type": "string"
+            }
+          },
+          "selectionEntityCodeDescription": {
+            "type": "array",
+            "description": "the selection entity value of the geographical crop.\neg. Antwerpen when code is Provincie and value (niscode) is 10000,\neg. Gent when code is Gemeente and value (niscode) is 44021,",
+            "nullable": true,
+            "example": "Antwerpen",
+            "items": {
+              "type": "string"
+            }
+          },
+          "polygon": {
+            "description": "the polygon value of the geographical crop",
+            "nullable": true,
+            "$ref": "#/components/schemas/Polygon"
+          }
+        }
+      },
+      "OrderDownloadFile": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "description": "the unique identifier of the downloadable file",
+            "format": "guid",
+            "example": "E53741DF-8A1F-4403-90B6-FD6C3483A987"
+          },
+          "name": {
+            "type": "string",
+            "description": "the name of the downloadable file",
+            "example": "GRBgis_20230220_e133_Shapefile.zip"
+          },
+          "size": {
+            "type": "integer",
+            "description": "the size of the downloadable file, in bytes",
+            "format": "uint64",
+            "example": 1797659
+          }
+        }
+      },
+      "OrderProductHydraCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the orders",
+            "example": "v2/orders"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "Collection"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "view": {
+            "description": "the view response of the response",
+            "$ref": "#/components/schemas/HydraPartialCollectionView"
+          },
+          "member": {
+            "type": "array",
+            "description": "Array of Order objects",
+            "items": {
+              "$ref": "#/components/schemas/OrderProductHydraItem"
+            }
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "The amount of Categories in the collection",
+            "format": "int32",
+            "example": 1
+          }
+        }
+      },
+      "OrderProductHydraItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "productName": {
+            "type": "string",
+            "description": "the product name",
+            "nullable": true,
+            "example": "GRB gis"
+          },
+          "productId": {
+            "type": "integer",
+            "description": "the product number",
+            "format": "int32",
+            "nullable": true,
+            "example": 1
+          },
+          "productType": {
+            "description": "the product type",
+            "example": "Dataset",
+            "$ref": "#/components/schemas/EnumProductType"
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the order",
+            "example": "/v2/orders/123"
+          },
+          "@context": {
+            "type": "string",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld"
+          },
+          "orderId": {
+            "type": "integer",
+            "description": "the unique id of the order",
+            "format": "int32",
+            "example": 123
+          },
+          "orderTimestamp": {
+            "type": "string",
+            "description": "the timestamp when the order was created",
+            "format": "date-time",
+            "example": "2023-01-01T13:00Z"
+          },
+          "status": {
+            "type": "string",
+            "description": "status of the order",
+            "example": "Completed"
+          },
+          "statusTimestamp": {
+            "type": "string",
+            "description": "the timestamp of the latest order status update",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2023-01-01T13:00Z"
+          },
+          "volume": {
+            "type": "string",
+            "description": "the total size of the downloadable files, In human-readeable form.\nTo know the exact size in bytes, see the downloads collection, property Size (in bytes)",
+            "nullable": true,
+            "example": "1 GB"
+          },
+          "orderconfiguration": {
+            "description": "the orderconfiguration",
+            "$ref": "#/components/schemas/OrderConfigurationResponse"
+          },
+          "downloads": {
+            "type": "array",
+            "description": "the order downloads",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/OrderDownload"
+            }
+          },
+          "expireDate": {
+            "type": "string",
+            "description": "the timestamp when the order expires",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2023-01-11T12:00Z"
+          }
+        }
+      },
+      "OrderDownload": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the order download file",
+            "example": "/v2/orders/123/download/E53741DF-8A1F-4403-90B6-FD6C3483A987"
+          },
+          "@context": {
+            "type": "string",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld"
+          },
+          "fileId": {
+            "type": "string",
+            "description": "the file index of the order download file",
+            "format": "guid",
+            "example": "E53741DF-8A1F-4403-90B6-FD6C3483A987"
+          },
+          "name": {
+            "type": "string",
+            "description": "the name of the order download file",
+            "example": "GRBgis_20230220_e133_Shapefile.zip"
+          },
+          "volume": {
+            "type": "string",
+            "description": "the volume of the order download file",
+            "nullable": true,
+            "example": 1797659
+          }
+        }
+      },
+      "ProductSummaryHydraCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the product summaries"
+          },
+          "@context": {
+            "type": "array",
+            "description": "the context of the product summaries",
+            "items": {
+              "type": "string"
+            }
+          },
+          "@type": {
+            "type": "string",
+            "description": "the type of response"
+          },
+          "member": {
+            "type": "array",
+            "description": "Array of ProductSummary objects",
+            "items": {
+              "$ref": "#/components/schemas/ProductSummaryHydraItem"
+            }
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "The amount of product summaries in the collection",
+            "format": "int32"
+          }
+        }
+      },
+      "ProductSummaryHydraItem": {
+        "type": "object",
+        "description": "Summary of a product",
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "integer",
+            "description": "The unique identifier of a product",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of a product",
+            "example": "GRB gis"
+          }
+        }
+      },
+      "ProductHydraCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "URL Id of the response",
+            "example": "/v2/products"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "Collection"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "view": {
+            "description": "the view response of the response",
+            "$ref": "#/components/schemas/HydraPartialCollectionView"
+          },
+          "member": {
+            "type": "array",
+            "description": "Array of Category objects",
+            "items": {
+              "$ref": "#/components/schemas/ProductHydraItem"
+            }
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "The amount of Categories in the collection",
+            "format": "int32",
+            "example": 250
+          }
+        }
+      },
+      "ProductHydraItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the product",
+            "example": "/v2/products/971"
+          },
+          "productId": {
+            "type": "integer",
+            "description": "the unique id of the product",
+            "format": "int32",
+            "example": 971
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the product",
+            "example": "3D GRB"
+          },
+          "partOfDataset": {
+            "description": "The parent dataset product info, when the product is of type Entity",
+            "nullable": true,
+            "example": null,
+            "$ref": "#/components/schemas/ProductOverview"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the product",
+            "example": "Het 3D GRB is een 3D model van beschikbare Grootschalig Referentiebestand (GRB) objecten dat toelaat om deze GRB objecten in 3D te visualiseren en om efficiënt hoogte-informatie per GRB object te bevragen. De hoogte-informatie is afkomstig uit de brondata van het Digitaal Hoogtemodel Vlaanderen (DHMV) en kan afhankelijk van de productentiteit uit zowel het DHMV I als het DHMV II worden gehaald. De verschijningsvorm van het 3D GRB is verder afhankelijk van de mate van detail of het LOD-niveau (level of detail)."
+          },
+          "productType": {
+            "description": "Type of the product",
+            "example": "Dataset",
+            "$ref": "#/components/schemas/EnumProductType"
+          },
+          "keywords": {
+            "type": "string",
+            "description": "All keywords related to the product",
+            "nullable": true,
+            "example": "(ge)bouwonderdeel|geografie|Vlaamse Open data|Geografische gegevens|informatiesysteem|gebouwen|gebouw|constructies|grootschalig|GRB-databank|kunstwerk|bouwsel|gevels|GRB|DHMV"
+          },
+          "isOpenData": {
+            "type": "boolean",
+            "description": "Tells if the product is opendata",
+            "nullable": true,
+            "example": false
+          },
+          "datePublished": {
+            "type": "string",
+            "description": "Date when the product was published",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2022-08-25T13:37Z"
+          },
+          "isOrderAllowed": {
+            "type": "boolean",
+            "description": "Tells if the product is downloadeable for the current user",
+            "nullable": true,
+            "example": true
+          },
+          "temporaryUnavailable": {
+            "type": "boolean",
+            "description": "Tells if the product is temporary unavailable",
+            "example": true
+          },
+          "orderAllowedRoles": {
+            "type": "array",
+            "description": "Allowed roles for the product",
+            "nullable": true,
+            "example": [
+              "role"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "description": "Categories related to the product",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the product",
+            "example": "/v2/products/1"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "Product"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "productId": {
+            "type": "integer",
+            "description": "the unique id of the product",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the product",
+            "example": "GRBgis"
+          },
+          "partOfDataset": {
+            "description": "The parent dataset product info, when the product is of type Entity",
+            "nullable": true,
+            "example": null,
+            "$ref": "#/components/schemas/ProductOverview"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the product",
+            "example": "Het Grootschalig Referentiebestand (GRB) of Basiskaart Vlaanderen is een geografisch informatiesysteem dat dient als topografische referentie voor Vlaanderen. Het is een gemeenschappelijke geografische basis waarop alle gebruikers eigen gegevens kunnen enten. Het GRB bevat enkel geografische en kenmerkende informatie van goed definieerbare, conventioneel aanvaarde referentiegegevens: gebouwen, percelen, wegen en hun inrichting, waterlopen, spoorbanen en het wegennetwerk. Deze objecten worden gedetailleerd en nauwkeurig opgemeten zodat de gegevens bruikbaar zijn in een grootschalige voorstelling met een schaalbereik tussen 1/250 en 1/5000. Beschikbaarheid GRB gegevens: https://overheid.vlaanderen.be/informatie-vlaanderen/ontdek-onze-producten-en-diensten/grb-rapportering"
+          },
+          "productType": {
+            "description": "Type of the product. Is Dataset or Entity",
+            "example": "Dataset",
+            "$ref": "#/components/schemas/EnumProductType"
+          },
+          "keywords": {
+            "type": "array",
+            "description": "All keywords related to the product",
+            "example": "\"geografie\",\"(ge)bouwonderdeel\",\"aanhorigheid\",",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isOpenData": {
+            "type": "boolean",
+            "description": "Tells if the product is opendata",
+            "nullable": true,
+            "example": false
+          },
+          "allowClip": {
+            "type": "boolean",
+            "description": "Tells if the product is allowed to clip",
+            "nullable": true,
+            "example": true
+          },
+          "datePublished": {
+            "type": "string",
+            "description": "Date when the product was published",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2022-12-12T11:23Z"
+          },
+          "isOrderAllowed": {
+            "type": "boolean",
+            "description": "Tells if the product is downloadeable for the current user",
+            "nullable": true
+          },
+          "temporaryUnavailable": {
+            "type": "boolean",
+            "description": "Tells if the product is temporary unavailable"
+          },
+          "orderAllowedRoles": {
+            "type": "array",
+            "description": "Allowed roles for the product",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "formats": {
+            "type": "array",
+            "description": "Formats in which the product is downloadable",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "description": "Categories related to the product",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          },
+          "documents": {
+            "type": "array",
+            "description": "Documents related to the product",
+            "items": {
+              "$ref": "#/components/schemas/Document"
+            }
+          },
+          "selectionEntities": {
+            "type": "array",
+            "description": "Selection Entities related to the product",
+            "items": {
+              "$ref": "#/components/schemas/ProductSelectionEntity"
+            }
+          },
+          "dataset": {
+            "description": "Dataset related to the product",
+            "nullable": true,
+            "$ref": "#/components/schemas/Dataset"
+          },
+          "entity": {
+            "description": "Entity related to the product",
+            "nullable": true,
+            "$ref": "#/components/schemas/Entity"
+          },
+          "files": {
+            "type": "array",
+            "description": "Downloadable files related to the product",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/PredefinedDownloadFile"
+            }
+          },
+          "allowDifferenceFiles": {
+            "type": "boolean",
+            "description": "Tells if the product is allowed to configure difference files",
+            "nullable": true
+          },
+          "allowHistoricVersions": {
+            "type": "boolean",
+            "description": "Tells if the product is allowed to configure historic versions",
+            "nullable": true
+          },
+          "historicStartDate": {
+            "type": "string",
+            "description": "Historic version start date",
+            "format": "date-time",
+            "nullable": true
+          },
+          "historicEndDate": {
+            "type": "string",
+            "description": "Historic version end date",
+            "format": "date-time",
+            "nullable": true
+          },
+          "DifferenceFileMinStartDate": {
+            "type": "string",
+            "description": "Difference File min start date",
+            "format": "date-time",
+            "nullable": true
+          },
+          "DifferenceFileMaxStartDate": {
+            "type": "string",
+            "description": "Difference File max start date",
+            "format": "date-time",
+            "nullable": true
+          },
+          "DifferenceFileMinEndDate": {
+            "type": "string",
+            "description": "Difference File min end date",
+            "format": "date-time",
+            "nullable": true
+          },
+          "DifferenceFileMaxEndDate": {
+            "type": "string",
+            "description": "Difference File max end date",
+            "format": "date-time",
+            "nullable": true
+          },
+          "discreteVersions": {
+            "type": "array",
+            "description": "Discrete versions related to the product",
+            "items": {
+              "$ref": "#/components/schemas/DiscreteVersion"
+            }
+          },
+          "allowPreview": {
+            "type": "boolean",
+            "description": "Tells if the product is allowed to show preview data",
+            "nullable": true,
+            "example": true
+          }
+        }
+      },
+      "Document": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the document"
+          },
+          "documentId": {
+            "type": "string",
+            "description": "the unique id of the document",
+            "format": "guid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the document"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of the document"
+          },
+          "size": {
+            "type": "integer",
+            "description": "size of the product",
+            "format": "int32"
+          }
+        }
+      },
+      "ProductSelectionEntity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the selection entity"
+          },
+          "selectionEntityId": {
+            "type": "integer",
+            "description": "the unique id of the selection entity",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the selection entity"
+          }
+        }
+      },
+      "Dataset": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the dataset"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "items": {
+              "type": "string"
+            }
+          },
+          "productId": {
+            "type": "integer",
+            "description": "the productId of the dataset",
+            "format": "int32"
+          },
+          "fileIdentifier": {
+            "type": "string",
+            "description": "the fileidentifier of the dataset"
+          },
+          "version": {
+            "type": "string",
+            "description": "the version of the dataset",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "the status of the dataset",
+            "nullable": true
+          },
+          "versionDate": {
+            "type": "string",
+            "description": "the version date of the dataset",
+            "format": "date-time"
+          },
+          "applicationScale": {
+            "type": "string",
+            "description": "the application scale of the dataset"
+          },
+          "spatialRepresentation": {
+            "type": "string",
+            "description": "the spatial representation of the dataset"
+          },
+          "metadataUrl": {
+            "type": "string",
+            "description": "the metadata URL of the dataset"
+          },
+          "entities": {
+            "type": "array",
+            "description": "the entities related to the dataset",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/Entity"
+            }
+          },
+          "exampleimages": {
+            "type": "array",
+            "description": "the example images related to the dataset",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/ExampleImage"
+            }
+          },
+          "license": {
+            "type": "string",
+            "description": "the license of the dataset",
+            "nullable": true
+          },
+          "usecontraints": {
+            "type": "array",
+            "description": "the usage contraints of the dataset",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/UsageContraint"
+            }
+          },
+          "datasetGroupId": {
+            "type": "integer",
+            "description": "the id of the related datasetgroup of the dataset",
+            "format": "int32",
+            "nullable": true
+          }
+        }
+      },
+      "Entity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the entity"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "items": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string",
+            "description": "the name of the entity"
+          },
+          "description": {
+            "type": "string",
+            "description": "the description of the entity"
+          },
+          "productId": {
+            "type": "integer",
+            "description": "the productId of the entity",
+            "format": "int32"
+          },
+          "featureTypeId": {
+            "type": "string",
+            "description": "the featureTypeId of the entity"
+          },
+          "isAllowedToOrderSeparately": {
+            "type": "boolean",
+            "description": "Tells if the entity is allowed to be ordered separately "
+          },
+          "isAllowedToOrder": {
+            "type": "boolean",
+            "description": "Tells if the entity is allowed to be ordered "
+          }
+        }
+      },
+      "ExampleImage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the example image"
+          }
+        }
+      },
+      "UsageContraint": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "type": "string",
+            "description": "the Level of the usage contraint"
+          },
+          "contraints": {
+            "type": "array",
+            "description": "the contraints of the usage contraint",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PredefinedDownloadFile": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "description": "the unique file path of the downloadable file"
+          },
+          "name": {
+            "type": "string",
+            "description": "the name of the downloadable file"
+          },
+          "format": {
+            "type": "string",
+            "description": "the format of the downloadable file",
+            "nullable": true
+          },
+          "size": {
+            "type": "integer",
+            "description": "the size of the downloadable file",
+            "format": "int32"
+          },
+          "selectionEntityId": {
+            "description": "the unique id selection entity of the downloadable file",
+            "nullable": true,
+            "$ref": "#/components/schemas/EnumSelectionEntity"
+          },
+          "version": {
+            "type": "string",
+            "description": "the selection entity version of the downloadable file if applicable",
+            "nullable": true
+          }
+        }
+      },
+      "EnumSelectionEntity": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "Onbekend",
+          "GeenVersnijding",
+          "Gemeente",
+          "Provincie",
+          "KaartBlad"
+        ],
+        "enum": [
+          "Onbekend",
+          "GeenVersnijding",
+          "Gemeente",
+          "Provincie",
+          "KaartBlad"
+        ]
+      },
+      "DiscreteVersion": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "discreteVersionId": {
+            "type": "string",
+            "description": "the unique id of the discrete version",
+            "format": "guid"
+          },
+          "FileIdentifier": {
+            "type": "string",
+            "description": "the unique file id of the discrete version"
+          },
+          "description": {
+            "type": "string",
+            "description": "the description of the discrete version"
+          },
+          "versionDate": {
+            "type": "string",
+            "description": "the date of the discrete version",
+            "format": "date-time"
+          }
+        }
+      },
+      "SelectionEntityHydraCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the selectionentities",
+            "example": "/v2/selectionentities"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "Collection"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "member": {
+            "type": "array",
+            "description": "Array of Selection Entity objects",
+            "items": {
+              "$ref": "#/components/schemas/SelectionEntityHydraItem"
+            }
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "The amount of Categories in the collection",
+            "format": "int32",
+            "example": 1
+          }
+        }
+      },
+      "SelectionEntityHydraItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the selection entity",
+            "example": "/v2/selectionentities/1"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "HydraItem"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "selectionEntityId": {
+            "type": "integer",
+            "description": "the unique id of the selection entity",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the selection entity",
+            "example": "Geen versnijding"
+          },
+          "code": {
+            "type": "string",
+            "description": "Code of the selection entity",
+            "example": "Geen_Versnijding"
+          }
+        }
+      },
+      "SelectionEntity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the selection entity",
+            "example": "/v2/selectionentities/4"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "SelectionEntity"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "selectionEntityId": {
+            "type": "integer",
+            "description": "the unique id of the selection entity",
+            "format": "int32",
+            "example": 4
+          },
+          "name": {
+            "type": "string",
+            "description": "the name of the selection entity",
+            "example": "Buffer 250m"
+          },
+          "code": {
+            "type": "string",
+            "description": "the code of the selection entity",
+            "example": "Gemeente_250m_Buffer"
+          },
+          "selectionEntityValues": {
+            "type": "array",
+            "description": "a collection of allowed values for a predefined selection entity",
+            "items": {
+              "$ref": "#/components/schemas/SelectionEntityValue"
+            }
+          }
+        }
+      },
+      "SelectionEntityValue": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "codeValue": {
+            "type": "string",
+            "description": "the value of the selection entity,\nuse this value to select an entity for a geographical crop",
+            "example": 11001
+          },
+          "geometry": {
+            "type": "string",
+            "description": "geometry of the selection entity",
+            "example": "POLYGON ((152209.30125000328 204044.7953750007, 152283.7105000019 204422.42862499878, 152166.52399999648 204560.66812499985, 151747.06650000066 204384.28500000015, 151707.72249999642 204150.9842500016, 151275.5081249997 204399.4862499982, 151124.9006249979 204189.3280000016, 150792.72375000268 204167.97337500006, 150043.3656250015 203697.78525000066, 149553.04187499732 204387.81774999946, 149417.69262500107 204223.0084999986, 148970.36050000042 204196.77450000122, 149275.24562499672 202846.43337500095, 149084.41924999654 202699.7664999999, 149737.72124999762 202373.58999999985, 150040.9699999988 201408.8909999989, 150403.21899999678 201133.25, 150550.35899999738 200741.3440000005, 149647.2398750037 200290.94387499988, 148949.32424999774 200429.81637499854, 149039.9530000016 200045.5940000005, 149357.25 199939.2969999984, 150896.96899999678 200101.8599999994, 151695.625 200775.1090000011, 152061.75912500173 200697.94249999896, 152219.3436250016 200886.48725000024, 151941.27724999934 201004.90737500042, 152528.06400000304 201887.45787499845, 152518.45525000244 202213.69762500003, 152678.26937499642 202258.4072499983, 152598.10587500036 202518.8031250015, 152797.72775000334 202568.78862499818, 152790.98924999684 203236.4537499994, 152546.35612499714 203346.59887500107, 152769.64787500352 203626.09450000152, 152508.12112499774 203754.85300000012, 152448.41924999654 204046.2664999999, 152209.30125000328 204044.7953750007))"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the selection entity",
+            "example": "Aartselaar"
+          }
+        }
+      },
+      "SelectionEntityVersionHydraCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "the id path of the selectionentity versions",
+            "example": "/v2/selectionentities/versions"
+          },
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "Collection"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "member": {
+            "type": "array",
+            "description": "Array of Selection Entity Version objects",
+            "items": {
+              "$ref": "#/components/schemas/SelectionEntityVersionHydraItem"
+            }
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "The amount of items in the collection",
+            "format": "int32",
+            "example": 1
+          }
+        }
+      },
+      "SelectionEntityVersionHydraItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "@type": {
+            "type": "string",
+            "description": "Type of the response",
+            "example": "SelectionEntityVersion"
+          },
+          "@context": {
+            "type": "array",
+            "description": "Context of the response",
+            "example": "http://www.w3.org/ns/hydra/context.jsonld",
+            "items": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string",
+            "description": "the name of the selection entity version",
+            "example": 2019
+          },
+          "description": {
+            "type": "string",
+            "description": "the description of the selection entity version",
+            "example": "Gemeente (volgens toestand 1/1/2019)"
+          },
+          "code": {
+            "type": "string",
+            "description": "the code of the selection entity version",
+            "example": 2019
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "x-api-key": {
+        "type": "apiKey",
+        "name": "x-api-key",
+        "in": "header"
+      },
+      "bearer": {
+        "type": "http",
+        "name": "bearer",
+        "in": "header",
+        "scheme": "bearer"
+      },
+      "oauth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "authorizationUrl": "https://authenticatie.vlaanderen.be/op/v1/auth",
+            "tokenUrl": "https://authenticatie.vlaanderen.be/op/v1/token",
+            "scopes": {
+              "download_catalogus_v2": "",
+              "download_orders_v2": "",
+              "download_voormalig_deelnemer_gis_vlaanderen": "",
+              "download_nieuwe_deelnemer_gdi_vlaanderen": "",
+              "download_grb_netbeheerder": ""
+            }
+          }
+        }
+      }
+    }
+  }
+}
