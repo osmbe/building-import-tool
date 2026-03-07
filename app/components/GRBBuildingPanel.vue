@@ -133,6 +133,11 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
     return items.map(item => item.replace(/^"|"$/g, ''))
   }
 
+  // Handle '; '-separated strings (STRING_AGG with '; ' separator, e.g. addresses column)
+  if (str.includes('; ')) {
+    return str.split('; ').map(s => s.trim()).filter(Boolean)
+  }
+
   return [str]
 }
 
