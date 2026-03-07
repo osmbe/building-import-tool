@@ -173,11 +173,10 @@ grb-order-all:
     @just _grb-order-gbg
     @just _grb-order-gba
     @just _grb-order-addresses
-    @just _grb-order-address-links
     @echo ""
     @echo "✅ All orders created!"
     @echo ""
-    @echo "Note: RltGbgGebouw.dbf (polygon-building relationships) is included in GBG download"
+    @echo "Note: RltGbgGebouw*.dbf (polygon-building relationships) and RltAdresGebouw*.dbf (address links) are both included in their respective downloads"
     @echo "Check status with: just grb-status-orders"
 
 # Download all ready GRB orders
@@ -186,7 +185,6 @@ grb-download-all:
     @echo ""
     @just _grb-download-if-ready gbg "$(just _grb-get-order-id gbg)"
     @just _grb-download-if-ready gba "$(just _grb-get-order-id gba)"
-    @just _grb-download-if-ready address-links "$(just _grb-get-order-id address-links)"
     @just _grb-download-if-ready addresses "$(just _grb-get-order-id addresses)"
     @echo ""
     @echo "✅ All downloads complete!"
@@ -278,7 +276,6 @@ grb-status-orders:
     @echo ""
     @just _grb-check-order-status gbg "GBG (Buildings)"
     @just _grb-check-order-status gba "GBA"
-    @just _grb-check-order-status address-links "Address Links"
     @just _grb-check-order-status addresses "Addresses"
 
 # ============================================================================
@@ -1042,7 +1039,7 @@ _grb-wait-for-orders:
     echo ""
     while true; do
         ALL_READY=true
-        for PRODUCT in gbg gba addresses address-links; do
+        for PRODUCT in gbg gba addresses; do
             ORDER_ID=$(just _grb-get-order-id $PRODUCT)
             if [ -n "$ORDER_ID" ] && [ "$ORDER_ID" != "null" ]; then
                 STATUS=$(curl -s --retry 5 --retry-all-errors --retry-delay 10 \
@@ -1066,27 +1063,37 @@ _grb-import-gbg-gebouw-rel:
     #!/usr/bin/env bash
     echo "📊 Importing RltGbgGebouw (polygon-building relationships)..."
 
-    # Find the RltGbgGebouw*.dbf file (handles date-stamped names)
-    REL_FILE=$(find {{grb_data_dir}} -name "RltGbgGebouw*.dbf" -type f 2>/dev/null | head -1)
+    # Find ALL RltGbgGebouw*.dbf files — GBG product delivers one file per province
+    # Using head -1 would only import one province; loop through all like _grb-import-address-links
+    FOUND=false
+    FIRST=true
+    for file in $(find {{grb_data_dir}} -name "RltGbgGebouw*.dbf" -type f 2>/dev/null | sort); do
+        if [ -f "$file" ]; then
+            FOUND=true
+            LAYER_NAME=$(basename "$file" .dbf)
+            echo "   Importing: $file"
+            if [ "$FIRST" = true ]; then
+                ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+                    "$file" -nln grb.polygon_building_rel -overwrite \
+                    -gt 100000 --config PG_USE_COPY YES \
+                    -sql "SELECT OIDN as oidn, GEBOUWID as gebouw_id FROM \"$LAYER_NAME\""
+                FIRST=false
+            else
+                ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+                    "$file" -nln grb.polygon_building_rel -append \
+                    -gt 100000 --config PG_USE_COPY YES \
+                    -sql "SELECT OIDN as oidn, GEBOUWID as gebouw_id FROM \"$LAYER_NAME\""
+            fi
+            rm "$file"
+            echo "   🗑️  Deleted $file"
+        fi
+    done
 
-    if [ -n "$REL_FILE" ] && [ -f "$REL_FILE" ]; then
-        echo "   Found: $REL_FILE"
-        # Get layer name from filename (without .dbf extension)
-        LAYER_NAME=$(basename "$REL_FILE" .dbf)
-        # Import DBF file to PostgreSQL
-        # The DBF contains: OIDN (polygon ID) and GEBOUWID (building ID)
-        ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-            "$REL_FILE" -nln grb.polygon_building_rel -overwrite \
-            -gt 100000 --config PG_USE_COPY YES \
-            -sql "SELECT OIDN as oidn, GEBOUWID as gebouw_id FROM \"$LAYER_NAME\""
+    if [ "$FOUND" = true ]; then
         echo "✅ Polygon-building relationships imported"
-        # Create index for faster joins
         echo "   📇 Creating index on polygon_building_rel.oidn..."
         PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
             "CREATE INDEX IF NOT EXISTS idx_polygon_building_rel_oidn ON grb.polygon_building_rel(oidn);"
-        # Clean up to save disk space
-        rm "$REL_FILE"
-        echo "   🗑️  Deleted $REL_FILE"
     else
         echo "⚠️  RltGbgGebouw*.dbf not found - gebouw_id will not be populated"
         echo "   Buildings will be aggregated by polygon geometry instead"
@@ -1291,12 +1298,17 @@ _grb-import-address-links:
     #!/usr/bin/env bash
     echo "📊 Importing address-building links..."
 
+    # Drop FK constraint temporarily: some adres_ids in link files reference deprecated
+    # addresses no longer present in the GRB address shapefile. Without this, PG_USE_COPY
+    # rolls back entire 100K-row batches on the first FK violation, losing valid rows.
+    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+        "ALTER TABLE grb.address_building_links DROP CONSTRAINT IF EXISTS fk_address_building_links_adres_id;"
+
     # Find RltAdresGebouw*.dbf files (exclude Lkt lookup tables)
-    for file in $(find {{grb_data_dir}} -name "RltAdresGebouw*.dbf" -type f 2>/dev/null | grep -v "Lkt"); do
+    # GRB-Adres product (10445) delivers multiple files: RltAdresGebouw.dbf, RltAdresGebouw_1.dbf, etc.
+    for file in $(find {{grb_data_dir}} -name "RltAdresGebouw*.dbf" -type f 2>/dev/null | grep -v "Lkt" | sort); do
         if [ -f "$file" ]; then
             echo "   Importing: $file"
-            echo "   Schema (field names):"
-            ogrinfo -al -so "$file" | grep -E "^\s+\w+" || true
             LAYER_NAME=$(basename "$file" .dbf)
             ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
                 "$file" -nln grb.address_building_links -append \
@@ -1308,6 +1320,18 @@ _grb-import-address-links:
                 FROM \"$LAYER_NAME\""
         fi
     done
+
+    # Remove links whose adres_id has no matching address (deprecated/removed addresses)
+    echo "   Cleaning up orphan links (adres_id not in addresses)..."
+    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+        "DELETE FROM grb.address_building_links abl
+         WHERE NOT EXISTS (SELECT 1 FROM grb.addresses a WHERE a.adres_id = abl.adres_id);"
+
+    # Re-add FK constraint now that orphan links are removed
+    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+        "ALTER TABLE grb.address_building_links ADD CONSTRAINT fk_address_building_links_adres_id
+         FOREIGN KEY (adres_id) REFERENCES grb.addresses(adres_id);"
+
     echo "✅ Address links imported"
 
     # Clean up data directories to save disk space
