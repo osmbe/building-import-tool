@@ -159,7 +159,6 @@ services:
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      COMPOSE_PROJECT_DIR: ${COMPOSE_PROJECT_DIR:-/compose}
     volumes:
       # gh CLI config for artifact download authentication
       # Linux: /home/username/.config/gh  |  macOS: /Users/username/.config/gh
