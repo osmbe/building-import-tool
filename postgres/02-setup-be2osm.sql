@@ -207,6 +207,8 @@ CREATE INDEX IF NOT EXISTS idx_addresses_geom_mercator ON grb.addresses USING GI
 CREATE INDEX IF NOT EXISTS idx_address_building_links_adres_id ON grb.address_building_links(adres_id);
 CREATE INDEX IF NOT EXISTS idx_address_building_links_building_object_id ON grb.address_building_links(building_object_id);
 CREATE INDEX IF NOT EXISTS idx_address_building_links_object_type ON grb.address_building_links(object_type);
+-- Functional index for BIGINT cast used in buildings_with_addresses view join
+CREATE INDEX IF NOT EXISTS idx_abl_building_obj_bigint ON grb.address_building_links ((building_object_id::bigint));
 
 -- Polygon-Building Relationship indexes
 CREATE INDEX IF NOT EXISTS idx_polygon_building_rel_oidn ON grb.polygon_building_rel(oidn);
@@ -336,49 +338,55 @@ ORDER BY municipality, postcode;
 DROP MATERIALIZED VIEW IF EXISTS grb.buildings_with_addresses CASCADE;
 
 CREATE MATERIALIZED VIEW grb.buildings_with_addresses AS
+-- Pre-aggregate addresses per gebouw_id to avoid fan-out in the main join.
+-- Without this CTE, joining 5M polygons directly with 3.9M links before GROUP BY
+-- creates a massive intermediate result set that kills performance.
+WITH addr_agg AS (
+    SELECT
+        abl.building_object_id::BIGINT AS gebouw_id,
+        COUNT(a.adres_id) AS address_count,
+        array_to_string(ARRAY_AGG(DISTINCT a.full_address ORDER BY a.full_address)
+            FILTER (WHERE a.full_address IS NOT NULL), '; ') AS addresses,
+        array_to_string(ARRAY_AGG(DISTINCT a.street_name ORDER BY a.street_name)
+            FILTER (WHERE a.street_name IS NOT NULL), ', ') AS street_names,
+        array_to_string(ARRAY_AGG(DISTINCT a.postcode ORDER BY a.postcode)
+            FILTER (WHERE a.postcode IS NOT NULL), ', ') AS postcodes,
+        array_to_string(ARRAY_AGG(DISTINCT a.municipality ORDER BY a.municipality)
+            FILTER (WHERE a.municipality IS NOT NULL), ', ') AS municipalities
+    FROM grb.address_building_links abl
+    JOIN grb.addresses a ON abl.adres_id = a.adres_id
+    GROUP BY abl.building_object_id::BIGINT
+)
 SELECT
     -- Polygon-level info (for OSM tagging with source:geometry:oidn)
     -- Cast oidn to BIGINT for Martin tile server (source is numeric(15,0))
-    bp.oidn::BIGINT as oidn,
+    bp.oidn::BIGINT AS oidn,
     bp.gebouw_id,
-    bp.area_m2::REAL as polygon_area_m2,
-    bp.type_label as polygon_type_label,
+    bp.area_m2::REAL AS polygon_area_m2,
+    bp.type_label AS polygon_type_label,
 
     -- Survey date for source:geometry:date OSM tag (format: YYYY-MM-DD)
-    TO_CHAR(bp.survey_date, 'YYYY-MM-DD') as survey_date,
+    TO_CHAR(bp.survey_date, 'YYYY-MM-DD') AS survey_date,
 
     -- Transform to Web Mercator for tile serving (transform once at view creation, not per tile)
     -- Explicit cast so PostGIS registers SRID=3857 in geometry_columns (required by Martin)
-    ST_Transform(bp.geom, 3857)::geometry(Geometry, 3857) as geom,
+    ST_Transform(bp.geom, 3857)::geometry(Geometry, 3857) AS geom,
 
     -- Parent building aggregated stats (for context)
     b.polygon_count,
     b.total_area_m2,
-    b.type_label as building_type_label,
+    b.type_label AS building_type_label,
 
-    -- Convert arrays to comma-separated strings for MVT compatibility
-    array_to_string(ARRAY_AGG(DISTINCT a.full_address ORDER BY a.full_address) FILTER (WHERE a.full_address IS NOT NULL), '; ') as addresses,
-    array_to_string(ARRAY_AGG(DISTINCT a.street_name ORDER BY a.street_name) FILTER (WHERE a.street_name IS NOT NULL), ', ') as street_names,
-    array_to_string(ARRAY_AGG(DISTINCT a.postcode ORDER BY a.postcode) FILTER (WHERE a.postcode IS NOT NULL), ', ') as postcodes,
-    array_to_string(ARRAY_AGG(DISTINCT a.municipality ORDER BY a.municipality) FILTER (WHERE a.municipality IS NOT NULL), ', ') as municipalities,
-
-    -- Address count
-    COUNT(DISTINCT a.adres_id) as address_count
+    -- Address data (pre-aggregated per gebouw_id)
+    COALESCE(aa.addresses, '')     AS addresses,
+    COALESCE(aa.street_names, '')  AS street_names,
+    COALESCE(aa.postcodes, '')     AS postcodes,
+    COALESCE(aa.municipalities, '') AS municipalities,
+    COALESCE(aa.address_count, 0)  AS address_count
 FROM
     grb.building_polygons bp
     LEFT JOIN grb.buildings b ON bp.gebouw_id = b.gebouw_id
-    LEFT JOIN grb.address_building_links abl ON bp.gebouw_id = abl.building_object_id::BIGINT
-    LEFT JOIN grb.addresses a ON abl.adres_id = a.adres_id
-GROUP BY
-    bp.oidn,
-    bp.gebouw_id,
-    bp.area_m2,
-    bp.type_label,
-    bp.survey_date,
-    bp.geom,
-    b.polygon_count,
-    b.total_area_m2,
-    b.type_label;
+    LEFT JOIN addr_agg aa ON bp.gebouw_id = aa.gebouw_id;
 
 -- Indexes on materialized view
 CREATE UNIQUE INDEX idx_mv_buildings_with_addresses_oidn ON grb.buildings_with_addresses(oidn);
