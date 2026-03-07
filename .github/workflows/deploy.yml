@@ -57,6 +57,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Notify server to deploy nuxt-app
+        if: ${{ vars.WEBHOOK_URL != '' }}
+        run: |
+          curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/nuxt-deploy" \
+            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"run_id": "${{ github.run_id }}"}'
+
   build-processing:
     name: Build Processing Tools
     runs-on: ubuntu-latest

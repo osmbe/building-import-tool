@@ -30,7 +30,7 @@ services:
 
   # Nuxt 3 Application
   nuxt-app:
-    image: ${NUXT_IMAGE:-}
+    image: ${NUXT_IMAGE:-ghcr.io/osmbe/building-import-tool/nuxt-app:latest}
     platform: linux/amd64
     build:
       context: ./app
@@ -159,10 +159,14 @@ services:
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      COMPOSE_PROJECT_DIR: ${COMPOSE_PROJECT_DIR:-/compose}
     volumes:
       # gh CLI config for artifact download authentication
       # Linux: /home/username/.config/gh  |  macOS: /Users/username/.config/gh
       - ${HOME}/.config/gh:/root/.config/gh:ro
+      # Docker socket + project dir for nuxt-deploy
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${COMPOSE_PROJECT_DIR:-${PWD}}:/compose:ro
     depends_on:
       postgres:
         condition: service_healthy

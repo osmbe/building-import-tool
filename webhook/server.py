@@ -11,6 +11,7 @@ ROUTES = {
     '/osm-restore': '/restore-osm.sh',
     '/grb-restore': '/restore-grb.sh',
     '/picc-restore': '/restore-picc.sh',
+    '/nuxt-deploy': '/deploy-nuxt.sh',
 }
 
 
