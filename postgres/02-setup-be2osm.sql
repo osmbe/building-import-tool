@@ -332,18 +332,23 @@ ORDER BY municipality, postcode;
 -- MATERIALIZED VIEW: Building Polygons with Addresses and Parent Building Info
 -- ============================================================================
 
--- This view joins building polygons with their addresses via spatial proximity
--- and includes parent building aggregated stats for context
--- Each row represents an individual polygon with oidn for OSM tagging
+-- This view joins building polygons with their addresses via spatial containment
+-- (ST_Contains) and includes parent building aggregated stats for context.
+-- Each row represents an individual polygon with oidn for OSM tagging.
+--
+-- Why spatial join instead of address_building_links?
+-- The GEBOUWID in RltAdresGebouw (address links) uses a different ID namespace
+-- than the GEBOUWID in RltGbgGebouw (polygon-building relationships), resulting
+-- in only ~5% match rate. Spatial join reliably matches addresses to the polygon
+-- that physically contains them. See docs/GRB_ADDRESS_JOIN.md for details.
 DROP MATERIALIZED VIEW IF EXISTS grb.buildings_with_addresses CASCADE;
 
 CREATE MATERIALIZED VIEW grb.buildings_with_addresses AS
--- Pre-aggregate addresses per gebouw_id to avoid fan-out in the main join.
--- Without this CTE, joining 5M polygons directly with 3.9M links before GROUP BY
--- creates a massive intermediate result set that kills performance.
-WITH addr_agg AS (
+-- Pre-aggregate addresses per polygon via spatial containment.
+-- GIST indexes on both building_polygons.geom and addresses.geom make this efficient.
+WITH addr_per_polygon AS (
     SELECT
-        abl.building_object_id::BIGINT AS gebouw_id,
+        bp.oidn,
         COUNT(a.adres_id) AS address_count,
         array_to_string(ARRAY_AGG(DISTINCT a.full_address ORDER BY a.full_address)
             FILTER (WHERE a.full_address IS NOT NULL), '; ') AS addresses,
@@ -353,9 +358,9 @@ WITH addr_agg AS (
             FILTER (WHERE a.postcode IS NOT NULL), ', ') AS postcodes,
         array_to_string(ARRAY_AGG(DISTINCT a.municipality ORDER BY a.municipality)
             FILTER (WHERE a.municipality IS NOT NULL), ', ') AS municipalities
-    FROM grb.address_building_links abl
-    JOIN grb.addresses a ON abl.adres_id = a.adres_id
-    GROUP BY abl.building_object_id::BIGINT
+    FROM grb.building_polygons bp
+    JOIN grb.addresses a ON ST_Contains(bp.geom, a.geom)
+    GROUP BY bp.oidn
 )
 SELECT
     -- Polygon-level info (for OSM tagging with source:geometry:oidn)
@@ -377,16 +382,16 @@ SELECT
     b.total_area_m2,
     b.type_label AS building_type_label,
 
-    -- Address data (pre-aggregated per gebouw_id)
-    COALESCE(aa.addresses, '')     AS addresses,
-    COALESCE(aa.street_names, '')  AS street_names,
-    COALESCE(aa.postcodes, '')     AS postcodes,
-    COALESCE(aa.municipalities, '') AS municipalities,
-    COALESCE(aa.address_count, 0)  AS address_count
+    -- Address data (pre-aggregated per polygon via spatial join)
+    COALESCE(app.addresses, '')     AS addresses,
+    COALESCE(app.street_names, '')  AS street_names,
+    COALESCE(app.postcodes, '')     AS postcodes,
+    COALESCE(app.municipalities, '') AS municipalities,
+    COALESCE(app.address_count, 0)  AS address_count
 FROM
     grb.building_polygons bp
     LEFT JOIN grb.buildings b ON bp.gebouw_id = b.gebouw_id
-    LEFT JOIN addr_agg aa ON bp.gebouw_id = aa.gebouw_id;
+    LEFT JOIN addr_per_polygon app ON bp.oidn = app.oidn;
 
 -- Indexes on materialized view
 CREATE UNIQUE INDEX idx_mv_buildings_with_addresses_oidn ON grb.buildings_with_addresses(oidn);

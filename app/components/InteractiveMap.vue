@@ -195,7 +195,7 @@
                     <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded mb-1.5">
                       <Building2 class="h-2.5 w-2.5" />GRB
                     </div>
-                    <h2 class="text-sm font-semibold text-foreground">{{ formatGRBBuildingType(feature.type_label) }}</h2>
+                    <h2 class="text-sm font-semibold text-foreground">{{ formatGRBBuildingType(feature.polygon_type_label || feature.building_type_label) }}</h2>
                     <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ feature.gebouw_id || feature.id }}</div>
                   </div>
                   <button v-if="isTooltipSticky" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="removeFeature(index)">

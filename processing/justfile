@@ -993,7 +993,8 @@ _grb-download-if-ready product order_id:
             URL=$(echo "$FRESH_ORDER" | jq -r ".downloads[$i][\"@id\"]")
             ALREADY=$(stat -c%s "$DEST" 2>/dev/null || echo 0)
             echo "   Downloading $FILE (attempt $ATTEMPT/$MAX_ATTEMPTS, $(numfmt --to=iec $ALREADY) already)..."
-            curl -L --progress-bar \
+            CURL_PROGRESS=$([ -n "${CI:-}" ] && echo "--no-progress-meter" || echo "--progress-bar")
+            curl -L $CURL_PROGRESS \
                 -H "x-api-key: {{grb_api_key}}" \
                 --max-time 1800 \
                 -C - \

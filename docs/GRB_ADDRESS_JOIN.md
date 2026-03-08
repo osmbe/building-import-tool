@@ -1,0 +1,54 @@
+# GRB Address-Building Join: GEBOUWID Mismatch
+
+## Problem
+
+The GRB data model uses `GEBOUWID` in two different relationship files, but they reference **different ID namespaces**:
+
+| Source File | Product | Column | Distinct IDs | ID Range |
+|---|---|---|---|---|
+| `RltGbgGebouw*.dbf` | GBG (6553) | GEBOUWID | 660,375 | 5.6M - 32M |
+| `RltAdresGebouw*.dbf` | GRB-Adres (10445) | GEBOUWID | 873,207 | 10M - 20.5M |
+| **Overlap** | | | **43,301** (5%) | |
+
+- `RltGbgGebouw` maps GBG polygon OIDN to a building grouping ID (used to populate `building_polygons.gebouw_id`)
+- `RltAdresGebouw` maps ADRESID to a building ID in the Gebouwenregister (building registry)
+
+Despite using the same column name `GEBOUWID`, only **5% of address link IDs** match the GBG building IDs. This means the ID-based join through `address_building_links` only resolves addresses for ~25,000 out of 5M+ building polygons.
+
+## Evidence (March 2026 data)
+
+```
+building_polygons total:           5,052,689
+  - with gebouw_id populated:        375,295   (from RltGbgGebouw)
+  - with gebouw_id NULL:           4,677,394   (GBA polygons + unmatched)
+
+address_building_links:            3,922,134   (from RltAdresGebouw)
+  - distinct building_object_id:     873,207
+
+Overlap (gebouw_id matches):        25,586 polygons with addresses (0.5%)
+```
+
+## Solution: Spatial Join
+
+Instead of joining through `address_building_links.building_object_id = building_polygons.gebouw_id`, the `buildings_with_addresses` materialized view now uses **ST_Contains** to spatially match each address point to the building polygon that physically contains it.
+
+```sql
+-- Old approach (broken): ID-based join via address_building_links
+FROM grb.address_building_links abl
+JOIN grb.addresses a ON abl.adres_id = a.adres_id
+GROUP BY abl.building_object_id::BIGINT  -- wrong ID namespace
+
+-- New approach (correct): spatial containment
+FROM grb.building_polygons bp
+JOIN grb.addresses a ON ST_Contains(bp.geom, a.geom)
+GROUP BY bp.oidn
+```
+
+This works because:
+- Address points in the GRB dataset are geocoded to building locations
+- GIST spatial indexes on both `building_polygons.geom` and `addresses.geom` make the join efficient
+- No dependency on matching ID namespaces
+
+## Impact on Import Workflow
+
+The `address_building_links` table and `_grb-import-address-links` step are still imported (the data may be useful for future analysis), but the materialized view no longer depends on them for address resolution.
