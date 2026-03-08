@@ -1432,12 +1432,14 @@ const getGroupedOsmProperties = (feature: any): { address: [string, any][], sour
 }
 
 // Helper function to sort features - GRB first, then OSM
-const sortFeatures = (features: any[]): any[] => [...features].sort((a, b) => {
-  // GRB features (_layer_type === 'grb') come first
-  if (a._layer_type === 'grb' && b._layer_type !== 'grb') return -1
-  if (a._layer_type !== 'grb' && b._layer_type === 'grb') return 1
-  return 0
-})
+// Uses function declaration (not const arrow) so it's hoisted above computed() calls that reference it
+function sortFeatures(features: any[]): any[] {
+  return [...features].sort((a, b) => {
+    if (a._layer_type === 'grb' && b._layer_type !== 'grb') return -1
+    if (a._layer_type !== 'grb' && b._layer_type === 'grb') return 1
+    return 0
+  })
+}
 
 // Helper function to parse PostgreSQL hstore tags format
 const parseHstoreTags = (tagsString: string): Record<string, string> => {
