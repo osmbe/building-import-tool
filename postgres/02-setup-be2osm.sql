@@ -373,6 +373,9 @@ SELECT
     -- Survey date for source:geometry:date OSM tag (format: YYYY-MM-DD)
     TO_CHAR(bp.survey_date, 'YYYY-MM-DD') AS survey_date,
 
+    -- Origin/inventory label (e.g. "terreinbezoek", "as-built plan")
+    bp.origin_label,
+
     -- Transform to Web Mercator for tile serving (transform once at view creation, not per tile)
     -- Explicit cast so PostGIS registers SRID=3857 in geometry_columns (required by Martin)
     ST_Transform(bp.geom, 3857)::geometry(Geometry, 3857) AS geom,

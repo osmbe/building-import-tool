@@ -181,68 +181,98 @@
         class="absolute top-4 left-4 z-50 w-80"
       >
         <div class="glass-panel rounded-lg overflow-hidden">
-          <template v-if="(isTooltipSticky ? clickedFeatures : hoveredFeatures).length > 0">
-            <div
-              v-for="(feature, index) in sortFeatures(isTooltipSticky ? clickedFeatures : hoveredFeatures)"
-              :key="index"
-              :class="{ 'border-t border-white/[0.05]': index > 0 }"
-              class="p-4"
-            >
+          <template v-if="activeFeatures.length > 0">
+            <!-- Feature switcher pills (shown when multiple features) -->
+            <div v-if="activeFeatures.length > 1" class="flex items-center gap-1.5 px-3 pt-3 pb-1">
+              <button
+                v-for="(feat, idx) in activeFeatures"
+                :key="idx"
+                class="feature-pill"
+                :class="{
+                  'feature-pill--grb': feat._layer_type === 'grb',
+                  'feature-pill--osm': feat._layer_type !== 'grb',
+                  'feature-pill--active': idx === activeFeatureIndex
+                }"
+                @click="activeFeatureIndex = idx"
+              >
+                <span class="feature-pill__dot" />
+                <span>{{ feat._layer_type === 'grb' ? 'GRB' : 'OSM' }}</span>
+                <span class="opacity-50 font-mono">{{ feat._layer_type === 'grb' ? (feat.gebouw_id || feat.id) : feat.osm_id }}</span>
+              </button>
+              <!-- Close button -->
+              <button v-if="isTooltipSticky" class="ml-auto text-muted-foreground hover:text-foreground transition-colors shrink-0" @click="closeTooltip">
+                <X class="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <!-- Active feature content -->
+            <div class="p-4" :key="activeFeatureIndex">
               <!-- GRB Building -->
-              <template v-if="feature._layer_type === 'grb'">
+              <template v-if="currentFeature._layer_type === 'grb'">
                 <div class="flex items-start justify-between mb-3">
                   <div>
                     <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded mb-1.5">
                       <Building2 class="h-2.5 w-2.5" />GRB
                     </div>
-                    <h2 class="text-sm font-semibold text-foreground">{{ formatGRBBuildingType(feature.polygon_type_label || feature.building_type_label) }}</h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ feature.gebouw_id || feature.id }}</div>
+                    <h2 class="text-sm font-semibold text-foreground">{{ formatGRBBuildingType(currentFeature.polygon_type_label || currentFeature.building_type_label) }}</h2>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ currentFeature.gebouw_id || currentFeature.id }}</div>
                   </div>
-                  <button v-if="isTooltipSticky" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="removeFeature(index)">
+                  <button v-if="isTooltipSticky && activeFeatures.length <= 1" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="closeTooltip">
                     <X class="h-3.5 w-3.5" />
                   </button>
                 </div>
 
-                <!-- Addresses -->
-                <div v-if="feature.addresses" class="mb-3">
+                <!-- Addresses (grouped by base address) -->
+                <div v-if="currentFeature.addresses" class="mb-3">
                   <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Addresses</div>
-                  <div class="space-y-0.5">
-                    <div v-for="(addr, idx) in parsePostgresArray(feature.addresses)" :key="idx" class="text-xs text-foreground font-medium">
-                      {{ addr }}
+                  <div class="space-y-1">
+                    <div v-for="(group, idx) in groupAddresses(parsePostgresArray(currentFeature.addresses))" :key="idx">
+                      <div class="text-xs text-foreground font-medium">{{ group.base }}</div>
+                      <div v-if="group.boxes.length > 0" class="text-[10px] text-muted-foreground mt-0.5 pl-2">
+                        bus {{ group.boxes.join(', ') }}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <!-- Location -->
-                <div v-if="!feature.addresses && (feature.street_names || feature.postcodes || feature.municipalities)" class="mb-3">
+                <div v-if="!currentFeature.addresses && (currentFeature.street_names || currentFeature.postcodes || currentFeature.municipalities)" class="mb-3">
                   <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Location</div>
                   <div class="space-y-1 text-xs">
-                    <div v-if="feature.street_names" class="flex gap-3">
+                    <div v-if="currentFeature.street_names" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Street</span>
-                      <span class="text-foreground font-medium">{{ parsePostgresArray(feature.street_names).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{ parsePostgresArray(currentFeature.street_names).join(', ') }}</span>
                     </div>
-                    <div v-if="feature.postcodes" class="flex gap-3">
+                    <div v-if="currentFeature.postcodes" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Postcode</span>
-                      <span class="text-foreground font-medium">{{ parsePostgresArray(feature.postcodes).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{ parsePostgresArray(currentFeature.postcodes).join(', ') }}</span>
                     </div>
-                    <div v-if="feature.municipalities" class="flex gap-3">
+                    <div v-if="currentFeature.municipalities" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Municipality</span>
-                      <span class="text-foreground font-medium">{{ parsePostgresArray(feature.municipalities).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{ parsePostgresArray(currentFeature.municipalities).join(', ') }}</span>
                     </div>
                   </div>
                 </div>
 
-                <!-- Details -->
-                <div>
+                <!-- Details (only show if at least one field present) -->
+                <div v-if="currentFeature.total_area_m2 || currentFeature.polygon_count || currentFeature.survey_date || currentFeature.origin_label">
                   <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Details</div>
                   <div class="space-y-1 text-xs">
-                    <div v-if="feature.total_area_m2" class="flex gap-3">
+                    <div v-if="currentFeature.total_area_m2" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Area</span>
-                      <span class="text-foreground font-medium font-mono">{{ formatArea(feature.total_area_m2) }}</span>
+                      <span class="text-foreground font-medium font-mono">{{ formatArea(currentFeature.total_area_m2) }}</span>
                     </div>
-                    <div v-if="feature.polygon_count" class="flex gap-3">
+                    <div v-if="currentFeature.polygon_count" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Parts</span>
-                      <span class="text-foreground font-medium font-mono">{{ feature.polygon_count }}</span>
+                      <span class="text-foreground font-medium font-mono">{{ currentFeature.polygon_count }}</span>
+                    </div>
+                    <div v-if="currentFeature.survey_date" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Surveyed</span>
+                      <span class="text-foreground font-medium font-mono">{{ currentFeature.survey_date }}</span>
+                    </div>
+                    <div v-if="currentFeature.origin_label" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Source</span>
+                      <span class="text-foreground font-medium">{{ formatOriginLabel(currentFeature.origin_label) }}</span>
                     </div>
                   </div>
                 </div>
@@ -256,18 +286,40 @@
                       <Building2 class="h-2.5 w-2.5" />OSM
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">
-                      {{ (feature.building && feature.building !== 'yes' ? feature.building : null) || 'Building' }}
+                      {{ (currentFeature.building && currentFeature.building !== 'yes' ? currentFeature.building : null) || 'Building' }}
                     </h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ feature.osm_id }}</div>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ currentFeature.osm_id }}</div>
                   </div>
-                  <button v-if="isTooltipSticky" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="removeFeature(index)">
+                  <button v-if="isTooltipSticky && activeFeatures.length <= 1" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="closeTooltip">
                     <X class="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <div v-if="getDisplayableProperties(feature).length > 0">
+                <!-- Grouped OSM tags -->
+                <!-- Address group -->
+                <div v-if="getGroupedOsmProperties(currentFeature).address.length > 0" class="mb-3">
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Address</div>
+                  <div class="space-y-1 text-xs">
+                    <div v-for="[key, value] in getGroupedOsmProperties(currentFeature).address" :key="key" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{ formatPropertyKey(key) }}</span>
+                      <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{ formatPropertyValue(value) }}</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- GRB Source group -->
+                <div v-if="getGroupedOsmProperties(currentFeature).source.length > 0" class="mb-3">
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">GRB Source</div>
+                  <div class="space-y-1 text-xs">
+                    <div v-for="[key, value] in getGroupedOsmProperties(currentFeature).source" :key="key" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{ formatPropertyKey(key) }}</span>
+                      <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{ formatPropertyValue(value) }}</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Other properties -->
+                <div v-if="getGroupedOsmProperties(currentFeature).other.length > 0">
                   <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Properties</div>
                   <div class="space-y-1 text-xs">
-                    <div v-for="[key, value] in getDisplayableProperties(feature)" :key="key" class="flex gap-3">
+                    <div v-for="[key, value] in getGroupedOsmProperties(currentFeature).other" :key="key" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{ formatPropertyKey(key) }}</span>
                       <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{ formatPropertyValue(value) }}</span>
                     </div>
@@ -277,8 +329,12 @@
             </div>
           </template>
 
+          <!-- Footer hints -->
           <div v-if="!isTooltipSticky" class="px-4 py-2 border-t border-white/[0.05]">
             <p class="text-[9px] text-muted-foreground text-center tracking-wide">Click to pin · Esc to close</p>
+          </div>
+          <div v-else-if="activeFeatures.length > 1" class="px-4 py-1.5 border-t border-white/[0.05]">
+            <p class="text-[9px] text-muted-foreground text-center tracking-wide">{{ activeFeatureIndex + 1 }} / {{ activeFeatures.length }} features</p>
           </div>
         </div>
       </div>
@@ -336,6 +392,22 @@ const candidateBuildingCount = ref(0)
 const hoveredFeatures = ref<any[]>([])
 const clickedFeatures = ref<any[]>([])
 const isTooltipSticky = ref(false)
+const activeFeatureIndex = ref(0)
+
+// Sorted features currently being displayed (hover or pinned)
+const activeFeatures = computed(() =>
+  sortFeatures(isTooltipSticky.value ? clickedFeatures.value : hoveredFeatures.value)
+)
+
+// Currently selected feature from the switcher
+const currentFeature = computed(() =>
+  activeFeatures.value[activeFeatureIndex.value] || activeFeatures.value[0]
+)
+
+// Reset switcher index when the feature list changes
+watch(() => activeFeatures.value.length, () => {
+  activeFeatureIndex.value = 0
+})
 
 const controlsCollapsed = ref(false)
 const layersCollapsed = ref(false)
@@ -1212,6 +1284,7 @@ const closeTooltip = () => {
   isTooltipSticky.value = false
   clickedFeatures.value = []
   hoveredFeatures.value = []
+  activeFeatureIndex.value = 0
 }
 
 // Helper function to parse PostgreSQL array format {item1,item2} to JS array
@@ -1253,6 +1326,43 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
   return [str]
 }
 
+// Group addresses that share the same base address, collapsing box numbers
+// e.g. ["Boekfos 49, 1730 Asse", "Boekfos 49 bus 1, 1730 Asse", "Boekfos 49 bus 2, 1730 Asse"]
+//   → [{ base: "Boekfos 49, 1730 Asse", boxes: ["1", "2"] }]
+interface GroupedAddress { base: string; boxes: string[] }
+const groupAddresses = (addresses: string[]): GroupedAddress[] => {
+  // Pattern: "<street> <number> bus <box>, <postcode> <city>"
+  const busPattern = /^(.+?)\s+bus\s+(.+?),\s*(.+)$/i
+  const groups = new Map<string, string[]>()
+  const order: string[] = []
+
+  for (const addr of addresses) {
+    const match = addr.match(busPattern)
+    if (match) {
+      const base = `${match[1]}, ${match[3]}`
+      if (!groups.has(base)) {
+        groups.set(base, [])
+        order.push(base)
+      }
+      groups.get(base)!.push(match[2])
+    } else {
+      // No bus number — standalone address
+      if (!groups.has(addr)) {
+        groups.set(addr, [])
+        order.push(addr)
+      }
+    }
+  }
+
+  // Sort box numbers naturally (1, 2, 3, ... 10, 11 instead of 1, 10, 11, 2)
+  const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+
+  return order.map(base => ({
+    base,
+    boxes: groups.get(base)!.sort(collator.compare)
+  }))
+}
+
 // Helper function to format area
 const formatArea = (area: number): string => {
   if (!area) return '—'
@@ -1272,10 +1382,53 @@ const formatGRBBuildingType = (type: string | undefined): string => {
     'afdak': 'Shelter',
     'garage': 'Garage',
     'berging': 'Storage',
-    'serre': 'Conservatory'
+    'serre': 'Conservatory',
+    'ingezonken garagetoegang': 'Sunken Garage Entrance',
+    'verdieping': 'Upper Floor',
+    'trap': 'Staircase',
+    'zichtbare onderkeldering': 'Visible Basement',
+    'gebouw afgezoomd met virtuele gevels': 'Building with Virtual Facades',
+    'verheven garagetoegang': 'Elevated Garage Entrance',
+    'loopbrug': 'Walkway'
   }
 
   return translations[type.toLowerCase()] || type
+}
+
+// Helper function to translate GRB origin labels (Dutch to English)
+const formatOriginLabel = (label: string | undefined): string => {
+  if (!label) return ''
+  const translations: Record<string, string> = {
+    'terreinbezoek': 'Field Survey',
+    'as-built plan': 'As-Built Plan',
+    'gemeentelijk as-built plan': 'Municipal As-Built Plan',
+    'fotogrammetrisch': 'Photogrammetry',
+    'luchtfoto': 'Aerial Photo',
+    'gedigitaliseerd': 'Digitized',
+    'niet gekend': 'Unknown',
+    'andere': 'Other'
+  }
+  return translations[label.toLowerCase()] || label
+}
+
+// Group OSM properties into address, source:geometry, and other
+const getGroupedOsmProperties = (feature: any): { address: [string, any][], source: [string, any][], other: [string, any][] } => {
+  const all = getDisplayableProperties(feature)
+  const address: [string, any][] = []
+  const source: [string, any][] = []
+  const other: [string, any][] = []
+
+  for (const [key, value] of all) {
+    if (key.startsWith('addr:') || key.startsWith('addr_')) {
+      address.push([key, value])
+    } else if (key.startsWith('source:geometry:') || key === 'source:geometry') {
+      source.push([key, value])
+    } else {
+      other.push([key, value])
+    }
+  }
+
+  return { address, source, other }
 }
 
 // Helper function to sort features - GRB first, then OSM

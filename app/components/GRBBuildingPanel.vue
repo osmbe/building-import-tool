@@ -20,18 +20,17 @@
 
       <!-- Body -->
       <div class="p-4 space-y-4">
-        <!-- Addresses -->
+        <!-- Addresses (grouped by base address) -->
         <div v-if="addresses.length > 0">
           <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5">
             <MapPin class="h-3 w-3" /> Addresses ({{ addresses.length }})
           </div>
-          <div class="space-y-0.5 pl-0">
-            <div
-              v-for="(address, idx) in addresses"
-              :key="idx"
-              class="text-xs text-foreground/80 py-0.5"
-            >
-              {{ address }}
+          <div class="space-y-1 pl-0">
+            <div v-for="(group, idx) in groupedAddresses" :key="idx">
+              <div class="text-xs text-foreground/80">{{ group.base }}</div>
+              <div v-if="group.boxes.length > 0" class="text-[10px] text-muted-foreground mt-0.5 pl-2">
+                bus {{ group.boxes.join(', ') }}
+              </div>
             </div>
           </div>
         </div>
@@ -75,6 +74,14 @@
               <span class="text-muted-foreground w-24 shrink-0">Type</span>
               <span class="text-foreground/80">{{ buildingTypeLabel }}</span>
             </div>
+            <div v-if="building.survey_date" class="flex gap-4">
+              <span class="text-muted-foreground w-24 shrink-0">Surveyed</span>
+              <span class="text-foreground/80 font-mono">{{ building.survey_date }}</span>
+            </div>
+            <div v-if="building.origin_label" class="flex gap-4">
+              <span class="text-muted-foreground w-24 shrink-0">Source</span>
+              <span class="text-foreground/80">{{ formatOriginLabel(building.origin_label) }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -91,6 +98,8 @@ interface GRBBuilding {
   polygon_count?: number
   total_area_m2?: number
   type_label?: string
+  survey_date?: string
+  origin_label?: string
   addresses?: string[] | string
   street_names?: string[] | string
   postcodes?: string[] | string
@@ -146,6 +155,30 @@ const streetNames   = computed(() => parsePostgresArray(building?.street_names))
 const postcodes     = computed(() => parsePostgresArray(building?.postcodes))
 const municipalities = computed(() => parsePostgresArray(building?.municipalities))
 
+// Group addresses that share the same base, collapsing box numbers
+interface GroupedAddress { base: string; boxes: string[] }
+const groupAddresses = (addrs: string[]): GroupedAddress[] => {
+  const busPattern = /^(.+?)\s+bus\s+(.+?),\s*(.+)$/i
+  const groups = new Map<string, string[]>()
+  const order: string[] = []
+
+  for (const addr of addrs) {
+    const match = addr.match(busPattern)
+    if (match) {
+      const base = `${match[1]}, ${match[3]}`
+      if (!groups.has(base)) { groups.set(base, []); order.push(base) }
+      groups.get(base)!.push(match[2])
+    } else {
+      if (!groups.has(addr)) { groups.set(addr, []); order.push(addr) }
+    }
+  }
+
+  const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+  return order.map(base => ({ base, boxes: groups.get(base)!.sort(collator.compare) }))
+}
+
+const groupedAddresses = computed(() => groupAddresses(addresses.value))
+
 const formattedArea = computed(() => {
   if (!building?.total_area_m2) return '—'
   const area = building.total_area_m2
@@ -163,16 +196,38 @@ const buildingTypeLabel = computed(() => {
     'afdak':       'Shelter',
     'garage':      'Garage',
     'berging':     'Storage',
-    'serre':       'Conservatory'
+    'serre':       'Conservatory',
+    'ingezonken garagetoegang': 'Sunken Garage Entrance',
+    'verdieping':  'Upper Floor',
+    'trap':        'Staircase',
+    'zichtbare onderkeldering': 'Visible Basement',
+    'gebouw afgezoomd met virtuele gevels': 'Building with Virtual Facades',
+    'verheven garagetoegang': 'Elevated Garage Entrance',
+    'loopbrug':    'Walkway'
   }
   return translations[type.toLowerCase()] || type
 })
+
+const formatOriginLabel = (label: string | undefined): string => {
+  if (!label) return ''
+  const translations: Record<string, string> = {
+    'terreinbezoek': 'Field Survey',
+    'as-built plan': 'As-Built Plan',
+    'gemeentelijk as-built plan': 'Municipal As-Built Plan',
+    'fotogrammetrisch': 'Photogrammetry',
+    'luchtfoto': 'Aerial Photo',
+    'gedigitaliseerd': 'Digitized',
+    'niet gekend': 'Unknown',
+    'andere': 'Other'
+  }
+  return translations[label.toLowerCase()] || label
+}
 
 const hasLocationData = computed(() =>
   postcodes.value.length > 0 || municipalities.value.length > 0 || streetNames.value.length > 0
 )
 
 const hasBuildingDetails = computed(() =>
-  building?.total_area_m2 || building?.polygon_count || building?.type_label
+  building?.total_area_m2 || building?.polygon_count || building?.type_label || building?.survey_date || building?.origin_label
 )
 </script>

@@ -137,6 +137,63 @@
   box-shadow: 0 0 6px currentColor;
 }
 
+/* ── Feature switcher pills ── */
+.feature-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  border: 1px solid transparent;
+  opacity: 0.45;
+  white-space: nowrap;
+}
+.feature-pill:hover {
+  opacity: 0.75;
+}
+.feature-pill--active {
+  opacity: 1 !important;
+}
+.feature-pill__dot {
+  display: inline-block;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+/* GRB variant */
+.feature-pill--grb {
+  color: hsl(152 68% 56%);
+  background: hsl(152 68% 56% / 0.06);
+}
+.feature-pill--grb.feature-pill--active {
+  background: hsl(152 68% 56% / 0.12);
+  border-color: hsl(152 68% 56% / 0.25);
+}
+.feature-pill--grb .feature-pill__dot {
+  background: hsl(152 68% 56%);
+  box-shadow: 0 0 4px hsl(152 68% 56% / 0.6);
+}
+/* OSM variant */
+.feature-pill--osm {
+  color: hsl(192 90% 46%);
+  background: hsl(192 90% 46% / 0.06);
+}
+.feature-pill--osm.feature-pill--active {
+  background: hsl(192 90% 46% / 0.12);
+  border-color: hsl(192 90% 46% / 0.25);
+}
+.feature-pill--osm .feature-pill__dot {
+  background: hsl(192 90% 46%);
+  box-shadow: 0 0 4px hsl(192 90% 46% / 0.6);
+}
+
 /* ── Animations ── */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(6px); }
