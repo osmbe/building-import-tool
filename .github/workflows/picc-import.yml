@@ -17,8 +17,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # Start with 2 smallest provinces to test the flow
-        province: [LUXEMBOURG, BRABANT_WALLON]
+        province: [BRABANT_WALLON, HAINAUT, LIEGE, LUXEMBOURG, NAMUR]
     name: Import ${{ matrix.province }}
 
     services:
