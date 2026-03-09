@@ -1,0 +1,17 @@
+name: GRB Update
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * 1'  # Weekly Monday at 5am UTC
+
+jobs:
+  trigger-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger GRB update on server
+        if: ${{ vars.WEBHOOK_URL != '' }}
+        run: |
+          curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/update-grb" \
+            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}"
+          echo "GRB update triggered on server"

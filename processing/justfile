@@ -41,6 +41,7 @@ default:
     @echo "  picc-download          - Download PICC buildings + ICAR addresses"
     @echo "  picc-import            - Import downloaded data + create matview"
     @echo "  picc-full              - Complete workflow (download + import)"
+    @echo "  picc-update            - Update PICC data (diff since last update)"
     @echo "  picc-status            - Show PICC database statistics"
     @echo "  clean-picc             - Drop PICC tables from database"
     @echo "  clean-picc-downloads   - Remove downloaded files"
@@ -89,6 +90,13 @@ metawal_api := "https://metawal.wallonie.be/geonetwork/srv/api/records"
 picc_buildings_layer := "CONSTR_BATIEMPRISE"
 picc_addresses_layer := "ADRESS_POINT"
 picc_data_dir := "data/picc"
+picc_last_update_file := picc_data_dir / ".last-update"
+
+# PICC ArcGIS REST API configuration (for differential updates)
+picc_arcgis_base := "https://geoservices.wallonie.be/arcgis/rest/services/TOPOGRAPHIE/PICC_VDIFF/MapServer"
+picc_arcgis_buildings_layer := "11"
+picc_arcgis_addresses_layer := "1"
+picc_arcgis_page_size := "2000"
 
 # PostgreSQL connection setup
 export PGPASSWORD := db_password
@@ -361,6 +369,7 @@ picc-import:
     @just _picc-import-buildings
     @just _picc-import-addresses
     @just _picc-create-matview
+    @just _picc-save-last-update
     @echo ""
     @just picc-status
     @echo ""
@@ -368,6 +377,27 @@ picc-import:
 
 # Complete PICC workflow (download + import)
 picc-full: picc-download picc-import
+
+# Update PICC data with changes since last update (differential via ArcGIS REST)
+picc-update:
+    @echo "🔄 PICC Differential Update (ArcGIS REST)"
+    @echo "========================================"
+    @echo "📅 Started at: $(date)"
+    @echo ""
+    @just _check-server
+    @just _check-be2osm-database
+    @just _check-picc-schema
+    @just _picc-check-last-update
+    @echo ""
+    @just _picc-fetch-diff-buildings
+    @just _picc-fetch-diff-addresses
+    @just _picc-upsert-buildings
+    @just _picc-upsert-addresses
+    @just _picc-refresh-matview
+    @just _picc-save-last-update
+    @just picc-status
+    @echo ""
+    @echo "✅ PICC differential update complete!"
 
 # Show PICC database statistics
 picc-status:
@@ -654,6 +684,8 @@ picc-finalize-provinces dumps_dir:
     echo ""
     echo "🔄 Creating indexes and materialized view..."
     just _picc-create-matview-provinces
+
+    just _picc-save-last-update
 
     echo ""
     echo "✅ PICC finalize complete!"
@@ -1881,3 +1913,242 @@ _grb-import-diff-building-polygons:
     # Clean up diff download after import
     rm -rf "$DIFF_DIR"
     echo "✅ Differential building polygons imported"
+
+# ============================================================================
+# INTERNAL TASKS - PICC Differential Updates
+# ============================================================================
+
+# PICC: Save last update timestamp
+_picc-save-last-update:
+    #!/usr/bin/env bash
+    mkdir -p {{picc_data_dir}}
+    date -u +%Y-%m-%dT00:00:00Z > {{picc_last_update_file}}
+    echo "📅 Saved PICC update timestamp: $(cat {{picc_last_update_file}})"
+
+# PICC: Check that a previous import exists (last update file)
+_picc-check-last-update:
+    #!/usr/bin/env bash
+    if [ ! -f "{{picc_last_update_file}}" ]; then
+        echo "❌ No previous PICC import found."
+        echo "   Run 'just picc-full' first to do a full import."
+        echo "   The update task only works after an initial import."
+        exit 1
+    fi
+    LAST_UPDATE=$(cat "{{picc_last_update_file}}")
+    echo "📅 Last PICC update: $LAST_UPDATE"
+
+# PICC: Fetch modified buildings from ArcGIS REST API (paginated)
+_picc-fetch-diff-buildings:
+    #!/usr/bin/env bash
+    set -e
+    LAST_UPDATE=$(cat "{{picc_last_update_file}}")
+    WHERE="DATE_MODIF > timestamp '${LAST_UPDATE}'"
+    OUTPUT="{{picc_data_dir}}/diff-buildings.geojson"
+    mkdir -p {{picc_data_dir}}
+
+    echo "🔍 Querying modified buildings since ${LAST_UPDATE}..."
+
+    OFFSET=0
+    PAGE=1
+    COMBINED='{"type":"FeatureCollection","features":['
+    TOTAL=0
+
+    while true; do
+        URL="{{picc_arcgis_base}}/{{picc_arcgis_buildings_layer}}/query"
+        RESPONSE=$(curl -sf -G "$URL" \
+            --data-urlencode "where=${WHERE}" \
+            --data-urlencode "outFields=*" \
+            --data-urlencode "f=geojson" \
+            --data-urlencode "resultRecordCount={{picc_arcgis_page_size}}" \
+            --data-urlencode "resultOffset=${OFFSET}")
+
+        COUNT=$(echo "$RESPONSE" | jq '.features | length')
+        if [ "$COUNT" -eq 0 ]; then
+            break
+        fi
+
+        echo "   Page ${PAGE}: ${COUNT} features (offset ${OFFSET})"
+        TOTAL=$((TOTAL + COUNT))
+
+        # Extract features array content
+        FEATURES=$(echo "$RESPONSE" | jq -c '.features[]')
+        if [ $OFFSET -gt 0 ]; then
+            COMBINED="${COMBINED},"
+        fi
+        COMBINED="${COMBINED}$(echo "$FEATURES" | paste -sd ',' -)"
+
+        OFFSET=$((OFFSET + COUNT))
+        PAGE=$((PAGE + 1))
+
+        # If fewer results than page size, we're done
+        if [ "$COUNT" -lt {{picc_arcgis_page_size}} ]; then
+            break
+        fi
+    done
+
+    COMBINED="${COMBINED}]}"
+
+    if [ "$TOTAL" -eq 0 ]; then
+        echo "   No modified buildings found"
+        echo '{"type":"FeatureCollection","features":[]}' > "$OUTPUT"
+    else
+        echo "$COMBINED" > "$OUTPUT"
+        echo "✅ ${TOTAL} modified buildings saved to ${OUTPUT}"
+    fi
+
+# PICC: Fetch modified addresses from ArcGIS REST API (paginated)
+_picc-fetch-diff-addresses:
+    #!/usr/bin/env bash
+    set -e
+    LAST_UPDATE=$(cat "{{picc_last_update_file}}")
+    WHERE="DATE_MODIF > timestamp '${LAST_UPDATE}'"
+    OUTPUT="{{picc_data_dir}}/diff-addresses.geojson"
+    mkdir -p {{picc_data_dir}}
+
+    echo "🔍 Querying modified addresses since ${LAST_UPDATE}..."
+
+    OFFSET=0
+    PAGE=1
+    COMBINED='{"type":"FeatureCollection","features":['
+    TOTAL=0
+
+    while true; do
+        URL="{{picc_arcgis_base}}/{{picc_arcgis_addresses_layer}}/query"
+        RESPONSE=$(curl -sf -G "$URL" \
+            --data-urlencode "where=${WHERE}" \
+            --data-urlencode "outFields=*" \
+            --data-urlencode "f=geojson" \
+            --data-urlencode "resultRecordCount={{picc_arcgis_page_size}}" \
+            --data-urlencode "resultOffset=${OFFSET}")
+
+        COUNT=$(echo "$RESPONSE" | jq '.features | length')
+        if [ "$COUNT" -eq 0 ]; then
+            break
+        fi
+
+        echo "   Page ${PAGE}: ${COUNT} features (offset ${OFFSET})"
+        TOTAL=$((TOTAL + COUNT))
+
+        FEATURES=$(echo "$RESPONSE" | jq -c '.features[]')
+        if [ $OFFSET -gt 0 ]; then
+            COMBINED="${COMBINED},"
+        fi
+        COMBINED="${COMBINED}$(echo "$FEATURES" | paste -sd ',' -)"
+
+        OFFSET=$((OFFSET + COUNT))
+        PAGE=$((PAGE + 1))
+
+        if [ "$COUNT" -lt {{picc_arcgis_page_size}} ]; then
+            break
+        fi
+    done
+
+    COMBINED="${COMBINED}]}"
+
+    if [ "$TOTAL" -eq 0 ]; then
+        echo "   No modified addresses found"
+        echo '{"type":"FeatureCollection","features":[]}' > "$OUTPUT"
+    else
+        echo "$COMBINED" > "$OUTPUT"
+        echo "✅ ${TOTAL} modified addresses saved to ${OUTPUT}"
+    fi
+
+# PICC: Upsert buildings from diff GeoJSON into main table
+_picc-upsert-buildings:
+    #!/usr/bin/env bash
+    set -e
+    INPUT="{{picc_data_dir}}/diff-buildings.geojson"
+    if [ ! -f "$INPUT" ]; then
+        echo "⚠️  No diff buildings file found, skipping"
+        return 0
+    fi
+
+    COUNT=$(jq '.features | length' "$INPUT")
+    if [ "$COUNT" -eq 0 ]; then
+        echo "📊 No building changes to apply"
+        rm -f "$INPUT"
+        return 0
+    fi
+
+    echo "📊 Upserting ${COUNT} modified buildings..."
+
+    # Import to staging table
+    ogr2ogr -f PostgreSQL \
+        "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+        "$INPUT" \
+        -nln picc.staging_buildings \
+        -nlt PROMOTE_TO_MULTI \
+        -overwrite \
+        -lco GEOMETRY_NAME=geom \
+        -lco SPATIAL_INDEX=NONE \
+        -dim 2 \
+        -t_srs EPSG:31370 \
+        -gt 100000 --config PG_USE_COPY YES
+
+    # Delete matching records from main table, then insert from staging
+    {{psql_be2osm}} -c "
+        DELETE FROM picc.constr_batiemprise
+        WHERE objectid IN (SELECT objectid FROM picc.staging_buildings);
+
+        INSERT INTO picc.constr_batiemprise
+        SELECT * FROM picc.staging_buildings;
+
+        DROP TABLE IF EXISTS picc.staging_buildings;
+    "
+
+    rm -f "$INPUT"
+    echo "✅ Buildings upserted"
+
+# PICC: Upsert addresses from diff GeoJSON into main table
+_picc-upsert-addresses:
+    #!/usr/bin/env bash
+    set -e
+    INPUT="{{picc_data_dir}}/diff-addresses.geojson"
+    if [ ! -f "$INPUT" ]; then
+        echo "⚠️  No diff addresses file found, skipping"
+        return 0
+    fi
+
+    COUNT=$(jq '.features | length' "$INPUT")
+    if [ "$COUNT" -eq 0 ]; then
+        echo "📊 No address changes to apply"
+        rm -f "$INPUT"
+        return 0
+    fi
+
+    echo "📊 Upserting ${COUNT} modified addresses..."
+
+    # Import to staging table
+    ogr2ogr -f PostgreSQL \
+        "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+        "$INPUT" \
+        -nln picc.staging_addresses \
+        -overwrite \
+        -lco GEOMETRY_NAME=geom \
+        -lco SPATIAL_INDEX=NONE \
+        -lco PRECISION=NO \
+        -dim 2 \
+        -t_srs EPSG:31370 \
+        -gt 100000 --config PG_USE_COPY YES
+
+    # Delete matching records from main table, then insert from staging
+    {{psql_be2osm}} -c "
+        DELETE FROM picc.icar_adr_pt
+        WHERE objectid IN (SELECT objectid FROM picc.staging_addresses);
+
+        INSERT INTO picc.icar_adr_pt
+        SELECT * FROM picc.staging_addresses;
+
+        DROP TABLE IF EXISTS picc.staging_addresses;
+    "
+
+    rm -f "$INPUT"
+    echo "✅ Addresses upserted"
+
+# PICC: Refresh materialized view after update
+_picc-refresh-matview:
+    #!/usr/bin/env bash
+    set -e
+    echo "🔄 Refreshing PICC materialized view..."
+    {{psql_be2osm}} -c "REFRESH MATERIALIZED VIEW CONCURRENTLY picc.buildings_with_addresses;"
+    echo "✅ Materialized view refreshed"

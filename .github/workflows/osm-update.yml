@@ -1,0 +1,17 @@
+name: OSM Update
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * *'  # Daily at 4am UTC
+
+jobs:
+  trigger-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger OSM update on server
+        if: ${{ vars.WEBHOOK_URL != '' }}
+        run: |
+          curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/update-osm" \
+            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}"
+          echo "OSM update triggered on server"

@@ -22,6 +22,13 @@ IMPORT_ROUTES = {
     '/import-picc': '/import-picc.sh',
 }
 
+# Routes that run a differential update (no run_id needed)
+UPDATE_ROUTES = {
+    '/update-osm': '/update-osm.sh',
+    '/update-grb': '/update-grb.sh',
+    '/update-picc': '/update-picc.sh',
+}
+
 
 def run_script(script: str, args: list = None) -> None:
     cmd = [script] + (args or [])
@@ -63,6 +70,13 @@ class WebhookHandler(BaseHTTPRequestHandler):
             self._respond(202, f'Import started: {script}')
             return
 
+        # Differential update routes (no run_id needed)
+        if self.path in UPDATE_ROUTES:
+            script = UPDATE_ROUTES[self.path]
+            threading.Thread(target=run_script, args=(script,), daemon=True).start()
+            self._respond(202, f'Update started: {script}')
+            return
+
         self._respond(404, 'Not found')
 
     def _respond(self, code: int, message: str) -> None:
@@ -80,4 +94,5 @@ if __name__ == '__main__':
     print(f"[webhook] Listening on port {port}", flush=True)
     print(f"[webhook] Restore routes: {list(RESTORE_ROUTES.keys())}", flush=True)
     print(f"[webhook] Import routes: {list(IMPORT_ROUTES.keys())}", flush=True)
+    print(f"[webhook] Update routes: {list(UPDATE_ROUTES.keys())}", flush=True)
     HTTPServer(('0.0.0.0', port), WebhookHandler).serve_forever()
