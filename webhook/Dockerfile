@@ -20,7 +20,11 @@ COPY restore-osm.sh /restore-osm.sh
 COPY restore-grb.sh /restore-grb.sh
 COPY restore-picc.sh /restore-picc.sh
 COPY deploy-nuxt.sh /deploy-nuxt.sh
-RUN chmod +x /restore-osm.sh /restore-grb.sh /restore-picc.sh /deploy-nuxt.sh
+COPY import-osm.sh /import-osm.sh
+COPY import-grb.sh /import-grb.sh
+COPY import-picc.sh /import-picc.sh
+RUN chmod +x /restore-osm.sh /restore-grb.sh /restore-picc.sh /deploy-nuxt.sh \
+    /import-osm.sh /import-grb.sh /import-picc.sh
 
 EXPOSE 9000
 CMD ["python", "/server.py"]
