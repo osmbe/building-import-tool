@@ -122,38 +122,27 @@ export default defineEventHandler(async (event) => {
       rows = await queryGrb(candidateQuery, [minX, minY, maxX, maxY])
 
     } else {
-      // Geometry matching for PICC: PICC polygons with no corresponding OSM building
-      // PICC geom is in native CRS (e.g. Lambert 2008 / EPSG:3812) — detect dynamically
-      // Transform to 4326 for comparison with OSM buildings
+      // Geometry matching for PICC: uses picc.buildings_with_addresses matview (EPSG:3857)
+      // OSM buildings also have geom_mercator in 3857 — entire comparison stays in 3857
       const candidateQuery = `
         WITH
-          picc_srid AS (
-            SELECT ST_SRID(geom) AS srid FROM picc.constr_batiemprise LIMIT 1
-          ),
-          envelope_native AS (
-            SELECT ST_Transform(
-                     ST_MakeEnvelope($1, $2, $3, $4, 3857), (SELECT srid FROM picc_srid)
-                   ) AS env
-          ),
-          envelope_4326 AS (
-            SELECT ST_Transform(
-                     ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326
-                   ) AS env
+          envelope AS (
+            SELECT ST_MakeEnvelope($1, $2, $3, $4, 3857) AS env
           ),
           picc_in_extent AS (
-            SELECT ST_Transform(b.geom, 4326) AS geom, b.objectid, b.natur_code
-            FROM picc.constr_batiemprise b, envelope_native e
+            SELECT b.geom, b.objectid, b.natur_code
+            FROM picc.buildings_with_addresses b, envelope e
             WHERE b.geom && e.env
               AND ST_Intersects(b.geom, e.env)
           ),
           osm_in_extent AS (
-            SELECT ob.geom
-            FROM osm.osm_buildings ob, envelope_4326 e
-            WHERE ob.geom && e.env
-              AND ST_Intersects(ob.geom, e.env)
+            SELECT ob.geom_mercator AS geom
+            FROM osm.osm_buildings ob, envelope e
+            WHERE ob.geom_mercator && e.env
+              AND ST_Intersects(ob.geom_mercator, e.env)
           )
         SELECT
-          ST_AsGeoJSON(p.geom) AS geometry,
+          ST_AsGeoJSON(ST_Transform(p.geom, 4326)) AS geometry,
           p.objectid,
           p.natur_code,
           (SELECT COUNT(*) FROM picc_in_extent)::bigint AS total_grb,
