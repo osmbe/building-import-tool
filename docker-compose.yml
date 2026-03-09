@@ -186,6 +186,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-building-import-tool-local}
       COMPOSE_PROJECT_DIR: /compose
+      HOST_PROJECT_DIR: ${COMPOSE_PROJECT_DIR:-${PWD}}
     volumes:
       # gh CLI config for artifact download authentication
       # Linux: /home/username/.config/gh  |  macOS: /Users/username/.config/gh
