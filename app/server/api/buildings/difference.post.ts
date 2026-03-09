@@ -82,83 +82,126 @@ export default defineEventHandler(async (event) => {
     } else if (dataSource === 'grb') {
       // Geometry matching for GRB: GRB polygons with no corresponding OSM building
       // A match = intersection area >= 50% of the smaller building's area
-      // Uses FDW (osm.osm_buildings is a foreign table in be2osm database)
-      const candidateQuery = `
-        WITH
-          envelope_4326 AS (
-            SELECT ST_Transform(
-                     ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326
-                   ) AS env
-          ),
-          grb_in_extent AS (
-            SELECT bp.geom, bp.oidn, bp.gebouw_id
-            FROM grb.building_polygons bp, envelope_4326 e
-            WHERE bp.geom && e.env
-              AND ST_Intersects(bp.geom, e.env)
-          ),
-          osm_in_extent AS (
-            SELECT ob.geom
-            FROM osm.osm_buildings ob, envelope_4326 e
-            WHERE ob.geom && e.env
-              AND ST_Intersects(ob.geom, e.env)
-          )
+      //
+      // Two-step approach to avoid FDW overhead:
+      // 1. Fetch OSM geometries directly from osmbe (uses local GIST index)
+      // 2. Pass collected geometry to GRB comparison query (all local operations)
+      const osmResult = await queryOsm(`
         SELECT
-          ST_AsGeoJSON(g.geom) AS geometry,
-          g.oidn,
-          g.gebouw_id,
-          (SELECT COUNT(*) FROM grb_in_extent)::bigint AS total_grb,
-          (SELECT COUNT(*) FROM osm_in_extent)::bigint AS total_osm
-        FROM grb_in_extent g
-        WHERE NOT EXISTS (
-          SELECT 1 FROM osm_in_extent o
-          WHERE g.geom && o.geom
-            AND ST_Intersects(g.geom, o.geom)
-            AND ST_Area(ST_Intersection(g.geom, o.geom))
-                / NULLIF(LEAST(ST_Area(g.geom), ST_Area(o.geom)), 0) >= 0.5
-        )
-        ORDER BY g.oidn;
-      `
+          ST_AsGeoJSON(ST_Collect(geom)) AS geom_collection,
+          COUNT(*) AS total_osm
+        FROM osm.osm_buildings
+        WHERE geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
+          AND ST_Intersects(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
+      `, [minX, minY, maxX, maxY])
 
-      rows = await queryGrb(candidateQuery, [minX, minY, maxX, maxY])
+      const osmGeomCollection = osmResult[0]?.geom_collection
+      totalOsm = parseInt(osmResult[0]?.total_osm || '0')
+
+      if (!osmGeomCollection) {
+        // No OSM buildings in extent — all GRB buildings are candidates
+        rows = await queryGrb(`
+          SELECT
+            ST_AsGeoJSON(bp.geom) AS geometry,
+            bp.oidn,
+            bp.gebouw_id,
+            COUNT(*) OVER() AS total_grb,
+            0::bigint AS total_osm
+          FROM grb.building_polygons bp
+          WHERE bp.geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
+            AND ST_Intersects(bp.geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
+          ORDER BY bp.oidn
+        `, [minX, minY, maxX, maxY])
+      } else {
+        rows = await queryGrb(`
+          WITH
+            envelope_4326 AS (
+              SELECT ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326) AS env
+            ),
+            osm_geoms AS (
+              SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON($5), 4326))).geom AS geom
+            ),
+            grb_in_extent AS (
+              SELECT bp.geom, bp.oidn, bp.gebouw_id
+              FROM grb.building_polygons bp, envelope_4326 e
+              WHERE bp.geom && e.env
+                AND ST_Intersects(bp.geom, e.env)
+            )
+          SELECT
+            ST_AsGeoJSON(g.geom) AS geometry,
+            g.oidn,
+            g.gebouw_id,
+            (SELECT COUNT(*) FROM grb_in_extent)::bigint AS total_grb,
+            $6::bigint AS total_osm
+          FROM grb_in_extent g
+          WHERE NOT EXISTS (
+            SELECT 1 FROM osm_geoms o
+            WHERE g.geom && o.geom
+              AND ST_Intersects(g.geom, o.geom)
+              AND ST_Area(ST_Intersection(g.geom, o.geom))
+                  / NULLIF(LEAST(ST_Area(g.geom), ST_Area(o.geom)), 0) >= 0.5
+          )
+          ORDER BY g.oidn
+        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm])
+      }
 
     } else {
       // Geometry matching for PICC: uses picc.buildings_with_addresses matview (EPSG:3857)
-      // OSM buildings also have geom_mercator in 3857 — entire comparison stays in 3857
-      const candidateQuery = `
-        WITH
-          envelope AS (
-            SELECT ST_MakeEnvelope($1, $2, $3, $4, 3857) AS env
-          ),
-          picc_in_extent AS (
-            SELECT b.geom, b.objectid, b.natur_code
-            FROM picc.buildings_with_addresses b, envelope e
-            WHERE b.geom && e.env
-              AND ST_Intersects(b.geom, e.env)
-          ),
-          osm_in_extent AS (
-            SELECT ob.geom_mercator AS geom
-            FROM osm.osm_buildings ob, envelope e
-            WHERE ob.geom_mercator && e.env
-              AND ST_Intersects(ob.geom_mercator, e.env)
-          )
+      // Two-step approach: fetch OSM geometries directly from osmbe to avoid FDW overhead
+      const osmResult = await queryOsm(`
         SELECT
-          ST_AsGeoJSON(ST_Transform(p.geom, 4326)) AS geometry,
-          p.objectid,
-          p.natur_code,
-          (SELECT COUNT(*) FROM picc_in_extent)::bigint AS total_grb,
-          (SELECT COUNT(*) FROM osm_in_extent)::bigint AS total_osm
-        FROM picc_in_extent p
-        WHERE NOT EXISTS (
-          SELECT 1 FROM osm_in_extent o
-          WHERE p.geom && o.geom
-            AND ST_Intersects(p.geom, o.geom)
-            AND ST_Area(ST_Intersection(p.geom, o.geom))
-                / NULLIF(LEAST(ST_Area(p.geom), ST_Area(o.geom)), 0) >= 0.5
-        )
-        ORDER BY p.objectid;
-      `
+          ST_AsGeoJSON(ST_Collect(geom_mercator)) AS geom_collection,
+          COUNT(*) AS total_osm
+        FROM osm.osm_buildings
+        WHERE geom_mercator && ST_MakeEnvelope($1, $2, $3, $4, 3857)
+          AND ST_Intersects(geom_mercator, ST_MakeEnvelope($1, $2, $3, $4, 3857))
+      `, [minX, minY, maxX, maxY])
 
-      rows = await queryGrb(candidateQuery, [minX, minY, maxX, maxY])
+      const osmGeomCollection = osmResult[0]?.geom_collection
+      totalOsm = parseInt(osmResult[0]?.total_osm || '0')
+
+      if (!osmGeomCollection) {
+        rows = await queryGrb(`
+          SELECT
+            ST_AsGeoJSON(ST_Transform(b.geom, 4326)) AS geometry,
+            b.objectid,
+            b.natur_code,
+            COUNT(*) OVER() AS total_grb,
+            0::bigint AS total_osm
+          FROM picc.buildings_with_addresses b
+          WHERE b.geom && ST_MakeEnvelope($1, $2, $3, $4, 3857)
+            AND ST_Intersects(b.geom, ST_MakeEnvelope($1, $2, $3, $4, 3857))
+          ORDER BY b.objectid
+        `, [minX, minY, maxX, maxY])
+      } else {
+        rows = await queryGrb(`
+          WITH
+            osm_geoms AS (
+              SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON($5), 3857))).geom AS geom
+            ),
+            picc_in_extent AS (
+              SELECT b.geom, b.objectid, b.natur_code
+              FROM picc.buildings_with_addresses b
+              WHERE b.geom && ST_MakeEnvelope($1, $2, $3, $4, 3857)
+                AND ST_Intersects(b.geom, ST_MakeEnvelope($1, $2, $3, $4, 3857))
+            )
+          SELECT
+            ST_AsGeoJSON(ST_Transform(p.geom, 4326)) AS geometry,
+            p.objectid,
+            p.natur_code,
+            (SELECT COUNT(*) FROM picc_in_extent)::bigint AS total_grb,
+            $6::bigint AS total_osm
+          FROM picc_in_extent p
+          WHERE NOT EXISTS (
+            SELECT 1 FROM osm_geoms o
+            WHERE p.geom && o.geom
+              AND ST_Intersects(p.geom, o.geom)
+              AND ST_Area(ST_Intersection(p.geom, o.geom))
+                  / NULLIF(LEAST(ST_Area(p.geom), ST_Area(o.geom)), 0) >= 0.5
+          )
+          ORDER BY p.objectid
+        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm])
+      }
     }
 
     const totalGrb = rows[0]?.total_grb || 0
