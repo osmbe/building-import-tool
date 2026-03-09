@@ -29,6 +29,18 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
+/* ── Layer color tokens ── */
+:root {
+  --layer-osm:        25 76% 31%;    /* brick brown */
+  --layer-osm-light:  25 60% 45%;    /* lighter brick for hover */
+  --layer-grb:        51 100% 50%;   /* Flemish yellow */
+  --layer-grb-dark:   51 100% 43%;   /* darker yellow for sheds */
+  --layer-grb-light:  51 100% 65%;   /* lighter yellow for hover */
+  --layer-picc:       0 84% 60%;     /* red */
+  --layer-picc-light: 0 84% 75%;     /* lighter red for hover */
+  --layer-candidate:  142 71% 45%;   /* green */
+}
+
 @layer base {
   *, *::before, *::after {
     @apply border-border;
@@ -167,44 +179,61 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
-/* GRB variant */
+/* GRB variant — Flemish yellow */
 .feature-pill--grb {
-  color: hsl(152 68% 56%);
-  background: hsl(152 68% 56% / 0.06);
+  color: hsl(var(--layer-grb));
+  background: hsl(var(--layer-grb) / 0.06);
 }
 .feature-pill--grb.feature-pill--active {
-  background: hsl(152 68% 56% / 0.12);
-  border-color: hsl(152 68% 56% / 0.25);
+  background: hsl(var(--layer-grb) / 0.12);
+  border-color: hsl(var(--layer-grb) / 0.25);
 }
 .feature-pill--grb .feature-pill__dot {
-  background: hsl(152 68% 56%);
-  box-shadow: 0 0 4px hsl(152 68% 56% / 0.6);
+  background: hsl(var(--layer-grb));
+  box-shadow: 0 0 4px hsl(var(--layer-grb) / 0.6);
 }
-/* PICC variant */
+/* PICC variant — red */
 .feature-pill--picc {
-  color: hsl(217 91% 60%);
-  background: hsl(217 91% 60% / 0.06);
+  color: hsl(var(--layer-picc));
+  background: hsl(var(--layer-picc) / 0.06);
 }
 .feature-pill--picc.feature-pill--active {
-  background: hsl(217 91% 60% / 0.12);
-  border-color: hsl(217 91% 60% / 0.25);
+  background: hsl(var(--layer-picc) / 0.12);
+  border-color: hsl(var(--layer-picc) / 0.25);
 }
 .feature-pill--picc .feature-pill__dot {
-  background: hsl(217 91% 60%);
-  box-shadow: 0 0 4px hsl(217 91% 60% / 0.6);
+  background: hsl(var(--layer-picc));
+  box-shadow: 0 0 4px hsl(var(--layer-picc) / 0.6);
 }
-/* OSM variant */
+/* OSM variant — brick brown */
 .feature-pill--osm {
-  color: hsl(192 90% 46%);
-  background: hsl(192 90% 46% / 0.06);
+  color: hsl(var(--layer-osm));
+  background: hsl(var(--layer-osm) / 0.06);
 }
 .feature-pill--osm.feature-pill--active {
-  background: hsl(192 90% 46% / 0.12);
-  border-color: hsl(192 90% 46% / 0.25);
+  background: hsl(var(--layer-osm) / 0.12);
+  border-color: hsl(var(--layer-osm) / 0.25);
 }
 .feature-pill--osm .feature-pill__dot {
-  background: hsl(192 90% 46%);
-  box-shadow: 0 0 4px hsl(192 90% 46% / 0.6);
+  background: hsl(var(--layer-osm));
+  box-shadow: 0 0 4px hsl(var(--layer-osm) / 0.6);
+}
+
+/* ── Layer badge classes (for template use) ── */
+.layer-badge-osm {
+  color: hsl(var(--layer-osm));
+  background: hsl(var(--layer-osm) / 0.10);
+  border-color: hsl(var(--layer-osm) / 0.20);
+}
+.layer-badge-grb {
+  color: hsl(var(--layer-grb));
+  background: hsl(var(--layer-grb) / 0.10);
+  border-color: hsl(var(--layer-grb) / 0.20);
+}
+.layer-badge-picc {
+  color: hsl(var(--layer-picc));
+  background: hsl(var(--layer-picc) / 0.10);
+  border-color: hsl(var(--layer-picc) / 0.20);
 }
 
 /* ── Animations ── */

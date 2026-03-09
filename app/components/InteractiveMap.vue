@@ -87,7 +87,7 @@
             <div class="space-y-2.5">
               <div class="layer-row">
                 <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="background: #f59e0b; box-shadow: 0 0 6px #f59e0b4d;"></span>
+                  <span class="layer-dot" style="color: hsl(var(--layer-candidate)); background: currentColor;"></span>
                   <span class="text-xs text-foreground/85">Candidate Buildings</span>
                 </div>
                 <div class="flex items-center gap-2">
@@ -97,21 +97,21 @@
               </div>
               <div class="layer-row">
                 <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="background: #ea580c; box-shadow: 0 0 6px #ea580c4d;"></span>
+                  <span class="layer-dot" style="color: hsl(var(--layer-osm)); background: currentColor;"></span>
                   <span class="text-xs text-foreground/85">OSM Buildings</span>
                 </div>
                 <Switch v-model:checked="overlayLayers.osmBuildings" @update:checked="toggleOsmBuildings" />
               </div>
               <div class="layer-row">
                 <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="background: #34d399; box-shadow: 0 0 6px #34d3994d;"></span>
+                  <span class="layer-dot" style="color: hsl(var(--layer-grb)); background: currentColor;"></span>
                   <span class="text-xs text-foreground/85">GRB Buildings</span>
                 </div>
                 <Switch v-model:checked="overlayLayers.grbBuildings" @update:checked="toggleGrbBuildings" />
               </div>
               <div class="layer-row">
                 <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="background: #60a5fa; box-shadow: 0 0 6px #60a5fa4d;"></span>
+                  <span class="layer-dot" style="color: hsl(var(--layer-picc)); background: currentColor;"></span>
                   <span class="text-xs text-foreground/85">PICC Buildings</span>
                 </div>
                 <Switch v-model:checked="overlayLayers.piccBuildings" @update:checked="togglePiccBuildings" />
@@ -219,7 +219,7 @@
               <template v-if="currentFeature._layer_type === 'grb'">
                 <div class="flex items-start justify-between mb-3">
                   <div>
-                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded mb-1.5">
+                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-grb border px-1.5 py-0.5 rounded mb-1.5">
                       <Building2 class="h-2.5 w-2.5" />GRB
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">{{ formatGRBBuildingType(currentFeature.polygon_type_label || currentFeature.building_type_label) }}</h2>
@@ -290,7 +290,7 @@
               <template v-else-if="currentFeature._layer_type === 'picc'">
                 <div class="flex items-start justify-between mb-3">
                   <div>
-                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-blue-400 bg-blue-400/10 border border-blue-400/20 px-1.5 py-0.5 rounded mb-1.5">
+                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-picc border px-1.5 py-0.5 rounded mb-1.5">
                       <Building2 class="h-2.5 w-2.5" />PICC
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">{{ currentFeature.natur_desc || 'Building' }}</h2>
@@ -362,7 +362,7 @@
               <template v-else>
                 <div class="flex items-start justify-between mb-3">
                   <div>
-                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded mb-1.5">
+                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-osm border px-1.5 py-0.5 rounded mb-1.5">
                       <Building2 class="h-2.5 w-2.5" />OSM
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">
@@ -638,6 +638,12 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
 }
 
 
+// Read HSL CSS variable and return rgba string
+const hslVar = (name: string, alpha: number): string => {
+  const hsl = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return `hsla(${hsl}, ${alpha})`
+}
+
 // Handle Load OSM Buildings using Vector Tiles from Martin
 const handleLoadOSM = () => {
   if (!map.value) {
@@ -665,19 +671,17 @@ const handleLoadOSM = () => {
       const isHovered = feature.get('hovered')
       const source = feature.get('source') || ''
 
-      // OSM features: 10% fill opacity, 100% border opacity
-      let fillColor = 'rgba(234, 88, 12, 0.1)' // Orange with 10% opacity
-      let strokeColor = 'rgba(234, 88, 12, 1.0)' // Orange with 100% opacity
+      let fillColor = hslVar('--layer-osm', 0.1)
+      let strokeColor = hslVar('--layer-osm', 1)
 
       if (source.includes('Gbg')) {
-        fillColor = 'rgba(34, 197, 94, 0.1)' // Green for GRB-sourced with 10% opacity
-        strokeColor = 'rgba(34, 197, 94, 1.0)' // Green with 100% opacity
+        fillColor = hslVar('--layer-osm-light', 0.1)
+        strokeColor = hslVar('--layer-osm-light', 1)
       }
 
-      // Hover effect
       if (isHovered) {
-        fillColor = 'rgba(234, 88, 12, 0.3)'
-        strokeColor = 'rgba(251, 146, 60, 1)'
+        fillColor = hslVar('--layer-osm', 0.3)
+        strokeColor = hslVar('--layer-osm-light', 1)
       }
 
       return new Style({
@@ -748,20 +752,16 @@ const handleLoadGRB = () => {
       const buildingType = feature.get('building_type')
       const surfaceArea = feature.get('surface_area') || 0
 
-      // GRB features: 80% fill opacity, 10% border opacity
-      let fillColor = 'rgba(34, 197, 94, 0.8)' // Green with 80% opacity
-      if (buildingType === 'house') {
-        fillColor = 'rgba(34, 197, 94, 0.8)'
-      } else if (buildingType === 'shed') {
-        fillColor = 'rgba(22, 163, 74, 0.8)'
+      let fillColor = hslVar('--layer-grb', 0.8)
+      if (buildingType === 'shed') {
+        fillColor = hslVar('--layer-grb-dark', 0.8)
       }
 
-      let strokeColor = 'rgba(34, 197, 94, 0.1)' // Green with 10% opacity
+      let strokeColor = hslVar('--layer-grb', 0.1)
 
-      // Hover effect
       if (isHovered) {
-        fillColor = 'rgba(34, 197, 94, 0.9)'
-        strokeColor = 'rgba(74, 222, 128, 1)'
+        fillColor = hslVar('--layer-grb', 0.9)
+        strokeColor = hslVar('--layer-grb-light', 1)
       }
 
       // Stroke width based on surface area
@@ -828,13 +828,12 @@ const handleLoadPICC = () => {
     const piccStyleFunction = (feature: any) => {
       const isHovered = feature.get('hovered')
 
-      let fillColor = 'rgba(96, 165, 250, 0.8)' // Blue with 80% opacity
-      let strokeColor = 'rgba(96, 165, 250, 0.1)' // Blue with 10% opacity
+      let fillColor = hslVar('--layer-picc', 0.8)
+      let strokeColor = hslVar('--layer-picc', 0.1)
 
-      // Hover effect
       if (isHovered) {
-        fillColor = 'rgba(96, 165, 250, 0.9)'
-        strokeColor = 'rgba(147, 197, 253, 1)'
+        fillColor = hslVar('--layer-picc', 0.9)
+        strokeColor = hslVar('--layer-picc-light', 1)
       }
 
       return new Style({
@@ -1359,10 +1358,10 @@ const calculateDifference = async () => {
     // Style function for candidate buildings
     const candidateStyleFunction = () => new Style({
       fill: new Fill({
-        color: 'rgba(251, 146, 60, 0.4)' // Orange with 40% opacity
+        color: hslVar('--layer-candidate', 0.4)
       }),
       stroke: new Stroke({
-        color: 'rgba(251, 146, 60, 1.0)', // Orange with 100% opacity
+        color: hslVar('--layer-candidate', 1),
         width: 2
       })
     })
