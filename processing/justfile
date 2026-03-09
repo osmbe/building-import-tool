@@ -490,14 +490,15 @@ _picc-create-matview:
             SELECT
                 b.objectid,
                 COUNT(*) AS address_count,
-                array_to_string(ARRAY_AGG(DISTINCT a.adresse ORDER BY a.adresse)
-                    FILTER (WHERE a.adresse IS NOT NULL), '; ') AS addresses,
-                array_to_string(ARRAY_AGG(DISTINCT a.rue ORDER BY a.rue)
-                    FILTER (WHERE a.rue IS NOT NULL), ', ') AS street_names,
+                array_to_string(ARRAY_AGG(DISTINCT (a.rue_nm || ' ' || a.adr_numero)
+                    ORDER BY (a.rue_nm || ' ' || a.adr_numero))
+                    FILTER (WHERE a.rue_nm IS NOT NULL), '; ') AS addresses,
+                array_to_string(ARRAY_AGG(DISTINCT a.rue_nm ORDER BY a.rue_nm)
+                    FILTER (WHERE a.rue_nm IS NOT NULL), ', ') AS street_names,
                 array_to_string(ARRAY_AGG(DISTINCT a.code_posta ORDER BY a.code_posta)
                     FILTER (WHERE a.code_posta IS NOT NULL), ', ') AS postcodes,
-                array_to_string(ARRAY_AGG(DISTINCT a.commune ORDER BY a.commune)
-                    FILTER (WHERE a.commune IS NOT NULL), ', ') AS municipalities
+                array_to_string(ARRAY_AGG(DISTINCT a.com_nm ORDER BY a.com_nm)
+                    FILTER (WHERE a.com_nm IS NOT NULL), ', ') AS municipalities
             FROM picc.constr_batiemprise b
             JOIN picc.icar_adr_pt a ON ST_Contains(b.geom, a.geom)
             GROUP BY b.objectid
