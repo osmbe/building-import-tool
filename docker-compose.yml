@@ -185,15 +185,16 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-building-import-tool-local}
-      COMPOSE_PROJECT_DIR: /compose
-      HOST_PROJECT_DIR: ${COMPOSE_PROJECT_DIR:-${PWD}}
+      # Project dir inside container mirrors the host path so docker compose
+      # volume paths resolve identically for both the CLI and the Docker daemon
+      COMPOSE_PROJECT_DIR: ${COMPOSE_PROJECT_DIR:-${PWD}}
     volumes:
       # gh CLI config for artifact download authentication
       # Linux: /home/username/.config/gh  |  macOS: /Users/username/.config/gh
       - ${HOME}/.config/gh:/root/.config/gh:ro
-      # Docker socket + project dir for nuxt-deploy
+      # Docker socket + project dir (mounted at same host path for volume resolution)
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${COMPOSE_PROJECT_DIR:-${PWD}}:/compose:ro
+      - ${COMPOSE_PROJECT_DIR:-${PWD}}:${COMPOSE_PROJECT_DIR:-${PWD}}:ro
     depends_on:
       postgres:
         condition: service_healthy

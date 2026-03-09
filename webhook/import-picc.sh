@@ -5,10 +5,8 @@
 # Downloads the full Wallonia dataset (FileGDB + addresses), imports, creates matview.
 set -euo pipefail
 
-COMPOSE_DIR="${COMPOSE_PROJECT_DIR:-/compose}"
-# HOST_PROJECT_DIR is the project path on the Docker host (for volume resolution)
-HOST_DIR="${HOST_PROJECT_DIR:-${COMPOSE_DIR}}"
-COMPOSE="docker compose -f ${COMPOSE_DIR}/docker-compose.yml --env-file ${COMPOSE_DIR}/.env --project-name ${COMPOSE_PROJECT_NAME:-building-import-tool-local} --project-directory ${HOST_DIR}"
+PROJECT_DIR="${COMPOSE_PROJECT_DIR}"
+COMPOSE="docker compose -f ${PROJECT_DIR}/docker-compose.yml --env-file ${PROJECT_DIR}/.env --project-name ${COMPOSE_PROJECT_NAME:-building-import-tool-local}"
 
 echo "[import-picc] Starting local PICC import..."
 echo "[import-picc] $(date)"

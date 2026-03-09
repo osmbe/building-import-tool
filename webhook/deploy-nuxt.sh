@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Args passed by webhook server ($1=run_id $2=repo) — not needed for deploy
-COMPOSE_DIR="/compose"
+COMPOSE_DIR="${COMPOSE_PROJECT_DIR}"
 IMAGE="ghcr.io/osmbe/building-import-tool/nuxt-app:latest"
 
 echo "[deploy-nuxt] Pulling latest config..."
