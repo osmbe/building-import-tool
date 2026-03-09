@@ -26,6 +26,12 @@
 		reverse_proxy osm-tiles:3000
 	}
 
+	# Martin PICC Tiles
+	handle /tiles/picc/* {
+		uri strip_prefix /tiles/picc
+		reverse_proxy picc-tiles:3000
+	}
+
 	# Webhook service
 	handle /webhook/* {
 		uri strip_prefix /webhook

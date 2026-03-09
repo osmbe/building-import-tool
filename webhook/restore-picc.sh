@@ -5,6 +5,7 @@ RUN_ID="${1:?Usage: restore-picc.sh <run_id> <repo>}"
 REPO="${2:?Usage: restore-picc.sh <run_id> <repo>}"
 
 WORK_DIR="/tmp/picc-restore"
+trap "rm -rf ${WORK_DIR}" EXIT
 
 echo "[restore-picc] Downloading artifact from run ${RUN_ID} (${REPO})..."
 rm -rf "${WORK_DIR}"
@@ -23,11 +24,16 @@ echo "[restore-picc] Restoring to be2osm database (picc schema)..."
 PSQL="psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d be2osm"
 export PGPASSWORD="${POSTGRES_PASSWORD}"
 
-${PSQL} -c "TRUNCATE picc.addresses CASCADE;" || true
+# Drop existing tables (full dump recreates them)
+${PSQL} -c "DROP MATERIALIZED VIEW IF EXISTS picc.buildings_with_addresses CASCADE;" || true
+${PSQL} -c "DROP TABLE IF EXISTS picc.constr_batiemprise CASCADE;" || true
+${PSQL} -c "DROP TABLE IF EXISTS picc.icar_adr_pt CASCADE;" || true
 
+# Restore full dump (includes CREATE TABLE statements)
 gunzip -c "${DUMP_FILE}" | ${PSQL}
 
-${PSQL} -c "ANALYZE picc.addresses;" || true
+# Update statistics
+${PSQL} -c "ANALYZE picc.constr_batiemprise;" || true
+${PSQL} -c "ANALYZE picc.icar_adr_pt;" || true
 
-rm -rf "${WORK_DIR}"
 echo "[restore-picc] Done."

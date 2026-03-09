@@ -109,6 +109,13 @@
                 </div>
                 <Switch v-model:checked="overlayLayers.grbBuildings" @update:checked="toggleGrbBuildings" />
               </div>
+              <div class="layer-row">
+                <div class="flex items-center gap-2">
+                  <span class="layer-dot" style="background: #60a5fa; box-shadow: 0 0 6px #60a5fa4d;"></span>
+                  <span class="text-xs text-foreground/85">PICC Buildings</span>
+                </div>
+                <Switch v-model:checked="overlayLayers.piccBuildings" @update:checked="togglePiccBuildings" />
+              </div>
             </div>
             <div class="mt-3 pt-3 border-t border-white/[0.05] space-y-1">
               <div class="flex items-center justify-between text-[10px]">
@@ -384,6 +391,9 @@ const osmBuildingsLayerRef = ref<any>(null)
 const grbBuildingsLayerRef = ref<any>(null)
 const isLoadingGRB = ref(false)
 
+// PICC Buildings layer state
+const piccBuildingsLayerRef = ref<any>(null)
+
 // Candidate Buildings layer state
 const candidateBuildingsLayerRef = ref<any>(null)
 const candidateBuildingCount = ref(0)
@@ -417,6 +427,7 @@ const overlayLayers = ref({
   candidateBuildings: true,
   osmBuildings: true,
   grbBuildings: false,
+  piccBuildings: false,
   conflicts: true,
   addresses: false,
   boundaries: false
@@ -548,6 +559,9 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
   }
   if (grbBuildingsLayerRef.value) {
     grbBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.grbBuildings)
+  }
+  if (piccBuildingsLayerRef.value) {
+    piccBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.piccBuildings)
   }
 }
 
@@ -723,6 +737,81 @@ const handleLoadGRB = () => {
 }
 
 
+// Handle Load PICC Buildings using Vector Tiles from Martin
+const handleLoadPICC = () => {
+  if (!map.value) {
+    console.error('Map not initialized')
+    return
+  }
+
+  try {
+    // Remove existing PICC buildings layer if present
+    if (piccBuildingsLayerRef.value) {
+      map.value.removeLayer(piccBuildingsLayerRef.value)
+    }
+
+    // Create vector tile source for PICC buildings
+    const piccTileSource = new VectorTileSource({
+      format: new MVT(),
+      url: '/tiles/picc/buildings/{z}/{x}/{y}',
+      minZoom: 10,
+      maxZoom: 18,
+      attributions: '© PICC Wallonia'
+    })
+
+    // Style function for PICC buildings
+    const piccStyleFunction = (feature: any) => {
+      const isHovered = feature.get('hovered')
+
+      let fillColor = 'rgba(96, 165, 250, 0.8)' // Blue with 80% opacity
+      let strokeColor = 'rgba(96, 165, 250, 0.1)' // Blue with 10% opacity
+
+      // Hover effect
+      if (isHovered) {
+        fillColor = 'rgba(96, 165, 250, 0.9)'
+        strokeColor = 'rgba(147, 197, 253, 1)'
+      }
+
+      return new Style({
+        fill: new Fill({
+          color: fillColor
+        }),
+        stroke: new Stroke({
+          color: strokeColor,
+          width: isHovered ? 3 : 1.5,
+          lineDash: [5, 5]
+        })
+      })
+    }
+
+    // Create vector tile layer
+    const piccTileLayer = new VectorTileLayer({
+      source: piccTileSource,
+      style: piccStyleFunction,
+      zIndex: 11,
+      properties: {
+        title: 'PICC Buildings',
+        type: 'overlay'
+      }
+    })
+
+    // Add layer to map
+    piccBuildingsLayerRef.value = piccTileLayer
+    map.value.addLayer(piccTileLayer)
+
+    // Update UI state
+    overlayLayers.value.piccBuildings = true
+
+    // Set initial visibility based on current zoom level
+    const currentZoomLevel = Math.round(map.value.getView().getZoom() || 13)
+    const shouldShow = currentZoomLevel >= 16 && overlayLayers.value.piccBuildings
+    piccTileLayer.setVisible(shouldShow)
+  } catch (error) {
+    console.error('Failed to load PICC buildings:', error)
+  }
+}
+
+
 // Layer toggle functions (kept for layer panel compatibility)
 
 const toggleCandidateBuildings = (visible: boolean) => {
@@ -749,6 +838,15 @@ const toggleGrbBuildings = (visible: boolean) => {
   // Toggle visibility of loaded GRB buildings layer
   if (grbBuildingsLayerRef.value) {
     grbBuildingsLayerRef.value.setVisible(visible)
+  }
+}
+
+const togglePiccBuildings = (visible: boolean) => {
+  overlayLayers.value.piccBuildings = visible
+
+  // Toggle visibility of loaded PICC buildings layer
+  if (piccBuildingsLayerRef.value) {
+    piccBuildingsLayerRef.value.setVisible(visible)
   }
 }
 
@@ -1663,7 +1761,7 @@ const setupHoverInteraction = () => {
 
     const foundFeatures: any[] = []
     map.value.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value) {
+      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === piccBuildingsLayerRef.value) {
         // Get properties for clicked feature
         let properties: any
         try {
@@ -1691,8 +1789,10 @@ const setupHoverInteraction = () => {
           }
         }
 
-        // Add layer type to distinguish OSM from GRB features
-        properties._layer_type = layer === osmBuildingsLayerRef.value ? 'osm' : 'grb'
+        // Add layer type to distinguish OSM from GRB/PICC features
+        properties._layer_type = layer === osmBuildingsLayerRef.value ? 'osm'
+          : layer === piccBuildingsLayerRef.value ? 'picc'
+          : 'grb'
 
         foundFeatures.push(properties)
       }
@@ -1752,7 +1852,7 @@ const setupHoverInteraction = () => {
     let firstFeature: any = null
 
     map.value.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value) {
+      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === piccBuildingsLayerRef.value) {
         if (!firstFeature) {
           firstFeature = feature
         }
@@ -1785,8 +1885,10 @@ const setupHoverInteraction = () => {
           }
         }
 
-        // Add layer type to distinguish OSM from GRB features
-        properties._layer_type = layer === osmBuildingsLayerRef.value ? 'osm' : 'grb'
+        // Add layer type to distinguish OSM from GRB/PICC features
+        properties._layer_type = layer === osmBuildingsLayerRef.value ? 'osm'
+          : layer === piccBuildingsLayerRef.value ? 'picc'
+          : 'grb'
 
         foundFeatures.push(properties)
       }
@@ -1857,6 +1959,7 @@ onMounted(() => {
       setTimeout(() => {
         handleLoadOSM()
         handleLoadGRB()
+        handleLoadPICC()
       }, 100)
     }, 50)
   })

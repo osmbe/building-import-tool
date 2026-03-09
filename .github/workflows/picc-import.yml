@@ -27,6 +27,18 @@ jobs:
           - 5432:5432
 
     steps:
+      - name: Free up disk space
+        run: |
+          echo "Before cleanup:"
+          df -h /
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af
+          echo "After cleanup:"
+          df -h /
+
       - uses: actions/checkout@v4
 
       - name: Install PostgreSQL 18 client
@@ -41,8 +53,7 @@ jobs:
       - name: Initialize be2osm database
         run: |
           # Only run scripts needed for PICC import.
-          # 05: sets up picc schema in be2osm database
-          # Skipping 01-04: not needed here
+          # 05: creates picc schema in be2osm database (tables created by ogr2ogr)
           PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f postgres/05-setup-picc.sql
 
       - name: Build processing image
@@ -56,12 +67,11 @@ jobs:
             -e POSTGRES_PORT=5432 \
             -e POSTGRES_USER=be2osm \
             -e POSTGRES_PASSWORD=be2osm \
-            processing just picc-download-addresses picc-import
+            processing just picc-full
 
       - name: Create PICC dump
         run: |
           PGPASSWORD=be2osm pg_dump -h localhost -U be2osm \
-            --data-only --disable-triggers \
             --no-owner --no-acl \
             -n picc \
             be2osm | gzip > picc.sql.gz
