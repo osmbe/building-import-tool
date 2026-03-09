@@ -638,10 +638,10 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
 }
 
 
-// Read HSL CSS variable and return rgba string
+// Read HSL CSS variable and return color string for OpenLayers
 const hslVar = (name: string, alpha: number): string => {
   const hsl = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-  return `hsla(${hsl}, ${alpha})`
+  return `hsl(${hsl} / ${alpha})`
 }
 
 // Handle Load OSM Buildings using Vector Tiles from Martin
