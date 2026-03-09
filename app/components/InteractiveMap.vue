@@ -197,14 +197,15 @@
                 class="feature-pill"
                 :class="{
                   'feature-pill--grb': feat._layer_type === 'grb',
-                  'feature-pill--osm': feat._layer_type !== 'grb',
+                  'feature-pill--picc': feat._layer_type === 'picc',
+                  'feature-pill--osm': feat._layer_type === 'osm',
                   'feature-pill--active': idx === activeFeatureIndex
                 }"
                 @click="activeFeatureIndex = idx"
               >
                 <span class="feature-pill__dot" />
-                <span>{{ feat._layer_type === 'grb' ? 'GRB' : 'OSM' }}</span>
-                <span class="opacity-50 font-mono">{{ feat._layer_type === 'grb' ? (feat.gebouw_id || feat.id) : feat.osm_id }}</span>
+                <span>{{ feat._layer_type === 'grb' ? 'GRB' : feat._layer_type === 'picc' ? 'PICC' : 'OSM' }}</span>
+                <span class="opacity-50 font-mono">{{ feat._layer_type === 'grb' ? (feat.gebouw_id || feat.id) : feat._layer_type === 'picc' ? feat.objectid : feat.osm_id }}</span>
               </button>
               <!-- Close button -->
               <button v-if="isTooltipSticky" class="ml-auto text-muted-foreground hover:text-foreground transition-colors shrink-0" @click="closeTooltip">
@@ -280,6 +281,78 @@
                     <div v-if="currentFeature.origin_label" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Source</span>
                       <span class="text-foreground font-medium">{{ formatOriginLabel(currentFeature.origin_label) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- PICC Building -->
+              <template v-else-if="currentFeature._layer_type === 'picc'">
+                <div class="flex items-start justify-between mb-3">
+                  <div>
+                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-blue-400 bg-blue-400/10 border border-blue-400/20 px-1.5 py-0.5 rounded mb-1.5">
+                      <Building2 class="h-2.5 w-2.5" />PICC
+                    </div>
+                    <h2 class="text-sm font-semibold text-foreground">{{ currentFeature.natur_desc || 'Building' }}</h2>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ currentFeature.objectid }}</div>
+                  </div>
+                  <button v-if="isTooltipSticky && activeFeatures.length <= 1" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="closeTooltip">
+                    <X class="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <!-- Addresses -->
+                <div v-if="currentFeature.addresses" class="mb-3">
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Addresses</div>
+                  <div class="space-y-0.5 text-xs">
+                    <div v-for="(addr, idx) in parseSemicolonList(currentFeature.addresses)" :key="idx" class="text-foreground font-medium">
+                      {{ addr }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Location (when no detailed addresses) -->
+                <div v-if="!currentFeature.addresses && (currentFeature.street_names || currentFeature.postcodes || currentFeature.municipalities)" class="mb-3">
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Location</div>
+                  <div class="space-y-1 text-xs">
+                    <div v-if="currentFeature.street_names" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Street</span>
+                      <span class="text-foreground font-medium">{{ parseSemicolonList(currentFeature.street_names).join(', ') }}</span>
+                    </div>
+                    <div v-if="currentFeature.postcodes" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Postcode</span>
+                      <span class="text-foreground font-medium">{{ parseSemicolonList(currentFeature.postcodes).join(', ') }}</span>
+                    </div>
+                    <div v-if="currentFeature.municipalities" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Municipality</span>
+                      <span class="text-foreground font-medium">{{ parseSemicolonList(currentFeature.municipalities).join(', ') }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Details -->
+                <div v-if="currentFeature.area_m2 || currentFeature.natur_code || currentFeature.date_modif || currentFeature.date_leve">
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Details</div>
+                  <div class="space-y-1 text-xs">
+                    <div v-if="currentFeature.area_m2" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Area</span>
+                      <span class="text-foreground font-medium font-mono">{{ formatArea(currentFeature.area_m2) }}</span>
+                    </div>
+                    <div v-if="currentFeature.natur_code" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Type</span>
+                      <span class="text-foreground font-medium">{{ currentFeature.natur_desc || currentFeature.natur_code }}</span>
+                    </div>
+                    <div v-if="currentFeature.date_leve" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Surveyed</span>
+                      <span class="text-foreground font-medium font-mono">{{ formatPiccDate(currentFeature.date_leve) }}</span>
+                    </div>
+                    <div v-if="currentFeature.date_modif" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Modified</span>
+                      <span class="text-foreground font-medium font-mono">{{ formatPiccDate(currentFeature.date_modif) }}</span>
+                    </div>
+                    <div v-if="currentFeature.georef_id" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">GeoRef</span>
+                      <span class="text-foreground font-medium font-mono text-[10px] truncate" :title="currentFeature.georef_id">{{ currentFeature.georef_id }}</span>
                     </div>
                   </div>
                 </div>
@@ -454,18 +527,15 @@ const isCalculatingDifference = ref(false) // Loading state for Get Difference b
 
 // Computed property to check if Get Difference button should be enabled
 const canCalculateDifference = computed(() => {
-  // Check if map is initialized
   if (!map.value) return false
+  if (!osmBuildingsLayerRef.value) return false
+  if (currentZoom.value < 16) return false
+  if (!overlayLayers.value.osmBuildings) return false
 
-  // Check if layers are loaded
-  if (!osmBuildingsLayerRef.value || !grbBuildingsLayerRef.value) return false
-
-  // Check zoom level
-  const zoom = currentZoom.value
-  if (zoom < 16) return false
-
-  // Check if layers are visible/active
-  if (!overlayLayers.value.osmBuildings || !overlayLayers.value.grbBuildings) return false
+  // At least one source layer (GRB or PICC) must be loaded and visible
+  const grbReady = grbBuildingsLayerRef.value && overlayLayers.value.grbBuildings
+  const piccReady = piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings
+  if (!grbReady && !piccReady) return false
 
   return true
 })
@@ -1468,13 +1538,31 @@ const groupAddresses = (addresses: string[]): GroupedAddress[] => {
   }))
 }
 
+// Helper to parse semicolon-separated lists from PICC matview
+const parseSemicolonList = (value: string | undefined): string[] => {
+  if (!value) return []
+  return value.split(';').map(s => s.trim()).filter(Boolean)
+}
+
+// Helper to format PICC dates to yyyy-mm-dd
+const formatPiccDate = (value: string | undefined): string => {
+  if (!value) return '—'
+  try {
+    const date = new Date(value)
+    if (isNaN(date.getTime())) return value
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  } catch {
+    return value
+  }
+}
+
 // Helper function to format area
 const formatArea = (area: number): string => {
   if (!area) return '—'
-  if (area >= 1000) {
-    return `${(area / 1000).toFixed(2)} km²`
+  if (area >= 10000) {
+    return `${(area / 10000).toFixed(2)} ha`
   }
-  return `${area.toFixed(0)} m²`
+  return `${area.toFixed(2)} m²`
 }
 
 // Helper function to translate GRB building types

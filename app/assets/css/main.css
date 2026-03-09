@@ -180,6 +180,19 @@
   background: hsl(152 68% 56%);
   box-shadow: 0 0 4px hsl(152 68% 56% / 0.6);
 }
+/* PICC variant */
+.feature-pill--picc {
+  color: hsl(217 91% 60%);
+  background: hsl(217 91% 60% / 0.06);
+}
+.feature-pill--picc.feature-pill--active {
+  background: hsl(217 91% 60% / 0.12);
+  border-color: hsl(217 91% 60% / 0.25);
+}
+.feature-pill--picc .feature-pill__dot {
+  background: hsl(217 91% 60%);
+  box-shadow: 0 0 4px hsl(217 91% 60% / 0.6);
+}
 /* OSM variant */
 .feature-pill--osm {
   color: hsl(192 90% 46%);
