@@ -368,12 +368,14 @@ import { useAuth } from '~/composables/useAuth'
 import { useJosmExport } from '~/composables/useJosmExport'
 import { useMapLayers } from '~/composables/useMapLayers'
 import { useMatchMode } from '~/composables/useMatchMode'
+import { useToast } from '~/composables/useToast'
 
 const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
 
 const mapRef = ref<HTMLElement>()
 const { exportLayerToJosm, testJosmConnection } = useJosmExport()
 const { matchMode } = useMatchMode()
+const toast = useToast()
 
 // Use the map layers composable
 const {
@@ -1195,7 +1197,7 @@ const calculateDifference = async () => {
 
   // Check if OSM layer and at least one source layer are loaded
   if (!osmBuildingsLayerRef.value || (!grbActive && !piccActive)) {
-    alert('Please enable OSM Buildings and either GRB or PICC buildings layer first.')
+    toast.warning('Layers required', 'Please enable OSM Buildings and either GRB or PICC buildings layer first.')
     return
   }
 
@@ -1204,13 +1206,13 @@ const calculateDifference = async () => {
   const zoom = view.getZoom() || 13
   const roundedZoom = Math.round(zoom)
   if (roundedZoom < 16) {
-    alert(`Please zoom in to at least level 16 to calculate differences.\n\nCurrent zoom: ${roundedZoom}`)
+    toast.warning('Zoom in required', `Please zoom in to at least level 16. Current zoom: ${roundedZoom}`)
     return
   }
 
   // Check if OSM layer is visible
   if (!overlayLayers.value.osmBuildings) {
-    alert('Please enable the OSM Buildings layer first.')
+    toast.warning('Layer required', 'Please enable the OSM Buildings layer first.')
     return
   }
 
@@ -1233,7 +1235,7 @@ const calculateDifference = async () => {
     const candidateGeoJSON = response as any
 
     if (!candidateGeoJSON || candidateGeoJSON.features.length === 0) {
-      alert(`No candidate buildings found.\n\nAll ${dataSource.toUpperCase()} buildings have matching OSM geometries or the area has no data.`)
+      toast.info('No candidates found', `All ${dataSource.toUpperCase()} buildings have matching OSM geometries or the area has no data.`)
 
       // Remove existing candidate buildings layer if present
       if (candidateBuildingsLayerRef.value) {
@@ -1313,7 +1315,7 @@ const calculateDifference = async () => {
 
   } catch (error) {
     console.error('Error calculating difference:', error)
-    alert(`Error calculating difference:\n\n${error instanceof Error ? error.message : String(error)}`)
+    toast.error('Difference calculation failed', error instanceof Error ? error.message : String(error))
   } finally {
     // Reset loading state
     isCalculatingDifference.value = false
@@ -1325,7 +1327,7 @@ const exportToJOSM = async () => {
 
   // Check if we have candidate buildings data
   if (originalCandidateFeatures.value.length === 0) {
-    alert('No candidate buildings to export.\n\nPlease click "Get Difference" first to calculate candidate buildings.')
+    toast.warning('No candidates', 'Please click "Get Difference" first to calculate candidate buildings.')
     return
   }
 
@@ -1333,7 +1335,7 @@ const exportToJOSM = async () => {
     // Check JOSM connection first
     const isConnected = await testJosmConnection()
     if (!isConnected) {
-      alert('JOSM is not running or remote control is disabled.\n\nPlease:\n1. Start JOSM\n2. Go to Edit → Preferences (F12)\n3. Enable "Remote Control"\n4. Click OK')
+      toast.error('JOSM not reachable', 'Start JOSM, go to Edit → Preferences (F12), and enable "Remote Control".')
       return
     }
 
@@ -1342,7 +1344,7 @@ const exportToJOSM = async () => {
     const allFeatures = originalCandidateFeatures.value
 
     if (allFeatures.length === 0) {
-      alert('No buildings to export.')
+      toast.warning('Nothing to export', 'No buildings available to export.')
       return
     }
 
@@ -1360,10 +1362,10 @@ const exportToJOSM = async () => {
     )
 
     console.log('✅ Export successful')
-    alert(`Candidate buildings exported to JOSM successfully!\n\nExported ${result.featureCount} building${result.featureCount === 1 ? '' : 's'}.\n\nThe buildings have been loaded in JOSM as a new layer.`)
+    toast.success('Exported to JOSM', `${result.featureCount} building${result.featureCount === 1 ? '' : 's'} loaded as a new layer in JOSM.`)
   } catch (error: any) {
     console.error('Error exporting candidate buildings to JOSM:', error)
-    alert(`Error exporting to JOSM:\n\n${error.message}\n\nPlease check:\n1. JOSM is running with remote control enabled\n2. Port 8111 is not blocked by firewall\n3. Network connectivity`)
+    toast.error('JOSM export failed', `${error.message}\nCheck that JOSM is running with remote control enabled on port 8111.`)
   }
 }
 

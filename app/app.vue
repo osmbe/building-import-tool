@@ -1,5 +1,6 @@
 <template>
   <NuxtPage />
+  <AppToast />
 </template>
 
 <script setup lang="ts">
