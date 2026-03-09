@@ -500,7 +500,7 @@ _picc-create-matview:
                 array_to_string(ARRAY_AGG(DISTINCT a.com_nm ORDER BY a.com_nm)
                     FILTER (WHERE a.com_nm IS NOT NULL), ', ') AS municipalities
             FROM picc.constr_batiemprise b
-            JOIN picc.icar_adr_pt a ON ST_Contains(b.geom, a.geom)
+            JOIN picc.icar_adr_pt a ON ST_Contains(ST_SetSRID(b.geom, 31370), a.geom)
             GROUP BY b.objectid
         )
         SELECT
@@ -510,8 +510,8 @@ _picc-create-matview:
             b.natur_desc,
             b.date_leve,
             b.date_modif,
-            ST_Area(b.geom)::REAL AS area_m2,
-            ST_Transform(b.geom, 3857)::geometry(Geometry, 3857) AS geom,
+            ST_Area(ST_SetSRID(b.geom, 31370))::REAL AS area_m2,
+            ST_Transform(ST_SetSRID(b.geom, 31370), 3857)::geometry(Geometry, 3857) AS geom,
             COALESCE(apb.addresses, '') AS addresses,
             COALESCE(apb.street_names, '') AS street_names,
             COALESCE(apb.postcodes, '') AS postcodes,
