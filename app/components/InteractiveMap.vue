@@ -499,7 +499,7 @@ const layersCollapsed = ref(false)
 
 // Overlay layers (can be combined)
 const overlayLayers = ref({
-  candidateBuildings: true,
+  candidateBuildings: false,
   osmBuildings: true,
   grbBuildings: false,
   piccBuildings: false,
@@ -790,17 +790,10 @@ const handleLoadGRB = () => {
       }
     })
 
-    // Add layer to map
+    // Add layer to map (hidden by default — user toggles it on)
     grbBuildingsLayerRef.value = grbTileLayer
     map.value.addLayer(grbTileLayer)
-
-    // Update UI state
-    overlayLayers.value.grbBuildings = true
-
-    // Set initial visibility based on current zoom level
-    const currentZoomLevel = Math.round(map.value.getView().getZoom() || 13)
-    const shouldShow = currentZoomLevel >= 16 && overlayLayers.value.grbBuildings
-    grbTileLayer.setVisible(shouldShow)
+    grbTileLayer.setVisible(false)
   } catch (error) {
     console.error('Failed to load GRB buildings:', error)
   } finally {
@@ -867,17 +860,10 @@ const handleLoadPICC = () => {
       }
     })
 
-    // Add layer to map
+    // Add layer to map (hidden by default — user toggles it on)
     piccBuildingsLayerRef.value = piccTileLayer
     map.value.addLayer(piccTileLayer)
-
-    // Update UI state
-    overlayLayers.value.piccBuildings = true
-
-    // Set initial visibility based on current zoom level
-    const currentZoomLevel = Math.round(map.value.getView().getZoom() || 13)
-    const shouldShow = currentZoomLevel >= 16 && overlayLayers.value.piccBuildings
-    piccTileLayer.setVisible(shouldShow)
+    piccTileLayer.setVisible(false)
   } catch (error) {
     console.error('Failed to load PICC buildings:', error)
   }
@@ -906,19 +892,35 @@ const toggleOsmBuildings = (visible: boolean) => {
 
 const toggleGrbBuildings = (visible: boolean) => {
   overlayLayers.value.grbBuildings = visible
+  const shouldShow = visible && currentZoom.value >= 16
 
-  // Toggle visibility of loaded GRB buildings layer
   if (grbBuildingsLayerRef.value) {
-    grbBuildingsLayerRef.value.setVisible(visible)
+    grbBuildingsLayerRef.value.setVisible(shouldShow)
+  }
+
+  // GRB and PICC are mutually exclusive
+  if (visible && overlayLayers.value.piccBuildings) {
+    overlayLayers.value.piccBuildings = false
+    if (piccBuildingsLayerRef.value) {
+      piccBuildingsLayerRef.value.setVisible(false)
+    }
   }
 }
 
 const togglePiccBuildings = (visible: boolean) => {
   overlayLayers.value.piccBuildings = visible
+  const shouldShow = visible && currentZoom.value >= 16
 
-  // Toggle visibility of loaded PICC buildings layer
   if (piccBuildingsLayerRef.value) {
-    piccBuildingsLayerRef.value.setVisible(visible)
+    piccBuildingsLayerRef.value.setVisible(shouldShow)
+  }
+
+  // GRB and PICC are mutually exclusive
+  if (visible && overlayLayers.value.grbBuildings) {
+    overlayLayers.value.grbBuildings = false
+    if (grbBuildingsLayerRef.value) {
+      grbBuildingsLayerRef.value.setVisible(false)
+    }
   }
 }
 

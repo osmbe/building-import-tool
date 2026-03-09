@@ -3,11 +3,11 @@ import { ref } from 'vue'
 /**
  * Match mode for comparing GRB and OSM buildings
  * - 'geometry': Match based on spatial intersection
- * - 'source': Match based on source:geometry:oidn tag in OSM buildings (default)
+ * - 'source': Match based on source:geometry:oidn tag in OSM buildings (GRB only)
  */
 export type MatchMode = 'geometry' | 'source'
 
-const matchMode = ref<MatchMode>('source')
+const matchMode = ref<MatchMode>('geometry')
 
 export function useMatchMode() {
   const setMatchMode = (mode: MatchMode) => {
