@@ -426,6 +426,7 @@ _picc-import-buildings:
         "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
         "$GDB_DIR" "{{picc_buildings_layer}}" \
         -nln picc.constr_batiemprise \
+        -nlt PROMOTE_TO_MULTI \
         -overwrite \
         -lco GEOMETRY_NAME=geom \
         -lco SPATIAL_INDEX=NONE \
@@ -568,24 +569,30 @@ picc-province-import province:
         "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
         "${DATA_DIR}/{{picc_buildings_layer}}.shp" \
         -nln picc.constr_batiemprise \
+        -nlt PROMOTE_TO_MULTI \
         -overwrite \
         -lco GEOMETRY_NAME=geom \
         -lco SPATIAL_INDEX=NONE \
         -gt 100000 --config PG_USE_COPY YES
 
-    echo "📥 Importing addresses ({{picc_addresses_layer}})..."
-    ogr2ogr -f PostgreSQL \
-        "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-        "${DATA_DIR}/{{picc_addresses_layer}}.shp" \
-        -nln picc.icar_adr_pt \
-        -overwrite \
-        -lco GEOMETRY_NAME=geom \
-        -lco SPATIAL_INDEX=NONE \
-        -gt 100000 --config PG_USE_COPY YES
+    if [ -f "${DATA_DIR}/{{picc_addresses_layer}}.shp" ]; then
+        echo "📥 Importing addresses ({{picc_addresses_layer}})..."
+        ogr2ogr -f PostgreSQL \
+            "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+            "${DATA_DIR}/{{picc_addresses_layer}}.shp" \
+            -nln picc.icar_adr_pt \
+            -overwrite \
+            -lco GEOMETRY_NAME=geom \
+            -lco SPATIAL_INDEX=NONE \
+            -gt 100000 --config PG_USE_COPY YES
+    else
+        echo "⚠️  ADRESS_POINT.shp not found in province archive, skipping address import"
+    fi
 
     echo ""
     echo "📊 Province ${PROVINCE} counts:"
-    {{psql_be2osm}} -c "SELECT 'buildings' as t, COUNT(*) FROM picc.constr_batiemprise UNION ALL SELECT 'addresses', COUNT(*) FROM picc.icar_adr_pt;"
+    {{psql_be2osm}} -c "SELECT 'buildings' as t, COUNT(*) FROM picc.constr_batiemprise;"
+    {{psql_be2osm}} -c "SELECT 'addresses' as t, COUNT(*) FROM picc.icar_adr_pt;" 2>/dev/null || echo "   (no addresses table)"
 
     echo ""
     echo "📦 Creating dump for province ${PROVINCE}..."
@@ -678,7 +685,7 @@ _picc-create-matview-provinces:
                 array_to_string(ARRAY_AGG(DISTINCT a.rue_nom ORDER BY a.rue_nom)
                     FILTER (WHERE a.rue_nom IS NOT NULL), ', ') AS street_names,
                 array_to_string(ARRAY_AGG(DISTINCT a.codepostal::int::text ORDER BY a.codepostal::int::text)
-                    FILTER (WHERE a.codepostal IS NOT NULL), ', ') AS postcodes,
+                    FILTER (WHERE a.codepostal IS NOT NULL AND a.codepostal = a.codepostal), ', ') AS postcodes,
                 array_to_string(ARRAY_AGG(DISTINCT a.commu_nom ORDER BY a.commu_nom)
                     FILTER (WHERE a.commu_nom IS NOT NULL), ', ') AS municipalities
             FROM picc.constr_batiemprise b
@@ -703,10 +710,22 @@ _picc-create-matview-provinces:
         LEFT JOIN addr_per_building apb ON b.objectid = apb.objectid;
     "
 
-    echo "🔄 Creating indexes on materialized view..."
+    echo "🔄 Checking objectid uniqueness..."
+    DUPES=$({{psql_be2osm}} -tAc "SELECT COUNT(*) FROM (SELECT objectid FROM picc.buildings_with_addresses GROUP BY objectid HAVING COUNT(*) > 1) d;")
+    if [ "$DUPES" -gt 0 ]; then
+        echo "⚠️  Found $DUPES duplicate objectids across provinces — using non-unique index"
+        {{psql_be2osm}} -c "
+            CREATE INDEX idx_picc_matview_objectid ON picc.buildings_with_addresses(objectid);
+        "
+    else
+        echo "   ✓ All objectids are unique"
+        {{psql_be2osm}} -c "
+            CREATE UNIQUE INDEX idx_picc_matview_objectid ON picc.buildings_with_addresses(objectid);
+        "
+    fi
 
+    echo "🔄 Creating remaining indexes on materialized view..."
     {{psql_be2osm}} -c "
-        CREATE UNIQUE INDEX idx_picc_matview_objectid ON picc.buildings_with_addresses(objectid);
         CREATE INDEX idx_picc_matview_geom ON picc.buildings_with_addresses USING GIST(geom);
         CREATE INDEX idx_picc_matview_natur_code ON picc.buildings_with_addresses(natur_code);
         CREATE INDEX idx_picc_matview_postcodes ON picc.buildings_with_addresses(postcodes);

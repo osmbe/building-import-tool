@@ -9,7 +9,7 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Brussels
 
-# Install base dependencies
+# Install base dependencies + PostgreSQL 18 client (must match server version for pg_dump)
 RUN apt-get update && apt-get install -y \
     # Core tools
     curl \
@@ -19,8 +19,6 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     gnupg \
     lsb-release \
-    # PostgreSQL client (for psql)
-    postgresql-client \
     # GDAL/OGR tools (includes ogr2ogr)
     gdal-bin \
     libgdal-dev \
@@ -36,6 +34,15 @@ RUN apt-get update && apt-get install -y \
        elif [ "$ARCH" = "aarch64" ]; then LIB_DIR="/usr/lib/aarch64-linux-gnu"; \
        else LIB_DIR="/usr/lib"; fi \
     && ln -sf $(ls ${LIB_DIR}/libleveldb.so.1* 2>/dev/null | head -1) ${LIB_DIR}/libleveldb.so.1 || true
+
+# Install PostgreSQL 18 client (psql, pg_dump, pg_restore must match server version)
+RUN apt-get update && apt-get install -y curl ca-certificates \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y postgresql-client-18 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Just task runner (pinned version from GitHub releases - more reliable than install.sh CDN)
 ENV JUST_VERSION=1.40.0
@@ -92,6 +99,7 @@ RUN ARCH=$(uname -m) \
 RUN echo "=== Installed versions ===" \
     && ogr2ogr --version \
     && psql --version \
+    && pg_dump --version \
     && just --version \
     && jq --version \
     && gh --version \
