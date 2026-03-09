@@ -461,6 +461,7 @@ _picc-import-addresses:
         -overwrite \
         -lco GEOMETRY_NAME=geom \
         -lco SPATIAL_INDEX=NONE \
+        -lco PRECISION=NO \
         -gt 100000 --config PG_USE_COPY YES
 
     echo "✅ Addresses imported"
@@ -584,6 +585,7 @@ picc-province-import province:
             -overwrite \
             -lco GEOMETRY_NAME=geom \
             -lco SPATIAL_INDEX=NONE \
+            -lco PRECISION=NO \
             -gt 100000 --config PG_USE_COPY YES
     else
         echo "⚠️  ADRESS_POINT.shp not found in province archive, skipping address import"
