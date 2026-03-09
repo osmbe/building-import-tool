@@ -1184,13 +1184,18 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
   return merged
 }
 
-// Calculate difference between GRB and OSM buildings and display them
+// Calculate difference between source (GRB/PICC) and OSM buildings and display them
 const calculateDifference = async () => {
   if (!map.value) return
 
-  // Check if layers are loaded
-  if (!osmBuildingsLayerRef.value || !grbBuildingsLayerRef.value) {
-    alert('Please load both OSM and GRB building layers first.')
+  // Determine which data source is active (GRB or PICC)
+  const grbActive = overlayLayers.value.grbBuildings && grbBuildingsLayerRef.value
+  const piccActive = overlayLayers.value.piccBuildings && piccBuildingsLayerRef.value
+  const dataSource = piccActive ? 'picc' : 'grb'
+
+  // Check if OSM layer and at least one source layer are loaded
+  if (!osmBuildingsLayerRef.value || (!grbActive && !piccActive)) {
+    alert('Please enable OSM Buildings and either GRB or PICC buildings layer first.')
     return
   }
 
@@ -1203,9 +1208,9 @@ const calculateDifference = async () => {
     return
   }
 
-  // Check if layers are visible/active
-  if (!overlayLayers.value.osmBuildings || !overlayLayers.value.grbBuildings) {
-    alert('Please enable both OSM Buildings and GRB Buildings layers first.')
+  // Check if OSM layer is visible
+  if (!overlayLayers.value.osmBuildings) {
+    alert('Please enable the OSM Buildings layer first.')
     return
   }
 
@@ -1222,13 +1227,13 @@ const calculateDifference = async () => {
     // Call backend API to calculate difference
     const response = await $fetch('/api/buildings/difference', {
       method: 'POST',
-      body: { bounds, matchMode: matchMode.value }
+      body: { bounds, matchMode: matchMode.value, dataSource }
     })
 
     const candidateGeoJSON = response as any
 
     if (!candidateGeoJSON || candidateGeoJSON.features.length === 0) {
-      alert('No buildings to show difference.\n\nAll GRB buildings have matching OSM geometries or the area has no data.')
+      alert(`No candidate buildings found.\n\nAll ${dataSource.toUpperCase()} buildings have matching OSM geometries or the area has no data.`)
 
       // Remove existing candidate buildings layer if present
       if (candidateBuildingsLayerRef.value) {

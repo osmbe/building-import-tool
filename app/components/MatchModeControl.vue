@@ -35,8 +35,8 @@
         </button>
       </div>
       <p class="text-[9px] text-muted-foreground mt-2 leading-relaxed">
-        <template v-if="matchMode === 'geometry'">Spatial — all GRB buildings in view</template>
-        <template v-else>Missing source:geometry:oidn tag</template>
+        <template v-if="matchMode === 'geometry'">Spatial — unmatched buildings in view (GRB or PICC)</template>
+        <template v-else>Missing source:geometry:oidn tag (GRB only)</template>
       </p>
     </div>
   </div>
