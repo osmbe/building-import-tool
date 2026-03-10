@@ -103,8 +103,11 @@ picc_last_update_file := picc_data_dir / ".last-update"
 
 # Urbis configuration (Brussels-Capital Region — GeoPackage, no API key needed)
 urbis_download_url := "https://urbisdownload.datastore.brussels/LastVersion/UrbISVector_31370_GPKG_04000_lastversion.zip"
-urbis_buildings_layer := "UrbAdm_BUILDING"
-urbis_addresses_layer := "UrbAdm_ADPOINT"
+urbis_buildings_layer := "Buildings"
+urbis_addresses_layer := "Addresses"
+urbis_placenames_layer := "PlaceNames"
+urbis_municipalities_layer := "Municipalities"
+urbis_postalzip_layer := "PostalZip"
 urbis_data_dir := "data/urbis"
 
 # PICC ArcGIS REST API configuration (for differential updates)
@@ -818,6 +821,7 @@ urbis-import:
     @echo ""
     @just _urbis-import-buildings
     @just _urbis-import-addresses
+    @just _urbis-import-lookups
     @just _urbis-create-matview
     @echo ""
     @just urbis-status
@@ -834,13 +838,13 @@ urbis-update: clean-urbis urbis-full
 urbis-status:
     @echo ""
     @echo "📊 Urbis (Brussels) Statistics:"
-    @{{psql_be2osm}} -c "SELECT 'Buildings' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('urbis.urbadm_building')) as size FROM urbis.urbadm_building UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('urbis.urbadm_adpoint')) FROM urbis.urbadm_adpoint UNION ALL SELECT 'Buildings with addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('urbis.buildings_with_addresses')) FROM urbis.buildings_with_addresses;" 2>/dev/null || echo "   (Urbis tables not yet created - run just urbis-import first)"
+    @{{psql_be2osm}} -c "SELECT 'Buildings' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('urbis.buildings')) as size FROM urbis.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('urbis.addresses')) FROM urbis.addresses UNION ALL SELECT 'Buildings with addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('urbis.buildings_with_addresses')) FROM urbis.buildings_with_addresses;" 2>/dev/null || echo "   (Urbis tables not yet created - run just urbis-import first)"
     @echo ""
 
 # Drop Urbis tables from database
 clean-urbis:
     @echo "🧹 Dropping Urbis tables from database..."
-    @{{psql_be2osm}} -c "DROP MATERIALIZED VIEW IF EXISTS urbis.buildings_with_addresses CASCADE; DROP TABLE IF EXISTS urbis.urbadm_building CASCADE; DROP TABLE IF EXISTS urbis.urbadm_adpoint CASCADE;" 2>/dev/null || echo "   Urbis tables not found"
+    @{{psql_be2osm}} -c "DROP MATERIALIZED VIEW IF EXISTS urbis.buildings_with_addresses CASCADE; DROP TABLE IF EXISTS urbis.buildings CASCADE; DROP TABLE IF EXISTS urbis.addresses CASCADE; DROP TABLE IF EXISTS urbis.placenames CASCADE; DROP TABLE IF EXISTS urbis.municipalities CASCADE; DROP TABLE IF EXISTS urbis.postalzip CASCADE;" 2>/dev/null || echo "   Urbis tables not found"
     @echo "✅ Urbis tables dropped"
 
 # Remove downloaded Urbis files
@@ -886,11 +890,12 @@ _urbis-import-buildings:
     ogr2ogr -f PostgreSQL \
         "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
         "$GPKG_FILE" "{{urbis_buildings_layer}}" \
-        -nln urbis.urbadm_building \
+        -nln urbis.buildings \
         -nlt PROMOTE_TO_MULTI \
         -overwrite \
         -lco GEOMETRY_NAME=geom \
         -lco SPATIAL_INDEX=NONE \
+        -lco FID=inspire_id \
         -gt 100000 --config PG_USE_COPY YES
 
     echo "✅ Buildings imported"
@@ -919,70 +924,129 @@ _urbis-import-addresses:
     ogr2ogr -f PostgreSQL \
         "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
         "$GPKG_FILE" "{{urbis_addresses_layer}}" \
-        -nln urbis.urbadm_adpoint \
+        -nln urbis.addresses \
         -overwrite \
         -lco GEOMETRY_NAME=geom \
         -lco SPATIAL_INDEX=NONE \
+        -lco FID=inspire_id \
         -gt 100000 --config PG_USE_COPY YES
 
     echo "✅ Addresses imported"
 
-# Create materialized view joining buildings with addresses (ID-based join)
+# Import Urbis lookup tables (PlaceNames, Municipalities, PostalZip)
+_urbis-import-lookups:
+    #!/usr/bin/env bash
+    set -e
+    echo "📥 Importing Urbis lookup tables..."
+
+    GPKG_FILE=$(find {{urbis_data_dir}} -name "*.gpkg" -type f 2>/dev/null | head -1)
+    PG_CONN="PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}"
+
+    echo "   Importing PlaceNames (street names)..."
+    ogr2ogr -f PostgreSQL "$PG_CONN" \
+        "$GPKG_FILE" "{{urbis_placenames_layer}}" \
+        -nln urbis.placenames \
+        -overwrite \
+        -lco SPATIAL_INDEX=NONE \
+        -lco FID=inspire_id \
+        -gt 100000 --config PG_USE_COPY YES
+
+    echo "   Importing Municipalities..."
+    ogr2ogr -f PostgreSQL "$PG_CONN" \
+        "$GPKG_FILE" "{{urbis_municipalities_layer}}" \
+        -nln urbis.municipalities \
+        -overwrite \
+        -lco GEOMETRY_NAME=geom \
+        -lco SPATIAL_INDEX=NONE \
+        -lco FID=inspire_id \
+        -gt 100000 --config PG_USE_COPY YES
+
+    echo "   Importing PostalZip..."
+    ogr2ogr -f PostgreSQL "$PG_CONN" \
+        "$GPKG_FILE" "{{urbis_postalzip_layer}}" \
+        -nln urbis.postalzip \
+        -overwrite \
+        -lco SPATIAL_INDEX=NONE \
+        -lco FID=inspire_id \
+        -gt 100000 --config PG_USE_COPY YES
+
+    echo "✅ Lookup tables imported"
+
+# Create materialized view joining buildings with addresses (ID-based join via lookup tables)
 _urbis-create-matview:
     #!/usr/bin/env bash
     set -e
     echo "🔄 Creating indexes on base tables..."
 
     {{psql_be2osm}} -c "
-        CREATE INDEX IF NOT EXISTS idx_urbis_buildings_geom ON urbis.urbadm_building USING GIST(geom);
-        CREATE INDEX IF NOT EXISTS idx_urbis_addresses_bu_id ON urbis.urbadm_adpoint(bu_id);
+        CREATE INDEX IF NOT EXISTS idx_urbis_buildings_geom ON urbis.buildings USING GIST(geom);
+        CREATE INDEX IF NOT EXISTS idx_urbis_addresses_bu_id ON urbis.addresses(bu_id);
+        CREATE INDEX IF NOT EXISTS idx_urbis_addresses_street_id ON urbis.addresses(street_id);
+        CREATE INDEX IF NOT EXISTS idx_urbis_addresses_municipality_id ON urbis.addresses(municipality_id);
+        CREATE INDEX IF NOT EXISTS idx_urbis_addresses_zipcode_id ON urbis.addresses(zipcode_id);
     "
 
     echo "🔄 Analyzing base tables..."
-    {{psql_be2osm}} -c "ANALYZE urbis.urbadm_building; ANALYZE urbis.urbadm_adpoint;"
+    {{psql_be2osm}} -c "
+        ANALYZE urbis.buildings;
+        ANALYZE urbis.addresses;
+        ANALYZE urbis.placenames;
+        ANALYZE urbis.municipalities;
+        ANALYZE urbis.postalzip;
+    "
 
-    echo "🔄 Creating materialized view (ID-based join)..."
+    echo "🔄 Creating materialized view (ID-based join via lookup tables)..."
 
     {{psql_be2osm}} -c "
         DROP MATERIALIZED VIEW IF EXISTS urbis.buildings_with_addresses CASCADE;
 
         CREATE MATERIALIZED VIEW urbis.buildings_with_addresses AS
-        WITH addr_per_building AS (
+        WITH addr_enriched AS (
             SELECT
                 a.bu_id,
+                a.policenum,
+                a.boxnumber,
+                COALESCE(pn.namefre, pn.namedut) AS street_name,
+                m.namefre AS municipality_name,
+                a.zipcode_id::text AS postcode
+            FROM urbis.addresses a
+            LEFT JOIN urbis.placenames pn ON a.street_id = pn.inspire_id
+            LEFT JOIN urbis.municipalities m ON a.municipality_id = m.inspire_id
+        ),
+        addr_per_building AS (
+            SELECT
+                ae.bu_id,
                 COUNT(*) AS address_count,
                 array_to_string(ARRAY_AGG(DISTINCT (
-                    COALESCE(a.strnamefre, a.strnamedut) || ' ' || a.policenum ||
-                    CASE WHEN a.boxnumber IS NOT NULL AND a.boxnumber != ''
-                         THEN '/' || a.boxnumber ELSE '' END
+                    ae.street_name || ' ' || ae.policenum ||
+                    CASE WHEN ae.boxnumber IS NOT NULL AND ae.boxnumber != ''
+                         THEN '/' || ae.boxnumber ELSE '' END
                 ) ORDER BY (
-                    COALESCE(a.strnamefre, a.strnamedut) || ' ' || a.policenum ||
-                    CASE WHEN a.boxnumber IS NOT NULL AND a.boxnumber != ''
-                         THEN '/' || a.boxnumber ELSE '' END
-                )) FILTER (WHERE COALESCE(a.strnamefre, a.strnamedut) IS NOT NULL), '; ') AS addresses,
-                array_to_string(ARRAY_AGG(DISTINCT COALESCE(a.strnamefre, a.strnamedut)
-                    ORDER BY COALESCE(a.strnamefre, a.strnamedut))
-                    FILTER (WHERE COALESCE(a.strnamefre, a.strnamedut) IS NOT NULL), ', ') AS street_names,
-                array_to_string(ARRAY_AGG(DISTINCT a.postcode ORDER BY a.postcode)
-                    FILTER (WHERE a.postcode IS NOT NULL), ', ') AS postcodes,
-                array_to_string(ARRAY_AGG(DISTINCT COALESCE(a.munnamefre, a.munnamedut)
-                    ORDER BY COALESCE(a.munnamefre, a.munnamedut))
-                    FILTER (WHERE COALESCE(a.munnamefre, a.munnamedut) IS NOT NULL), ', ') AS municipalities
-            FROM urbis.urbadm_adpoint a
-            GROUP BY a.bu_id
+                    ae.street_name || ' ' || ae.policenum ||
+                    CASE WHEN ae.boxnumber IS NOT NULL AND ae.boxnumber != ''
+                         THEN '/' || ae.boxnumber ELSE '' END
+                )) FILTER (WHERE ae.street_name IS NOT NULL), '; ') AS addresses,
+                array_to_string(ARRAY_AGG(DISTINCT ae.street_name ORDER BY ae.street_name)
+                    FILTER (WHERE ae.street_name IS NOT NULL), ', ') AS street_names,
+                array_to_string(ARRAY_AGG(DISTINCT ae.postcode ORDER BY ae.postcode)
+                    FILTER (WHERE ae.postcode IS NOT NULL), ', ') AS postcodes,
+                array_to_string(ARRAY_AGG(DISTINCT ae.municipality_name ORDER BY ae.municipality_name)
+                    FILTER (WHERE ae.municipality_name IS NOT NULL), ', ') AS municipalities
+            FROM addr_enriched ae
+            GROUP BY ae.bu_id
         )
         SELECT
-            b.fid::BIGINT AS building_id,
+            b.inspire_id::BIGINT AS building_id,
             b.inspire_id,
             b.block_id,
-            ST_Area(ST_SetSRID(b.geom, 31370))::REAL AS area_m2,
-            ST_Transform(ST_SetSRID(b.geom, 31370), 3857)::geometry(Geometry, 3857) AS geom,
+            ST_Area(b.geom)::REAL AS area_m2,
+            ST_Transform(b.geom, 3857)::geometry(Geometry, 3857) AS geom,
             COALESCE(apb.addresses, '') AS addresses,
             COALESCE(apb.street_names, '') AS street_names,
             COALESCE(apb.postcodes, '') AS postcodes,
             COALESCE(apb.municipalities, '') AS municipalities,
             COALESCE(apb.address_count, 0) AS address_count
-        FROM urbis.urbadm_building b
+        FROM urbis.buildings b
         LEFT JOIN addr_per_building apb ON b.inspire_id = apb.bu_id;
     "
 

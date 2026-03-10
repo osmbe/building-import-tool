@@ -26,8 +26,11 @@ ${COMPOSE} run --rm processing bash -c '
     export PGPASSWORD="${POSTGRES_PASSWORD}"
     psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d be2osm -c "
         DROP MATERIALIZED VIEW IF EXISTS urbis.buildings_with_addresses CASCADE;
-        DROP TABLE IF EXISTS urbis.urbadm_building CASCADE;
-        DROP TABLE IF EXISTS urbis.urbadm_adpoint CASCADE;
+        DROP TABLE IF EXISTS urbis.buildings CASCADE;
+        DROP TABLE IF EXISTS urbis.addresses CASCADE;
+        DROP TABLE IF EXISTS urbis.placenames CASCADE;
+        DROP TABLE IF EXISTS urbis.municipalities CASCADE;
+        DROP TABLE IF EXISTS urbis.postalzip CASCADE;
     "
 '
 

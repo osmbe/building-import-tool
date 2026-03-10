@@ -26,14 +26,17 @@ export PGPASSWORD="${POSTGRES_PASSWORD}"
 
 # Drop existing tables (full dump recreates them)
 ${PSQL} -c "DROP MATERIALIZED VIEW IF EXISTS urbis.buildings_with_addresses CASCADE;" || true
-${PSQL} -c "DROP TABLE IF EXISTS urbis.urbadm_building CASCADE;" || true
-${PSQL} -c "DROP TABLE IF EXISTS urbis.urbadm_adpoint CASCADE;" || true
+${PSQL} -c "DROP TABLE IF EXISTS urbis.buildings CASCADE;" || true
+${PSQL} -c "DROP TABLE IF EXISTS urbis.addresses CASCADE;" || true
+${PSQL} -c "DROP TABLE IF EXISTS urbis.placenames CASCADE;" || true
+${PSQL} -c "DROP TABLE IF EXISTS urbis.municipalities CASCADE;" || true
+${PSQL} -c "DROP TABLE IF EXISTS urbis.postalzip CASCADE;" || true
 
 # Restore full dump (includes CREATE TABLE statements)
 gunzip -c "${DUMP_FILE}" | ${PSQL}
 
 # Update statistics
-${PSQL} -c "ANALYZE urbis.urbadm_building;" || true
-${PSQL} -c "ANALYZE urbis.urbadm_adpoint;" || true
+${PSQL} -c "ANALYZE urbis.buildings;" || true
+${PSQL} -c "ANALYZE urbis.addresses;" || true
 
 echo "[restore-urbis] Done."
