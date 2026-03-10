@@ -19,18 +19,18 @@ export default defineEventHandler(async (event) => {
       }))
     }
 
-    if (dataSource !== 'grb' && dataSource !== 'picc') {
+    if (dataSource !== 'grb' && dataSource !== 'picc' && dataSource !== 'urbis') {
       return sendError(event, createError({
         statusCode: 400,
-        statusMessage: 'Invalid dataSource. Expected "grb" or "picc"'
+        statusMessage: 'Invalid dataSource. Expected "grb", "picc", or "urbis"'
       }))
     }
 
-    // Source tag matching only works for GRB (PICC has no source:geometry:oidn tags in OSM)
-    if (matchMode === 'source' && dataSource === 'picc') {
+    // Source tag matching only works for GRB (PICC/Urbis have no source:geometry:oidn tags in OSM)
+    if (matchMode === 'source' && dataSource !== 'grb') {
       return sendError(event, createError({
         statusCode: 400,
-        statusMessage: 'Source tag matching is only available for GRB data. Use geometry mode for PICC.'
+        statusMessage: 'Source tag matching is only available for GRB data. Use geometry mode for PICC/Urbis.'
       }))
     }
 
@@ -142,6 +142,64 @@ export default defineEventHandler(async (event) => {
                   / NULLIF(LEAST(ST_Area(g.geom), ST_Area(o.geom)), 0) >= 0.5
           )
           ORDER BY g.oidn
+        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm])
+      }
+
+    } else if (dataSource === 'urbis') {
+      // Geometry matching for Urbis: uses urbis.buildings_with_addresses matview (EPSG:3857)
+      // Two-step approach: fetch OSM geometries directly from osmbe to avoid FDW overhead
+      const osmResult = await queryOsm(`
+        SELECT
+          ST_AsGeoJSON(ST_Collect(geom_mercator)) AS geom_collection,
+          COUNT(*) AS total_osm
+        FROM osm.osm_buildings
+        WHERE geom_mercator && ST_MakeEnvelope($1, $2, $3, $4, 3857)
+          AND ST_Intersects(geom_mercator, ST_MakeEnvelope($1, $2, $3, $4, 3857))
+      `, [minX, minY, maxX, maxY])
+
+      const osmGeomCollection = osmResult[0]?.geom_collection
+      totalOsm = parseInt(osmResult[0]?.total_osm || '0')
+
+      if (!osmGeomCollection) {
+        rows = await queryGrb(`
+          SELECT
+            ST_AsGeoJSON(ST_Transform(b.geom, 4326)) AS geometry,
+            b.building_id,
+            b.inspire_id,
+            COUNT(*) OVER() AS total_grb,
+            0::bigint AS total_osm
+          FROM urbis.buildings_with_addresses b
+          WHERE b.geom && ST_MakeEnvelope($1, $2, $3, $4, 3857)
+            AND ST_Intersects(b.geom, ST_MakeEnvelope($1, $2, $3, $4, 3857))
+          ORDER BY b.building_id
+        `, [minX, minY, maxX, maxY])
+      } else {
+        rows = await queryGrb(`
+          WITH
+            osm_geoms AS (
+              SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON($5), 3857))).geom AS geom
+            ),
+            urbis_in_extent AS (
+              SELECT b.geom, b.building_id, b.inspire_id
+              FROM urbis.buildings_with_addresses b
+              WHERE b.geom && ST_MakeEnvelope($1, $2, $3, $4, 3857)
+                AND ST_Intersects(b.geom, ST_MakeEnvelope($1, $2, $3, $4, 3857))
+            )
+          SELECT
+            ST_AsGeoJSON(ST_Transform(u.geom, 4326)) AS geometry,
+            u.building_id,
+            u.inspire_id,
+            (SELECT COUNT(*) FROM urbis_in_extent)::bigint AS total_grb,
+            $6::bigint AS total_osm
+          FROM urbis_in_extent u
+          WHERE NOT EXISTS (
+            SELECT 1 FROM osm_geoms o
+            WHERE u.geom && o.geom
+              AND ST_Intersects(u.geom, o.geom)
+              AND ST_Area(ST_Intersection(u.geom, o.geom))
+                  / NULLIF(LEAST(ST_Area(u.geom), ST_Area(o.geom)), 0) >= 0.5
+          )
+          ORDER BY u.building_id
         `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm])
       }
 

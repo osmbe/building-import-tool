@@ -608,10 +608,11 @@ const canCalculateDifference = computed(() => {
   if (currentZoom.value < 16) return false
   if (!overlayLayers.value.osmBuildings) return false
 
-  // At least one source layer (GRB or PICC) must be loaded and visible
+  // At least one source layer (GRB, PICC, or Urbis) must be loaded and visible
   const grbReady = grbBuildingsLayerRef.value && overlayLayers.value.grbBuildings
   const piccReady = piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings
-  if (!grbReady && !piccReady) return false
+  const urbisReady = urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings
+  if (!grbReady && !piccReady && !urbisReady) return false
 
   return true
 })
@@ -1428,14 +1429,15 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
 const calculateDifference = async () => {
   if (!map.value) return
 
-  // Determine which data source is active (GRB or PICC)
+  // Determine which data source is active (GRB, PICC, or Urbis)
   const grbActive = overlayLayers.value.grbBuildings && grbBuildingsLayerRef.value
   const piccActive = overlayLayers.value.piccBuildings && piccBuildingsLayerRef.value
-  const dataSource = piccActive ? 'picc' : 'grb'
+  const urbisActive = overlayLayers.value.urbisBuildings && urbisBuildingsLayerRef.value
+  const dataSource = urbisActive ? 'urbis' : piccActive ? 'picc' : 'grb'
 
   // Check if OSM layer and at least one source layer are loaded
-  if (!osmBuildingsLayerRef.value || (!grbActive && !piccActive)) {
-    toast.warning('Layers required', 'Please enable OSM Buildings and either GRB or PICC buildings layer first.')
+  if (!osmBuildingsLayerRef.value || (!grbActive && !piccActive && !urbisActive)) {
+    toast.warning('Layers required', 'Please enable OSM Buildings and a buildings layer (GRB, PICC, or Urbis) first.')
     return
   }
 
