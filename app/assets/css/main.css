@@ -38,6 +38,8 @@
   --layer-grb-light:  30 80% 62%;    /* lighter orange for hover */
   --layer-picc:       300 60% 50%;   /* magenta */
   --layer-picc-light: 300 55% 62%;   /* lighter magenta for hover */
+  --layer-urbis:      170 65% 45%;   /* teal-cyan */
+  --layer-urbis-light: 170 55% 57%;  /* lighter teal for hover */
   --layer-candidate:  165 65% 43%;   /* emerald teal */
 }
 
@@ -205,6 +207,19 @@
   background: hsl(var(--layer-picc));
   box-shadow: 0 0 4px hsl(var(--layer-picc) / 0.6);
 }
+/* Urbis variant — teal-cyan */
+.feature-pill--urbis {
+  color: hsl(var(--layer-urbis));
+  background: hsl(var(--layer-urbis) / 0.06);
+}
+.feature-pill--urbis.feature-pill--active {
+  background: hsl(var(--layer-urbis) / 0.12);
+  border-color: hsl(var(--layer-urbis) / 0.25);
+}
+.feature-pill--urbis .feature-pill__dot {
+  background: hsl(var(--layer-urbis));
+  box-shadow: 0 0 4px hsl(var(--layer-urbis) / 0.6);
+}
 /* OSM variant — cobalt blue */
 .feature-pill--osm {
   color: hsl(var(--layer-osm));
@@ -234,6 +249,11 @@
   color: hsl(var(--layer-picc));
   background: hsl(var(--layer-picc) / 0.10);
   border-color: hsl(var(--layer-picc) / 0.20);
+}
+.layer-badge-urbis {
+  color: hsl(var(--layer-urbis));
+  background: hsl(var(--layer-urbis) / 0.10);
+  border-color: hsl(var(--layer-urbis) / 0.20);
 }
 
 /* ── Animations ── */

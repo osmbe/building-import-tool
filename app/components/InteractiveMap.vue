@@ -116,6 +116,13 @@
                 </div>
                 <Switch v-model:checked="overlayLayers.piccBuildings" @update:checked="togglePiccBuildings" />
               </div>
+              <div class="layer-row">
+                <div class="flex items-center gap-2">
+                  <span class="layer-dot" style="color: hsl(var(--layer-urbis)); background: currentColor;"></span>
+                  <span class="text-xs text-foreground/85">Urbis Buildings</span>
+                </div>
+                <Switch v-model:checked="overlayLayers.urbisBuildings" @update:checked="toggleUrbisBuildings" />
+              </div>
             </div>
             <div class="mt-3 pt-3 border-t border-white/[0.05] space-y-1">
               <div class="flex items-center justify-between text-[10px]">
@@ -198,14 +205,15 @@
                 :class="{
                   'feature-pill--grb': feat._layer_type === 'grb',
                   'feature-pill--picc': feat._layer_type === 'picc',
+                  'feature-pill--urbis': feat._layer_type === 'urbis',
                   'feature-pill--osm': feat._layer_type === 'osm',
                   'feature-pill--active': idx === activeFeatureIndex
                 }"
                 @click="activeFeatureIndex = idx"
               >
                 <span class="feature-pill__dot" />
-                <span>{{ feat._layer_type === 'grb' ? 'GRB' : feat._layer_type === 'picc' ? 'PICC' : 'OSM' }}</span>
-                <span class="opacity-50 font-mono">{{ feat._layer_type === 'grb' ? (feat.gebouw_id || feat.id) : feat._layer_type === 'picc' ? feat.objectid : feat.osm_id }}</span>
+                <span>{{ feat._layer_type === 'grb' ? 'GRB' : feat._layer_type === 'picc' ? 'PICC' : feat._layer_type === 'urbis' ? 'Urbis' : 'OSM' }}</span>
+                <span class="opacity-50 font-mono">{{ feat._layer_type === 'grb' ? (feat.gebouw_id || feat.id) : feat._layer_type === 'picc' ? feat.objectid : feat._layer_type === 'urbis' ? feat.building_id : feat.osm_id }}</span>
               </button>
               <!-- Close button -->
               <button v-if="isTooltipSticky" class="ml-auto text-muted-foreground hover:text-foreground transition-colors shrink-0" @click="closeTooltip">
@@ -358,6 +366,70 @@
                 </div>
               </template>
 
+              <!-- Urbis Building -->
+              <template v-else-if="currentFeature._layer_type === 'urbis'">
+                <div class="flex items-start justify-between mb-3">
+                  <div>
+                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-urbis border px-1.5 py-0.5 rounded mb-1.5">
+                      <Building2 class="h-2.5 w-2.5" />Urbis
+                    </div>
+                    <h2 class="text-sm font-semibold text-foreground">Building</h2>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ currentFeature.building_id }}</div>
+                  </div>
+                  <button v-if="isTooltipSticky && activeFeatures.length <= 1" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="closeTooltip">
+                    <X class="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <!-- Addresses -->
+                <div v-if="currentFeature.addresses" class="mb-3">
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Addresses</div>
+                  <div class="space-y-0.5 text-xs">
+                    <div v-for="(addr, idx) in parseSemicolonList(currentFeature.addresses)" :key="idx" class="text-foreground font-medium">
+                      {{ addr }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Location (when no detailed addresses) -->
+                <div v-if="!currentFeature.addresses && (currentFeature.street_names || currentFeature.postcodes || currentFeature.municipalities)" class="mb-3">
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Location</div>
+                  <div class="space-y-1 text-xs">
+                    <div v-if="currentFeature.street_names" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Street</span>
+                      <span class="text-foreground font-medium">{{ parseSemicolonList(currentFeature.street_names).join(', ') }}</span>
+                    </div>
+                    <div v-if="currentFeature.postcodes" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Postcode</span>
+                      <span class="text-foreground font-medium">{{ parseSemicolonList(currentFeature.postcodes).join(', ') }}</span>
+                    </div>
+                    <div v-if="currentFeature.municipalities" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Municipality</span>
+                      <span class="text-foreground font-medium">{{ parseSemicolonList(currentFeature.municipalities).join(', ') }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Details -->
+                <div v-if="currentFeature.area_m2 || currentFeature.inspire_id">
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Details</div>
+                  <div class="space-y-1 text-xs">
+                    <div v-if="currentFeature.area_m2" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Area</span>
+                      <span class="text-foreground font-medium font-mono">{{ formatArea(currentFeature.area_m2) }}</span>
+                    </div>
+                    <div v-if="currentFeature.inspire_id" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">INSPIRE</span>
+                      <span class="text-foreground font-medium font-mono text-[10px]">{{ currentFeature.inspire_id }}</span>
+                    </div>
+                    <div v-if="currentFeature.block_id" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Block</span>
+                      <span class="text-foreground font-medium font-mono">{{ currentFeature.block_id }}</span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
               <!-- OSM Building -->
               <template v-else>
                 <div class="flex items-start justify-between mb-3">
@@ -469,6 +541,9 @@ const isLoadingGRB = ref(false)
 // PICC Buildings layer state
 const piccBuildingsLayerRef = ref<any>(null)
 
+// Urbis Buildings layer state
+const urbisBuildingsLayerRef = ref<any>(null)
+
 // Candidate Buildings layer state
 const candidateBuildingsLayerRef = ref<any>(null)
 const candidateBuildingCount = ref(0)
@@ -503,6 +578,7 @@ const overlayLayers = ref({
   osmBuildings: true,
   grbBuildings: false,
   piccBuildings: false,
+  urbisBuildings: false,
   conflicts: true,
   addresses: false,
   boundaries: false
@@ -634,6 +710,9 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
   }
   if (piccBuildingsLayerRef.value) {
     piccBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.piccBuildings)
+  }
+  if (urbisBuildingsLayerRef.value) {
+    urbisBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.urbisBuildings)
   }
 }
 
@@ -862,6 +941,71 @@ const handleLoadPICC = () => {
   }
 }
 
+// Handle Load Urbis Buildings using Vector Tiles from Martin
+const handleLoadUrbis = () => {
+  if (!map.value) {
+    console.error('Map not initialized')
+    return
+  }
+
+  try {
+    // Remove existing Urbis buildings layer if present
+    if (urbisBuildingsLayerRef.value) {
+      map.value.removeLayer(urbisBuildingsLayerRef.value)
+    }
+
+    // Create vector tile source for Urbis buildings
+    const urbisTileSource = new VectorTileSource({
+      format: new MVT(),
+      url: '/tiles/urbis/buildings/{z}/{x}/{y}',
+      minZoom: 10,
+      maxZoom: 18,
+      attributions: '© UrbIS Brussels'
+    })
+
+    // Style function for Urbis buildings
+    const urbisStyleFunction = (feature: any) => {
+      const isHovered = feature.get('hovered')
+
+      let fillColor = hslVar('--layer-urbis', 0.15)
+      let strokeColor = hslVar('--layer-urbis', 1)
+
+      if (isHovered) {
+        fillColor = hslVar('--layer-urbis', 0.3)
+        strokeColor = hslVar('--layer-urbis-light', 1)
+      }
+
+      return new Style({
+        fill: new Fill({
+          color: fillColor
+        }),
+        stroke: new Stroke({
+          color: strokeColor,
+          width: isHovered ? 3 : 2
+        })
+      })
+    }
+
+    // Create vector tile layer
+    const urbisTileLayer = new VectorTileLayer({
+      source: urbisTileSource,
+      style: urbisStyleFunction,
+      zIndex: 12,
+      properties: {
+        title: 'Urbis Buildings',
+        type: 'overlay'
+      }
+    })
+
+    // Add layer to map (hidden by default — user toggles it on)
+    urbisBuildingsLayerRef.value = urbisTileLayer
+    map.value.addLayer(urbisTileLayer)
+    urbisTileLayer.setVisible(false)
+  } catch (error) {
+    console.error('Failed to load Urbis buildings:', error)
+  }
+}
+
 
 // Layer toggle functions (kept for layer panel compatibility)
 
@@ -891,11 +1035,15 @@ const toggleGrbBuildings = (visible: boolean) => {
     grbBuildingsLayerRef.value.setVisible(shouldShow)
   }
 
-  // GRB and PICC are mutually exclusive
-  if (visible && overlayLayers.value.piccBuildings) {
-    overlayLayers.value.piccBuildings = false
-    if (piccBuildingsLayerRef.value) {
-      piccBuildingsLayerRef.value.setVisible(false)
+  // GRB, PICC, and Urbis are mutually exclusive
+  if (visible) {
+    if (overlayLayers.value.piccBuildings) {
+      overlayLayers.value.piccBuildings = false
+      if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
+    }
+    if (overlayLayers.value.urbisBuildings) {
+      overlayLayers.value.urbisBuildings = false
+      if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
     }
   }
 }
@@ -908,11 +1056,36 @@ const togglePiccBuildings = (visible: boolean) => {
     piccBuildingsLayerRef.value.setVisible(shouldShow)
   }
 
-  // GRB and PICC are mutually exclusive
-  if (visible && overlayLayers.value.grbBuildings) {
-    overlayLayers.value.grbBuildings = false
-    if (grbBuildingsLayerRef.value) {
-      grbBuildingsLayerRef.value.setVisible(false)
+  // GRB, PICC, and Urbis are mutually exclusive
+  if (visible) {
+    if (overlayLayers.value.grbBuildings) {
+      overlayLayers.value.grbBuildings = false
+      if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
+    }
+    if (overlayLayers.value.urbisBuildings) {
+      overlayLayers.value.urbisBuildings = false
+      if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
+    }
+  }
+}
+
+const toggleUrbisBuildings = (visible: boolean) => {
+  overlayLayers.value.urbisBuildings = visible
+  const shouldShow = visible && currentZoom.value >= 16
+
+  if (urbisBuildingsLayerRef.value) {
+    urbisBuildingsLayerRef.value.setVisible(shouldShow)
+  }
+
+  // GRB, PICC, and Urbis are mutually exclusive
+  if (visible) {
+    if (overlayLayers.value.grbBuildings) {
+      overlayLayers.value.grbBuildings = false
+      if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
+    }
+    if (overlayLayers.value.piccBuildings) {
+      overlayLayers.value.piccBuildings = false
+      if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
     }
   }
 }
@@ -1851,7 +2024,7 @@ const setupHoverInteraction = () => {
 
     const foundFeatures: any[] = []
     map.value.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === piccBuildingsLayerRef.value) {
+      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value) {
         // Get properties for clicked feature
         let properties: any
         try {
@@ -1882,6 +2055,7 @@ const setupHoverInteraction = () => {
         // Add layer type to distinguish OSM from GRB/PICC features
         properties._layer_type = layer === osmBuildingsLayerRef.value ? 'osm'
           : layer === piccBuildingsLayerRef.value ? 'picc'
+          : layer === urbisBuildingsLayerRef.value ? 'urbis'
           : 'grb'
 
         foundFeatures.push(properties)
@@ -1942,7 +2116,7 @@ const setupHoverInteraction = () => {
     let firstFeature: any = null
 
     map.value.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === piccBuildingsLayerRef.value) {
+      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value) {
         if (!firstFeature) {
           firstFeature = feature
         }
@@ -1978,6 +2152,7 @@ const setupHoverInteraction = () => {
         // Add layer type to distinguish OSM from GRB/PICC features
         properties._layer_type = layer === osmBuildingsLayerRef.value ? 'osm'
           : layer === piccBuildingsLayerRef.value ? 'picc'
+          : layer === urbisBuildingsLayerRef.value ? 'urbis'
           : 'grb'
 
         foundFeatures.push(properties)
@@ -2050,6 +2225,7 @@ onMounted(() => {
         handleLoadOSM()
         handleLoadGRB()
         handleLoadPICC()
+        handleLoadUrbis()
       }, 100)
     }, 50)
   })
