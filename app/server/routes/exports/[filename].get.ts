@@ -4,7 +4,7 @@ import { readFile } from 'fs/promises'
 export default defineEventHandler(async (event) => {
   const filename = getRouterParam(event, 'filename')
 
-  if (!filename || !filename.endsWith('.osm')) {
+  if (!filename || !/^[a-f0-9]+\.osm$/.test(filename)) {
     throw createError({
       statusCode: 400,
       message: 'Invalid filename'

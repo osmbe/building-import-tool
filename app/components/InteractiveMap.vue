@@ -671,11 +671,11 @@ const handleLoadOSM = () => {
       const isHovered = feature.get('hovered')
       const source = feature.get('source') || ''
 
-      let fillColor = hslVar('--layer-osm', 0.1)
+      let fillColor = hslVar('--layer-osm', 0.15)
       let strokeColor = hslVar('--layer-osm', 1)
 
       if (source.includes('Gbg')) {
-        fillColor = hslVar('--layer-osm-light', 0.1)
+        fillColor = hslVar('--layer-osm-light', 0.15)
         strokeColor = hslVar('--layer-osm-light', 1)
       }
 
@@ -750,22 +750,18 @@ const handleLoadGRB = () => {
     const grbStyleFunction = (feature: any) => {
       const isHovered = feature.get('hovered')
       const buildingType = feature.get('building_type')
-      const surfaceArea = feature.get('surface_area') || 0
 
-      let fillColor = hslVar('--layer-grb', 0.8)
+      let fillColor = hslVar('--layer-grb', 0.15)
       if (buildingType === 'shed') {
-        fillColor = hslVar('--layer-grb-dark', 0.8)
+        fillColor = hslVar('--layer-grb-dark', 0.15)
       }
 
-      let strokeColor = hslVar('--layer-grb', 0.1)
+      let strokeColor = hslVar('--layer-grb', 1)
 
       if (isHovered) {
-        fillColor = hslVar('--layer-grb', 0.9)
+        fillColor = hslVar('--layer-grb', 0.3)
         strokeColor = hslVar('--layer-grb-light', 1)
       }
-
-      // Stroke width based on surface area
-      const strokeWidth = surfaceArea > 200 ? 2 : 1.5
 
       return new Style({
         fill: new Fill({
@@ -773,8 +769,7 @@ const handleLoadGRB = () => {
         }),
         stroke: new Stroke({
           color: strokeColor,
-          width: isHovered ? 3 : strokeWidth,
-          lineDash: [5, 5]
+          width: isHovered ? 3 : 2
         })
       })
     }
@@ -828,11 +823,11 @@ const handleLoadPICC = () => {
     const piccStyleFunction = (feature: any) => {
       const isHovered = feature.get('hovered')
 
-      let fillColor = hslVar('--layer-picc', 0.8)
-      let strokeColor = hslVar('--layer-picc', 0.1)
+      let fillColor = hslVar('--layer-picc', 0.15)
+      let strokeColor = hslVar('--layer-picc', 1)
 
       if (isHovered) {
-        fillColor = hslVar('--layer-picc', 0.9)
+        fillColor = hslVar('--layer-picc', 0.3)
         strokeColor = hslVar('--layer-picc-light', 1)
       }
 
@@ -842,8 +837,7 @@ const handleLoadPICC = () => {
         }),
         stroke: new Stroke({
           color: strokeColor,
-          width: isHovered ? 3 : 1.5,
-          lineDash: [5, 5]
+          width: isHovered ? 3 : 2
         })
       })
     }
@@ -1358,7 +1352,7 @@ const calculateDifference = async () => {
     // Style function for candidate buildings
     const candidateStyleFunction = () => new Style({
       fill: new Fill({
-        color: hslVar('--layer-candidate', 0.4)
+        color: hslVar('--layer-candidate', 0.35)
       }),
       stroke: new Stroke({
         color: hslVar('--layer-candidate', 1),

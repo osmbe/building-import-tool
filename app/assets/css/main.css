@@ -31,14 +31,14 @@
 
 /* ── Layer color tokens ── */
 :root {
-  --layer-osm:        25 76% 31%;    /* brick brown */
-  --layer-osm-light:  25 60% 45%;    /* lighter brick for hover */
-  --layer-grb:        51 100% 50%;   /* Flemish yellow */
-  --layer-grb-dark:   51 100% 43%;   /* darker yellow for sheds */
-  --layer-grb-light:  51 100% 65%;   /* lighter yellow for hover */
-  --layer-picc:       0 84% 60%;     /* red */
-  --layer-picc-light: 0 84% 75%;     /* lighter red for hover */
-  --layer-candidate:  142 71% 45%;   /* green */
+  --layer-osm:        215 70% 50%;   /* cobalt blue */
+  --layer-osm-light:  215 60% 62%;   /* lighter blue for GRB-sourced */
+  --layer-grb:        30 85% 52%;    /* vivid orange */
+  --layer-grb-dark:   30 75% 42%;    /* darker orange for sheds */
+  --layer-grb-light:  30 80% 62%;    /* lighter orange for hover */
+  --layer-picc:       300 60% 50%;   /* magenta */
+  --layer-picc-light: 300 55% 62%;   /* lighter magenta for hover */
+  --layer-candidate:  165 65% 43%;   /* emerald teal */
 }
 
 @layer base {
@@ -179,7 +179,7 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
-/* GRB variant — Flemish yellow */
+/* GRB variant — vivid orange */
 .feature-pill--grb {
   color: hsl(var(--layer-grb));
   background: hsl(var(--layer-grb) / 0.06);
@@ -192,7 +192,7 @@
   background: hsl(var(--layer-grb));
   box-shadow: 0 0 4px hsl(var(--layer-grb) / 0.6);
 }
-/* PICC variant — red */
+/* PICC variant — magenta */
 .feature-pill--picc {
   color: hsl(var(--layer-picc));
   background: hsl(var(--layer-picc) / 0.06);
@@ -205,7 +205,7 @@
   background: hsl(var(--layer-picc));
   box-shadow: 0 0 4px hsl(var(--layer-picc) / 0.6);
 }
-/* OSM variant — brick brown */
+/* OSM variant — cobalt blue */
 .feature-pill--osm {
   color: hsl(var(--layer-osm));
   background: hsl(var(--layer-osm) / 0.06);

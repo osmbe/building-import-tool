@@ -1,4 +1,5 @@
 import type { Feature, FeatureCollection } from 'geojson'
+import { geojsonToOsm } from '~/utils/geojsonToOsm'
 
 export const useJosmExport = () => {
   const josmBaseUrl = ref('http://127.0.0.1:8111')
@@ -139,23 +140,15 @@ export const useJosmExport = () => {
 
   /**
    * Convert GeoJSON to OSM-XML
-   * Uses geojsontoosm library
    */
-  const convertToOsmXml = async (geojson: FeatureCollection): Promise<string> => {
-    try {
-      // Import geojsontoosm dynamically (client-side only)
-      const { default: geojsonToOsm } = await import('geojsontoosm')
-      const osmXml = geojsonToOsm(geojson)
+  const convertToOsmXml = (geojson: FeatureCollection): string => {
+    const osmXml = geojsonToOsm(geojson)
 
-      if (!osmXml || osmXml.length === 0) {
-        throw new Error('geojsontoosm generated empty output')
-      }
-
-      return osmXml
-    } catch (error: any) {
-      console.error('Error converting GeoJSON to OSM-XML:', error)
-      throw new Error(`Failed to convert to OSM-XML: ${error.message}`, { cause: error })
+    if (!osmXml || osmXml.length === 0) {
+      throw new Error('geojsonToOsm generated empty output')
     }
+
+    return osmXml
   }
 
   /**
@@ -199,23 +192,27 @@ export const useJosmExport = () => {
 
     // Optional: Simplify geometry using mapshaper
     if (simplify && simplifyPercent < 100) {
-      const mapshaper = await import('mapshaper')
-      const dataset = mapshaper.internal.importGeoJSON(geojson, {})
-      const simplified = mapshaper.simplify(dataset, {
-        percentage: simplifyPercent / 100,
-        method: 'dp',
-        keep_shapes: true
-      })
+      try {
+        const mapshaper = await import('mapshaper')
+        const dataset = mapshaper.internal.importGeoJSON(geojson, {})
+        const simplified = mapshaper.simplify(dataset, {
+          percentage: simplifyPercent / 100,
+          method: 'dp',
+          keep_shapes: true
+        })
 
-      const output = mapshaper.internal.exportFileContent(simplified, {
-        format: 'geojson'
-      })
+        const output = mapshaper.internal.exportFileContent(simplified, {
+          format: 'geojson'
+        })
 
-      geojson = JSON.parse(output[0].content)
+        geojson = JSON.parse(output[0].content)
+      } catch (err) {
+        console.warn('Mapshaper simplification failed, exporting without simplification:', err)
+      }
     }
 
     // Convert to OSM-XML
-    const osmXml = await convertToOsmXml(geojson)
+    const osmXml = convertToOsmXml(geojson)
 
     // Check if data is too large for direct transfer
     const testParams = new URLSearchParams({
