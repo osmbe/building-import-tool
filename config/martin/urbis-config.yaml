@@ -1,0 +1,42 @@
+# Martin configuration for Urbis Building Tiles (Brussels-Capital Region)
+# This file configures the Martin tile server to serve Urbis building data as vector tiles
+
+# Listen configuration
+listen_addresses: "0.0.0.0:3000"
+
+# CORS settings for web access
+cors: true
+
+# Performance settings
+cache_size_mb: 512
+
+# PostgreSQL connection for Urbis data
+postgres:
+  connection_string: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/be2osm"
+  pool_size: 20
+  max_feature_count: 10000
+  default_srid: 3857
+
+  # Table configuration - Building polygons with addresses (materialized view)
+  tables:
+    buildings:
+      schema: urbis
+      table: buildings_with_addresses
+      srid: 3857
+      geometry_column: geom
+      id_column: building_id
+      clip_geom: true
+      buffer: 64
+      extent: 4096
+      minzoom: 10
+      maxzoom: 22
+      properties:
+        building_id: building_id
+        inspire_id: inspire_id
+        block_id: block_id
+        area_m2: area_m2
+        addresses: addresses
+        street_names: street_names
+        postcodes: postcodes
+        municipalities: municipalities
+        address_count: address_count

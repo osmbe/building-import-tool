@@ -1,0 +1,80 @@
+name: Urbis Import
+
+on:
+  workflow_dispatch:
+
+env:
+  POSTGRES_USER: be2osm
+  POSTGRES_PASSWORD: be2osm
+  POSTGRES_DB: be2osm
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    name: Import Urbis (Brussels)
+
+    services:
+      postgres:
+        image: postgis/postgis:18-3.6
+        env:
+          POSTGRES_USER: be2osm
+          POSTGRES_PASSWORD: be2osm
+          POSTGRES_DB: be2osm
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL 18 client
+        run: |
+          sudo apt-get install -y curl ca-certificates
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18
+
+      - name: Initialize database
+        run: PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f postgres/06-setup-urbis.sql
+
+      - name: Build processing image
+        run: docker build -t processing ./processing
+
+      - name: Import Urbis data
+        run: |
+          docker run --network host \
+            -v ${{ github.workspace }}/processing:/work \
+            -e POSTGRES_HOST=localhost \
+            -e POSTGRES_PORT=5432 \
+            -e POSTGRES_USER=be2osm \
+            -e POSTGRES_PASSWORD=be2osm \
+            processing just urbis-full
+
+      - name: Create Urbis dump
+        run: |
+          PGPASSWORD=be2osm pg_dump -h localhost -U be2osm \
+            --no-owner --no-acl \
+            -n urbis \
+            be2osm | gzip > urbis.sql.gz
+          ls -lh urbis.sql.gz
+
+      - name: Upload Urbis dump
+        uses: actions/upload-artifact@v4
+        with:
+          name: urbis-dump
+          path: urbis.sql.gz
+          retention-days: 7
+
+      - name: Notify server to restore dump
+        if: ${{ vars.WEBHOOK_URL != '' }}
+        run: |
+          curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/urbis-restore" \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
+            -d "{\"run_id\": \"${{ github.run_id }}\"}"

@@ -32,6 +32,12 @@
 		reverse_proxy picc-tiles:3000
 	}
 
+	# Martin Urbis Tiles
+	handle /tiles/urbis/* {
+		uri strip_prefix /tiles/urbis
+		reverse_proxy urbis-tiles:3000
+	}
+
 	# Webhook service
 	handle /webhook/* {
 		uri strip_prefix /webhook

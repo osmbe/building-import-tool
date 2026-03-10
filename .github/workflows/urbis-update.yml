@@ -1,0 +1,17 @@
+name: Urbis Update
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 1 * *'  # Monthly 1st at 5am UTC
+
+jobs:
+  trigger-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Urbis update on server
+        if: ${{ vars.WEBHOOK_URL != '' }}
+        run: |
+          curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/update-urbis" \
+            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}"
+          echo "Urbis update triggered on server"

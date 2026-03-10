@@ -12,6 +12,7 @@ RESTORE_ROUTES = {
     '/osm-restore': '/restore-osm.sh',
     '/grb-restore': '/restore-grb.sh',
     '/picc-restore': '/restore-picc.sh',
+    '/urbis-restore': '/restore-urbis.sh',
     '/nuxt-deploy': '/deploy-nuxt.sh',
 }
 
@@ -20,6 +21,7 @@ IMPORT_ROUTES = {
     '/import-osm': '/import-osm.sh',
     '/import-grb': '/import-grb.sh',
     '/import-picc': '/import-picc.sh',
+    '/import-urbis': '/import-urbis.sh',
 }
 
 # Routes that run a differential update (no run_id needed)
@@ -27,6 +29,7 @@ UPDATE_ROUTES = {
     '/update-osm': '/update-osm.sh',
     '/update-grb': '/update-grb.sh',
     '/update-picc': '/update-picc.sh',
+    '/update-urbis': '/update-urbis.sh',
 }
 
 

@@ -26,9 +26,12 @@ COPY import-picc.sh /import-picc.sh
 COPY update-osm.sh /update-osm.sh
 COPY update-grb.sh /update-grb.sh
 COPY update-picc.sh /update-picc.sh
-RUN chmod +x /restore-osm.sh /restore-grb.sh /restore-picc.sh /deploy-nuxt.sh \
-    /import-osm.sh /import-grb.sh /import-picc.sh \
-    /update-osm.sh /update-grb.sh /update-picc.sh
+COPY restore-urbis.sh /restore-urbis.sh
+COPY import-urbis.sh /import-urbis.sh
+COPY update-urbis.sh /update-urbis.sh
+RUN chmod +x /restore-osm.sh /restore-grb.sh /restore-picc.sh /restore-urbis.sh /deploy-nuxt.sh \
+    /import-osm.sh /import-grb.sh /import-picc.sh /import-urbis.sh \
+    /update-osm.sh /update-grb.sh /update-picc.sh /update-urbis.sh
 
 EXPOSE 9000
 CMD ["python", "/server.py"]
