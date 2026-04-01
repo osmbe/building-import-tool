@@ -65,7 +65,7 @@ services:
 
   # Martin Tile Server - GRB Data
   grb-tiles:
-    image: ghcr.io/maplibre/martin:1.3.1
+    image: ghcr.io/maplibre/martin:1.4.0
     container_name: be2osm-grb-tiles
     command: ["--config", "/config.yaml"]
     environment:
@@ -89,7 +89,7 @@ services:
 
   # Martin Tile Server - OSM Data
   osm-tiles:
-    image: ghcr.io/maplibre/martin:1.3.1
+    image: ghcr.io/maplibre/martin:1.4.0
     container_name: be2osm-osm-tiles
     command: ["--config", "/config.yaml"]
     environment:
@@ -113,7 +113,7 @@ services:
 
   # Martin Tile Server - PICC Data (Wallonia)
   picc-tiles:
-    image: ghcr.io/maplibre/martin:1.3.1
+    image: ghcr.io/maplibre/martin:1.4.0
     container_name: be2osm-picc-tiles
     command: ["--config", "/config.yaml"]
     environment:
@@ -137,7 +137,7 @@ services:
 
   # Martin Tile Server - Urbis Data (Brussels)
   urbis-tiles:
-    image: ghcr.io/maplibre/martin:1.3.1
+    image: ghcr.io/maplibre/martin:1.4.0
     container_name: be2osm-urbis-tiles
     command: ["--config", "/config.yaml"]
     environment:
