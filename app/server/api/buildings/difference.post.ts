@@ -68,6 +68,8 @@ export default defineEventHandler(async (event) => {
           ST_AsGeoJSON(bp.geom) AS geometry,
           bp.oidn,
           bp.gebouw_id,
+          bp.opndatum,
+          bp.lbltype,
           COUNT(*) OVER() AS total_grb,
           $5::bigint AS total_osm
         FROM grb.building_polygons bp, envelope_4326 e
@@ -105,6 +107,8 @@ export default defineEventHandler(async (event) => {
             ST_AsGeoJSON(bp.geom) AS geometry,
             bp.oidn,
             bp.gebouw_id,
+            bp.opndatum,
+            bp.lbltype,
             COUNT(*) OVER() AS total_grb,
             0::bigint AS total_osm
           FROM grb.building_polygons bp
@@ -122,7 +126,7 @@ export default defineEventHandler(async (event) => {
               SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON($5), 4326))).geom AS geom
             ),
             grb_in_extent AS (
-              SELECT bp.geom, bp.oidn, bp.gebouw_id
+              SELECT bp.geom, bp.oidn, bp.gebouw_id, bp.opndatum, bp.lbltype
               FROM grb.building_polygons bp, envelope_4326 e
               WHERE bp.geom && e.env
                 AND ST_Intersects(bp.geom, e.env)
@@ -131,6 +135,8 @@ export default defineEventHandler(async (event) => {
             ST_AsGeoJSON(g.geom) AS geometry,
             g.oidn,
             g.gebouw_id,
+            g.opndatum,
+            g.lbltype,
             (SELECT COUNT(*) FROM grb_in_extent)::bigint AS total_grb,
             $6::bigint AS total_osm
           FROM grb_in_extent g
