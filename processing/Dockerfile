@@ -36,12 +36,20 @@ RUN apt-get update && apt-get install -y \
     && ln -sf $(ls ${LIB_DIR}/libleveldb.so.1* 2>/dev/null | head -1) ${LIB_DIR}/libleveldb.so.1 || true
 
 # Install PostgreSQL 18 client (psql, pg_dump, pg_restore must match server version)
-RUN apt-get update && apt-get install -y curl ca-certificates \
-    && install -d /usr/share/postgresql-common/pgdg \
+# Use retries to tolerate transient Ubuntu mirror sync mismatches in CI.
+RUN install -d /usr/share/postgresql-common/pgdg \
     && curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc \
     && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
-    && apt-get update \
-    && apt-get install -y postgresql-client-18 \
+    && for attempt in 1 2 3 4 5; do \
+         apt-get update -o Acquire::Retries=5 && break; \
+         if [ "$attempt" = "5" ]; then exit 1; fi; \
+         sleep 15; \
+       done \
+    && for attempt in 1 2 3 4 5; do \
+         apt-get install -y --no-install-recommends postgresql-client-18 && break; \
+         if [ "$attempt" = "5" ]; then exit 1; fi; \
+         sleep 10; \
+       done \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Just task runner (pinned version from GitHub releases - more reliable than install.sh CDN)
@@ -90,8 +98,6 @@ RUN ARCH=$(uname -m) \
         && cd /tmp/imposm3 \
         && go build -o /usr/local/bin/imposm ./cmd/imposm \
         && rm -rf /tmp/imposm3 \
-        && apt-get purge -y git build-essential \
-        && apt-get autoremove -y \
         && rm -rf /var/lib/apt/lists/*; \
     fi
 
