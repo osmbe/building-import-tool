@@ -206,7 +206,7 @@ CREATE TABLE IF NOT EXISTS grb.polygon_building_rel (
 
     -- Relationship fields (from RltGbgGebouw.dbf)
     oidn BIGINT NOT NULL,             -- Polygon OIDN (links to building_polygons.oidn)
-    gebouw_id BIGINT NOT NULL,        -- Building ID (the logical building this polygon belongs to)
+    gebouw_id BIGINT NOT NULL         -- Building ID (the logical building this polygon belongs to)
 
     -- Note: no UNIQUE constraint on oidn - DBF source may have duplicates;
     -- _grb-update-gebouw-ids handles this via DISTINCT in the UPDATE join

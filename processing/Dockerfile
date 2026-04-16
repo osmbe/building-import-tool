@@ -9,24 +9,30 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Brussels
 
-# Install base dependencies + PostgreSQL 18 client (must match server version for pg_dump)
-RUN apt-get update && apt-get install -y \
-    # Core tools
-    curl \
-    wget \
-    unzip \
-    jq \
-    ca-certificates \
-    gnupg \
-    lsb-release \
-    # GDAL/OGR tools (includes ogr2ogr)
-    gdal-bin \
-    libgdal-dev \
-    python3-gdal \
-    # LevelDB (required by imposm3)
-    libleveldb-dev \
-    # GEOS (required by imposm3)
-    libgeos-dev \
+# Install base dependencies + PostgreSQL client prerequisites
+RUN for attempt in 1 2 3 4 5; do \
+      apt-get update -o Acquire::Retries=5 \
+      && apt-get install -y --no-install-recommends \
+        # Core tools
+        curl \
+        wget \
+        unzip \
+        jq \
+        ca-certificates \
+        gnupg \
+        lsb-release \
+        # GDAL/OGR tools (includes ogr2ogr)
+        gdal-bin \
+        libgdal-dev \
+        python3-gdal \
+        # LevelDB (required by imposm3)
+        libleveldb-dev \
+        # GEOS (required by imposm3)
+        libgeos-dev \
+      && break; \
+      if [ "$attempt" = "5" ]; then exit 1; fi; \
+      sleep 15; \
+    done \
     && rm -rf /var/lib/apt/lists/* \
     # Symlink: imposm3 expects libleveldb.so.1, find actual library and link it
     && ARCH=$(uname -m) \
@@ -37,7 +43,14 @@ RUN apt-get update && apt-get install -y \
 
 # Install PostgreSQL 18 client (psql, pg_dump, pg_restore must match server version)
 # Use retries to tolerate transient Ubuntu mirror sync mismatches in CI.
-RUN install -d /usr/share/postgresql-common/pgdg \
+RUN for attempt in 1 2 3 4 5; do \
+         apt-get update -o Acquire::Retries=5 \
+         && apt-get install -y --no-install-recommends curl ca-certificates lsb-release \
+         && break; \
+         if [ "$attempt" = "5" ]; then exit 1; fi; \
+         sleep 10; \
+       done \
+    && install -d /usr/share/postgresql-common/pgdg \
     && curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc \
     && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && for attempt in 1 2 3 4 5; do \
