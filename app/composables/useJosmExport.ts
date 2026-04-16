@@ -43,19 +43,9 @@ export const useJosmExport = () => {
   const filterFeatureProperties = (feature: Feature): Feature => {
     const props = { ...feature.properties }
 
-    // Map GRB LBLTYPE to OSM building tag
-    if (props.lbltype) {
-      const buildingTypeMap: Record<string, string> = {
-        'hoofdgebouw': 'house',
-        'bijgebouw': 'shed',
-        'afdak': 'roof',
-        'ingezonken garagetoegang': 'garage1',
-        'verheven garagetoegang': 'garage2'
-      }
-      const lbltype = String(props.lbltype).toLowerCase()
-      if (buildingTypeMap[lbltype]) {
-        props.building = buildingTypeMap[lbltype]
-      }
+    // Export candidate polygons as buildings by default
+    if (!props.building) {
+      props.building = 'yes'
     }
 
     // Map GRB OIDN to source:geometry:oidn
