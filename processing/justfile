@@ -30,7 +30,7 @@ default:
     @echo "  osm-status         - Show OSM database statistics"
     @echo ""
     @echo "🏢 GRB Tasks (Flanders - local processing)"
-    @echo "  grb-order-all      - Order all GRB datasets from API"
+    @echo "  grb-order-all      - Order all GRB datasets (GBG/GBA/KNW/Addresses)"
     @echo "  grb-download-all   - Download all ready orders"
     @echo "  grb-import         - Import GRB data to database"
     @echo "  grb-full           - Complete workflow (order → download → import)"
@@ -204,6 +204,7 @@ grb-order-all:
     @echo ""
     @just _grb-order-gbg
     @just _grb-order-gba
+    @just _grb-order-knw
     @just _grb-order-addresses
     @echo ""
     @echo "✅ All orders created!"
@@ -220,12 +221,15 @@ grb-download-all:
     PID_GBG=$!
     just _grb-download-if-ready gba "$(just _grb-get-order-id gba)" &
     PID_GBA=$!
+    just _grb-download-if-ready knw "$(just _grb-get-order-id knw)" &
+    PID_KNW=$!
     just _grb-download-if-ready addresses "$(just _grb-get-order-id addresses)" &
     PID_ADDR=$!
     wait $PID_GBG; EXIT_GBG=$?
     wait $PID_GBA; EXIT_GBA=$?
+    wait $PID_KNW; EXIT_KNW=$?
     wait $PID_ADDR; EXIT_ADDR=$?
-    if [ $EXIT_GBG -ne 0 ] || [ $EXIT_GBA -ne 0 ] || [ $EXIT_ADDR -ne 0 ]; then
+    if [ $EXIT_GBG -ne 0 ] || [ $EXIT_GBA -ne 0 ] || [ $EXIT_KNW -ne 0 ] || [ $EXIT_ADDR -ne 0 ]; then
         echo "❌ One or more downloads failed" >&2
         exit 1
     fi
@@ -244,6 +248,7 @@ grb-import:
     @just _grb-import-gbg-gebouw-rel
     @just _grb-import-building-polygons
     @just _grb-import-gba
+    @just _grb-import-knw
     @just _grb-update-gebouw-ids
     @just _grb-import-addresses
     @just _grb-import-address-links
@@ -311,7 +316,7 @@ grb-update:
 grb-status:
     @echo "📈 GRB Database Statistics:"
     @echo ""
-    @{{psql_be2osm}} -c "SELECT 'Building polygons' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('grb.building_polygons')) as size FROM grb.building_polygons UNION ALL SELECT '  - with gebouw_id', COUNT(*)::text, '' FROM grb.building_polygons WHERE gebouw_id IS NOT NULL UNION ALL SELECT '  - with survey_date', COUNT(*)::text, '' FROM grb.building_polygons WHERE survey_date IS NOT NULL UNION ALL SELECT 'Polygon-building relations', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.polygon_building_rel')) FROM grb.polygon_building_rel UNION ALL SELECT 'Buildings (aggregated)', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.buildings')) FROM grb.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.addresses')) FROM grb.addresses UNION ALL SELECT 'Address-building links', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.address_building_links')) FROM grb.address_building_links;"
+    @{{psql_be2osm}} -c "SELECT 'Building polygons' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('grb.building_polygons')) as size FROM grb.building_polygons UNION ALL SELECT '  - with gebouw_id', COUNT(*)::text, '' FROM grb.building_polygons WHERE gebouw_id IS NOT NULL UNION ALL SELECT '  - with survey_date', COUNT(*)::text, '' FROM grb.building_polygons WHERE survey_date IS NOT NULL UNION ALL SELECT 'Kunstwerken (KNW)', COALESCE((SELECT n_live_tup::bigint::text FROM pg_stat_user_tables WHERE schemaname='grb' AND relname='kunstwerken'), '0'), COALESCE(pg_size_pretty(pg_total_relation_size(to_regclass('grb.kunstwerken'))), '') UNION ALL SELECT 'Polygon-building relations', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.polygon_building_rel')) FROM grb.polygon_building_rel UNION ALL SELECT 'Buildings (aggregated)', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.buildings')) FROM grb.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.addresses')) FROM grb.addresses UNION ALL SELECT 'Address-building links', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.address_building_links')) FROM grb.address_building_links;"
     @echo ""
 
 # Check status of all GRB orders
@@ -320,6 +325,7 @@ grb-status-orders:
     @echo ""
     @just _grb-check-order-status gbg "GBG (Buildings)"
     @just _grb-check-order-status gba "GBA"
+    @just _grb-check-order-status knw "KNW (Kunstwerken)"
     @just _grb-check-order-status addresses "Addresses"
 
 # ============================================================================
@@ -1135,7 +1141,7 @@ clean-grb-orders:
 # Clean GRB downloads
 clean-grb-downloads:
     @echo "🧹 Cleaning GRB downloaded files..."
-    rm -rf {{grb_data_dir}}/gbg {{grb_data_dir}}/gba {{grb_data_dir}}/address-links {{grb_data_dir}}/addresses
+    rm -rf {{grb_data_dir}}/gbg {{grb_data_dir}}/gba {{grb_data_dir}}/knw {{grb_data_dir}}/address-links {{grb_data_dir}}/addresses
     @echo "✅ Downloads cleaned"
 
 # Clean all GRB data (orders + downloads)
@@ -1148,6 +1154,7 @@ clean-grb-all:
 clean-grb-db:
     @echo "🧹 Cleaning GRB data from database..."
     @{{psql_be2osm}} -c "TRUNCATE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links CASCADE;"
+    @{{psql_be2osm}} -c "TRUNCATE grb.kunstwerken CASCADE;" 2>/dev/null || true
     @echo "✅ GRB database tables truncated"
 
 # Clean imported OSM data from database
@@ -1295,6 +1302,7 @@ grb-import-remote:
     echo ""
     echo "🧹 Clearing existing GRB data..."
     {{psql_be2osm}} -c "TRUNCATE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links CASCADE;" || true
+    {{psql_be2osm}} -c "TRUNCATE grb.kunstwerken CASCADE;" 2>/dev/null || true
 
     # Restore to local database
     echo ""
@@ -1305,6 +1313,7 @@ grb-import-remote:
     echo ""
     echo "📊 Updating database statistics..."
     {{psql_be2osm}} -c "ANALYZE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links;"
+    {{psql_be2osm}} -c "ANALYZE grb.kunstwerken;" 2>/dev/null || true
 
     # Cleanup
     rm -rf /tmp/grb-restore
@@ -1523,6 +1532,22 @@ _grb-order-gba:
     ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
     echo "✅ Order ID: $ORDER_ID"
 
+# GRB: Create order for KNW (Kunstwerken)
+_grb-order-knw:
+    #!/usr/bin/env bash
+    echo "📦 Ordering KNW (Kunstwerken)..."
+    PRODUCT_ID="${GRB_KNW_PRODUCT_ID:-6555}"
+    RESPONSE=$(curl -s -H "x-api-key: {{grb_api_key}}" -H "Content-Type: application/json" \
+        -X POST -d "{\"productId\": ${PRODUCT_ID}, \"format\": \"Shapefile\"}" {{grb_api_base}}/orders)
+    echo "$RESPONSE" > {{grb_orders_dir}}/knw_order.json
+    ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
+    if [ -z "$ORDER_ID" ] || [ "$ORDER_ID" = "null" ]; then
+        echo "❌ Failed to create KNW order using productId ${PRODUCT_ID}"
+        echo "$RESPONSE" | jq .
+        exit 1
+    fi
+    echo "✅ Order ID: $ORDER_ID (productId=${PRODUCT_ID})"
+
 # GRB: Create order for addresses
 _grb-order-addresses:
     #!/usr/bin/env bash
@@ -1661,7 +1686,7 @@ _grb-wait-for-orders:
     echo ""
     while true; do
         ALL_READY=true
-        for PRODUCT in gbg gba addresses; do
+        for PRODUCT in gbg gba knw addresses; do
             ORDER_ID=$(just _grb-get-order-id $PRODUCT)
             if [ -n "$ORDER_ID" ] && [ "$ORDER_ID" != "null" ]; then
                 STATUS=$(curl -s --retry 5 --retry-all-errors --retry-delay 10 \
@@ -1818,6 +1843,69 @@ _grb-import-gba:
     echo "✅ GBA building attachments imported"
     echo "   🗑️  Cleaning up gba data..."
     rm -rf {{grb_data_dir}}/gba
+
+# GRB: Import KNW (Kunstwerken) into dedicated kunstwerken table
+_grb-import-knw:
+    #!/usr/bin/env bash
+    FIRST=true
+    FOUND=false
+
+    for KNW_FILE in $(find {{grb_data_dir}} -path "*/knw/*" -name "Knw*.shp" -type f 2>/dev/null | sort); do
+      if [ ! -f "$KNW_FILE" ]; then
+        continue
+      fi
+
+      FOUND=true
+      echo "📊 Importing KNW kunstwerken..."
+      echo "   Found: $KNW_FILE"
+
+      if [ "$FIRST" = true ]; then
+        ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+            "$KNW_FILE" -nln grb.kunstwerken_raw -overwrite -t_srs EPSG:4326 \
+            -gt 100000 --config PG_USE_COPY YES \
+            -lco GEOMETRY_NAME=geom -lco SPATIAL_INDEX=OFF
+        FIRST=false
+      else
+        ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+            "$KNW_FILE" -nln grb.kunstwerken_raw -append -t_srs EPSG:4326 \
+            -gt 100000 --config PG_USE_COPY YES
+      fi
+    done
+
+    if [ "$FOUND" = false ]; then
+        echo "⚠️  Knw*.shp not found — skipping KNW import"
+        exit 0
+    fi
+
+    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c "
+        INSERT INTO grb.kunstwerken (oidn, uidn, type_code, type_label, area_m2, length_m, version, origin_code, origin_label, opndatum_raw, entity, geom)
+        SELECT
+            oidn::bigint,
+            uidn::bigint,
+            type::integer as type_code,
+            lbltype as type_label,
+            oppervl::real as area_m2,
+            lengte::real as length_m,
+            versie::integer as version,
+            bgninv::integer as origin_code,
+            lblbgninv as origin_label,
+            opndatum as opndatum_raw,
+            'Knw'::varchar(8) as entity,
+            geom
+        FROM grb.kunstwerken_raw
+        ON CONFLICT (oidn) DO NOTHING;
+        DROP TABLE IF EXISTS grb.kunstwerken_raw;
+    "
+
+    echo "   Converting survey_date..."
+    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+        "UPDATE grb.kunstwerken SET survey_date = opndatum_raw::date WHERE opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\\d{4}-\\d{2}-\\d{2}$';"
+    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+        "UPDATE grb.kunstwerken SET survey_date = TO_DATE(opndatum_raw, 'DD/MM/YYYY') WHERE opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\\d{2}/\\d{2}/\\d{4}$';"
+
+    echo "✅ KNW kunstwerken imported"
+    echo "   🗑️  Cleaning up knw data..."
+    rm -rf {{grb_data_dir}}/knw
 
 # GRB: Update gebouw_id in building_polygons from relationship table
 _grb-update-gebouw-ids:

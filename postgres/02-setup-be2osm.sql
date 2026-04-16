@@ -67,6 +67,48 @@ CREATE TABLE IF NOT EXISTS grb.building_polygons (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Kunstwerken Polygons (KNW - Structures)
+CREATE TABLE IF NOT EXISTS grb.kunstwerken (
+    id BIGSERIAL PRIMARY KEY,
+
+    -- GRB identifiers
+    oidn BIGINT UNIQUE NOT NULL,
+    uidn BIGINT,
+
+    -- Type information
+    type_code INTEGER,
+    type_label VARCHAR(96),
+
+    -- Measurements
+    area_m2 REAL,
+    length_m REAL,
+
+    -- Versioning
+    version INTEGER,
+    survey_date DATE,
+
+    -- Origin/inventory
+    origin_code INTEGER,
+    origin_label VARCHAR(64),
+
+    -- Temporary field for date conversion during import
+    opndatum_raw VARCHAR(10),
+
+    -- Source entity (always Knw)
+    entity VARCHAR(8) DEFAULT 'Knw',
+
+    -- Geometry (WGS84 - EPSG:4326)
+    geom GEOMETRY(Polygon, 4326) NOT NULL,
+
+    -- Web Mercator for tile serving (EPSG:3857)
+    geom_mercator GEOMETRY(Polygon, 3857),
+
+    -- Import tracking
+    source_file VARCHAR(255),
+    imported_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Buildings (Aggregated from building_polygons)
 -- Represents logical buildings (one building may have multiple polygons)
 CREATE TABLE IF NOT EXISTS grb.buildings (
@@ -185,6 +227,16 @@ CREATE INDEX IF NOT EXISTS idx_building_polygons_imported ON grb.building_polygo
 CREATE INDEX IF NOT EXISTS idx_building_polygons_geom ON grb.building_polygons USING GIST(geom);
 CREATE INDEX IF NOT EXISTS idx_building_polygons_geom_mercator ON grb.building_polygons USING GIST(geom_mercator) WHERE geom_mercator IS NOT NULL;
 
+-- Kunstwerken indexes
+CREATE INDEX IF NOT EXISTS idx_kunstwerken_oidn ON grb.kunstwerken(oidn);
+CREATE INDEX IF NOT EXISTS idx_kunstwerken_type_code ON grb.kunstwerken(type_code);
+CREATE INDEX IF NOT EXISTS idx_kunstwerken_type_label ON grb.kunstwerken(type_label);
+CREATE INDEX IF NOT EXISTS idx_kunstwerken_survey_date ON grb.kunstwerken(survey_date);
+CREATE INDEX IF NOT EXISTS idx_kunstwerken_entity ON grb.kunstwerken(entity);
+CREATE INDEX IF NOT EXISTS idx_kunstwerken_imported ON grb.kunstwerken(imported_at);
+CREATE INDEX IF NOT EXISTS idx_kunstwerken_geom ON grb.kunstwerken USING GIST(geom);
+CREATE INDEX IF NOT EXISTS idx_kunstwerken_geom_mercator ON grb.kunstwerken USING GIST(geom_mercator) WHERE geom_mercator IS NOT NULL;
+
 -- Buildings (aggregated) indexes
 CREATE INDEX IF NOT EXISTS idx_buildings_type_label ON grb.buildings(type_label);
 CREATE INDEX IF NOT EXISTS idx_buildings_polygon_count ON grb.buildings(polygon_count);
@@ -257,6 +309,29 @@ CREATE TRIGGER building_polygons_before_update
     BEFORE INSERT OR UPDATE ON grb.building_polygons
     FOR EACH ROW
     EXECUTE FUNCTION update_building_polygon();
+
+-- Kunstwerken trigger (auto-generate Web Mercator)
+CREATE OR REPLACE FUNCTION update_kunstwerk_polygon()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+
+    IF NEW.geom IS NOT NULL AND NEW.geom_mercator IS NULL THEN
+        NEW.geom_mercator = ST_Transform(NEW.geom, 3857);
+    END IF;
+
+    IF NEW.entity IS NULL OR NEW.entity = '' THEN
+        NEW.entity = 'Knw';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER kunstwerken_before_update
+    BEFORE INSERT OR UPDATE ON grb.kunstwerken
+    FOR EACH ROW
+    EXECUTE FUNCTION update_kunstwerk_polygon();
 
 -- Addresses trigger (auto-generate Web Mercator)
 CREATE OR REPLACE FUNCTION update_address()
@@ -435,6 +510,12 @@ COMMENT ON COLUMN grb.building_polygons.oidn IS 'Unique polygon identifier from 
 COMMENT ON COLUMN grb.building_polygons.gebouw_id IS 'Building ID - one building can have multiple polygons';
 COMMENT ON COLUMN grb.building_polygons.geom IS 'Geometry in WGS84 (EPSG:4326)';
 
+COMMENT ON TABLE grb.kunstwerken IS 'GRB kunstwerken polygons (KNW) - non-building structures for OSM import support';
+COMMENT ON COLUMN grb.kunstwerken.oidn IS 'Unique kunstwerk identifier from GRB';
+COMMENT ON COLUMN grb.kunstwerken.type_label IS 'Kunstwerk type label (LBLTYPE)';
+COMMENT ON COLUMN grb.kunstwerken.entity IS 'Source geometry entity identifier (Knw)';
+COMMENT ON COLUMN grb.kunstwerken.geom IS 'Geometry in WGS84 (EPSG:4326)';
+
 COMMENT ON TABLE grb.buildings IS 'GRB buildings (aggregated) - logical buildings with multiple polygons unified';
 COMMENT ON COLUMN grb.buildings.gebouw_id IS 'Building ID from RltGbgGebouw relationship table';
 COMMENT ON COLUMN grb.buildings.geom IS 'MultiPolygon geometry (union of all building polygons)';
@@ -467,6 +548,7 @@ COMMENT ON COLUMN grb.address_building_links.building_object_id IS 'Building ID 
 \echo ''
 \echo 'Tables created:'
 \echo '  - grb.building_polygons (5M+ building polygon geometries from GBG)'
+\echo '  - grb.kunstwerken (KNW structures for non-building imports)'
 \echo '  - grb.buildings (aggregated buildings with unified geometries)'
 \echo '  - grb.addresses (1.3M+ GRAR address points)'
 \echo '  - grb.address_building_links (3.9M+ address-building relationships)'

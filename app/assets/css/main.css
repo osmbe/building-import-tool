@@ -36,6 +36,8 @@
   --layer-grb:        30 85% 52%;    /* vivid orange */
   --layer-grb-dark:   30 75% 42%;    /* darker orange for sheds */
   --layer-grb-light:  30 80% 62%;    /* lighter orange for hover */
+  --layer-knw:        12 78% 56%;    /* warm red-orange for KNW */
+  --layer-knw-light:  12 72% 66%;    /* lighter KNW hover */
   --layer-picc:       300 60% 50%;   /* magenta */
   --layer-picc-light: 300 55% 62%;   /* lighter magenta for hover */
   --layer-urbis:      170 65% 45%;   /* teal-cyan */
@@ -194,6 +196,19 @@
   background: hsl(var(--layer-grb));
   box-shadow: 0 0 4px hsl(var(--layer-grb) / 0.6);
 }
+/* KNW variant — warm red-orange */
+.feature-pill--knw {
+  color: hsl(var(--layer-knw));
+  background: hsl(var(--layer-knw) / 0.06);
+}
+.feature-pill--knw.feature-pill--active {
+  background: hsl(var(--layer-knw) / 0.12);
+  border-color: hsl(var(--layer-knw) / 0.25);
+}
+.feature-pill--knw .feature-pill__dot {
+  background: hsl(var(--layer-knw));
+  box-shadow: 0 0 4px hsl(var(--layer-knw) / 0.6);
+}
 /* PICC variant — magenta */
 .feature-pill--picc {
   color: hsl(var(--layer-picc));
@@ -244,6 +259,11 @@
   color: hsl(var(--layer-grb));
   background: hsl(var(--layer-grb) / 0.10);
   border-color: hsl(var(--layer-grb) / 0.20);
+}
+.layer-badge-knw {
+  color: hsl(var(--layer-knw));
+  background: hsl(var(--layer-knw) / 0.10);
+  border-color: hsl(var(--layer-knw) / 0.20);
 }
 .layer-badge-picc {
   color: hsl(var(--layer-picc));

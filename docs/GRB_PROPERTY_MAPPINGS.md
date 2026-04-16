@@ -25,6 +25,14 @@ The GRB building data undergoes property transformation before being exported to
 | `OIDN` | `source:geometry:oidn` | Unique GRB object identifier |
 | `OPNDATUM` | `source:geometry:date` | Date (formatted to YYYY-MM-DD) |
 
+### Export Contract (Issue #10 Current Situation)
+
+When exporting GRB candidates to JOSM, the following must always hold:
+
+- `gebouw_id` is **never exported**
+- Buildings include `building=yes` when no explicit building tag is present
+- `source:geometry:date` is exported when date data is available (`OPNDATUM` or `survey_date`)
+
 ### Properties Removed During Export
 
 The following GRB properties are **deleted** before export:
@@ -113,6 +121,29 @@ The following LBLTYPE values are **deleted** during processing:
 - `trap` (stairs)
 - `verdieping` (floor level)
 - `gebouw afgezoomd met virtuele gevels` (virtual building outline)
+
+## 5b. KNW (Kunstwerken) Type Mappings
+
+For GRB KNW structures, `source:geometry:entity` is set to `Knw` and `source:geometry:ref` is generated as `Knw/<oidn>`.
+
+Supported phase-1 KNW defaults:
+
+| KNW Type (`type_label`) | Default OSM tags |
+|-------------------------|------------------|
+| `overbrugging` | `bridge=yes` |
+| `pijler` | `man_made=bridge_support` |
+| `tunnelmond` | `tunnel=yes` |
+| `hoogspanningsmast` | `power=tower` |
+| `windturbine` | `power=generator`, `generator:source=wind`, `generator:method=wind_turbine` |
+| `schoorsteen` | `man_made=chimney` |
+| `koeltoren` | `man_made=cooling_tower` |
+| `silo` | `man_made=silo` |
+| `watertoren` | `man_made=water_tower` |
+| `staketsel` | `man_made=pier` |
+| `havendam` | `man_made=breakwater` |
+| `golfbreker` | `man_made=breakwater` |
+
+If a KNW type is not in this list and has no explicit target tag, export falls back to `man_made=structure`.
 
 ## 6. Property Transformations
 

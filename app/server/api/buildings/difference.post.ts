@@ -19,10 +19,10 @@ export default defineEventHandler(async (event) => {
       }))
     }
 
-    if (dataSource !== 'grb' && dataSource !== 'picc' && dataSource !== 'urbis') {
+    if (dataSource !== 'grb' && dataSource !== 'knw' && dataSource !== 'picc' && dataSource !== 'urbis') {
       return sendError(event, createError({
         statusCode: 400,
-        statusMessage: 'Invalid dataSource. Expected "grb", "picc", or "urbis"'
+        statusMessage: 'Invalid dataSource. Expected "grb", "knw", "picc", or "urbis"'
       }))
     }
 
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
     if (matchMode === 'source' && dataSource !== 'grb') {
       return sendError(event, createError({
         statusCode: 400,
-        statusMessage: 'Source tag matching is only available for GRB data. Use geometry mode for PICC/Urbis.'
+        statusMessage: 'Source tag matching is only available for GRB data. Use geometry mode for KNW/PICC/Urbis.'
       }))
     }
 
@@ -158,6 +158,74 @@ export default defineEventHandler(async (event) => {
                   / NULLIF(ST_Area(o.geom), 0) >= $7
           )
           ORDER BY g.oidn
+        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold])
+      }
+
+    } else if (dataSource === 'knw') {
+      // Geometry matching for KNW: GRB kunstwerken with no corresponding OSM geometry
+      const osmResult = await queryOsm(`
+        SELECT
+          ST_AsGeoJSON(ST_Collect(geom)) AS geom_collection,
+          COUNT(*) AS total_osm
+        FROM osm.osm_buildings
+        WHERE geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
+          AND ST_Intersects(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
+      `, [minX, minY, maxX, maxY])
+
+      const osmGeomCollection = osmResult[0]?.geom_collection
+      totalOsm = parseInt(osmResult[0]?.total_osm || '0')
+
+      if (!osmGeomCollection) {
+        rows = await queryGrb(`
+          SELECT
+            ST_AsGeoJSON(k.geom) AS geometry,
+            k.oidn,
+            k.type_code,
+            k.type_label,
+            k.survey_date,
+            k.entity,
+            COUNT(*) OVER() AS total_grb,
+            0::bigint AS total_osm
+          FROM grb.kunstwerken k
+          WHERE k.geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
+            AND ST_Intersects(k.geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
+          ORDER BY k.oidn
+        `, [minX, minY, maxX, maxY])
+      } else {
+        rows = await queryGrb(`
+          WITH
+            envelope_4326 AS (
+              SELECT ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326) AS env
+            ),
+            osm_geoms AS (
+              SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON($5), 4326))).geom AS geom
+            ),
+            knw_in_extent AS (
+              SELECT k.geom, k.oidn, k.type_code, k.type_label, k.survey_date, k.entity
+              FROM grb.kunstwerken k, envelope_4326 e
+              WHERE k.geom && e.env
+                AND ST_Intersects(k.geom, e.env)
+            )
+          SELECT
+            ST_AsGeoJSON(k.geom) AS geometry,
+            k.oidn,
+            k.type_code,
+            k.type_label,
+            k.survey_date,
+            k.entity,
+            (SELECT COUNT(*) FROM knw_in_extent)::bigint AS total_grb,
+            $6::bigint AS total_osm
+          FROM knw_in_extent k
+          WHERE NOT EXISTS (
+            SELECT 1 FROM osm_geoms o
+            WHERE k.geom && o.geom
+              AND ST_Intersects(k.geom, o.geom)
+              AND ST_Area(ST_Intersection(k.geom, o.geom))
+                  / NULLIF(ST_Area(k.geom), 0) >= $7
+              AND ST_Area(ST_Intersection(k.geom, o.geom))
+                  / NULLIF(ST_Area(o.geom), 0) >= $7
+          )
+          ORDER BY k.oidn
         `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold])
       }
 

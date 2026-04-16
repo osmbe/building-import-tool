@@ -45,3 +45,25 @@ postgres:
         postcodes: postcodes
         municipalities: municipalities
         address_count: address_count
+
+    kunstwerken:
+      schema: grb
+      table: kunstwerken
+      srid: 3857
+      geometry_column: geom_mercator
+      id_column: oidn
+      clip_geom: true
+      buffer: 64
+      extent: 4096
+      minzoom: 10
+      maxzoom: 22
+      properties:
+        oidn: oidn
+        uidn: uidn
+        entity: entity
+        type_code: type_code
+        type_label: type_label
+        survey_date: survey_date
+        origin_label: origin_label
+        area_m2: area_m2
+        length_m: length_m

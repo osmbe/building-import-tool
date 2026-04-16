@@ -5,6 +5,25 @@ export const useJosmExport = () => {
   const josmBaseUrl = ref('http://127.0.0.1:8111')
   const useSSL = ref(false)
 
+  const KNW_TAG_MAP: Record<string, Record<string, string>> = {
+    overbrugging: { bridge: 'yes' },
+    pijler: { 'man_made': 'bridge_support' },
+    tunnelmond: { tunnel: 'yes' },
+    hoogspanningsmast: { power: 'tower' },
+    windturbine: {
+      power: 'generator',
+      'generator:source': 'wind',
+      'generator:method': 'wind_turbine'
+    },
+    schoorsteen: { 'man_made': 'chimney' },
+    koeltoren: { 'man_made': 'cooling_tower' },
+    silo: { 'man_made': 'silo' },
+    watertoren: { 'man_made': 'water_tower' },
+    staketsel: { 'man_made': 'pier' },
+    havendam: { 'man_made': 'breakwater' },
+    golfbreker: { 'man_made': 'breakwater' }
+  }
+
   // Update JOSM URL based on SSL preference
   const getJosmUrl = () => useSSL.value ? 'https://127.0.0.1:8112' : 'http://127.0.0.1:8111'
 
@@ -43,9 +62,31 @@ export const useJosmExport = () => {
   const filterFeatureProperties = (feature: Feature): Feature => {
     const props = { ...feature.properties }
 
-    // Export candidate polygons as buildings by default
-    if (!props.building) {
+    const sourceLayerType = String((props as any)._layer_type || '').toLowerCase()
+    const explicitEntity = String((props as any).entity || (props as any).source_geometry_entity || '').toLowerCase()
+    const isKnw = sourceLayerType === 'knw' || explicitEntity === 'knw' || explicitEntity === 'kunstwerken'
+
+    // Export candidate polygons as buildings by default (not for KNW structures)
+    if (!isKnw && !props.building) {
       props.building = 'yes'
+    }
+
+    // Add default tags for supported KNW structure types
+    if (isKnw) {
+      const typeLabel = String((props as any).type_label || (props as any).lbltype || '').toLowerCase().trim()
+      const mappedTags = KNW_TAG_MAP[typeLabel]
+
+      if (mappedTags) {
+        Object.entries(mappedTags).forEach(([key, value]) => {
+          if (!props[key]) {
+            props[key] = value
+          }
+        })
+      } else if (!props.man_made && !props.power && !props.bridge && !props.tunnel) {
+        props.man_made = 'structure'
+      }
+
+      delete props.building
     }
 
     // Map GRB OIDN to source:geometry:oidn
@@ -54,8 +95,8 @@ export const useJosmExport = () => {
     }
 
     // Map GRB OPNDATUM to source:geometry:date and format to YYYY-MM-DD
-    if (props.opndatum) {
-      const date = String(props.opndatum)
+    if (props.opndatum || props.survey_date) {
+      const date = String(props.opndatum || props.survey_date)
       // Convert DD/MM/YYYY to YYYY-MM-DD
       if (date.includes('/')) {
         const parts = date.split('/')
@@ -68,8 +109,8 @@ export const useJosmExport = () => {
       }
     }
 
-    // Set source:geometry:entity to "Gbg" (Gebouwen/Buildings)
-    props['source:geometry:entity'] = 'Gbg'
+    // Set source:geometry:entity from feature type
+    props['source:geometry:entity'] = isKnw ? 'Knw' : 'Gbg'
 
     // Create source:geometry:ref composite property
     if (props['source:geometry:entity'] && props['source:geometry:oidn']) {
@@ -88,12 +129,14 @@ export const useJosmExport = () => {
       'ogc_fid',
       'oidn',
       'uidn',
+      'gebouw_id',
       'versie',
       'begindatum',
       'versdatum',
       'type',
       'lbltype',
       'opndatum',
+      'survey_date',
       'bgninv',
       'lblbgninv',
       'lengte',
@@ -115,7 +158,9 @@ export const useJosmExport = () => {
       'size_source_landuse',
       'source:geometry:entity',
       'source:geometry:oidn',
-      'auto_target_landuse'
+      'auto_target_landuse',
+      'entity',
+      '_layer_type'
     ]
 
     tagsToRemove.forEach(tag => {

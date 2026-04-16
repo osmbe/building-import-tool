@@ -111,6 +111,13 @@
               </div>
               <div class="layer-row">
                 <div class="flex items-center gap-2">
+                  <span class="layer-dot" style="color: hsl(var(--layer-knw)); background: currentColor;"></span>
+                  <span class="text-xs text-foreground/85">GRB Kunstwerken</span>
+                </div>
+                <Switch v-model:checked="overlayLayers.knwStructures" @update:checked="toggleKnwStructures" />
+              </div>
+              <div class="layer-row">
+                <div class="flex items-center gap-2">
                   <span class="layer-dot" style="color: hsl(var(--layer-picc)); background: currentColor;"></span>
                   <span class="text-xs text-foreground/85">PICC Buildings</span>
                 </div>
@@ -204,6 +211,7 @@
                 class="feature-pill"
                 :class="{
                   'feature-pill--grb': feat._layer_type === 'grb',
+                  'feature-pill--knw': feat._layer_type === 'knw',
                   'feature-pill--picc': feat._layer_type === 'picc',
                   'feature-pill--urbis': feat._layer_type === 'urbis',
                   'feature-pill--osm': feat._layer_type === 'osm',
@@ -212,8 +220,8 @@
                 @click="activeFeatureIndex = idx"
               >
                 <span class="feature-pill__dot" />
-                <span>{{ feat._layer_type === 'grb' ? 'GRB' : feat._layer_type === 'picc' ? 'PICC' : feat._layer_type === 'urbis' ? 'Urbis' : 'OSM' }}</span>
-                <span class="opacity-50 font-mono">{{ feat._layer_type === 'grb' ? (feat.gebouw_id || feat.id) : feat._layer_type === 'picc' ? feat.objectid : feat._layer_type === 'urbis' ? feat.building_id : feat.osm_id }}</span>
+                <span>{{ feat._layer_type === 'grb' ? 'GRB' : feat._layer_type === 'knw' ? 'KNW' : feat._layer_type === 'picc' ? 'PICC' : feat._layer_type === 'urbis' ? 'Urbis' : 'OSM' }}</span>
+                <span class="opacity-50 font-mono">{{ feat._layer_type === 'grb' ? (feat.gebouw_id || feat.id) : feat._layer_type === 'knw' ? (feat.oidn || feat.id) : feat._layer_type === 'picc' ? feat.objectid : feat._layer_type === 'urbis' ? feat.building_id : feat.osm_id }}</span>
               </button>
               <!-- Close button -->
               <button v-if="isTooltipSticky" class="ml-auto text-muted-foreground hover:text-foreground transition-colors shrink-0" @click="closeTooltip">
@@ -281,6 +289,48 @@
                     <div v-if="currentFeature.polygon_count" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Parts</span>
                       <span class="text-foreground font-medium font-mono">{{ currentFeature.polygon_count }}</span>
+                    </div>
+                    <div v-if="currentFeature.survey_date" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Surveyed</span>
+                      <span class="text-foreground font-medium font-mono">{{ currentFeature.survey_date }}</span>
+                    </div>
+                    <div v-if="currentFeature.origin_label" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Source</span>
+                      <span class="text-foreground font-medium">{{ formatOriginLabel(currentFeature.origin_label) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- GRB KNW Structure -->
+              <template v-else-if="currentFeature._layer_type === 'knw'">
+                <div class="flex items-start justify-between mb-3">
+                  <div>
+                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-knw border px-1.5 py-0.5 rounded mb-1.5">
+                      <Landmark class="h-2.5 w-2.5" />KNW
+                    </div>
+                    <h2 class="text-sm font-semibold text-foreground">{{ currentFeature.type_label || 'Structure' }}</h2>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">OIDN: {{ currentFeature.oidn || currentFeature.id }}</div>
+                  </div>
+                  <button v-if="isTooltipSticky && activeFeatures.length <= 1" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="closeTooltip">
+                    <X class="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <div v-if="currentFeature.area_m2 || currentFeature.length_m || currentFeature.survey_date || currentFeature.origin_label || currentFeature.type_code">
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Details</div>
+                  <div class="space-y-1 text-xs">
+                    <div v-if="currentFeature.type_code" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Type code</span>
+                      <span class="text-foreground font-medium font-mono">{{ currentFeature.type_code }}</span>
+                    </div>
+                    <div v-if="currentFeature.area_m2" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Area</span>
+                      <span class="text-foreground font-medium font-mono">{{ formatArea(currentFeature.area_m2) }}</span>
+                    </div>
+                    <div v-if="currentFeature.length_m" class="flex gap-3">
+                      <span class="text-muted-foreground w-20 shrink-0">Length</span>
+                      <span class="text-foreground font-medium font-mono">{{ Number(currentFeature.length_m).toFixed(2) }} m</span>
                     </div>
                     <div v-if="currentFeature.survey_date" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Surveyed</span>
@@ -495,7 +545,7 @@
 </template>
 
 <script setup lang="ts">
-import { Building2, ChevronDown, ExternalLink, GitCompareArrows, Loader2, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
+import { Building2, ChevronDown, ExternalLink, GitCompareArrows, Landmark, Loader2, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
 import { Fill, Stroke, Style } from 'ol/style'
 import { GeoJSON, MVT } from 'ol/format'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -538,6 +588,9 @@ const osmBuildingsLayerRef = ref<any>(null)
 const grbBuildingsLayerRef = ref<any>(null)
 const isLoadingGRB = ref(false)
 
+// GRB KNW structures layer state
+const knwStructuresLayerRef = ref<any>(null)
+
 // PICC Buildings layer state
 const piccBuildingsLayerRef = ref<any>(null)
 
@@ -577,6 +630,7 @@ const overlayLayers = ref({
   candidateBuildings: false,
   osmBuildings: true,
   grbBuildings: false,
+  knwStructures: false,
   piccBuildings: false,
   urbisBuildings: false,
   conflicts: true,
@@ -608,11 +662,12 @@ const canCalculateDifference = computed(() => {
   if (currentZoom.value < 16) return false
   if (!overlayLayers.value.osmBuildings) return false
 
-  // At least one source layer (GRB, PICC, or Urbis) must be loaded and visible
+  // At least one source layer (GRB, KNW, PICC, or Urbis) must be loaded and visible
   const grbReady = grbBuildingsLayerRef.value && overlayLayers.value.grbBuildings
+  const knwReady = knwStructuresLayerRef.value && overlayLayers.value.knwStructures
   const piccReady = piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings
   const urbisReady = urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings
-  if (!grbReady && !piccReady && !urbisReady) return false
+  if (!grbReady && !knwReady && !piccReady && !urbisReady) return false
 
   return true
 })
@@ -715,11 +770,72 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
   if (grbBuildingsLayerRef.value) {
     grbBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.grbBuildings)
   }
+  if (knwStructuresLayerRef.value) {
+    knwStructuresLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.knwStructures)
+  }
   if (piccBuildingsLayerRef.value) {
     piccBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.piccBuildings)
   }
   if (urbisBuildingsLayerRef.value) {
     urbisBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.urbisBuildings)
+  }
+}
+
+// Handle Load GRB KNW structures using Vector Tiles
+const handleLoadKNW = () => {
+  if (!map.value) {
+    console.error('Map not initialized')
+    return
+  }
+
+  try {
+    if (knwStructuresLayerRef.value) {
+      map.value.removeLayer(knwStructuresLayerRef.value)
+    }
+
+    const knwTileSource = new VectorTileSource({
+      format: new MVT(),
+      url: '/tiles/grb/kunstwerken/{z}/{x}/{y}',
+      minZoom: 10,
+      maxZoom: 18,
+      attributions: '© GRB Kunstwerken'
+    })
+
+    const knwStyleFunction = (feature: any) => {
+      const isHovered = feature.get('hovered')
+
+      let fillColor = hslVar('--layer-knw', 0.14)
+      let strokeColor = hslVar('--layer-knw', 1)
+
+      if (isHovered) {
+        fillColor = hslVar('--layer-knw', 0.28)
+        strokeColor = hslVar('--layer-knw-light', 1)
+      }
+
+      return new Style({
+        fill: new Fill({ color: fillColor }),
+        stroke: new Stroke({
+          color: strokeColor,
+          width: isHovered ? 3 : 2
+        })
+      })
+    }
+
+    const knwTileLayer = new VectorTileLayer({
+      source: knwTileSource,
+      style: knwStyleFunction,
+      zIndex: 10,
+      properties: {
+        title: 'GRB Kunstwerken',
+        type: 'overlay'
+      }
+    })
+
+    knwStructuresLayerRef.value = knwTileLayer
+    map.value.addLayer(knwTileLayer)
+    knwTileLayer.setVisible(false)
+  } catch (error) {
+    console.error('Failed to load GRB kunstwerken:', error)
   }
 }
 
@@ -1052,6 +1168,34 @@ const toggleGrbBuildings = (visible: boolean) => {
       overlayLayers.value.urbisBuildings = false
       if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
     }
+    if (overlayLayers.value.knwStructures) {
+      overlayLayers.value.knwStructures = false
+      if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
+    }
+  }
+}
+
+const toggleKnwStructures = (visible: boolean) => {
+  overlayLayers.value.knwStructures = visible
+  const shouldShow = visible && currentZoom.value >= 16
+
+  if (knwStructuresLayerRef.value) {
+    knwStructuresLayerRef.value.setVisible(shouldShow)
+  }
+
+  if (visible) {
+    if (overlayLayers.value.piccBuildings) {
+      overlayLayers.value.piccBuildings = false
+      if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
+    }
+    if (overlayLayers.value.urbisBuildings) {
+      overlayLayers.value.urbisBuildings = false
+      if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
+    }
+    if (overlayLayers.value.grbBuildings) {
+      overlayLayers.value.grbBuildings = false
+      if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
+    }
   }
 }
 
@@ -1068,6 +1212,10 @@ const togglePiccBuildings = (visible: boolean) => {
     if (overlayLayers.value.grbBuildings) {
       overlayLayers.value.grbBuildings = false
       if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
+    }
+    if (overlayLayers.value.knwStructures) {
+      overlayLayers.value.knwStructures = false
+      if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
     }
     if (overlayLayers.value.urbisBuildings) {
       overlayLayers.value.urbisBuildings = false
@@ -1089,6 +1237,10 @@ const toggleUrbisBuildings = (visible: boolean) => {
     if (overlayLayers.value.grbBuildings) {
       overlayLayers.value.grbBuildings = false
       if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
+    }
+    if (overlayLayers.value.knwStructures) {
+      overlayLayers.value.knwStructures = false
+      if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
     }
     if (overlayLayers.value.piccBuildings) {
       overlayLayers.value.piccBuildings = false
@@ -1437,13 +1589,14 @@ const calculateDifference = async () => {
 
   // Determine which data source is active (GRB, PICC, or Urbis)
   const grbActive = overlayLayers.value.grbBuildings && grbBuildingsLayerRef.value
+  const knwActive = overlayLayers.value.knwStructures && knwStructuresLayerRef.value
   const piccActive = overlayLayers.value.piccBuildings && piccBuildingsLayerRef.value
   const urbisActive = overlayLayers.value.urbisBuildings && urbisBuildingsLayerRef.value
-  const dataSource = urbisActive ? 'urbis' : piccActive ? 'picc' : 'grb'
+  const dataSource = urbisActive ? 'urbis' : piccActive ? 'picc' : knwActive ? 'knw' : 'grb'
 
   // Check if OSM layer and at least one source layer are loaded
-  if (!osmBuildingsLayerRef.value || (!grbActive && !piccActive && !urbisActive)) {
-    toast.warning('Layers required', 'Please enable OSM Buildings and a buildings layer (GRB, PICC, or Urbis) first.')
+  if (!osmBuildingsLayerRef.value || (!grbActive && !knwActive && !piccActive && !urbisActive)) {
+    toast.warning('Layers required', 'Please enable OSM Buildings and a source layer (GRB, KNW, PICC, or Urbis) first.')
     return
   }
 
@@ -1597,9 +1750,15 @@ const exportToJOSM = async () => {
     console.log(`Exporting ${allFeatures.length} candidate buildings to JOSM`)
 
     // Export to JOSM - ALL features from the candidate layer
+    const hasKnwCandidates = allFeatures.some((feature: any) => {
+      const layerType = String(feature?.properties?._layer_type || '').toLowerCase()
+      const entity = String(feature?.properties?.entity || '').toLowerCase()
+      return layerType === 'knw' || entity === 'knw'
+    })
+
     const result = await exportLayerToJosm(
       allFeatures,
-      'GRB Candidate Buildings',
+      hasKnwCandidates ? 'GRB Candidate Structures (KNW)' : 'GRB Candidate Buildings',
       {
         includeMeta: false,
         simplify: false,
@@ -1804,9 +1963,15 @@ const getGroupedOsmProperties = (feature: any): { address: [string, any][], sour
 // Uses function declaration (not const arrow) so it's hoisted above computed() calls that reference it
 function sortFeatures(features: any[]): any[] {
   return [...features].sort((a, b) => {
-    if (a._layer_type === 'grb' && b._layer_type !== 'grb') return -1
-    if (a._layer_type !== 'grb' && b._layer_type === 'grb') return 1
-    return 0
+    const weight = (layerType: string) => {
+      if (layerType === 'grb') return 0
+      if (layerType === 'knw') return 1
+      if (layerType === 'picc') return 2
+      if (layerType === 'urbis') return 3
+      if (layerType === 'osm') return 4
+      return 5
+    }
+    return weight(a._layer_type) - weight(b._layer_type)
   })
 }
 
@@ -1878,7 +2043,7 @@ const propertyDisplayNames: Record<string, string> = {
 const getDisplayableProperties = (feature: any) => {
   if (!feature) return []
 
-  const isGrb = feature._layer_type === 'grb'
+  const isGrb = feature._layer_type === 'grb' || feature._layer_type === 'knw'
   const isOsm = feature._layer_type === 'osm'
 
   // Properties to exclude from display (internal or already shown)
@@ -2032,7 +2197,7 @@ const setupHoverInteraction = () => {
 
     const foundFeatures: any[] = []
     map.value.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value) {
+      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === knwStructuresLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value) {
         // Get properties for clicked feature
         let properties: any
         try {
@@ -2062,6 +2227,7 @@ const setupHoverInteraction = () => {
 
         // Add layer type to distinguish OSM from GRB/PICC features
         properties._layer_type = layer === osmBuildingsLayerRef.value ? 'osm'
+          : layer === knwStructuresLayerRef.value ? 'knw'
           : layer === piccBuildingsLayerRef.value ? 'picc'
           : layer === urbisBuildingsLayerRef.value ? 'urbis'
           : 'grb'
@@ -2124,7 +2290,7 @@ const setupHoverInteraction = () => {
     let firstFeature: any = null
 
     map.value.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value) {
+      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === knwStructuresLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value) {
         if (!firstFeature) {
           firstFeature = feature
         }
@@ -2159,6 +2325,7 @@ const setupHoverInteraction = () => {
 
         // Add layer type to distinguish OSM from GRB/PICC features
         properties._layer_type = layer === osmBuildingsLayerRef.value ? 'osm'
+          : layer === knwStructuresLayerRef.value ? 'knw'
           : layer === piccBuildingsLayerRef.value ? 'picc'
           : layer === urbisBuildingsLayerRef.value ? 'urbis'
           : 'grb'
@@ -2232,6 +2399,7 @@ onMounted(() => {
       setTimeout(() => {
         handleLoadOSM()
         handleLoadGRB()
+        handleLoadKNW()
         handleLoadPICC()
         handleLoadUrbis()
       }, 100)
