@@ -49,15 +49,27 @@ export default defineEventHandler(async (event) => {
 
     if (matchMode === 'source') {
       // Source tag matching (GRB only): Show GRB buildings that DON'T have matching OSM source:geometry:oidn
+      // Support multiple OSM reference patterns for compatibility:
+      // 1) tags.source:geometry:oidn
+      // 2) tags.source:geometry:ref (format Entity/OIDN)
+      // 3) legacy/imported osm.osm_buildings.oidn column
 
       // Step 1: Get OSM buildings with source:geometry:oidn in the extent
       const osmQuery = `
         SELECT DISTINCT
-          tags->>'source:geometry:oidn' AS oidn
+          COALESCE(
+            NULLIF(tags->>'source:geometry:oidn', ''),
+            NULLIF(split_part(tags->>'source:geometry:ref', '/', 2), ''),
+            NULLIF(oidn::text, '')
+          ) AS oidn
         FROM osm.osm_buildings
         WHERE geom_mercator && ST_MakeEnvelope($1, $2, $3, $4, 3857)
           AND ST_Intersects(geom_mercator, ST_MakeEnvelope($1, $2, $3, $4, 3857))
-          AND tags ? 'source:geometry:oidn'
+          AND (
+            tags ? 'source:geometry:oidn'
+            OR tags ? 'source:geometry:ref'
+            OR oidn IS NOT NULL
+          )
       `
 
       const osmRows = await queryOsm(osmQuery, [minX, minY, maxX, maxY])
@@ -98,11 +110,11 @@ export default defineEventHandler(async (event) => {
       // 2. Pass collected geometry to GRB comparison query (all local operations)
       const osmResult = await queryOsm(`
         SELECT
-          ST_AsGeoJSON(ST_Collect(geom)) AS geom_collection,
+          ST_AsGeoJSON(ST_Collect(COALESCE(geom, ST_Transform(geom_mercator, 4326)))) AS geom_collection,
           COUNT(*) AS total_osm
         FROM osm.osm_buildings
-        WHERE geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
-          AND ST_Intersects(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
+        WHERE COALESCE(geom, ST_Transform(geom_mercator, 4326)) && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
+          AND ST_Intersects(COALESCE(geom, ST_Transform(geom_mercator, 4326)), ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
       `, [minX, minY, maxX, maxY])
 
       const osmGeomCollection = osmResult[0]?.geom_collection
@@ -165,11 +177,11 @@ export default defineEventHandler(async (event) => {
       // Geometry matching for KNW: GRB kunstwerken with no corresponding OSM geometry
       const osmResult = await queryOsm(`
         SELECT
-          ST_AsGeoJSON(ST_Collect(geom)) AS geom_collection,
+          ST_AsGeoJSON(ST_Collect(COALESCE(geom, ST_Transform(geom_mercator, 4326)))) AS geom_collection,
           COUNT(*) AS total_osm
         FROM osm.osm_buildings
-        WHERE geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
-          AND ST_Intersects(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
+        WHERE COALESCE(geom, ST_Transform(geom_mercator, 4326)) && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
+          AND ST_Intersects(COALESCE(geom, ST_Transform(geom_mercator, 4326)), ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
       `, [minX, minY, maxX, maxY])
 
       const osmGeomCollection = osmResult[0]?.geom_collection
