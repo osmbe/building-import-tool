@@ -3,7 +3,7 @@ import { queryGrb, queryOsm } from '~/server/utils/db'
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
-    const { bounds, matchMode = 'geometry', dataSource = 'grb' } = body
+    const { bounds, matchMode = 'geometry', dataSource = 'grb', geometryThreshold = 0.7 } = body
 
     if (!bounds || bounds.length !== 4) {
       return sendError(event, createError({
@@ -23,6 +23,14 @@ export default defineEventHandler(async (event) => {
       return sendError(event, createError({
         statusCode: 400,
         statusMessage: 'Invalid dataSource. Expected "grb", "picc", or "urbis"'
+      }))
+    }
+
+    const numericThreshold = Number(geometryThreshold)
+    if (Number.isNaN(numericThreshold) || numericThreshold < 0.3 || numericThreshold > 0.95) {
+      return sendError(event, createError({
+        statusCode: 400,
+        statusMessage: 'Invalid geometryThreshold. Expected a number between 0.3 and 0.95'
       }))
     }
 
@@ -83,7 +91,7 @@ export default defineEventHandler(async (event) => {
 
     } else if (dataSource === 'grb') {
       // Geometry matching for GRB: GRB polygons with no corresponding OSM building
-      // A match = intersection area >= 50% of the smaller building's area
+      // A match = overlap threshold reached in both directions (source and OSM)
       //
       // Two-step approach to avoid FDW overhead:
       // 1. Fetch OSM geometries directly from osmbe (uses local GIST index)
@@ -145,10 +153,12 @@ export default defineEventHandler(async (event) => {
             WHERE g.geom && o.geom
               AND ST_Intersects(g.geom, o.geom)
               AND ST_Area(ST_Intersection(g.geom, o.geom))
-                  / NULLIF(LEAST(ST_Area(g.geom), ST_Area(o.geom)), 0) >= 0.5
+                  / NULLIF(ST_Area(g.geom), 0) >= $7
+              AND ST_Area(ST_Intersection(g.geom, o.geom))
+                  / NULLIF(ST_Area(o.geom), 0) >= $7
           )
           ORDER BY g.oidn
-        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm])
+        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold])
       }
 
     } else if (dataSource === 'urbis') {
@@ -203,10 +213,12 @@ export default defineEventHandler(async (event) => {
             WHERE u.geom && o.geom
               AND ST_Intersects(u.geom, o.geom)
               AND ST_Area(ST_Intersection(u.geom, o.geom))
-                  / NULLIF(LEAST(ST_Area(u.geom), ST_Area(o.geom)), 0) >= 0.5
+                  / NULLIF(ST_Area(u.geom), 0) >= $7
+              AND ST_Area(ST_Intersection(u.geom, o.geom))
+                  / NULLIF(ST_Area(o.geom), 0) >= $7
           )
           ORDER BY u.building_id
-        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm])
+        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold])
       }
 
     } else {
@@ -261,10 +273,12 @@ export default defineEventHandler(async (event) => {
             WHERE p.geom && o.geom
               AND ST_Intersects(p.geom, o.geom)
               AND ST_Area(ST_Intersection(p.geom, o.geom))
-                  / NULLIF(LEAST(ST_Area(p.geom), ST_Area(o.geom)), 0) >= 0.5
+                  / NULLIF(ST_Area(p.geom), 0) >= $7
+              AND ST_Area(ST_Intersection(p.geom, o.geom))
+                  / NULLIF(ST_Area(o.geom), 0) >= $7
           )
           ORDER BY p.objectid
-        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm])
+        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold])
       }
     }
 

@@ -35,9 +35,28 @@
         </button>
       </div>
       <p class="text-[9px] text-muted-foreground mt-2 leading-relaxed">
-        <template v-if="matchMode === 'geometry'">Spatial — unmatched buildings in view (GRB or PICC)</template>
+        <template v-if="matchMode === 'geometry'">Spatial — unmatched buildings in view (GRB, PICC, or Urbis)</template>
         <template v-else>Missing source:geometry:oidn tag (GRB only)</template>
       </p>
+
+      <div v-if="matchMode === 'geometry'" class="mt-2.5 space-y-1.5">
+        <div class="flex items-center justify-between text-[10px]">
+          <span class="text-muted-foreground">Match strictness</span>
+          <span class="font-mono text-foreground/70">{{ Math.round(geometryThreshold * 100) }}%</span>
+        </div>
+        <input
+          type="range"
+          min="30"
+          max="95"
+          step="5"
+          class="w-full accent-primary"
+          :value="Math.round(geometryThreshold * 100)"
+          @input="onThresholdInput"
+        >
+        <p class="text-[9px] text-muted-foreground leading-relaxed">
+          Requires both footprints to overlap by at least this percentage.
+        </p>
+      </div>
     </div>
   </div>
 </template>
@@ -47,6 +66,16 @@ import { ChevronDown, MapPin, Tag } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useMatchMode } from '~/composables/useMatchMode'
 
-const { matchMode, setMatchMode } = useMatchMode()
+const { matchMode, geometryThreshold, setMatchMode, setGeometryThreshold } = useMatchMode()
 const collapsed = ref(false)
+
+const onThresholdInput = (event: Event) => {
+  const target = event.target as HTMLInputElement | null
+  if (!target) return
+
+  const value = Number(target.value)
+  if (Number.isNaN(value)) return
+
+  setGeometryThreshold(value / 100)
+}
 </script>

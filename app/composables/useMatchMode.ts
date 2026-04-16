@@ -8,6 +8,7 @@ import { ref } from 'vue'
 export type MatchMode = 'geometry' | 'source'
 
 const matchMode = ref<MatchMode>('geometry')
+const geometryThreshold = ref(0.7)
 
 export function useMatchMode() {
   const setMatchMode = (mode: MatchMode) => {
@@ -18,9 +19,16 @@ export function useMatchMode() {
     matchMode.value = matchMode.value === 'geometry' ? 'source' : 'geometry'
   }
 
+  const setGeometryThreshold = (value: number) => {
+    if (Number.isNaN(value)) return
+    geometryThreshold.value = Math.min(0.95, Math.max(0.3, value))
+  }
+
   return {
     matchMode,
+    geometryThreshold,
     setMatchMode,
+    setGeometryThreshold,
     toggleMatchMode
   }
 }
