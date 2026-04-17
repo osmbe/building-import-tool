@@ -1737,24 +1737,35 @@ _grb-download-if-ready product order_id:
             ALREADY=$(stat -c%s "$DEST" 2>/dev/null || echo 0)
             echo "   Downloading $FILE (attempt $ATTEMPT/$MAX_ATTEMPTS, $(numfmt --to=iec $ALREADY) already)..."
             CURL_PROGRESS=$([ -n "${CI:-}" ] && echo "--no-progress-meter" || echo "--progress-bar")
-            curl -L $CURL_PROGRESS \
-                -H "x-api-key: {{grb_api_key}}" \
-                --max-time "$MAX_TIME_SEC" \
-                -C - \
-                -o "$DEST" \
-                "https://download.api.vlaanderen.be$URL"
-            CURL_EXIT=$?
-            # Exit 33 = server rejected Range request (no resume support); clear partial file and retry
-            if [ $CURL_EXIT -eq 33 ]; then
-                echo "   Server does not support resume, restarting..."
-                rm -f "$DEST"
-                if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
-                    echo "❌ Download failed for $FILE after $MAX_ATTEMPTS attempts (resume unsupported)" >&2
-                    exit 1
-                fi
-                sleep "$RETRY_SLEEP_SEC"
-                continue
+            if [ "$ALREADY" -gt 0 ]; then
+                curl -L $CURL_PROGRESS \
+                    -H "x-api-key: {{grb_api_key}}" \
+                    --max-time "$MAX_TIME_SEC" \
+                    -C - \
+                    -o "$DEST" \
+                    "https://download.api.vlaanderen.be$URL"
+            else
+                curl -L $CURL_PROGRESS \
+                    -H "x-api-key: {{grb_api_key}}" \
+                    --max-time "$MAX_TIME_SEC" \
+                    -o "$DEST" \
+                    "https://download.api.vlaanderen.be$URL"
             fi
+            CURL_EXIT=$?
+
+            # Exit 33 = server rejected Range request (no resume support).
+            # Fall back to a full re-download in the same attempt.
+            if [ $CURL_EXIT -eq 33 ]; then
+                echo "   Server rejected resume, retrying same attempt without resume..."
+                rm -f "$DEST"
+                curl -L $CURL_PROGRESS \
+                    -H "x-api-key: {{grb_api_key}}" \
+                    --max-time "$MAX_TIME_SEC" \
+                    -o "$DEST" \
+                    "https://download.api.vlaanderen.be$URL"
+                CURL_EXIT=$?
+            fi
+
             if [ $CURL_EXIT -ne 0 ]; then
                 echo "   curl failed (exit $CURL_EXIT), retrying in ${RETRY_SLEEP_SEC}s..."
                 if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
@@ -1771,7 +1782,7 @@ _grb-download-if-ready product order_id:
                     break  # Valid zip
                 else
                     FILE_SIZE=$(stat -c%s "$DEST" 2>/dev/null || echo 0)
-                    echo "   Downloaded zip is invalid ($(numfmt --to=iec $FILE_SIZE)), clearing and retrying in 60s..."
+                    echo "   Downloaded zip is invalid ($(numfmt --to=iec $FILE_SIZE)), clearing and retrying in ${RETRY_SLEEP_SEC}s..."
                     rm -f "$DEST"
                     if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
                         echo "❌ Download failed for $FILE after $MAX_ATTEMPTS attempts (invalid zip)" >&2
