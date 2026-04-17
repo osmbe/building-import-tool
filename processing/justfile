@@ -32,6 +32,7 @@ default:
     @echo "🏢 GRB Tasks (Flanders - local processing)"
     @echo "  grb-order-all      - Order all GRB datasets (GBG/GBA/KNW/Addresses)"
     @echo "  grb-download-all   - Download all ready orders"
+    @echo "  grb-download-selected - Download only selected products"
     @echo "  grb-import         - Import GRB data to database"
     @echo "  grb-full           - Complete workflow (order → download → import)"
     @echo "  grb-update         - Update GRB data (diff since last update)"
@@ -90,6 +91,10 @@ grb_api_key := env_var_or_default('DIGITAL_VLAANDEREN_API_KEY', '')
 grb_api_base := env_var_or_default('DIGITAL_VLAANDEREN_API_BASE_URL', 'https://download.api.vlaanderen.be/v2')
 grb_data_dir := "data/grb"
 grb_orders_dir := "data/grb/orders"
+grb_download_parallel := env_var_or_default('GRB_DOWNLOAD_PARALLEL', '1')
+grb_download_max_attempts := env_var_or_default('GRB_DOWNLOAD_MAX_ATTEMPTS', '10')
+grb_download_max_time_sec := env_var_or_default('GRB_DOWNLOAD_MAX_TIME_SEC', '1800')
+grb_download_retry_sleep_sec := env_var_or_default('GRB_DOWNLOAD_RETRY_SLEEP_SEC', '60')
 
 # PICC configuration (Wallonia - native shapefiles, no API key needed)
 # MetaWal GeoNetwork dataset UUIDs (used to dynamically resolve download URLs)
@@ -212,29 +217,134 @@ grb-order-all:
     @echo "Note: RltGbgGebouw*.dbf (polygon-building relationships) and RltAdresGebouw*.dbf (address links) are both included in their respective downloads"
     @echo "Check status with: just grb-status-orders"
 
-# Download all ready GRB orders (parallel)
+# Download all ready GRB orders
+# Use GRB_DOWNLOAD_PARALLEL=0 to force sequential mode (recommended in CI)
 grb-download-all:
     #!/usr/bin/env bash
-    echo "📥 Downloading all ready orders in parallel..."
+    echo "📥 Downloading all ready orders..."
+    echo "   parallel={{grb_download_parallel}}, max_attempts={{grb_download_max_attempts}}, max_time={{grb_download_max_time_sec}}s, retry_sleep={{grb_download_retry_sleep_sec}}s"
     echo ""
-    just _grb-download-if-ready gbg "$(just _grb-get-order-id gbg)" &
-    PID_GBG=$!
-    just _grb-download-if-ready gba "$(just _grb-get-order-id gba)" &
-    PID_GBA=$!
-    just _grb-download-if-ready knw "$(just _grb-get-order-id knw)" &
-    PID_KNW=$!
-    just _grb-download-if-ready addresses "$(just _grb-get-order-id addresses)" &
-    PID_ADDR=$!
-    wait $PID_GBG; EXIT_GBG=$?
-    wait $PID_GBA; EXIT_GBA=$?
-    wait $PID_KNW; EXIT_KNW=$?
-    wait $PID_ADDR; EXIT_ADDR=$?
-    if [ $EXIT_GBG -ne 0 ] || [ $EXIT_GBA -ne 0 ] || [ $EXIT_KNW -ne 0 ] || [ $EXIT_ADDR -ne 0 ]; then
-        echo "❌ One or more downloads failed" >&2
-        exit 1
+
+    if [ "{{grb_download_parallel}}" = "1" ]; then
+        just _grb-download-if-ready gbg "$(just _grb-get-order-id gbg)" &
+        PID_GBG=$!
+        just _grb-download-if-ready gba "$(just _grb-get-order-id gba)" &
+        PID_GBA=$!
+        just _grb-download-if-ready knw "$(just _grb-get-order-id knw)" &
+        PID_KNW=$!
+        just _grb-download-if-ready addresses "$(just _grb-get-order-id addresses)" &
+        PID_ADDR=$!
+        wait $PID_GBG; EXIT_GBG=$?
+        wait $PID_GBA; EXIT_GBA=$?
+        wait $PID_KNW; EXIT_KNW=$?
+        wait $PID_ADDR; EXIT_ADDR=$?
+        if [ $EXIT_GBG -ne 0 ] || [ $EXIT_GBA -ne 0 ] || [ $EXIT_KNW -ne 0 ] || [ $EXIT_ADDR -ne 0 ]; then
+            echo "❌ One or more downloads failed" >&2
+            exit 1
+        fi
+    else
+        EXIT_CODE=0
+        for PRODUCT in gbg gba knw addresses; do
+            ORDER_ID=$(just _grb-get-order-id "$PRODUCT")
+            if ! just _grb-download-if-ready "$PRODUCT" "$ORDER_ID"; then
+                EXIT_CODE=1
+            fi
+        done
+        if [ $EXIT_CODE -ne 0 ]; then
+            echo "❌ One or more downloads failed" >&2
+            exit 1
+        fi
     fi
     echo ""
     echo "✅ All downloads complete!"
+
+# Download one GRB product from an existing order file (gbg/gba/knw/addresses)
+grb-download-product product:
+    #!/usr/bin/env bash
+    ORDER_ID=$(just _grb-get-order-id "{{product}}")
+    if [ -z "$ORDER_ID" ] || [ "$ORDER_ID" = "null" ]; then
+        echo "❌ No saved order ID found for {{product}} in {{grb_orders_dir}}" >&2
+        echo "   Run: just grb-order-all" >&2
+        exit 1
+    fi
+    just _grb-download-if-ready "{{product}}" "$ORDER_ID"
+
+# Download selected GRB products (comma-separated: gbg,gba,knw,addresses)
+# Creates missing orders for requested products, waits for readiness, then downloads only those.
+grb-download-selected products:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    INPUT="{{products}}"
+    if [ -z "$INPUT" ] || [ "$INPUT" = "all" ]; then
+        INPUT="gbg,gba,knw,addresses"
+    fi
+
+    IFS=',' read -r -a PRODUCT_LIST <<< "$INPUT"
+    mkdir -p {{grb_orders_dir}}
+
+    echo "📦 Preparing selected products: $INPUT"
+    for RAW in "${PRODUCT_LIST[@]}"; do
+        PRODUCT=$(echo "$RAW" | tr -d '[:space:]')
+        case "$PRODUCT" in
+            gbg|gba|knw|addresses) ;;
+            *)
+                echo "❌ Invalid product: $PRODUCT (allowed: gbg,gba,knw,addresses)" >&2
+                exit 1
+                ;;
+        esac
+
+        ORDER_ID=$(just _grb-get-order-id "$PRODUCT")
+        if [ -z "$ORDER_ID" ] || [ "$ORDER_ID" = "null" ]; then
+            just _grb-order-"$PRODUCT"
+            ORDER_ID=$(just _grb-get-order-id "$PRODUCT")
+            if [ -z "$ORDER_ID" ] || [ "$ORDER_ID" = "null" ]; then
+                echo "❌ Failed to create order for $PRODUCT" >&2
+                exit 1
+            fi
+        else
+            echo "✅ Reusing existing order for $PRODUCT: $ORDER_ID"
+        fi
+    done
+
+    echo ""
+    echo "⏳ Waiting for selected orders to be processed..."
+    while true; do
+        ALL_READY=true
+        for RAW in "${PRODUCT_LIST[@]}"; do
+            PRODUCT=$(echo "$RAW" | tr -d '[:space:]')
+            ORDER_ID=$(just _grb-get-order-id "$PRODUCT")
+            STATUS=$(curl -s --retry 5 --retry-all-errors --retry-delay 10 \
+                -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/$ORDER_ID | jq -r '.status')
+            echo "$(date +%H:%M:%S) - $PRODUCT: $STATUS"
+            if [ "$STATUS" != "Processed" ] && [ "$STATUS" != "Completed" ]; then
+                ALL_READY=false
+            fi
+        done
+        echo ""
+        if [ "$ALL_READY" = true ]; then
+            echo "✅ All selected orders ready!"
+            break
+        fi
+        sleep 60
+    done
+
+    echo "📥 Downloading selected products..."
+    EXIT_CODE=0
+    for RAW in "${PRODUCT_LIST[@]}"; do
+        PRODUCT=$(echo "$RAW" | tr -d '[:space:]')
+        ORDER_ID=$(just _grb-get-order-id "$PRODUCT")
+        if ! just _grb-download-if-ready "$PRODUCT" "$ORDER_ID"; then
+            EXIT_CODE=1
+        fi
+    done
+
+    if [ $EXIT_CODE -ne 0 ]; then
+        echo "❌ One or more selected downloads failed" >&2
+        exit 1
+    fi
+
+    echo "✅ Selected downloads complete"
 
 # Import GRB data to PostgreSQL database
 grb-import:
@@ -1604,12 +1714,21 @@ _grb-download-if-ready product order_id:
         exit 0
     fi
     DOWNLOAD_COUNT=$(echo "$ORDER_DATA" | jq -r '.downloads | length')
+    if [ "$DOWNLOAD_COUNT" = "0" ]; then
+        echo "❌ No files available for {{product}} (order {{order_id}})" >&2
+        exit 1
+    fi
+
+    MAX_ATTEMPTS={{grb_download_max_attempts}}
+    MAX_TIME_SEC={{grb_download_max_time_sec}}
+    RETRY_SLEEP_SEC={{grb_download_retry_sleep_sec}}
+    echo "   settings: max_attempts=${MAX_ATTEMPTS}, max_time=${MAX_TIME_SEC}s, retry_sleep=${RETRY_SLEEP_SEC}s"
+
     for i in $(seq 0 $((DOWNLOAD_COUNT - 1))); do
         FILE=$(echo "$ORDER_DATA" | jq -r ".downloads[$i].name")
         DEST="{{grb_data_dir}}/{{product}}/$FILE"
         # Retry loop: resume partial downloads with curl -C -
         # The @id path is stable per order, so resuming makes sense across attempts
-        MAX_ATTEMPTS=10
         DOWNLOAD_OK=false
         for ATTEMPT in $(seq 1 $MAX_ATTEMPTS); do
             FRESH_ORDER=$(curl -s --retry 3 --retry-all-errors --retry-delay 10 \
@@ -1620,7 +1739,7 @@ _grb-download-if-ready product order_id:
             CURL_PROGRESS=$([ -n "${CI:-}" ] && echo "--no-progress-meter" || echo "--progress-bar")
             curl -L $CURL_PROGRESS \
                 -H "x-api-key: {{grb_api_key}}" \
-                --max-time 1800 \
+                --max-time "$MAX_TIME_SEC" \
                 -C - \
                 -o "$DEST" \
                 "https://download.api.vlaanderen.be$URL"
@@ -1633,16 +1752,16 @@ _grb-download-if-ready product order_id:
                     echo "❌ Download failed for $FILE after $MAX_ATTEMPTS attempts (resume unsupported)" >&2
                     exit 1
                 fi
-                sleep 30
+                sleep "$RETRY_SLEEP_SEC"
                 continue
             fi
             if [ $CURL_EXIT -ne 0 ]; then
-                echo "   curl failed (exit $CURL_EXIT), retrying in 60s..."
+                echo "   curl failed (exit $CURL_EXIT), retrying in ${RETRY_SLEEP_SEC}s..."
                 if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
                     echo "❌ Download failed for $FILE after $MAX_ATTEMPTS attempts" >&2
                     exit 1
                 fi
-                sleep 60
+                sleep "$RETRY_SLEEP_SEC"
                 continue
             fi
             # Validate zip integrity before accepting
@@ -1658,7 +1777,7 @@ _grb-download-if-ready product order_id:
                         echo "❌ Download failed for $FILE after $MAX_ATTEMPTS attempts (invalid zip)" >&2
                         exit 1
                     fi
-                    sleep 60
+                    sleep "$RETRY_SLEEP_SEC"
                 fi
             else
                 DOWNLOAD_OK=true

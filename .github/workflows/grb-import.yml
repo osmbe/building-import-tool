@@ -2,6 +2,16 @@ name: GRB Import
 
 on:
   workflow_dispatch:
+    inputs:
+      products:
+        description: "Products to download/import (comma-separated: gbg,gba,knw,addresses or all)"
+        required: false
+        default: "all"
+      download_only:
+        description: "Only validate download step (skip DB import/dump/upload)"
+        required: false
+        type: boolean
+        default: false
 
 env:
   POSTGRES_USER: be2osm
@@ -19,7 +29,7 @@ jobs:
           POSTGRES_PASSWORD: be2osm
           POSTGRES_DB: be2osm
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U be2osm -d be2osm"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -62,6 +72,24 @@ jobs:
 
       - name: Import GRB data
         run: |
+          PRODUCTS="${{ github.event.inputs.products || 'all' }}"
+          DOWNLOAD_ONLY="${{ github.event.inputs.download_only || 'false' }}"
+          if [ "$PRODUCTS" = "all" ] || [ -z "$PRODUCTS" ]; then
+            if [ "$DOWNLOAD_ONLY" = "true" ]; then
+              JUST_COMMAND="just grb-order-all && just _grb-wait-for-orders && just grb-download-all"
+            else
+              JUST_COMMAND="just grb-full"
+            fi
+          else
+            # Reuse/create orders only for selected products to avoid full reruns
+            # Example: products=knw or products=gbg,knw
+            if [ "$DOWNLOAD_ONLY" = "true" ]; then
+              JUST_COMMAND="just grb-download-selected \"$PRODUCTS\""
+            else
+              JUST_COMMAND="just grb-download-selected \"$PRODUCTS\" && just grb-import"
+            fi
+          fi
+
           docker run --network host \
             -v ${{ github.workspace }}/processing:/work \
             -e POSTGRES_HOST=localhost \
@@ -70,9 +98,14 @@ jobs:
             -e POSTGRES_PASSWORD=be2osm \
             -e DIGITAL_VLAANDEREN_API_KEY=${{ secrets.DIGITAL_VLAANDEREN_API_KEY }} \
             -e DIGITAL_VLAANDEREN_API_BASE_URL=${{ vars.DIGITAL_VLAANDEREN_API_BASE_URL }} \
-            processing just grb-full
+            -e GRB_DOWNLOAD_PARALLEL=0 \
+            -e GRB_DOWNLOAD_MAX_TIME_SEC=7200 \
+            -e GRB_DOWNLOAD_MAX_ATTEMPTS=20 \
+            -e GRB_DOWNLOAD_RETRY_SLEEP_SEC=90 \
+            processing bash -lc "$JUST_COMMAND"
 
       - name: Create GRB dump
+        if: ${{ github.event.inputs.download_only != 'true' }}
         run: |
           PGPASSWORD=be2osm pg_dump -h localhost -U be2osm \
             --data-only --disable-triggers \
@@ -82,6 +115,7 @@ jobs:
           ls -lh be2osm.sql.gz
 
       - name: Upload GRB dump
+        if: ${{ github.event.inputs.download_only != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: be2osm-dump
@@ -89,7 +123,7 @@ jobs:
           retention-days: 7
 
       - name: Notify server to restore dump
-        if: ${{ vars.WEBHOOK_URL != '' }}
+        if: ${{ github.event.inputs.download_only != 'true' && vars.WEBHOOK_URL != '' }}
         run: |
           curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/grb-restore" \
             -H "Content-Type: application/json" \
