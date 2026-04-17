@@ -1610,6 +1610,7 @@ _grb-download-if-ready product order_id:
         # Retry loop: resume partial downloads with curl -C -
         # The @id path is stable per order, so resuming makes sense across attempts
         MAX_ATTEMPTS=10
+        DOWNLOAD_OK=false
         for ATTEMPT in $(seq 1 $MAX_ATTEMPTS); do
             FRESH_ORDER=$(curl -s --retry 3 --retry-all-errors --retry-delay 10 \
                 -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/{{order_id}})
@@ -1628,32 +1629,48 @@ _grb-download-if-ready product order_id:
             if [ $CURL_EXIT -eq 33 ]; then
                 echo "   Server does not support resume, restarting..."
                 rm -f "$DEST"
+                if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+                    echo "❌ Download failed for $FILE after $MAX_ATTEMPTS attempts (resume unsupported)" >&2
+                    exit 1
+                fi
                 sleep 30
                 continue
             fi
             if [ $CURL_EXIT -ne 0 ]; then
                 echo "   curl failed (exit $CURL_EXIT), retrying in 60s..."
+                if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+                    echo "❌ Download failed for $FILE after $MAX_ATTEMPTS attempts" >&2
+                    exit 1
+                fi
                 sleep 60
                 continue
             fi
             # Validate zip integrity before accepting
             if [[ "$FILE" == *.zip ]]; then
                 if unzip -t "$DEST" > /dev/null 2>&1; then
+                    DOWNLOAD_OK=true
                     break  # Valid zip
                 else
                     FILE_SIZE=$(stat -c%s "$DEST" 2>/dev/null || echo 0)
                     echo "   Downloaded zip is invalid ($(numfmt --to=iec $FILE_SIZE)), clearing and retrying in 60s..."
                     rm -f "$DEST"
+                    if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+                        echo "❌ Download failed for $FILE after $MAX_ATTEMPTS attempts (invalid zip)" >&2
+                        exit 1
+                    fi
                     sleep 60
                 fi
             else
+                DOWNLOAD_OK=true
                 break  # Non-zip, no validation needed
             fi
-            if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
-                echo "❌ Download failed for $FILE after $MAX_ATTEMPTS attempts" >&2
-                exit 1
-            fi
         done
+
+        if [ "$DOWNLOAD_OK" != "true" ]; then
+            echo "❌ Download failed for $FILE after $MAX_ATTEMPTS attempts" >&2
+            exit 1
+        fi
+
         FILE_SIZE=$(stat -c%s "$DEST" 2>/dev/null || echo 0)
         echo "✅ Downloaded: $FILE ($(numfmt --to=iec $FILE_SIZE))"
         # Extract if ZIP
