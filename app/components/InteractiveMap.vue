@@ -239,7 +239,8 @@
                       <Building2 class="h-2.5 w-2.5" />GRB
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">{{ formatGRBBuildingType(currentFeature.polygon_type_label || currentFeature.building_type_label) }}</h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ currentFeature.gebouw_id || currentFeature.id }}</div>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">Building ID: {{ currentFeature.gebouw_id || currentFeature.id }}</div>
+                    <div v-if="currentFeature.oidn" class="text-[10px] font-mono text-muted-foreground">OIDN: {{ currentFeature.oidn }}</div>
                   </div>
                   <button v-if="isTooltipSticky && activeFeatures.length <= 1" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="closeTooltip">
                     <X class="h-3.5 w-3.5" />
