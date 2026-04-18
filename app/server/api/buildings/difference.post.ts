@@ -47,15 +47,56 @@ export default defineEventHandler(async (event) => {
     let rows: any[]
     let totalOsm = 0
 
+    // GRB schema compatibility (legacy vs normalized column names)
+    const needsGrbPolygonColumns = dataSource === 'grb'
+    let grbSurveyDateExpr = 'NULL::date'
+    let grbTypeLabelExpr = 'NULL::text'
+
+    if (needsGrbPolygonColumns) {
+      const grbColumns = await queryGrb(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'grb'
+          AND table_name = 'building_polygons'
+          AND column_name IN ('survey_date', 'opndatum', 'type_label', 'lbltype');
+      `)
+
+      const columnNames = new Set(grbColumns.map((row: any) => row.column_name))
+
+      if (columnNames.has('survey_date')) {
+        grbSurveyDateExpr = 'bp.survey_date'
+      } else if (columnNames.has('opndatum')) {
+        grbSurveyDateExpr = 'bp.opndatum'
+      }
+
+      if (columnNames.has('type_label')) {
+        grbTypeLabelExpr = 'bp.type_label'
+      } else if (columnNames.has('lbltype')) {
+        grbTypeLabelExpr = 'bp.lbltype'
+      }
+    }
+
     if (matchMode === 'source') {
       // Source tag matching (GRB only): Show GRB buildings that DON'T have matching OSM source:geometry:oidn
       // Support multiple OSM reference patterns for compatibility:
       // 1) tags.source:geometry:oidn
       // 2) tags.source:geometry:ref (format Entity/OIDN)
-      // 3) legacy/imported osm.osm_buildings.oidn column
+      // 3) optional legacy/imported osm.osm_buildings.oidn column (when present)
+
+      const columnCheck = await queryOsm(`
+        SELECT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'osm'
+            AND table_name = 'osm_buildings'
+            AND column_name = 'oidn'
+        ) AS has_legacy_oidn;
+      `)
+      const hasLegacyOidn = Boolean(columnCheck[0]?.has_legacy_oidn)
 
       // Step 1: Get OSM buildings with source:geometry:oidn in the extent
-      const osmQuery = `
+      const osmQuery = hasLegacyOidn
+        ? `
         SELECT DISTINCT
           COALESCE(
             NULLIF(tags->>'source:geometry:oidn', ''),
@@ -69,6 +110,20 @@ export default defineEventHandler(async (event) => {
             tags ? 'source:geometry:oidn'
             OR tags ? 'source:geometry:ref'
             OR oidn IS NOT NULL
+          )
+      `
+        : `
+        SELECT DISTINCT
+          COALESCE(
+            NULLIF(tags->>'source:geometry:oidn', ''),
+            NULLIF(split_part(tags->>'source:geometry:ref', '/', 2), '')
+          ) AS oidn
+        FROM osm.osm_buildings
+        WHERE geom_mercator && ST_MakeEnvelope($1, $2, $3, $4, 3857)
+          AND ST_Intersects(geom_mercator, ST_MakeEnvelope($1, $2, $3, $4, 3857))
+          AND (
+            tags ? 'source:geometry:oidn'
+            OR tags ? 'source:geometry:ref'
           )
       `
 
@@ -88,8 +143,8 @@ export default defineEventHandler(async (event) => {
           ST_AsGeoJSON(bp.geom) AS geometry,
           bp.oidn,
           bp.gebouw_id,
-          bp.opndatum,
-          bp.lbltype,
+          ${grbSurveyDateExpr} AS opndatum,
+          ${grbTypeLabelExpr} AS lbltype,
           COUNT(*) OVER() AS total_grb,
           $5::bigint AS total_osm
         FROM grb.building_polygons bp, envelope_4326 e
@@ -127,8 +182,8 @@ export default defineEventHandler(async (event) => {
             ST_AsGeoJSON(bp.geom) AS geometry,
             bp.oidn,
             bp.gebouw_id,
-            bp.opndatum,
-            bp.lbltype,
+            ${grbSurveyDateExpr} AS opndatum,
+            ${grbTypeLabelExpr} AS lbltype,
             COUNT(*) OVER() AS total_grb,
             0::bigint AS total_osm
           FROM grb.building_polygons bp
@@ -146,7 +201,12 @@ export default defineEventHandler(async (event) => {
               SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON($5), 4326))).geom AS geom
             ),
             grb_in_extent AS (
-              SELECT bp.geom, bp.oidn, bp.gebouw_id, bp.opndatum, bp.lbltype
+              SELECT
+                bp.geom,
+                bp.oidn,
+                bp.gebouw_id,
+                ${grbSurveyDateExpr} AS opndatum,
+                ${grbTypeLabelExpr} AS lbltype
               FROM grb.building_polygons bp, envelope_4326 e
               WHERE bp.geom && e.env
                 AND ST_Intersects(bp.geom, e.env)
