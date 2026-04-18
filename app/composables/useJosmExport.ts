@@ -5,23 +5,20 @@ export const useJosmExport = () => {
   const josmBaseUrl = ref('http://127.0.0.1:8111')
   const useSSL = ref(false)
 
-  const KNW_TAG_MAP: Record<string, Record<string, string>> = {
-    overbrugging: { bridge: 'yes' },
-    pijler: { 'man_made': 'bridge_support' },
-    tunnelmond: { tunnel: 'yes' },
-    hoogspanningsmast: { power: 'tower' },
-    windturbine: {
+  const KNW_TAG_MAP_BY_CODE: Record<string, Record<string, string>> = {
+    '1': { bridge: 'yes' },
+    '5': { 'man_made': 'bridge_support' },
+    '7': { 'man_made': 'chimney' },
+    '8': { 'man_made': 'cooling_tower' },
+    '11': { 'man_made': 'water_tower' },
+    '14': {
       power: 'generator',
       'generator:source': 'wind',
       'generator:method': 'wind_turbine'
     },
-    schoorsteen: { 'man_made': 'chimney' },
-    koeltoren: { 'man_made': 'cooling_tower' },
-    silo: { 'man_made': 'silo' },
-    watertoren: { 'man_made': 'water_tower' },
-    staketsel: { 'man_made': 'pier' },
-    havendam: { 'man_made': 'breakwater' },
-    golfbreker: { 'man_made': 'breakwater' }
+    '22': { 'man_made': 'breakwater' },
+    '23': { 'man_made': 'breakwater' },
+    '24': { 'man_made': 'pier' }
   }
 
   // Update JOSM URL based on SSL preference
@@ -73,8 +70,12 @@ export const useJosmExport = () => {
 
     // Add default tags for supported KNW structure types
     if (isKnw) {
+      const typeCode = String((props as any).type_code || '').trim()
       const typeLabel = String((props as any).type_label || (props as any).lbltype || '').toLowerCase().trim()
-      const mappedTags = KNW_TAG_MAP[typeLabel]
+
+      const mappedTags = typeCode === '9'
+        ? { 'man_made': typeLabel.includes('opslagtank') && !typeLabel.includes('silo') ? 'storage_tank' : 'silo' }
+        : KNW_TAG_MAP_BY_CODE[typeCode]
 
       if (mappedTags) {
         Object.entries(mappedTags).forEach(([key, value]) => {
@@ -82,8 +83,6 @@ export const useJosmExport = () => {
             props[key] = value
           }
         })
-      } else if (!props.man_made && !props.power && !props.bridge && !props.tunnel) {
-        props.man_made = 'structure'
       }
 
       delete props.building

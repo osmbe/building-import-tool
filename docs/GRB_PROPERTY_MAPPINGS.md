@@ -126,24 +126,22 @@ The following LBLTYPE values are **deleted** during processing:
 
 For GRB KNW structures, `source:geometry:entity` is set to `Knw` and `source:geometry:ref` is generated as `Knw/<oidn>`.
 
-Supported phase-1 KNW defaults:
+Supported phase-1 KNW defaults (issue #22 scope):
 
-| KNW Type (`type_label`) | Default OSM tags |
-|-------------------------|------------------|
-| `overbrugging` | `bridge=yes` |
-| `pijler` | `man_made=bridge_support` |
-| `tunnelmond` | `tunnel=yes` |
-| `hoogspanningsmast` | `power=tower` |
-| `windturbine` | `power=generator`, `generator:source=wind`, `generator:method=wind_turbine` |
-| `schoorsteen` | `man_made=chimney` |
-| `koeltoren` | `man_made=cooling_tower` |
-| `silo` | `man_made=silo` |
-| `watertoren` | `man_made=water_tower` |
-| `staketsel` | `man_made=pier` |
-| `havendam` | `man_made=breakwater` |
-| `golfbreker` | `man_made=breakwater` |
+| KNW Type (`type_code`) | KNW Type (`type_label`) | Default OSM tags |
+|------------------------|-------------------------|------------------|
+| `1` | `overbrugging` | `bridge=yes` |
+| `5` | `pijler` | `man_made=bridge_support` |
+| `7` | `schoorsteen` | `man_made=chimney` |
+| `8` | `koeltoren` | `man_made=cooling_tower` |
+| `9` | `silo, opslagtank` | `man_made=silo` (or `man_made=storage_tank` when subtype indicates tank) |
+| `11` | `watertoren` | `man_made=water_tower` |
+| `14` | `nutspaal type windturbine` | `power=generator`, `generator:source=wind`, `generator:method=wind_turbine` |
+| `22` | `golfbreker, strandhoofd en lage havendam` | `man_made=breakwater` |
+| `23` | `havendam` | `man_made=breakwater` |
+| `24` | `staketsel` | `man_made=pier` |
 
-If a KNW type is not in this list and has no explicit target tag, export falls back to `man_made=structure`.
+KNW types outside this scope are exported without a default structural tag and require manual tagging in JOSM.
 
 ## 6. Property Transformations
 
