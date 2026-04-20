@@ -130,14 +130,14 @@ Supported phase-1 KNW defaults (issue #22 scope):
 
 | KNW Type (`type_code`) | KNW Type (`type_label`) | Default OSM tags |
 |------------------------|-------------------------|------------------|
-| `1` | `overbrugging` | `bridge=yes` |
+| `1` | `overbrugging` | `man_made=bridge` |
 | `5` | `pijler` | `man_made=bridge_support` |
 | `7` | `schoorsteen` | `man_made=chimney` |
-| `8` | `koeltoren` | `man_made=cooling_tower` |
-| `9` | `silo, opslagtank` | `man_made=silo` (or `man_made=storage_tank` when subtype indicates tank) |
+| `8` | `koeltoren` | `man_made=tower` + `tower:type=cooling`
+| `9` | `silo, opslagtank` | `man_made=silo` (bulk materials) or `man_made=storage_tank` (for liquids & gas) |
 | `11` | `watertoren` | `man_made=water_tower` |
-| `14` | `nutspaal type windturbine` | `power=generator`, `generator:source=wind`, `generator:method=wind_turbine` |
-| `22` | `golfbreker, strandhoofd en lage havendam` | `man_made=breakwater` |
+| `14` | `nutspaal type windturbine` | `power=generator`, `generator:source=wind`, `generator:method=wind_turbine`, `generator:output:electricity=yes` |
+| `22` | `golfbreker, strandhoofd en lage havendam` | `man_made=breakwater` (large construction) or `man_made=groyne`(on the beach) |
 | `23` | `havendam` | `man_made=breakwater` |
 | `24` | `staketsel` | `man_made=pier` |
 
