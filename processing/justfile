@@ -1997,7 +1997,7 @@ _grb-import-knw:
     FIRST=true
     FOUND=false
 
-    for KNW_FILE in $(find {{grb_data_dir}} -path "*/knw/*" -name "Knw*.shp" -type f 2>/dev/null | sort); do
+    for KNW_FILE in $(find {{grb_data_dir}} -path "*/knw/*" \( -name "Knw*.shp" -o -name "Gvl*.shp" \) -type f 2>/dev/null | sort); do
       if [ ! -f "$KNW_FILE" ]; then
         continue
       fi
@@ -2020,7 +2020,7 @@ _grb-import-knw:
     done
 
     if [ "$FOUND" = false ]; then
-        echo "⚠️  Knw*.shp not found — skipping KNW import"
+        echo "⚠️  KNW shapefile not found (Knw*.shp or Gvl*.shp) — skipping KNW import"
         exit 0
     fi
 
@@ -2031,15 +2031,20 @@ _grb-import-knw:
             uidn::bigint,
             type::integer as type_code,
             lbltype as type_label,
-            oppervl::real as area_m2,
+            CASE
+                WHEN GeometryType(geom) LIKE 'POLYGON%' OR GeometryType(geom) LIKE 'MULTIPOLYGON%'
+                THEN ST_Area(geom::geography)::real
+                ELSE NULL
+            END as area_m2,
             lengte::real as length_m,
             versie::integer as version,
             bgninv::integer as origin_code,
             lblbgninv as origin_label,
             opndatum as opndatum_raw,
             'Knw'::varchar(8) as entity,
-            geom
+            ST_MakeValid(geom)::geometry(Geometry, 4326)
         FROM grb.kunstwerken_raw
+        WHERE NOT ST_IsEmpty(ST_MakeValid(geom))
         ON CONFLICT (oidn) DO NOTHING;
         DROP TABLE IF EXISTS grb.kunstwerken_raw;
     "
