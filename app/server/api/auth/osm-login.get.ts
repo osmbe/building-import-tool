@@ -21,7 +21,7 @@ export default defineEventHandler((event) => {
     client_id: config.public.osmClientId,
     redirect_uri: config.public.osmRedirectUri,
     response_type: 'code',
-    scope: 'read_prefs write_api',
+    scope: 'read_prefs',
     state: state
   })
 
