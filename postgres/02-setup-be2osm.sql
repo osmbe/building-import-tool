@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS grb.building_polygons (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Kunstwerken Polygons (KNW - Structures)
+-- Kunstwerken Geometries (KNW - Structures)
 CREATE TABLE IF NOT EXISTS grb.kunstwerken (
     id BIGSERIAL PRIMARY KEY,
 
@@ -98,10 +98,10 @@ CREATE TABLE IF NOT EXISTS grb.kunstwerken (
     entity VARCHAR(8) DEFAULT 'Knw',
 
     -- Geometry (WGS84 - EPSG:4326)
-    geom GEOMETRY(Polygon, 4326) NOT NULL,
+    geom GEOMETRY(Geometry, 4326) NOT NULL,
 
     -- Web Mercator for tile serving (EPSG:3857)
-    geom_mercator GEOMETRY(Polygon, 3857),
+    geom_mercator GEOMETRY(Geometry, 3857),
 
     -- Import tracking
     source_file VARCHAR(255),
@@ -510,7 +510,7 @@ COMMENT ON COLUMN grb.building_polygons.oidn IS 'Unique polygon identifier from 
 COMMENT ON COLUMN grb.building_polygons.gebouw_id IS 'Building ID - one building can have multiple polygons';
 COMMENT ON COLUMN grb.building_polygons.geom IS 'Geometry in WGS84 (EPSG:4326)';
 
-COMMENT ON TABLE grb.kunstwerken IS 'GRB kunstwerken polygons (KNW) - non-building structures for OSM import support';
+COMMENT ON TABLE grb.kunstwerken IS 'GRB kunstwerken geometries (KNW) - non-building structures for OSM import support';
 COMMENT ON COLUMN grb.kunstwerken.oidn IS 'Unique kunstwerk identifier from GRB';
 COMMENT ON COLUMN grb.kunstwerken.type_label IS 'Kunstwerk type label (LBLTYPE)';
 COMMENT ON COLUMN grb.kunstwerken.entity IS 'Source geometry entity identifier (Knw)';
