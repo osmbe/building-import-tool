@@ -137,6 +137,70 @@
   cursor: not-allowed;
 }
 
+/* ── Keyboard focus visibility (a11y) ── */
+.map-icon-btn:focus-visible,
+.layer-btn:focus-visible,
+.action-btn:focus-visible,
+.check-row:focus-visible,
+.result-retry:focus-visible {
+  outline: 2px solid hsl(192 90% 46% / 0.7);
+  outline-offset: 1px;
+}
+
+/* ── Prerequisite checklist rows ── */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  width: 100%;
+  font-size: 0.625rem;
+  line-height: 1.2;
+  padding: 0.125rem 0;
+  color: hsl(215 12% 52%);
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+.check-row:hover {
+  color: hsl(210 18% 82%);
+}
+.check-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+.check-mark.check-done {
+  background: hsl(152 70% 50% / 0.15);
+  border-color: hsl(152 70% 50% / 0.4);
+  color: hsl(152 70% 60%);
+}
+.check-action {
+  font-size: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: hsl(192 80% 62% / 0.85);
+}
+.result-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: hsl(192 80% 62%);
+  border: 1px solid hsl(192 90% 46% / 0.25);
+  transition: background 0.12s ease;
+  cursor: pointer;
+}
+.result-retry:hover {
+  background: hsl(192 90% 46% / 0.1);
+}
+
 /* ── Layer panel rows ── */
 .layer-row {
   display: flex;

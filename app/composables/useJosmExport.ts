@@ -1,25 +1,10 @@
 import type { Feature, FeatureCollection } from 'geojson'
 import { geojsonToOsm } from '~/utils/geojsonToOsm'
+import { filterFeatureProperties } from '~/utils/grbExportTags'
 
 export const useJosmExport = () => {
   const josmBaseUrl = ref('http://127.0.0.1:8111')
   const useSSL = ref(false)
-
-  const KNW_TAG_MAP_BY_CODE: Record<string, Record<string, string>> = {
-    '1': { bridge: 'yes' },
-    '5': { 'man_made': 'bridge_support' },
-    '7': { 'man_made': 'chimney' },
-    '8': { 'man_made': 'cooling_tower' },
-    '11': { 'man_made': 'water_tower' },
-    '14': {
-      power: 'generator',
-      'generator:source': 'wind',
-      'generator:method': 'wind_turbine'
-    },
-    '22': { 'man_made': 'breakwater' },
-    '23': { 'man_made': 'breakwater' },
-    '24': { 'man_made': 'pier' }
-  }
 
   // Update JOSM URL based on SSL preference
   const getJosmUrl = () => useSSL.value ? 'https://127.0.0.1:8112' : 'http://127.0.0.1:8111'
@@ -49,126 +34,6 @@ export const useJosmExport = () => {
     } catch (error) {
       console.error('JOSM connection failed:', error)
       return false
-    }
-  }
-
-  /**
-   * Filter feature properties for export
-   * Maps GRB properties to OSM tags according to GRB_PROPERTY_MAPPINGS.md
-   */
-  const filterFeatureProperties = (feature: Feature): Feature => {
-    const props = { ...feature.properties }
-
-    const sourceLayerType = String((props as any)._layer_type || '').toLowerCase()
-    const explicitEntity = String((props as any).entity || (props as any).source_geometry_entity || '').toLowerCase()
-    const isKnw = sourceLayerType === 'knw' || explicitEntity === 'knw' || explicitEntity === 'kunstwerken'
-
-    // Export candidate polygons as buildings by default (not for KNW structures)
-    if (!isKnw && !props.building) {
-      props.building = 'yes'
-    }
-
-    // Add default tags for supported KNW structure types
-    if (isKnw) {
-      const typeCode = String((props as any).type_code || '').trim()
-      const typeLabel = String((props as any).type_label || (props as any).lbltype || '').toLowerCase().trim()
-
-      const mappedTags = typeCode === '9'
-        ? { 'man_made': typeLabel.includes('opslagtank') && !typeLabel.includes('silo') ? 'storage_tank' : 'silo' }
-        : KNW_TAG_MAP_BY_CODE[typeCode]
-
-      if (mappedTags) {
-        Object.entries(mappedTags).forEach(([key, value]) => {
-          if (!props[key]) {
-            props[key] = value
-          }
-        })
-      }
-
-      delete props.building
-    }
-
-    // Map GRB OIDN to source:geometry:oidn
-    if (props.oidn) {
-      props['source:geometry:oidn'] = props.oidn
-    }
-
-    // Map GRB OPNDATUM to source:geometry:date and format to YYYY-MM-DD
-    if (props.opndatum || props.survey_date) {
-      const date = String(props.opndatum || props.survey_date)
-      // Convert DD/MM/YYYY to YYYY-MM-DD
-      if (date.includes('/')) {
-        const parts = date.split('/')
-        if (parts.length === 3) {
-          props['source:geometry:date'] = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
-        }
-      } else if (date.includes('-')) {
-        // Already in correct format or YYYY-MM-DD
-        props['source:geometry:date'] = date
-      }
-    }
-
-    // Set source:geometry:entity from feature type
-    props['source:geometry:entity'] = isKnw ? 'Knw' : 'Gbg'
-
-    // Create source:geometry:ref composite property
-    if (props['source:geometry:entity'] && props['source:geometry:oidn']) {
-      props['source:geometry:ref'] =
-        `${props['source:geometry:entity']}/${props['source:geometry:oidn']}`
-    }
-
-    // Migrate auto_building to building tag (fallback)
-    if (props.auto_building && !props.building) {
-      props.building = props.auto_building
-    }
-
-    // Remove GRB-specific properties that shouldn't be exported
-    const tagsToRemove = [
-      // GRB internal properties
-      'ogc_fid',
-      'oidn',
-      'uidn',
-      'gebouw_id',
-      'versie',
-      'begindatum',
-      'versdatum',
-      'type',
-      'lbltype',
-      'opndatum',
-      'survey_date',
-      'bgninv',
-      'lblbgninv',
-      'lengte',
-      'oppervl',
-      // Metadata tags
-      'size_grb_building',
-      'source:geometry:uidn',
-      'source',
-      'H_DTM_MIN',
-      'H_DTM_GEM',
-      'H_DSM_MAX',
-      'H_DSM_P99',
-      'HN_MAX',
-      'HN_P99',
-      'detection_method',
-      'size_shared',
-      'size_source_building',
-      'auto_building',
-      'size_source_landuse',
-      'source:geometry:entity',
-      'source:geometry:oidn',
-      'auto_target_landuse',
-      'entity',
-      '_layer_type'
-    ]
-
-    tagsToRemove.forEach(tag => {
-      delete props[tag]
-    })
-
-    return {
-      ...feature,
-      properties: props
     }
   }
 

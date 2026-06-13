@@ -4,6 +4,9 @@
       <!-- OpenLayers Map Container -->
       <div id="map" ref="mapRef" class="absolute inset-0" :class="currentBaseLayer === 'blank' ? 'bg-[#f5f0e8]' : ''" style="width: 100%; height: 100%; min-height: 400px;"></div>
 
+      <!-- First-run guidance -->
+      <GettingStartedCard :has-candidates="candidateBuildingCount > 0" />
+
       <!-- Top-right: Map Controls Panel -->
       <div class="absolute right-4 top-4 flex flex-col gap-2 w-44">
         <div class="glass-panel rounded-lg overflow-hidden">
@@ -21,13 +24,13 @@
           <div v-show="!controlsCollapsed">
             <!-- Zoom controls -->
             <div class="flex items-center gap-1 p-2 border-b border-white/[0.05]">
-              <button class="map-icon-btn" @click="zoomIn" title="Zoom in">
+              <button class="map-icon-btn" @click="zoomIn" title="Zoom in" aria-label="Zoom in">
                 <ZoomIn class="h-3.5 w-3.5" />
               </button>
-              <button class="map-icon-btn" @click="zoomOut" title="Zoom out">
+              <button class="map-icon-btn" @click="zoomOut" title="Zoom out" aria-label="Zoom out">
                 <ZoomOut class="h-3.5 w-3.5" />
               </button>
-              <button class="map-icon-btn" @click="resetView" title="Reset view">
+              <button class="map-icon-btn" @click="resetView" title="Reset view" aria-label="Reset view">
                 <RotateCcw class="h-3.5 w-3.5" />
               </button>
             </div>
@@ -45,11 +48,33 @@
               </div>
             </div>
 
+            <!-- Prerequisite checklist (shown until everything is ready) -->
+            <div v-if="!canCalculateDifference" class="px-2 pt-2 pb-1.5 space-y-1 border-b border-white/[0.05]">
+              <div class="text-[8px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Before you start</div>
+              <button class="check-row" @click="revealLayersPanel">
+                <span class="check-mark" :class="hasSourceLayer ? 'check-done' : ''"><Check v-if="hasSourceLayer" class="h-2 w-2" /></span>
+                <span class="flex-1 text-left" :class="hasSourceLayer ? 'text-emerald-400/80' : ''">Source dataset on</span>
+                <span v-if="!hasSourceLayer" class="check-action">Layers</span>
+              </button>
+              <button class="check-row" @click="revealLayersPanel">
+                <span class="check-mark" :class="hasOsmLayer ? 'check-done' : ''"><Check v-if="hasOsmLayer" class="h-2 w-2" /></span>
+                <span class="flex-1 text-left" :class="hasOsmLayer ? 'text-emerald-400/80' : ''">OSM Buildings on</span>
+                <span v-if="!hasOsmLayer" class="check-action">Layers</span>
+              </button>
+              <button class="check-row" @click="zoomToWorkingLevel">
+                <span class="check-mark" :class="zoomReady ? 'check-done' : ''"><Check v-if="zoomReady" class="h-2 w-2" /></span>
+                <span class="flex-1 text-left" :class="zoomReady ? 'text-emerald-400/80' : ''">Zoom in to ≥ 16</span>
+                <span v-if="!zoomReady" class="check-action">Zoom</span>
+              </button>
+            </div>
+
             <!-- Actions -->
             <div class="p-2 space-y-1">
               <button
                 class="action-btn w-full"
                 :disabled="!canCalculateDifference || isCalculatingDifference"
+                title="Get Difference (G)"
+                aria-label="Get Difference"
                 @click="calculateDifference"
               >
                 <Loader2 v-if="isCalculatingDifference" class="h-3 w-3 animate-spin shrink-0" />
@@ -59,11 +84,33 @@
               <button
                 class="action-btn w-full"
                 :disabled="!canExportToJOSM"
+                title="Open in JOSM (J)"
+                aria-label="Open candidates in JOSM"
                 @click="exportToJOSM"
               >
                 <ExternalLink class="h-3 w-3 shrink-0" />
                 <span>Open in JOSM</span>
               </button>
+
+              <!-- JOSM connection status -->
+              <div class="flex items-center justify-between px-0.5 pt-1">
+                <div class="flex items-center gap-1.5">
+                  <span
+                    class="h-1.5 w-1.5 rounded-full shrink-0"
+                    :class="josmConnected === true ? 'bg-emerald-400'
+                      : josmConnected === false ? 'bg-red-400'
+                      : 'bg-muted-foreground/40'"
+                  ></span>
+                  <span class="text-[9px] text-muted-foreground">
+                    {{ josmConnected === true ? 'JOSM ready'
+                      : josmConnected === false ? 'JOSM offline'
+                      : 'JOSM unknown' }}
+                  </span>
+                </div>
+                <button class="text-[9px] text-primary/80 hover:text-primary transition-colors" @click="josmHelpOpen = true">
+                  Set up
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -102,34 +149,26 @@
                 </div>
                 <Switch v-model:checked="overlayLayers.osmBuildings" @update:checked="toggleOsmBuildings" />
               </div>
-              <div class="layer-row">
-                <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="color: hsl(var(--layer-grb)); background: currentColor;"></span>
-                  <span class="text-xs text-foreground/85">GRB Buildings</span>
-                </div>
-                <Switch v-model:checked="overlayLayers.grbBuildings" @update:checked="toggleGrbBuildings" />
+            </div>
+
+            <!-- Source dataset (single-select; compared against OSM) -->
+            <div class="mt-3 pt-3 border-t border-white/[0.05]">
+              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Source dataset</div>
+              <div class="grid grid-cols-2 gap-1">
+                <button
+                  v-for="opt in sourceOptions"
+                  :key="opt.key"
+                  class="layer-btn flex items-center justify-center gap-1.5"
+                  :class="selectedSource === opt.key ? 'layer-btn-active' : ''"
+                  @click="selectSource(opt.key)"
+                >
+                  <span class="layer-dot" :style="{ color: `hsl(var(${opt.varName}))`, background: 'currentColor' }"></span>
+                  {{ opt.label }}
+                </button>
               </div>
-              <div class="layer-row">
-                <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="color: hsl(var(--layer-knw)); background: currentColor;"></span>
-                  <span class="text-xs text-foreground/85">GRB Kunstwerken</span>
-                </div>
-                <Switch v-model:checked="overlayLayers.knwStructures" @update:checked="toggleKnwStructures" />
-              </div>
-              <div class="layer-row">
-                <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="color: hsl(var(--layer-picc)); background: currentColor;"></span>
-                  <span class="text-xs text-foreground/85">PICC Buildings</span>
-                </div>
-                <Switch v-model:checked="overlayLayers.piccBuildings" @update:checked="togglePiccBuildings" />
-              </div>
-              <div class="layer-row">
-                <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="color: hsl(var(--layer-urbis)); background: currentColor;"></span>
-                  <span class="text-xs text-foreground/85">Urbis Buildings</span>
-                </div>
-                <Switch v-model:checked="overlayLayers.urbisBuildings" @update:checked="toggleUrbisBuildings" />
-              </div>
+              <p class="text-[9px] text-muted-foreground/70 mt-1.5 leading-relaxed">
+                One dataset at a time, compared against OSM Buildings.
+              </p>
             </div>
             <div class="mt-3 pt-3 border-t border-white/[0.05] space-y-1">
               <div class="flex items-center justify-between text-[10px]">
@@ -147,17 +186,56 @@
 
       <!-- Bottom-right: Match Mode + Stats stacked -->
       <div class="absolute bottom-4 right-4 flex flex-col gap-2 w-56">
-        <!-- Matching Stats (shown after Get Difference) -->
-        <div v-if="matchingStats" class="glass-panel rounded-lg p-3">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Match Stats</h3>
-            <button class="text-muted-foreground hover:text-foreground transition-colors" @click="matchingStats = null">
+        <!-- Results panel (loading / empty / error / success) -->
+        <div v-if="differenceState !== 'idle'" class="glass-panel rounded-lg p-3">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-1.5">
+              <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Results</h3>
+              <span
+                v-if="useOverpass"
+                class="inline-flex items-center gap-1 px-1 py-px rounded text-[8px] font-semibold uppercase tracking-wide text-emerald-400 bg-emerald-400/10 border border-emerald-400/20"
+              >
+                <span class="h-1 w-1 rounded-full bg-emerald-400"></span>
+                Live
+              </span>
+            </div>
+            <button class="text-muted-foreground hover:text-foreground transition-colors" aria-label="Dismiss results" @click="dismissResults">
               <X class="h-3 w-3" />
             </button>
           </div>
-          <div class="space-y-1.5 text-[11px]">
+
+          <!-- Loading -->
+          <div v-if="differenceState === 'loading'" class="flex items-center gap-2 text-[11px] text-muted-foreground py-1">
+            <Loader2 class="h-3 w-3 animate-spin shrink-0" />
+            <span>Searching this view…</span>
+          </div>
+
+          <!-- Error -->
+          <div v-else-if="differenceState === 'error'" class="space-y-2">
+            <div class="flex items-start gap-2 text-[11px] text-red-300/90">
+              <CircleAlert class="h-3.5 w-3.5 shrink-0 mt-px text-red-400" />
+              <span>Could not calculate the difference.</span>
+            </div>
+            <p v-if="differenceError" class="text-[10px] text-muted-foreground break-words leading-relaxed">{{ differenceError }}</p>
+            <button class="result-retry" @click="calculateDifference">
+              <RotateCcw class="h-2.5 w-2.5" />
+              Retry
+            </button>
+          </div>
+
+          <!-- Empty -->
+          <div v-else-if="differenceState === 'empty'" class="space-y-1.5">
+            <p class="text-[11px] text-foreground/85">No missing buildings here.</p>
+            <p class="text-[10px] text-muted-foreground leading-relaxed">
+              Everything in view already matches OSM. Pan to a new area, lower the match strictness, or switch match mode.
+            </p>
+            <p class="text-[9px] text-muted-foreground/70 pt-0.5">{{ matchSummary }}</p>
+          </div>
+
+          <!-- Success -->
+          <div v-else-if="differenceState === 'success' && matchingStats" class="space-y-1.5 text-[11px]">
             <div class="flex items-center justify-between">
-              <span class="text-muted-foreground">GRB total</span>
+              <span class="text-muted-foreground">Source total</span>
               <span class="font-mono text-foreground/65">{{ matchingStats.totalGrb }}</span>
             </div>
             <div class="flex items-center justify-between">
@@ -170,22 +248,53 @@
                 <span class="font-mono font-medium text-emerald-400">{{ matchingStats.matched }}</span>
               </div>
               <div class="flex items-center justify-between">
-                <span class="text-sky-400/90">Unmatched</span>
+                <span class="text-sky-400/90">Candidates</span>
                 <span class="font-mono font-medium text-sky-400">{{ matchingStats.unmatched }}</span>
               </div>
             </div>
             <div class="pt-2 border-t border-white/[0.05]">
               <div class="flex items-center justify-between mb-1.5">
                 <span class="text-muted-foreground">Coverage</span>
-                <span class="font-mono text-primary font-medium">{{ Math.round((matchingStats.matched / matchingStats.totalGrb) * 100) }}%</span>
+                <span class="font-mono text-primary font-medium">{{ coveragePct }}%</span>
               </div>
               <div class="h-1 bg-white/[0.05] rounded-full overflow-hidden">
                 <div
                   class="h-full bg-primary/75 rounded-full transition-all duration-700"
-                  :style="{ width: Math.round((matchingStats.matched / matchingStats.totalGrb) * 100) + '%' }"
+                  :style="{ width: coveragePct + '%' }"
                 ></div>
               </div>
             </div>
+            <!-- Cap notice when there are more candidates than we render/export at once -->
+            <div v-if="candidateCapped" class="flex items-start gap-1.5 pt-2 text-[10px] text-amber-300/90">
+              <CircleAlert class="h-3 w-3 shrink-0 mt-px text-amber-400" />
+              <span>Showing the first {{ candidateBuildingCount.toLocaleString() }} of {{ candidateTotalInView.toLocaleString() }}. Zoom in to review the rest.</span>
+            </div>
+
+            <!-- Optional simplification before export -->
+            <div class="pt-2 mt-1 border-t border-white/[0.05]">
+              <label class="flex items-center justify-between gap-2 cursor-pointer select-none">
+                <span class="text-[10px] text-foreground/80">Simplify geometry on export</span>
+                <input type="checkbox" class="accent-primary h-3 w-3" v-model="simplifyOnExport">
+              </label>
+              <div v-if="simplifyOnExport" class="mt-1.5 flex items-center gap-2">
+                <input
+                  type="range"
+                  min="50"
+                  max="98"
+                  step="1"
+                  class="flex-1 accent-primary"
+                  v-model.number="simplifyPercent"
+                >
+                <span class="font-mono text-[10px] text-foreground/60 w-8 text-right">{{ simplifyPercent }}%</span>
+              </div>
+              <p v-if="simplifyOnExport" class="text-[9px] text-muted-foreground/70 mt-1 leading-relaxed">
+                Keeps {{ simplifyPercent }}% of detail. Reduces node count on dense GRB outlines.
+              </p>
+            </div>
+
+            <p class="text-[9px] text-muted-foreground/70 pt-1.5 leading-relaxed">
+              {{ matchSummary }}. Open in JOSM to review before upload.
+            </p>
           </div>
         </div>
 
@@ -193,7 +302,16 @@
         <MatchModeControl />
       </div>
 
-      <ObjectInfoPanel :building="activeBuilding" :is-open="panelOpen" @close="panelOpen=false" @operation-complete="onOperationComplete" />
+      <ObjectInfoPanel :building="activeBuilding" :is-open="panelOpen" @close="panelOpen=false" />
+
+      <!-- JOSM setup help -->
+      <JosmHelpDialog
+        v-model:open="josmHelpOpen"
+        :connected="josmConnected"
+        :testing="josmTesting"
+        :instructions="josmInstructions"
+        @test="checkJosm"
+      />
 
       <!-- Feature Info Panel (hover / click) -->
       <div
@@ -546,7 +664,7 @@
 </template>
 
 <script setup lang="ts">
-import { Building2, ChevronDown, ExternalLink, GitCompareArrows, Landmark, Loader2, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
+import { Building2, Check, ChevronDown, CircleAlert, ExternalLink, GitCompareArrows, Landmark, Loader2, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
 import { Fill, Stroke, Style } from 'ol/style'
 import { GeoJSON, MVT } from 'ol/format'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -554,6 +672,8 @@ import { fromLonLat, toLonLat } from 'ol/proj'
 import Feature from 'ol/Feature'
 import MatchModeControl from '~/components/MatchModeControl.vue'
 import ObjectInfoPanel from '~/components/ObjectInfoPanel.vue'
+import GettingStartedCard from '~/components/GettingStartedCard.vue'
+import JosmHelpDialog from '~/components/JosmHelpDialog.vue'
 import type { BuildingData } from '~/composables/useBuildingData'
 import type { SearchResult } from '~/composables/useSearch'
 import Switch from '~/components/ui/switch.vue'
@@ -569,8 +689,9 @@ import { useToast } from '~/composables/useToast'
 const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
 
 const mapRef = ref<HTMLElement>()
-const { exportLayerToJosm, testJosmConnection } = useJosmExport()
-const { matchMode, geometryThreshold } = useMatchMode()
+const { exportLayerToJosm, testJosmConnection, getJosmInstructions } = useJosmExport()
+const josmInstructions = getJosmInstructions()
+const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
 
 // Use the map layers composable
@@ -656,21 +777,103 @@ const matchingStats = ref<{
 const originalCandidateFeatures = ref<any[]>([]) // Store original features for reset
 const isCalculatingDifference = ref(false) // Loading state for Get Difference button
 
+// Workflow prerequisites (issue: turn gates into visible guidance).
+// At least one source layer (GRB, KNW, PICC, or Urbis) must be loaded and visible.
+const hasSourceLayer = computed(() =>
+  Boolean(
+    (grbBuildingsLayerRef.value && overlayLayers.value.grbBuildings)
+    || (knwStructuresLayerRef.value && overlayLayers.value.knwStructures)
+    || (piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings)
+    || (urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings)
+  )
+)
+const hasOsmLayer = computed(() => Boolean(osmBuildingsLayerRef.value && overlayLayers.value.osmBuildings))
+const zoomReady = computed(() => currentZoom.value >= 16)
+
 // Computed property to check if Get Difference button should be enabled
-const canCalculateDifference = computed(() => {
-  if (!map.value) return false
-  if (!osmBuildingsLayerRef.value) return false
-  if (currentZoom.value < 16) return false
-  if (!overlayLayers.value.osmBuildings) return false
+const canCalculateDifference = computed(() =>
+  Boolean(map.value) && hasOsmLayer.value && zoomReady.value && hasSourceLayer.value
+)
 
-  // At least one source layer (GRB, KNW, PICC, or Urbis) must be loaded and visible
-  const grbReady = grbBuildingsLayerRef.value && overlayLayers.value.grbBuildings
-  const knwReady = knwStructuresLayerRef.value && overlayLayers.value.knwStructures
-  const piccReady = piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings
-  const urbisReady = urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings
-  if (!grbReady && !knwReady && !piccReady && !urbisReady) return false
+// Difference workflow lifecycle state, surfaced as a persistent results panel
+// instead of disappearing toasts.
+type DifferenceState = 'idle' | 'loading' | 'success' | 'empty' | 'error'
+const differenceState = ref<DifferenceState>('idle')
+const differenceError = ref('')
 
-  return true
+// Optional geometry simplification applied at export time (reuses the export's mapshaper path).
+const simplifyOnExport = ref(false)
+const simplifyPercent = ref(85)
+
+// Soft cap on rendered/exported candidates (mass-import safety + browser performance).
+const CANDIDATE_RENDER_CAP = 2000
+const candidateTotalInView = ref(0)
+const candidateCapped = ref(false)
+
+// JOSM remote-control connection status (null = not checked yet)
+const josmConnected = ref<boolean | null>(null)
+const josmTesting = ref(false)
+const josmHelpOpen = ref(false)
+
+const checkJosm = async () => {
+  josmTesting.value = true
+  try {
+    josmConnected.value = await testJosmConnection()
+  } catch {
+    josmConnected.value = false
+  } finally {
+    josmTesting.value = false
+  }
+}
+
+// Open the layers panel and scroll a hint into view (used by the checklist).
+const revealLayersPanel = () => {
+  layersCollapsed.value = false
+}
+
+const zoomToWorkingLevel = () => {
+  if (!map.value) return
+  const view = map.value.getView()
+  view.animate({ zoom: Math.max(16, view.getZoom() || 16), duration: 600 })
+}
+
+const dismissResults = () => {
+  differenceState.value = 'idle'
+  matchingStats.value = null
+}
+
+// Keyboard shortcuts: G = Get Difference, J = open in JOSM. Ignored while typing.
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return
+  const target = e.target as HTMLElement | null
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+
+  const key = e.key.toLowerCase()
+  if (key === 'g' && canCalculateDifference.value && !isCalculatingDifference.value) {
+    e.preventDefault()
+    calculateDifference()
+  } else if (key === 'j' && canExportToJOSM.value) {
+    e.preventDefault()
+    exportToJOSM()
+  }
+}
+
+const coveragePct = computed(() => {
+  const s = matchingStats.value
+  if (!s || !s.totalGrb) return 0
+  return Math.round((s.matched / s.totalGrb) * 100)
+})
+
+// Short, human label for what produced the current results (which mode, freshness).
+const matchSummary = computed(() => {
+  const pct = Math.round(geometryThreshold.value * 100)
+  const mode = matchMode.value === 'source'
+    ? 'Source tag'
+    : matchMode.value === 'both'
+      ? `Geometry ${pct}% + source tag`
+      : `Geometry ${pct}%`
+  const freshness = useOverpass.value ? 'live Overpass' : 'OSM mirror'
+  return `${mode} · ${freshness}`
 })
 
 // Computed property to check if JOSM export button should be enabled
@@ -698,7 +901,13 @@ watch(matchMode, () => {
 })
 
 watch(geometryThreshold, () => {
-  if (matchMode.value === 'geometry' && candidateBuildingsLayerRef.value) {
+  if ((matchMode.value === 'geometry' || matchMode.value === 'both') && candidateBuildingsLayerRef.value) {
+    calculateDifference()
+  }
+})
+
+watch(useOverpass, () => {
+  if (candidateBuildingsLayerRef.value) {
     calculateDifference()
   }
 })
@@ -1250,6 +1459,34 @@ const toggleUrbisBuildings = (visible: boolean) => {
   }
 }
 
+// Source dataset is single-select (GRB / KNW / PICC / Urbis are mutually exclusive).
+// Reflect the active one and route clicks through the existing toggle handlers, which
+// already disable the others.
+type SourceKind = 'grb' | 'knw' | 'picc' | 'urbis'
+const selectedSource = computed<SourceKind | 'none'>(() => {
+  if (overlayLayers.value.grbBuildings) return 'grb'
+  if (overlayLayers.value.knwStructures) return 'knw'
+  if (overlayLayers.value.piccBuildings) return 'picc'
+  if (overlayLayers.value.urbisBuildings) return 'urbis'
+  return 'none'
+})
+
+const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
+  { key: 'grb', label: 'GRB', varName: '--layer-grb' },
+  { key: 'knw', label: 'KNW', varName: '--layer-knw' },
+  { key: 'picc', label: 'PICC', varName: '--layer-picc' },
+  { key: 'urbis', label: 'Urbis', varName: '--layer-urbis' }
+]
+
+const selectSource = (src: SourceKind) => {
+  // Clicking the active dataset turns it off; otherwise switch to it.
+  const turnOn = selectedSource.value !== src
+  if (src === 'grb') toggleGrbBuildings(turnOn)
+  else if (src === 'knw') toggleKnwStructures(turnOn)
+  else if (src === 'picc') togglePiccBuildings(turnOn)
+  else toggleUrbisBuildings(turnOn)
+}
+
 // Helper function to calculate polygon centroid
 const getPolygonCentroid = (coords: [number, number][]): [number, number] => {
   if (!coords || coords.length === 0) return [0, 0]
@@ -1618,6 +1855,8 @@ const calculateDifference = async () => {
 
   // Set loading state
   isCalculatingDifference.value = true
+  differenceState.value = 'loading'
+  differenceError.value = ''
 
   try {
     // Get map extent in Web Mercator (EPSG:3857)
@@ -1629,13 +1868,14 @@ const calculateDifference = async () => {
     // Call backend API to calculate difference
     const response = await $fetch('/api/buildings/difference', {
       method: 'POST',
-      body: { bounds, matchMode: matchMode.value, dataSource, geometryThreshold: geometryThreshold.value }
+      body: { bounds, matchMode: matchMode.value, dataSource, geometryThreshold: geometryThreshold.value, useOverpass: useOverpass.value }
     })
 
     const candidateGeoJSON = response as any
 
     if (!candidateGeoJSON || candidateGeoJSON.features.length === 0) {
-      toast.info('No candidates found', `All ${dataSource.toUpperCase()} buildings have matching OSM geometries or the area has no data.`)
+      // Persistent empty state in the results panel rather than a disappearing toast.
+      differenceState.value = 'empty'
 
       // Remove existing candidate buildings layer if present
       if (candidateBuildingsLayerRef.value) {
@@ -1645,19 +1885,43 @@ const calculateDifference = async () => {
 
       matchingStats.value = null
       candidateBuildingCount.value = 0
+      candidateCapped.value = false
+      candidateTotalInView.value = 0
+      originalCandidateFeatures.value = []
       return
     }
 
-    // Update matching stats
-    const stats = (candidateGeoJSON as any).stats || {}
-    matchingStats.value = {
-      totalGrb: stats.totalGrb || candidateGeoJSON.features.length,
-      totalOsm: stats.totalOsm || 0,
-      matched: (stats.totalGrb || 0) - candidateGeoJSON.features.length,
-      unmatched: candidateGeoJSON.features.length
+    // Soft cap on how many candidates we render and export at once. Mass imports need
+    // review; loading tens of thousands of features also strains the browser. The true
+    // count is still reported in the stats; the note tells the user what is loaded.
+    const totalCandidates = candidateGeoJSON.features.length
+    candidateTotalInView.value = totalCandidates
+    candidateCapped.value = totalCandidates > CANDIDATE_RENDER_CAP
+    if (candidateCapped.value) {
+      candidateGeoJSON.features = candidateGeoJSON.features.slice(0, CANDIDATE_RENDER_CAP)
     }
 
-    // Update candidate building count
+    // Stamp the source kind on each candidate so the review tooltip and JOSM export
+    // know what they are looking at (the candidate layer is a single OL layer).
+    const sourceKind = dataSource === 'knw' ? 'knw'
+      : dataSource === 'picc' ? 'picc'
+      : dataSource === 'urbis' ? 'urbis'
+      : 'grb'
+    for (const f of candidateGeoJSON.features) {
+      f.properties = f.properties || {}
+      f.properties._layer_type = sourceKind
+    }
+
+    // Update matching stats (unmatched reflects the true count missing from OSM)
+    const stats = (candidateGeoJSON as any).stats || {}
+    matchingStats.value = {
+      totalGrb: stats.totalGrb || totalCandidates,
+      totalOsm: stats.totalOsm || 0,
+      matched: (stats.totalGrb || 0) - totalCandidates,
+      unmatched: totalCandidates
+    }
+
+    // Candidate count reflects what is actually loaded/exportable (post-cap)
     candidateBuildingCount.value = candidateGeoJSON.features.length
 
     // Store original features for simplification
@@ -1712,10 +1976,12 @@ const calculateDifference = async () => {
 
     // Enable candidate buildings layer
     overlayLayers.value.candidateBuildings = true
+    differenceState.value = 'success'
 
   } catch (error) {
     console.error('Error calculating difference:', error)
-    toast.error('Difference calculation failed', error instanceof Error ? error.message : String(error))
+    differenceState.value = 'error'
+    differenceError.value = error instanceof Error ? error.message : String(error)
   } finally {
     // Reset loading state
     isCalculatingDifference.value = false
@@ -1733,9 +1999,13 @@ const exportToJOSM = async () => {
 
   try {
     // Check JOSM connection first
+    josmTesting.value = true
     const isConnected = await testJosmConnection()
+    josmConnected.value = isConnected
+    josmTesting.value = false
     if (!isConnected) {
-      toast.error('JOSM not reachable', 'Start JOSM, go to Edit → Preferences (F12), and enable "Remote Control".')
+      // Open the setup dialog instead of cramming instructions into a toast.
+      josmHelpOpen.value = true
       return
     }
 
@@ -1762,7 +2032,8 @@ const exportToJOSM = async () => {
       hasKnwCandidates ? 'GRB Candidate Structures (KNW)' : 'GRB Candidate Buildings',
       {
         includeMeta: false,
-        simplify: false,
+        simplify: simplifyOnExport.value,
+        simplifyPercent: simplifyPercent.value,
         uploadToBackend: false
       }
     )
@@ -1771,13 +2042,9 @@ const exportToJOSM = async () => {
     toast.success('Exported to JOSM', `${result.featureCount} building${result.featureCount === 1 ? '' : 's'} loaded as a new layer in JOSM.`)
   } catch (error: any) {
     console.error('Error exporting candidate buildings to JOSM:', error)
-    toast.error('JOSM export failed', `${error.message}\nCheck that JOSM is running with remote control enabled on port 8111.`)
+    josmTesting.value = false
+    toast.error('JOSM export failed', error.message || 'Could not send data to JOSM.')
   }
-}
-
-const onOperationComplete = (res: any) => {
-  // Handle operation completion
-  console.log('Operation completed:', res)
 }
 
 // Remove a specific feature from the clicked features array
@@ -2198,7 +2465,7 @@ const setupHoverInteraction = () => {
 
     const foundFeatures: any[] = []
     map.value.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === knwStructuresLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value) {
+      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === knwStructuresLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value || layer === candidateBuildingsLayerRef.value) {
         // Get properties for clicked feature
         let properties: any
         try {
@@ -2231,6 +2498,7 @@ const setupHoverInteraction = () => {
           : layer === knwStructuresLayerRef.value ? 'knw'
           : layer === piccBuildingsLayerRef.value ? 'picc'
           : layer === urbisBuildingsLayerRef.value ? 'urbis'
+          : layer === candidateBuildingsLayerRef.value ? (properties._layer_type || 'grb')
           : 'grb'
 
         foundFeatures.push(properties)
@@ -2291,7 +2559,7 @@ const setupHoverInteraction = () => {
     let firstFeature: any = null
 
     map.value.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === knwStructuresLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value) {
+      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === knwStructuresLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value || layer === candidateBuildingsLayerRef.value) {
         if (!firstFeature) {
           firstFeature = feature
         }
@@ -2329,6 +2597,7 @@ const setupHoverInteraction = () => {
           : layer === knwStructuresLayerRef.value ? 'knw'
           : layer === piccBuildingsLayerRef.value ? 'picc'
           : layer === urbisBuildingsLayerRef.value ? 'urbis'
+          : layer === candidateBuildingsLayerRef.value ? (properties._layer_type || 'grb')
           : 'grb'
 
         foundFeatures.push(properties)
@@ -2406,9 +2675,15 @@ onMounted(() => {
       }, 100)
     }, 50)
   })
+
+  // One quiet probe so the JOSM status chip reflects reality on load.
+  checkJosm()
+
+  window.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
   destroy()
 })
 </script>
