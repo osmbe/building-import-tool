@@ -45,7 +45,7 @@
         </button>
       </div>
       <p class="text-[9px] text-muted-foreground mt-2 leading-relaxed">
-        <template v-if="matchMode === 'geometry'">Spatial — unmatched buildings in view (GRB, PICC, or Urbis)</template>
+        <template v-if="matchMode === 'geometry'">Spatial: unmatched buildings in view (GRB, PICC, or Urbis)</template>
         <template v-else-if="matchMode === 'source'">Missing source:geometry:oidn tag (GRB only)</template>
         <template v-else>Spatially unmatched AND missing source tag (GRB only)</template>
       </p>

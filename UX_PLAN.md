@@ -146,13 +146,20 @@ every visible string for clarity (some toasts duplicate help content). Effort: S
 
 ## Suggested phasing
 
-- **Phase 1 (trust + orientation):** items 1, 2, 3, 4, 5. Removes the fake feature, turns
-  gates into guidance, fixes empty/error/success states, surfaces JOSM help, adds first-run
-  guidance. This is where most of the perceived-quality gain lives.
-- **Phase 2 (comprehension + review):** items 6, 7, 8, 9, 10. Makes match mode / freshness /
-  datasets legible and adds a real per-candidate review step.
-- **Phase 3 (robustness):** items 11, 12, 13, 14. Performance cap, keyboard/a11y, auth
-  clarity, copy.
+- **Phase 1 (trust + orientation):** items 1, 2, 3, 4, 5. ✅ Done (commit 1fb42a1).
+- **Phase 2 (comprehension + review):** items 6, 7, 8, 9, 10. ✅ Done (commit bc7208e).
+- **Phase 3 (robustness):** items 11, 12, 13, 14. ✅ Done (this commit).
+
+### Implementation notes
+- Item 9 was delivered by making the candidate layer clickable (it was not before) and
+  routing it through the existing info tooltip, rather than the orphaned ObjectInfoPanel
+  (which expects a different `BuildingData` shape and would duplicate the tooltip).
+- Item 10 reuses the export's existing mapshaper path (a checkbox + detail slider in the
+  results panel). The live before/after node-count preview was deferred as lower-value.
+- Item 11 cap = 2000 (`CANDIDATE_RENDER_CAP`), applied to both render and export for
+  mass-import safety; the true total is still reported with a "showing first N of M" note.
+- Item 13 was largely satisfied in Phase 1 (AuthDialog copy + the JOSM help dialog make the
+  login-vs-JOSM split clear).
 
 ## Open decisions (need your call)
 

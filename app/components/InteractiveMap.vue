@@ -24,13 +24,13 @@
           <div v-show="!controlsCollapsed">
             <!-- Zoom controls -->
             <div class="flex items-center gap-1 p-2 border-b border-white/[0.05]">
-              <button class="map-icon-btn" @click="zoomIn" title="Zoom in">
+              <button class="map-icon-btn" @click="zoomIn" title="Zoom in" aria-label="Zoom in">
                 <ZoomIn class="h-3.5 w-3.5" />
               </button>
-              <button class="map-icon-btn" @click="zoomOut" title="Zoom out">
+              <button class="map-icon-btn" @click="zoomOut" title="Zoom out" aria-label="Zoom out">
                 <ZoomOut class="h-3.5 w-3.5" />
               </button>
-              <button class="map-icon-btn" @click="resetView" title="Reset view">
+              <button class="map-icon-btn" @click="resetView" title="Reset view" aria-label="Reset view">
                 <RotateCcw class="h-3.5 w-3.5" />
               </button>
             </div>
@@ -73,6 +73,8 @@
               <button
                 class="action-btn w-full"
                 :disabled="!canCalculateDifference || isCalculatingDifference"
+                title="Get Difference (G)"
+                aria-label="Get Difference"
                 @click="calculateDifference"
               >
                 <Loader2 v-if="isCalculatingDifference" class="h-3 w-3 animate-spin shrink-0" />
@@ -82,6 +84,8 @@
               <button
                 class="action-btn w-full"
                 :disabled="!canExportToJOSM"
+                title="Open in JOSM (J)"
+                aria-label="Open candidates in JOSM"
                 @click="exportToJOSM"
               >
                 <ExternalLink class="h-3 w-3 shrink-0" />
@@ -195,7 +199,7 @@
                 Live
               </span>
             </div>
-            <button class="text-muted-foreground hover:text-foreground transition-colors" @click="dismissResults">
+            <button class="text-muted-foreground hover:text-foreground transition-colors" aria-label="Dismiss results" @click="dismissResults">
               <X class="h-3 w-3" />
             </button>
           </div>
@@ -260,6 +264,12 @@
                 ></div>
               </div>
             </div>
+            <!-- Cap notice when there are more candidates than we render/export at once -->
+            <div v-if="candidateCapped" class="flex items-start gap-1.5 pt-2 text-[10px] text-amber-300/90">
+              <CircleAlert class="h-3 w-3 shrink-0 mt-px text-amber-400" />
+              <span>Showing the first {{ candidateBuildingCount.toLocaleString() }} of {{ candidateTotalInView.toLocaleString() }}. Zoom in to review the rest.</span>
+            </div>
+
             <!-- Optional simplification before export -->
             <div class="pt-2 mt-1 border-t border-white/[0.05]">
               <label class="flex items-center justify-between gap-2 cursor-pointer select-none">
@@ -795,6 +805,11 @@ const differenceError = ref('')
 const simplifyOnExport = ref(false)
 const simplifyPercent = ref(85)
 
+// Soft cap on rendered/exported candidates (mass-import safety + browser performance).
+const CANDIDATE_RENDER_CAP = 2000
+const candidateTotalInView = ref(0)
+const candidateCapped = ref(false)
+
 // JOSM remote-control connection status (null = not checked yet)
 const josmConnected = ref<boolean | null>(null)
 const josmTesting = ref(false)
@@ -825,6 +840,22 @@ const zoomToWorkingLevel = () => {
 const dismissResults = () => {
   differenceState.value = 'idle'
   matchingStats.value = null
+}
+
+// Keyboard shortcuts: G = Get Difference, J = open in JOSM. Ignored while typing.
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return
+  const target = e.target as HTMLElement | null
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+
+  const key = e.key.toLowerCase()
+  if (key === 'g' && canCalculateDifference.value && !isCalculatingDifference.value) {
+    e.preventDefault()
+    calculateDifference()
+  } else if (key === 'j' && canExportToJOSM.value) {
+    e.preventDefault()
+    exportToJOSM()
+  }
 }
 
 const coveragePct = computed(() => {
@@ -1854,8 +1885,20 @@ const calculateDifference = async () => {
 
       matchingStats.value = null
       candidateBuildingCount.value = 0
+      candidateCapped.value = false
+      candidateTotalInView.value = 0
       originalCandidateFeatures.value = []
       return
+    }
+
+    // Soft cap on how many candidates we render and export at once. Mass imports need
+    // review; loading tens of thousands of features also strains the browser. The true
+    // count is still reported in the stats; the note tells the user what is loaded.
+    const totalCandidates = candidateGeoJSON.features.length
+    candidateTotalInView.value = totalCandidates
+    candidateCapped.value = totalCandidates > CANDIDATE_RENDER_CAP
+    if (candidateCapped.value) {
+      candidateGeoJSON.features = candidateGeoJSON.features.slice(0, CANDIDATE_RENDER_CAP)
     }
 
     // Stamp the source kind on each candidate so the review tooltip and JOSM export
@@ -1869,16 +1912,16 @@ const calculateDifference = async () => {
       f.properties._layer_type = sourceKind
     }
 
-    // Update matching stats
+    // Update matching stats (unmatched reflects the true count missing from OSM)
     const stats = (candidateGeoJSON as any).stats || {}
     matchingStats.value = {
-      totalGrb: stats.totalGrb || candidateGeoJSON.features.length,
+      totalGrb: stats.totalGrb || totalCandidates,
       totalOsm: stats.totalOsm || 0,
-      matched: (stats.totalGrb || 0) - candidateGeoJSON.features.length,
-      unmatched: candidateGeoJSON.features.length
+      matched: (stats.totalGrb || 0) - totalCandidates,
+      unmatched: totalCandidates
     }
 
-    // Update candidate building count
+    // Candidate count reflects what is actually loaded/exportable (post-cap)
     candidateBuildingCount.value = candidateGeoJSON.features.length
 
     // Store original features for simplification
@@ -2635,9 +2678,12 @@ onMounted(() => {
 
   // One quiet probe so the JOSM status chip reflects reality on load.
   checkJosm()
+
+  window.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
   destroy()
 })
 </script>

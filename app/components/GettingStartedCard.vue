@@ -56,7 +56,7 @@ if (import.meta.client) {
   try {
     dismissed.value = localStorage.getItem(STORAGE_KEY) === '1'
   } catch {
-    // localStorage unavailable (private mode) — just show the card this session
+    // localStorage unavailable (private mode): just show the card this session
   }
 }
 

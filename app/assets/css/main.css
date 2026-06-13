@@ -137,6 +137,16 @@
   cursor: not-allowed;
 }
 
+/* ── Keyboard focus visibility (a11y) ── */
+.map-icon-btn:focus-visible,
+.layer-btn:focus-visible,
+.action-btn:focus-visible,
+.check-row:focus-visible,
+.result-retry:focus-visible {
+  outline: 2px solid hsl(192 90% 46% / 0.7);
+  outline-offset: 1px;
+}
+
 /* ── Prerequisite checklist rows ── */
 .check-row {
   display: flex;
