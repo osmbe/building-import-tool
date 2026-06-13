@@ -698,7 +698,7 @@ watch(matchMode, () => {
 })
 
 watch(geometryThreshold, () => {
-  if (matchMode.value === 'geometry' && candidateBuildingsLayerRef.value) {
+  if ((matchMode.value === 'geometry' || matchMode.value === 'both') && candidateBuildingsLayerRef.value) {
     calculateDifference()
   }
 })

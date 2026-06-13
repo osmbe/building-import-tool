@@ -5,6 +5,17 @@ export const useJosmExport = () => {
   const josmBaseUrl = ref('http://127.0.0.1:8111')
   const useSSL = ref(false)
 
+  // GRB GBA/GBG polygon type labels (LBLTYPE) that must NOT be tagged as a building.
+  // - "verdieping" is handled specially (kept as building + fixme), so it is NOT in this set.
+  // - "gebouw afgezoomd met virtuele gevels" is the gbg-3 virtual-facade outline.
+  const NON_BUILDING_TYPE_LABELS = new Set([
+    'trap',
+    'gebouw afgezoomd met virtuele gevels'
+  ])
+
+  const VERDIEPING_FIXME =
+    'verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!'
+
   const KNW_TAG_MAP_BY_CODE: Record<string, Record<string, string>> = {
     '1': { bridge: 'yes' },
     '5': { 'man_made': 'bridge_support' },
@@ -63,9 +74,22 @@ export const useJosmExport = () => {
     const explicitEntity = String((props as any).entity || (props as any).source_geometry_entity || '').toLowerCase()
     const isKnw = sourceLayerType === 'knw' || explicitEntity === 'knw' || explicitEntity === 'kunstwerken'
 
-    // Export candidate polygons as buildings by default (not for KNW structures)
-    if (!isKnw && !props.building) {
+    // GRB polygon type label (LBLTYPE) drives building pre-filtering (issue #53)
+    const polygonTypeLabel = String(
+      (props as any).type_label || (props as any).lbltype || ''
+    ).toLowerCase().trim()
+    const isVerdieping = polygonTypeLabel === 'verdieping'
+    const isNonBuildingType = NON_BUILDING_TYPE_LABELS.has(polygonTypeLabel)
+
+    // Export candidate polygons as buildings by default (not for KNW structures).
+    // gbg-3 (virtual facade) and other non-building GRB types must not get a building tag.
+    if (!isKnw && !props.building && !isNonBuildingType) {
       props.building = 'yes'
+    }
+
+    // GBA "verdieping" (floor level): keep building tag but flag for manual correction in JOSM (issue #53)
+    if (!isKnw && isVerdieping) {
+      props.fixme = VERDIEPING_FIXME
     }
 
     // Add default tags for supported KNW structure types
@@ -93,18 +117,19 @@ export const useJosmExport = () => {
       props['source:geometry:oidn'] = props.oidn
     }
 
-    // Map GRB OPNDATUM to source:geometry:date and format to YYYY-MM-DD
+    // Map GRB OPNDATUM/survey_date to source:geometry:date, always date-only (YYYY-MM-DD).
+    // Values may arrive as DD/MM/YYYY, YYYY-MM-DD, or a full ISO datetime (e.g. 2023-03-15T00:00:00).
     if (props.opndatum || props.survey_date) {
-      const date = String(props.opndatum || props.survey_date)
-      // Convert DD/MM/YYYY to YYYY-MM-DD
-      if (date.includes('/')) {
-        const parts = date.split('/')
+      const raw = String(props.opndatum || props.survey_date).trim()
+      // Strip any time component (T-separated or space-separated)
+      const dateOnly = raw.split('T')[0].split(' ')[0]
+      if (dateOnly.includes('/')) {
+        const parts = dateOnly.split('/')
         if (parts.length === 3) {
           props['source:geometry:date'] = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
         }
-      } else if (date.includes('-')) {
-        // Already in correct format or YYYY-MM-DD
-        props['source:geometry:date'] = date
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
+        props['source:geometry:date'] = dateOnly
       }
     }
 
@@ -122,6 +147,32 @@ export const useJosmExport = () => {
       props.building = props.auto_building
     }
 
+    // Issue #49: attach address information for GRB/PICC/Urbis exports.
+    // OSM convention is one address per object, so auto-emit addr:* tags ONLY when the candidate
+    // has exactly one address. Multi-address buildings are left for manual handling in JOSM.
+    const addressCount = Number((props as any).address_count || 0)
+    const addressesStr = String((props as any).addresses || '').trim()
+    if (!isKnw && addressCount === 1 && addressesStr) {
+      const street = String((props as any).street_names || '').split(',')[0].trim()
+      const postcode = String((props as any).postcodes || '').split(',')[0].trim()
+      const city = String((props as any).municipalities || '').split(',')[0].trim()
+
+      // Derive the house number from the full address by stripping the street prefix,
+      // then keep only a house-number-shaped token (e.g. "12", "12A", "12/3").
+      let remainder = addressesStr
+      if (street && remainder.toLowerCase().startsWith(street.toLowerCase())) {
+        remainder = remainder.slice(street.length)
+      }
+      const hnMatch = remainder.trim().match(/^\d+\s*[A-Za-z]?(?:\s*\/\s*\w+)?/)
+
+      if (street && !props['addr:street']) props['addr:street'] = street
+      if (hnMatch && !props['addr:housenumber']) {
+        props['addr:housenumber'] = hnMatch[0].replace(/\s+/g, '')
+      }
+      if (postcode && !props['addr:postcode']) props['addr:postcode'] = postcode
+      if (city && !props['addr:city']) props['addr:city'] = city
+    }
+
     // Remove GRB-specific properties that shouldn't be exported
     const tagsToRemove = [
       // GRB internal properties
@@ -133,6 +184,8 @@ export const useJosmExport = () => {
       'begindatum',
       'versdatum',
       'type',
+      'type_code',
+      'type_label',
       'lbltype',
       'opndatum',
       'survey_date',
@@ -159,7 +212,17 @@ export const useJosmExport = () => {
       'source:geometry:oidn',
       'auto_target_landuse',
       'entity',
-      '_layer_type'
+      '_layer_type',
+      // Aggregated address fields (consumed above into addr:* tags)
+      'addresses',
+      'street_names',
+      'postcodes',
+      'municipalities',
+      'address_count',
+      'building_id',
+      'inspire_id',
+      'objectid',
+      'natur_code'
     ]
 
     tagsToRemove.forEach(tag => {

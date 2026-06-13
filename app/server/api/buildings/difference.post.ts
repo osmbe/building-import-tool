@@ -12,10 +12,10 @@ export default defineEventHandler(async (event) => {
       }))
     }
 
-    if (matchMode !== 'geometry' && matchMode !== 'source') {
+    if (matchMode !== 'geometry' && matchMode !== 'source' && matchMode !== 'both') {
       return sendError(event, createError({
         statusCode: 400,
-        statusMessage: 'Invalid matchMode. Expected "geometry" or "source"'
+        statusMessage: 'Invalid matchMode. Expected "geometry", "source", or "both"'
       }))
     }
 
@@ -34,8 +34,9 @@ export default defineEventHandler(async (event) => {
       }))
     }
 
-    // Source tag matching only works for GRB (PICC/Urbis have no source:geometry:oidn tags in OSM)
-    if (matchMode === 'source' && dataSource !== 'grb') {
+    // Source tag matching (and combined mode) only work for GRB
+    // (PICC/Urbis have no source:geometry:oidn tags in OSM)
+    if ((matchMode === 'source' || matchMode === 'both') && dataSource !== 'grb') {
       return sendError(event, createError({
         statusCode: 400,
         statusMessage: 'Source tag matching is only available for GRB data. Use geometry mode for KNW/PICC/Urbis.'
@@ -76,13 +77,43 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    if (matchMode === 'source') {
-      // Source tag matching (GRB only): Show GRB buildings that DON'T have matching OSM source:geometry:oidn
-      // Support multiple OSM reference patterns for compatibility:
-      // 1) tags.source:geometry:oidn
-      // 2) tags.source:geometry:ref (format Entity/OIDN)
-      // 3) optional legacy/imported osm.osm_buildings.oidn column (when present)
+    // Issue #53: GRB building pre-filtering. GBG and GBA polygons share grb.building_polygons and are
+    // distinguished by type_label (LBLTYPE). gbg-3 ("gebouw afgezoomd met virtuele gevels") and "trap"
+    // are not buildings and must not appear as candidates. "verdieping" (gba1) IS kept — it is exported
+    // as a building with a fixme. coalesce keeps rows when no type_label column exists.
+    const grbBuildingTypeFilter =
+      `coalesce(lower(${grbTypeLabelExpr}), '') <> ALL(ARRAY['trap', 'gebouw afgezoomd met virtuele gevels'])`
 
+    // Issue #49: include address data in GRB exports. Addresses live in the grb.buildings_with_addresses
+    // matview (keyed on oidn). Guard on its existence so deployments without the matview still work.
+    let hasGrbAddresses = false
+    if (needsGrbPolygonColumns) {
+      const mv = await queryGrb(`
+        SELECT EXISTS (
+          SELECT 1 FROM pg_matviews
+          WHERE schemaname = 'grb' AND matviewname = 'buildings_with_addresses'
+        ) AS ok;
+      `)
+      hasGrbAddresses = Boolean(mv[0]?.ok)
+    }
+    const grbAddressColsCsv = hasGrbAddresses
+      ? 'bwa.addresses, bwa.street_names, bwa.postcodes, bwa.municipalities, bwa.address_count'
+      : ''
+    const grbAddressSelect = grbAddressColsCsv ? `${grbAddressColsCsv},` : ''
+    const grbAddressJoin = hasGrbAddresses
+      ? 'LEFT JOIN grb.buildings_with_addresses bwa ON bwa.oidn = bp.oidn'
+      : ''
+    // For the CTE pass-through (geometry-with-osm branch): columns selected in CTE, re-selected from alias g
+    const grbAddressCteSelect = hasGrbAddresses
+      ? 'bwa.addresses, bwa.street_names, bwa.postcodes, bwa.municipalities, bwa.address_count,'
+      : ''
+    const grbAddressOuterSelect = hasGrbAddresses
+      ? 'g.addresses, g.street_names, g.postcodes, g.municipalities, g.address_count,'
+      : ''
+
+    // Collect OSM source:geometry:oidn references in the extent (GRB only).
+    // Shared by 'source' mode and 'both' mode (issue #6: combine geometry + source-tag filtering).
+    const fetchOsmSourceOidns = async (): Promise<string[]> => {
       const columnCheck = await queryOsm(`
         SELECT EXISTS (
           SELECT 1
@@ -94,18 +125,17 @@ export default defineEventHandler(async (event) => {
       `)
       const hasLegacyOidn = Boolean(columnCheck[0]?.has_legacy_oidn)
 
-      // Step 1: Get OSM buildings with source:geometry:oidn in the extent
       const osmQuery = hasLegacyOidn
         ? `
         SELECT DISTINCT
           COALESCE(
-            NULLIF(tags->>'source:geometry:oidn', ''),
-            NULLIF(split_part(tags->>'source:geometry:ref', '/', 2), ''),
+            NULLIF(trim(tags->>'source:geometry:oidn'), ''),
+            NULLIF(trim(split_part(tags->>'source:geometry:ref', '/', 2)), ''),
             NULLIF(oidn::text, '')
           ) AS oidn
         FROM osm.osm_buildings
-        WHERE geom_mercator && ST_MakeEnvelope($1, $2, $3, $4, 3857)
-          AND ST_Intersects(geom_mercator, ST_MakeEnvelope($1, $2, $3, $4, 3857))
+        WHERE COALESCE(geom_mercator, ST_Transform(geom, 3857)) && ST_MakeEnvelope($1, $2, $3, $4, 3857)
+          AND ST_Intersects(COALESCE(geom_mercator, ST_Transform(geom, 3857)), ST_MakeEnvelope($1, $2, $3, $4, 3857))
           AND (
             tags ? 'source:geometry:oidn'
             OR tags ? 'source:geometry:ref'
@@ -115,12 +145,12 @@ export default defineEventHandler(async (event) => {
         : `
         SELECT DISTINCT
           COALESCE(
-            NULLIF(tags->>'source:geometry:oidn', ''),
-            NULLIF(split_part(tags->>'source:geometry:ref', '/', 2), '')
+            NULLIF(trim(tags->>'source:geometry:oidn'), ''),
+            NULLIF(trim(split_part(tags->>'source:geometry:ref', '/', 2)), '')
           ) AS oidn
         FROM osm.osm_buildings
-        WHERE geom_mercator && ST_MakeEnvelope($1, $2, $3, $4, 3857)
-          AND ST_Intersects(geom_mercator, ST_MakeEnvelope($1, $2, $3, $4, 3857))
+        WHERE COALESCE(geom_mercator, ST_Transform(geom, 3857)) && ST_MakeEnvelope($1, $2, $3, $4, 3857)
+          AND ST_Intersects(COALESCE(geom_mercator, ST_Transform(geom, 3857)), ST_MakeEnvelope($1, $2, $3, $4, 3857))
           AND (
             tags ? 'source:geometry:oidn'
             OR tags ? 'source:geometry:ref'
@@ -128,7 +158,21 @@ export default defineEventHandler(async (event) => {
       `
 
       const osmRows = await queryOsm(osmQuery, [minX, minY, maxX, maxY])
-      const oidnList = osmRows.map((row: any) => row.oidn).filter(Boolean)
+      return osmRows.map((row: any) => row.oidn).filter(Boolean)
+    }
+
+    // Pre-fetch the source-tag oidn list for the 'both' combined mode (source mode fetches inline below).
+    const bothOidnList: string[] = matchMode === 'both' ? await fetchOsmSourceOidns() : []
+
+    if (matchMode === 'source') {
+      // Source tag matching (GRB only): Show GRB buildings that DON'T have matching OSM source:geometry:oidn
+      // Support multiple OSM reference patterns for compatibility:
+      // 1) tags.source:geometry:oidn
+      // 2) tags.source:geometry:ref (format Entity/OIDN)
+      // 3) optional legacy/imported osm.osm_buildings.oidn column (when present)
+
+      // Step 1: Get OSM buildings with source:geometry:oidn in the extent
+      const oidnList = await fetchOsmSourceOidns()
       totalOsm = oidnList.length
 
       // Step 2: Get GRB polygons that DON'T have matching OIDNs
@@ -145,12 +189,14 @@ export default defineEventHandler(async (event) => {
           bp.gebouw_id,
           ${grbSurveyDateExpr} AS opndatum,
           ${grbTypeLabelExpr} AS lbltype,
+          ${grbAddressSelect}
           COUNT(*) OVER() AS total_grb,
           $5::bigint AS total_osm
-        FROM grb.building_polygons bp, envelope_4326 e
+        FROM grb.building_polygons bp ${grbAddressJoin}, envelope_4326 e
         WHERE bp.geom && e.env
           AND ST_Intersects(bp.geom, e.env)
           AND bp.oidn::text != ALL($6::text[])
+          AND ${grbBuildingTypeFilter}
         ORDER BY bp.oidn;
       `
 
@@ -184,13 +230,18 @@ export default defineEventHandler(async (event) => {
             bp.gebouw_id,
             ${grbSurveyDateExpr} AS opndatum,
             ${grbTypeLabelExpr} AS lbltype,
+            ${grbAddressSelect}
             COUNT(*) OVER() AS total_grb,
             0::bigint AS total_osm
-          FROM grb.building_polygons bp
+          FROM grb.building_polygons bp ${grbAddressJoin}
           WHERE bp.geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
             AND ST_Intersects(bp.geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
+            AND ${grbBuildingTypeFilter}
+            ${matchMode === 'both' ? 'AND bp.oidn::text != ALL($5::text[])' : ''}
           ORDER BY bp.oidn
-        `, [minX, minY, maxX, maxY])
+        `, matchMode === 'both'
+          ? [minX, minY, maxX, maxY, bothOidnList.length > 0 ? bothOidnList : ['-1']]
+          : [minX, minY, maxX, maxY])
       } else {
         rows = await queryGrb(`
           WITH
@@ -205,16 +256,20 @@ export default defineEventHandler(async (event) => {
                 bp.geom,
                 bp.oidn,
                 bp.gebouw_id,
+                ${grbAddressCteSelect}
                 ${grbSurveyDateExpr} AS opndatum,
                 ${grbTypeLabelExpr} AS lbltype
-              FROM grb.building_polygons bp, envelope_4326 e
+              FROM grb.building_polygons bp ${grbAddressJoin}, envelope_4326 e
               WHERE bp.geom && e.env
                 AND ST_Intersects(bp.geom, e.env)
+                AND ${grbBuildingTypeFilter}
+                ${matchMode === 'both' ? 'AND bp.oidn::text != ALL($8::text[])' : ''}
             )
           SELECT
             ST_AsGeoJSON(g.geom) AS geometry,
             g.oidn,
             g.gebouw_id,
+            ${grbAddressOuterSelect}
             g.opndatum,
             g.lbltype,
             (SELECT COUNT(*) FROM grb_in_extent)::bigint AS total_grb,
@@ -230,7 +285,9 @@ export default defineEventHandler(async (event) => {
                   / NULLIF(ST_Area(o.geom), 0) >= $7
           )
           ORDER BY g.oidn
-        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold])
+        `, matchMode === 'both'
+          ? [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold, bothOidnList.length > 0 ? bothOidnList : ['-1']]
+          : [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold])
       }
 
     } else if (dataSource === 'knw') {
@@ -322,6 +379,11 @@ export default defineEventHandler(async (event) => {
             ST_AsGeoJSON(ST_Transform(b.geom, 4326)) AS geometry,
             b.building_id,
             b.inspire_id,
+            b.addresses,
+            b.street_names,
+            b.postcodes,
+            b.municipalities,
+            b.address_count,
             COUNT(*) OVER() AS total_grb,
             0::bigint AS total_osm
           FROM urbis.buildings_with_addresses b
@@ -336,7 +398,8 @@ export default defineEventHandler(async (event) => {
               SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON($5), 3857))).geom AS geom
             ),
             urbis_in_extent AS (
-              SELECT b.geom, b.building_id, b.inspire_id
+              SELECT b.geom, b.building_id, b.inspire_id,
+                     b.addresses, b.street_names, b.postcodes, b.municipalities, b.address_count
               FROM urbis.buildings_with_addresses b
               WHERE b.geom && ST_MakeEnvelope($1, $2, $3, $4, 3857)
                 AND ST_Intersects(b.geom, ST_MakeEnvelope($1, $2, $3, $4, 3857))
@@ -345,6 +408,11 @@ export default defineEventHandler(async (event) => {
             ST_AsGeoJSON(ST_Transform(u.geom, 4326)) AS geometry,
             u.building_id,
             u.inspire_id,
+            u.addresses,
+            u.street_names,
+            u.postcodes,
+            u.municipalities,
+            u.address_count,
             (SELECT COUNT(*) FROM urbis_in_extent)::bigint AS total_grb,
             $6::bigint AS total_osm
           FROM urbis_in_extent u
@@ -382,6 +450,11 @@ export default defineEventHandler(async (event) => {
             ST_AsGeoJSON(ST_Transform(b.geom, 4326)) AS geometry,
             b.objectid,
             b.natur_code,
+            b.addresses,
+            b.street_names,
+            b.postcodes,
+            b.municipalities,
+            b.address_count,
             COUNT(*) OVER() AS total_grb,
             0::bigint AS total_osm
           FROM picc.buildings_with_addresses b
@@ -396,7 +469,8 @@ export default defineEventHandler(async (event) => {
               SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON($5), 3857))).geom AS geom
             ),
             picc_in_extent AS (
-              SELECT b.geom, b.objectid, b.natur_code
+              SELECT b.geom, b.objectid, b.natur_code,
+                     b.addresses, b.street_names, b.postcodes, b.municipalities, b.address_count
               FROM picc.buildings_with_addresses b
               WHERE b.geom && ST_MakeEnvelope($1, $2, $3, $4, 3857)
                 AND ST_Intersects(b.geom, ST_MakeEnvelope($1, $2, $3, $4, 3857))
@@ -405,6 +479,11 @@ export default defineEventHandler(async (event) => {
             ST_AsGeoJSON(ST_Transform(p.geom, 4326)) AS geometry,
             p.objectid,
             p.natur_code,
+            p.addresses,
+            p.street_names,
+            p.postcodes,
+            p.municipalities,
+            p.address_count,
             (SELECT COUNT(*) FROM picc_in_extent)::bigint AS total_grb,
             $6::bigint AS total_osm
           FROM picc_in_extent p
@@ -448,6 +527,7 @@ export default defineEventHandler(async (event) => {
         totalGrb,
         totalOsm,
         dataSource,
+        matchMode,
         bounds
       }
     }

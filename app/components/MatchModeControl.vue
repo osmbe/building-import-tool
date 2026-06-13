@@ -33,13 +33,24 @@
           <Tag class="h-3 w-3 shrink-0" />
           Source Tag
         </button>
+        <button
+          class="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
+          :class="matchMode === 'both'
+            ? 'bg-primary/18 text-primary border border-primary/30'
+            : 'text-muted-foreground hover:text-foreground/70'"
+          @click="setMatchMode('both')"
+        >
+          <Layers class="h-3 w-3 shrink-0" />
+          Both
+        </button>
       </div>
       <p class="text-[9px] text-muted-foreground mt-2 leading-relaxed">
         <template v-if="matchMode === 'geometry'">Spatial — unmatched buildings in view (GRB, PICC, or Urbis)</template>
-        <template v-else>Missing source:geometry:oidn tag (GRB only)</template>
+        <template v-else-if="matchMode === 'source'">Missing source:geometry:oidn tag (GRB only)</template>
+        <template v-else>Spatially unmatched AND missing source tag (GRB only)</template>
       </p>
 
-      <div v-if="matchMode === 'geometry'" class="mt-2.5 space-y-1.5">
+      <div v-if="matchMode === 'geometry' || matchMode === 'both'" class="mt-2.5 space-y-1.5">
         <div class="flex items-center justify-between text-[10px]">
           <span class="text-muted-foreground">Match strictness</span>
           <span class="font-mono text-foreground/70">{{ Math.round(geometryThreshold * 100) }}%</span>
@@ -62,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, MapPin, Tag } from 'lucide-vue-next'
+import { ChevronDown, Layers, MapPin, Tag } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useMatchMode } from '~/composables/useMatchMode'
 
