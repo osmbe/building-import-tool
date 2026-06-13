@@ -1,9 +1,10 @@
 import { queryGrb, queryOsm } from '~/server/utils/db'
+import { fetchOverpassBuildings, type OverpassBuildings } from '~/server/utils/overpass'
 
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
-    const { bounds, matchMode = 'geometry', dataSource = 'grb', geometryThreshold = 0.7 } = body
+    const { bounds, matchMode = 'geometry', dataSource = 'grb', geometryThreshold = 0.7, useOverpass = false } = body
 
     if (!bounds || bounds.length !== 4) {
       return sendError(event, createError({
@@ -111,9 +112,19 @@ export default defineEventHandler(async (event) => {
       ? 'g.addresses, g.street_names, g.postcodes, g.municipalities, g.address_count,'
       : ''
 
+    // Issue #9: optionally source OSM buildings live from Overpass for the current bbox
+    // (opt-in; GRB only in this v1). Falls back to the Postgres mirror when not set.
+    const overpassData: OverpassBuildings | null =
+      (useOverpass && dataSource === 'grb')
+        ? await fetchOverpassBuildings([minX, minY, maxX, maxY])
+        : null
+
     // Collect OSM source:geometry:oidn references in the extent (GRB only).
     // Shared by 'source' mode and 'both' mode (issue #6: combine geometry + source-tag filtering).
     const fetchOsmSourceOidns = async (): Promise<string[]> => {
+      // When sourcing live from Overpass, the oidn list comes from the Overpass tags instead.
+      if (overpassData) return overpassData.oidnList
+
       const columnCheck = await queryOsm(`
         SELECT EXISTS (
           SELECT 1
@@ -207,19 +218,26 @@ export default defineEventHandler(async (event) => {
       // A match = overlap threshold reached in both directions (source and OSM)
       //
       // Two-step approach to avoid FDW overhead:
-      // 1. Fetch OSM geometries directly from osmbe (uses local GIST index)
+      // 1. Fetch OSM geometries directly from osmbe (uses local GIST index), OR live from Overpass (#9)
       // 2. Pass collected geometry to GRB comparison query (all local operations)
-      const osmResult = await queryOsm(`
-        SELECT
-          ST_AsGeoJSON(ST_Collect(COALESCE(geom, ST_Transform(geom_mercator, 4326)))) AS geom_collection,
-          COUNT(*) AS total_osm
-        FROM osm.osm_buildings
-        WHERE COALESCE(geom, ST_Transform(geom_mercator, 4326)) && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
-          AND ST_Intersects(COALESCE(geom, ST_Transform(geom_mercator, 4326)), ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
-      `, [minX, minY, maxX, maxY])
+      let osmGeomCollection: string | null
+      if (overpassData) {
+        // Both Overpass geometries and the GRB query operate in EPSG:4326
+        osmGeomCollection = overpassData.geomCollection
+        totalOsm = overpassData.totalOsm
+      } else {
+        const osmResult = await queryOsm(`
+          SELECT
+            ST_AsGeoJSON(ST_Collect(COALESCE(geom, ST_Transform(geom_mercator, 4326)))) AS geom_collection,
+            COUNT(*) AS total_osm
+          FROM osm.osm_buildings
+          WHERE COALESCE(geom, ST_Transform(geom_mercator, 4326)) && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
+            AND ST_Intersects(COALESCE(geom, ST_Transform(geom_mercator, 4326)), ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
+        `, [minX, minY, maxX, maxY])
 
-      const osmGeomCollection = osmResult[0]?.geom_collection
-      totalOsm = parseInt(osmResult[0]?.total_osm || '0')
+        osmGeomCollection = osmResult[0]?.geom_collection ?? null
+        totalOsm = parseInt(osmResult[0]?.total_osm || '0')
+      }
 
       if (!osmGeomCollection) {
         // No OSM buildings in extent — all GRB buildings are candidates

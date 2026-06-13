@@ -570,7 +570,7 @@ const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null
 
 const mapRef = ref<HTMLElement>()
 const { exportLayerToJosm, testJosmConnection } = useJosmExport()
-const { matchMode, geometryThreshold } = useMatchMode()
+const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
 
 // Use the map layers composable
@@ -699,6 +699,12 @@ watch(matchMode, () => {
 
 watch(geometryThreshold, () => {
   if ((matchMode.value === 'geometry' || matchMode.value === 'both') && candidateBuildingsLayerRef.value) {
+    calculateDifference()
+  }
+})
+
+watch(useOverpass, () => {
+  if (candidateBuildingsLayerRef.value) {
     calculateDifference()
   }
 })
@@ -1629,7 +1635,7 @@ const calculateDifference = async () => {
     // Call backend API to calculate difference
     const response = await $fetch('/api/buildings/difference', {
       method: 'POST',
-      body: { bounds, matchMode: matchMode.value, dataSource, geometryThreshold: geometryThreshold.value }
+      body: { bounds, matchMode: matchMode.value, dataSource, geometryThreshold: geometryThreshold.value, useOverpass: useOverpass.value }
     })
 
     const candidateGeoJSON = response as any

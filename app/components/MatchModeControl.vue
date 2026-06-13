@@ -68,6 +68,19 @@
           Requires both footprints to overlap by at least this percentage.
         </p>
       </div>
+
+      <!-- Issue #9: opt-in to live OSM data from Overpass (GRB only) -->
+      <label class="mt-2.5 flex items-center gap-2 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          class="accent-primary h-3 w-3"
+          :checked="useOverpass"
+          @change="setUseOverpass(($event.target as HTMLInputElement).checked)"
+        >
+        <span class="text-[10px] text-muted-foreground">
+          Live OSM from Overpass <span class="opacity-60">(GRB, slower, most up-to-date)</span>
+        </span>
+      </label>
     </div>
   </div>
 </template>
@@ -77,7 +90,7 @@ import { ChevronDown, Layers, MapPin, Tag } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useMatchMode } from '~/composables/useMatchMode'
 
-const { matchMode, geometryThreshold, setMatchMode, setGeometryThreshold } = useMatchMode()
+const { matchMode, geometryThreshold, useOverpass, setMatchMode, setGeometryThreshold, setUseOverpass } = useMatchMode()
 const collapsed = ref(false)
 
 const onThresholdInput = (event: Event) => {
