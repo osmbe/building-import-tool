@@ -145,34 +145,26 @@
                 </div>
                 <Switch v-model:checked="overlayLayers.osmBuildings" @update:checked="toggleOsmBuildings" />
               </div>
-              <div class="layer-row">
-                <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="color: hsl(var(--layer-grb)); background: currentColor;"></span>
-                  <span class="text-xs text-foreground/85">GRB Buildings</span>
-                </div>
-                <Switch v-model:checked="overlayLayers.grbBuildings" @update:checked="toggleGrbBuildings" />
+            </div>
+
+            <!-- Source dataset (single-select; compared against OSM) -->
+            <div class="mt-3 pt-3 border-t border-white/[0.05]">
+              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Source dataset</div>
+              <div class="grid grid-cols-2 gap-1">
+                <button
+                  v-for="opt in sourceOptions"
+                  :key="opt.key"
+                  class="layer-btn flex items-center justify-center gap-1.5"
+                  :class="selectedSource === opt.key ? 'layer-btn-active' : ''"
+                  @click="selectSource(opt.key)"
+                >
+                  <span class="layer-dot" :style="{ color: `hsl(var(${opt.varName}))`, background: 'currentColor' }"></span>
+                  {{ opt.label }}
+                </button>
               </div>
-              <div class="layer-row">
-                <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="color: hsl(var(--layer-knw)); background: currentColor;"></span>
-                  <span class="text-xs text-foreground/85">GRB Kunstwerken</span>
-                </div>
-                <Switch v-model:checked="overlayLayers.knwStructures" @update:checked="toggleKnwStructures" />
-              </div>
-              <div class="layer-row">
-                <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="color: hsl(var(--layer-picc)); background: currentColor;"></span>
-                  <span class="text-xs text-foreground/85">PICC Buildings</span>
-                </div>
-                <Switch v-model:checked="overlayLayers.piccBuildings" @update:checked="togglePiccBuildings" />
-              </div>
-              <div class="layer-row">
-                <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="color: hsl(var(--layer-urbis)); background: currentColor;"></span>
-                  <span class="text-xs text-foreground/85">Urbis Buildings</span>
-                </div>
-                <Switch v-model:checked="overlayLayers.urbisBuildings" @update:checked="toggleUrbisBuildings" />
-              </div>
+              <p class="text-[9px] text-muted-foreground/70 mt-1.5 leading-relaxed">
+                One dataset at a time, compared against OSM Buildings.
+              </p>
             </div>
             <div class="mt-3 pt-3 border-t border-white/[0.05] space-y-1">
               <div class="flex items-center justify-between text-[10px]">
@@ -193,7 +185,16 @@
         <!-- Results panel (loading / empty / error / success) -->
         <div v-if="differenceState !== 'idle'" class="glass-panel rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
-            <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Results</h3>
+            <div class="flex items-center gap-1.5">
+              <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Results</h3>
+              <span
+                v-if="useOverpass"
+                class="inline-flex items-center gap-1 px-1 py-px rounded text-[8px] font-semibold uppercase tracking-wide text-emerald-400 bg-emerald-400/10 border border-emerald-400/20"
+              >
+                <span class="h-1 w-1 rounded-full bg-emerald-400"></span>
+                Live
+              </span>
+            </div>
             <button class="text-muted-foreground hover:text-foreground transition-colors" @click="dismissResults">
               <X class="h-3 w-3" />
             </button>
@@ -259,6 +260,28 @@
                 ></div>
               </div>
             </div>
+            <!-- Optional simplification before export -->
+            <div class="pt-2 mt-1 border-t border-white/[0.05]">
+              <label class="flex items-center justify-between gap-2 cursor-pointer select-none">
+                <span class="text-[10px] text-foreground/80">Simplify geometry on export</span>
+                <input type="checkbox" class="accent-primary h-3 w-3" v-model="simplifyOnExport">
+              </label>
+              <div v-if="simplifyOnExport" class="mt-1.5 flex items-center gap-2">
+                <input
+                  type="range"
+                  min="50"
+                  max="98"
+                  step="1"
+                  class="flex-1 accent-primary"
+                  v-model.number="simplifyPercent"
+                >
+                <span class="font-mono text-[10px] text-foreground/60 w-8 text-right">{{ simplifyPercent }}%</span>
+              </div>
+              <p v-if="simplifyOnExport" class="text-[9px] text-muted-foreground/70 mt-1 leading-relaxed">
+                Keeps {{ simplifyPercent }}% of detail. Reduces node count on dense GRB outlines.
+              </p>
+            </div>
+
             <p class="text-[9px] text-muted-foreground/70 pt-1.5 leading-relaxed">
               {{ matchSummary }}. Open in JOSM to review before upload.
             </p>
@@ -767,6 +790,10 @@ const canCalculateDifference = computed(() =>
 type DifferenceState = 'idle' | 'loading' | 'success' | 'empty' | 'error'
 const differenceState = ref<DifferenceState>('idle')
 const differenceError = ref('')
+
+// Optional geometry simplification applied at export time (reuses the export's mapshaper path).
+const simplifyOnExport = ref(false)
+const simplifyPercent = ref(85)
 
 // JOSM remote-control connection status (null = not checked yet)
 const josmConnected = ref<boolean | null>(null)
@@ -1401,6 +1428,34 @@ const toggleUrbisBuildings = (visible: boolean) => {
   }
 }
 
+// Source dataset is single-select (GRB / KNW / PICC / Urbis are mutually exclusive).
+// Reflect the active one and route clicks through the existing toggle handlers, which
+// already disable the others.
+type SourceKind = 'grb' | 'knw' | 'picc' | 'urbis'
+const selectedSource = computed<SourceKind | 'none'>(() => {
+  if (overlayLayers.value.grbBuildings) return 'grb'
+  if (overlayLayers.value.knwStructures) return 'knw'
+  if (overlayLayers.value.piccBuildings) return 'picc'
+  if (overlayLayers.value.urbisBuildings) return 'urbis'
+  return 'none'
+})
+
+const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
+  { key: 'grb', label: 'GRB', varName: '--layer-grb' },
+  { key: 'knw', label: 'KNW', varName: '--layer-knw' },
+  { key: 'picc', label: 'PICC', varName: '--layer-picc' },
+  { key: 'urbis', label: 'Urbis', varName: '--layer-urbis' }
+]
+
+const selectSource = (src: SourceKind) => {
+  // Clicking the active dataset turns it off; otherwise switch to it.
+  const turnOn = selectedSource.value !== src
+  if (src === 'grb') toggleGrbBuildings(turnOn)
+  else if (src === 'knw') toggleKnwStructures(turnOn)
+  else if (src === 'picc') togglePiccBuildings(turnOn)
+  else toggleUrbisBuildings(turnOn)
+}
+
 // Helper function to calculate polygon centroid
 const getPolygonCentroid = (coords: [number, number][]): [number, number] => {
   if (!coords || coords.length === 0) return [0, 0]
@@ -1803,6 +1858,17 @@ const calculateDifference = async () => {
       return
     }
 
+    // Stamp the source kind on each candidate so the review tooltip and JOSM export
+    // know what they are looking at (the candidate layer is a single OL layer).
+    const sourceKind = dataSource === 'knw' ? 'knw'
+      : dataSource === 'picc' ? 'picc'
+      : dataSource === 'urbis' ? 'urbis'
+      : 'grb'
+    for (const f of candidateGeoJSON.features) {
+      f.properties = f.properties || {}
+      f.properties._layer_type = sourceKind
+    }
+
     // Update matching stats
     const stats = (candidateGeoJSON as any).stats || {}
     matchingStats.value = {
@@ -1923,7 +1989,8 @@ const exportToJOSM = async () => {
       hasKnwCandidates ? 'GRB Candidate Structures (KNW)' : 'GRB Candidate Buildings',
       {
         includeMeta: false,
-        simplify: false,
+        simplify: simplifyOnExport.value,
+        simplifyPercent: simplifyPercent.value,
         uploadToBackend: false
       }
     )
@@ -2355,7 +2422,7 @@ const setupHoverInteraction = () => {
 
     const foundFeatures: any[] = []
     map.value.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === knwStructuresLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value) {
+      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === knwStructuresLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value || layer === candidateBuildingsLayerRef.value) {
         // Get properties for clicked feature
         let properties: any
         try {
@@ -2388,6 +2455,7 @@ const setupHoverInteraction = () => {
           : layer === knwStructuresLayerRef.value ? 'knw'
           : layer === piccBuildingsLayerRef.value ? 'picc'
           : layer === urbisBuildingsLayerRef.value ? 'urbis'
+          : layer === candidateBuildingsLayerRef.value ? (properties._layer_type || 'grb')
           : 'grb'
 
         foundFeatures.push(properties)
@@ -2448,7 +2516,7 @@ const setupHoverInteraction = () => {
     let firstFeature: any = null
 
     map.value.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === knwStructuresLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value) {
+      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === knwStructuresLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value || layer === candidateBuildingsLayerRef.value) {
         if (!firstFeature) {
           firstFeature = feature
         }
@@ -2486,6 +2554,7 @@ const setupHoverInteraction = () => {
           : layer === knwStructuresLayerRef.value ? 'knw'
           : layer === piccBuildingsLayerRef.value ? 'picc'
           : layer === urbisBuildingsLayerRef.value ? 'urbis'
+          : layer === candidateBuildingsLayerRef.value ? (properties._layer_type || 'grb')
           : 'grb'
 
         foundFeatures.push(properties)

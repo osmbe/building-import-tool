@@ -70,23 +70,30 @@
       </div>
 
       <!-- Issue #9: opt-in to live OSM data from Overpass (GRB only) -->
-      <label class="mt-2.5 flex items-center gap-2 cursor-pointer select-none">
-        <input
-          type="checkbox"
-          class="accent-primary h-3 w-3"
-          :checked="useOverpass"
-          @change="setUseOverpass(($event.target as HTMLInputElement).checked)"
-        >
-        <span class="text-[10px] text-muted-foreground">
-          Live OSM from Overpass <span class="opacity-60">(GRB, slower, most up-to-date)</span>
-        </span>
-      </label>
+      <div class="mt-3 pt-2.5 border-t border-white/[0.05]">
+        <label class="flex items-center justify-between gap-2 cursor-pointer select-none">
+          <span class="flex items-center gap-1.5 text-[10px] text-foreground/80">
+            <Radio class="h-3 w-3 text-primary/70" />
+            Live OSM data
+          </span>
+          <input
+            type="checkbox"
+            class="accent-primary h-3 w-3"
+            :checked="useOverpass"
+            @change="setUseOverpass(($event.target as HTMLInputElement).checked)"
+          >
+        </label>
+        <p class="text-[9px] text-muted-foreground/80 mt-1.5 leading-relaxed">
+          Queries OpenStreetMap live for this view instead of our daily copy. Slower, but reflects
+          edits from the last day. GRB only.
+        </p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, Layers, MapPin, Tag } from 'lucide-vue-next'
+import { ChevronDown, Layers, MapPin, Radio, Tag } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useMatchMode } from '~/composables/useMatchMode'
 
