@@ -49,16 +49,9 @@ import { computed, ref } from 'vue'
 // Hide once the user has real work on screen (parent passes candidate presence).
 const { hasCandidates = false } = defineProps<{ hasCandidates?: boolean }>()
 
-const STORAGE_KEY = 'be2osm:onboarded'
+// Dismissal is intentionally session-only: the card returns on every refresh so the
+// workflow reminder is always one glance away. We don't persist "Got it".
 const dismissed = ref(false)
-
-if (import.meta.client) {
-  try {
-    dismissed.value = localStorage.getItem(STORAGE_KEY) === '1'
-  } catch {
-    // localStorage unavailable (private mode): just show the card this session
-  }
-}
 
 const visible = computed(() => !dismissed.value && !hasCandidates)
 
@@ -71,13 +64,6 @@ const steps = [
 
 const dismiss = () => {
   dismissed.value = true
-  if (import.meta.client) {
-    try {
-      localStorage.setItem(STORAGE_KEY, '1')
-    } catch {
-      // ignore persistence failure
-    }
-  }
 }
 </script>
 
