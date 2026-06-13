@@ -6,7 +6,7 @@ const OVERPASS_ENDPOINT = process.env.OVERPASS_API_URL || 'https://overpass-api.
 const MERCATOR_R = 20037508.342789244
 
 /** Convert a Web Mercator (EPSG:3857) coordinate to WGS84 lon/lat. */
-function mercatorToLonLat(x: number, y: number): [number, number] {
+export function mercatorToLonLat(x: number, y: number): [number, number] {
   const lon = (x / MERCATOR_R) * 180
   let lat = (y / MERCATOR_R) * 180
   lat = (180 / Math.PI) * (2 * Math.atan(Math.exp((lat * Math.PI) / 180)) - Math.PI / 2)
