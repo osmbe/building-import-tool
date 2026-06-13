@@ -12,35 +12,32 @@
 
     <!-- Collapsible body -->
     <div v-show="!collapsed" class="p-2.5">
-      <div class="flex gap-1 bg-white/[0.03] rounded p-0.5">
+      <div class="grid grid-cols-3 gap-1 bg-white/[0.03] rounded p-0.5">
         <button
-          class="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
+          class="flex items-center justify-center px-1 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
           :class="matchMode === 'geometry'
             ? 'bg-primary/18 text-primary border border-primary/30'
             : 'text-muted-foreground hover:text-foreground/70'"
           @click="setMatchMode('geometry')"
         >
-          <MapPin class="h-3 w-3 shrink-0" />
           Geometry
         </button>
         <button
-          class="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
+          class="flex items-center justify-center px-1 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
           :class="matchMode === 'source'
             ? 'bg-primary/18 text-primary border border-primary/30'
             : 'text-muted-foreground hover:text-foreground/70'"
           @click="setMatchMode('source')"
         >
-          <Tag class="h-3 w-3 shrink-0" />
-          Source Tag
+          Source
         </button>
         <button
-          class="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
+          class="flex items-center justify-center px-1 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
           :class="matchMode === 'both'
             ? 'bg-primary/18 text-primary border border-primary/30'
             : 'text-muted-foreground hover:text-foreground/70'"
           @click="setMatchMode('both')"
         >
-          <Layers class="h-3 w-3 shrink-0" />
           Both
         </button>
       </div>
@@ -93,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, Layers, MapPin, Radio, Tag } from 'lucide-vue-next'
+import { ChevronDown, Radio } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useMatchMode } from '~/composables/useMatchMode'
 
