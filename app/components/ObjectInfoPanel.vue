@@ -32,12 +32,6 @@
           >
             Compare
           </TabsTrigger>
-          <TabsTrigger
-            value="qa"
-            class="flex-1 h-9 rounded-none text-[11px] font-medium data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-1px_0_0_hsl(192_90%_46%)] data-[state=active]:bg-transparent text-muted-foreground hover:text-foreground/70 transition-colors"
-          >
-            QA Tools
-          </TabsTrigger>
         </TabsList>
 
         <!-- Overview tab -->
@@ -110,11 +104,6 @@
             </div>
           </div>
         </TabsContent>
-
-        <!-- QA tab -->
-        <TabsContent value="qa" class="p-4 mt-0">
-          <QAToolsPanel :building="building" @operation-complete="$emit('operation-complete', $event)" />
-        </TabsContent>
       </Tabs>
     </div>
   </div>
@@ -124,7 +113,6 @@
 import { Building, Calendar, Layers, Ruler, X } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import type { BuildingData } from '~/composables/useBuildingData'
-import QAToolsPanel from '~/components/QAToolsPanel.vue'
 import Tabs from '~/components/ui/tabs.vue'
 import TabsContent from '~/components/ui/tabs-content.vue'
 import TabsList from '~/components/ui/tabs-list.vue'
@@ -134,7 +122,7 @@ const { building, isOpen } = defineProps<{
   building: BuildingData | null
   isOpen: boolean
 }>()
-defineEmits<{ (e: 'close'): void; (e: 'operation-complete', payload: any): void }>()
+defineEmits<{ (e: 'close'): void }>()
 
 const activeTab = ref('overview')
 

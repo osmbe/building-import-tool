@@ -4,7 +4,7 @@
       <DialogHeader>
         <DialogTitle class="text-base font-semibold">Sign in with OpenStreetMap</DialogTitle>
         <DialogDescription class="text-xs text-muted-foreground mt-1">
-          Connect your OSM account to save edits and access QA tools.
+          Connect your OSM account so your imports are attributed to you.
         </DialogDescription>
       </DialogHeader>
 
@@ -62,9 +62,9 @@ const { open, onSignIn, isLoading } = defineProps<{
 }>()
 
 const benefits = [
-  { icon: MapPin,  text: 'Save your map edits directly to OpenStreetMap' },
+  { icon: MapPin,  text: 'Your imports are attributed to your OSM account' },
   { icon: Users,   text: 'Track your contribution history and changesets' },
-  { icon: Shield,  text: 'Access quality assurance and comparison tools' },
+  { icon: Shield,  text: 'Edits go through JOSM, where you review before upload' },
 ]
 
 function handleSignIn() {

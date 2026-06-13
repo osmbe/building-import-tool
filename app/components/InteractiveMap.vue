@@ -4,6 +4,9 @@
       <!-- OpenLayers Map Container -->
       <div id="map" ref="mapRef" class="absolute inset-0" :class="currentBaseLayer === 'blank' ? 'bg-[#f5f0e8]' : ''" style="width: 100%; height: 100%; min-height: 400px;"></div>
 
+      <!-- First-run guidance -->
+      <GettingStartedCard :has-candidates="candidateBuildingCount > 0" />
+
       <!-- Top-right: Map Controls Panel -->
       <div class="absolute right-4 top-4 flex flex-col gap-2 w-44">
         <div class="glass-panel rounded-lg overflow-hidden">
@@ -45,6 +48,26 @@
               </div>
             </div>
 
+            <!-- Prerequisite checklist (shown until everything is ready) -->
+            <div v-if="!canCalculateDifference" class="px-2 pt-2 pb-1.5 space-y-1 border-b border-white/[0.05]">
+              <div class="text-[8px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Before you start</div>
+              <button class="check-row" @click="revealLayersPanel">
+                <span class="check-mark" :class="hasSourceLayer ? 'check-done' : ''"><Check v-if="hasSourceLayer" class="h-2 w-2" /></span>
+                <span class="flex-1 text-left" :class="hasSourceLayer ? 'text-emerald-400/80' : ''">Source dataset on</span>
+                <span v-if="!hasSourceLayer" class="check-action">Layers</span>
+              </button>
+              <button class="check-row" @click="revealLayersPanel">
+                <span class="check-mark" :class="hasOsmLayer ? 'check-done' : ''"><Check v-if="hasOsmLayer" class="h-2 w-2" /></span>
+                <span class="flex-1 text-left" :class="hasOsmLayer ? 'text-emerald-400/80' : ''">OSM Buildings on</span>
+                <span v-if="!hasOsmLayer" class="check-action">Layers</span>
+              </button>
+              <button class="check-row" @click="zoomToWorkingLevel">
+                <span class="check-mark" :class="zoomReady ? 'check-done' : ''"><Check v-if="zoomReady" class="h-2 w-2" /></span>
+                <span class="flex-1 text-left" :class="zoomReady ? 'text-emerald-400/80' : ''">Zoom in to ≥ 16</span>
+                <span v-if="!zoomReady" class="check-action">Zoom</span>
+              </button>
+            </div>
+
             <!-- Actions -->
             <div class="p-2 space-y-1">
               <button
@@ -64,6 +87,26 @@
                 <ExternalLink class="h-3 w-3 shrink-0" />
                 <span>Open in JOSM</span>
               </button>
+
+              <!-- JOSM connection status -->
+              <div class="flex items-center justify-between px-0.5 pt-1">
+                <div class="flex items-center gap-1.5">
+                  <span
+                    class="h-1.5 w-1.5 rounded-full shrink-0"
+                    :class="josmConnected === true ? 'bg-emerald-400'
+                      : josmConnected === false ? 'bg-red-400'
+                      : 'bg-muted-foreground/40'"
+                  ></span>
+                  <span class="text-[9px] text-muted-foreground">
+                    {{ josmConnected === true ? 'JOSM ready'
+                      : josmConnected === false ? 'JOSM offline'
+                      : 'JOSM unknown' }}
+                  </span>
+                </div>
+                <button class="text-[9px] text-primary/80 hover:text-primary transition-colors" @click="josmHelpOpen = true">
+                  Set up
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -147,17 +190,47 @@
 
       <!-- Bottom-right: Match Mode + Stats stacked -->
       <div class="absolute bottom-4 right-4 flex flex-col gap-2 w-56">
-        <!-- Matching Stats (shown after Get Difference) -->
-        <div v-if="matchingStats" class="glass-panel rounded-lg p-3">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Match Stats</h3>
-            <button class="text-muted-foreground hover:text-foreground transition-colors" @click="matchingStats = null">
+        <!-- Results panel (loading / empty / error / success) -->
+        <div v-if="differenceState !== 'idle'" class="glass-panel rounded-lg p-3">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Results</h3>
+            <button class="text-muted-foreground hover:text-foreground transition-colors" @click="dismissResults">
               <X class="h-3 w-3" />
             </button>
           </div>
-          <div class="space-y-1.5 text-[11px]">
+
+          <!-- Loading -->
+          <div v-if="differenceState === 'loading'" class="flex items-center gap-2 text-[11px] text-muted-foreground py-1">
+            <Loader2 class="h-3 w-3 animate-spin shrink-0" />
+            <span>Searching this view…</span>
+          </div>
+
+          <!-- Error -->
+          <div v-else-if="differenceState === 'error'" class="space-y-2">
+            <div class="flex items-start gap-2 text-[11px] text-red-300/90">
+              <CircleAlert class="h-3.5 w-3.5 shrink-0 mt-px text-red-400" />
+              <span>Could not calculate the difference.</span>
+            </div>
+            <p v-if="differenceError" class="text-[10px] text-muted-foreground break-words leading-relaxed">{{ differenceError }}</p>
+            <button class="result-retry" @click="calculateDifference">
+              <RotateCcw class="h-2.5 w-2.5" />
+              Retry
+            </button>
+          </div>
+
+          <!-- Empty -->
+          <div v-else-if="differenceState === 'empty'" class="space-y-1.5">
+            <p class="text-[11px] text-foreground/85">No missing buildings here.</p>
+            <p class="text-[10px] text-muted-foreground leading-relaxed">
+              Everything in view already matches OSM. Pan to a new area, lower the match strictness, or switch match mode.
+            </p>
+            <p class="text-[9px] text-muted-foreground/70 pt-0.5">{{ matchSummary }}</p>
+          </div>
+
+          <!-- Success -->
+          <div v-else-if="differenceState === 'success' && matchingStats" class="space-y-1.5 text-[11px]">
             <div class="flex items-center justify-between">
-              <span class="text-muted-foreground">GRB total</span>
+              <span class="text-muted-foreground">Source total</span>
               <span class="font-mono text-foreground/65">{{ matchingStats.totalGrb }}</span>
             </div>
             <div class="flex items-center justify-between">
@@ -170,22 +243,25 @@
                 <span class="font-mono font-medium text-emerald-400">{{ matchingStats.matched }}</span>
               </div>
               <div class="flex items-center justify-between">
-                <span class="text-sky-400/90">Unmatched</span>
+                <span class="text-sky-400/90">Candidates</span>
                 <span class="font-mono font-medium text-sky-400">{{ matchingStats.unmatched }}</span>
               </div>
             </div>
             <div class="pt-2 border-t border-white/[0.05]">
               <div class="flex items-center justify-between mb-1.5">
                 <span class="text-muted-foreground">Coverage</span>
-                <span class="font-mono text-primary font-medium">{{ Math.round((matchingStats.matched / matchingStats.totalGrb) * 100) }}%</span>
+                <span class="font-mono text-primary font-medium">{{ coveragePct }}%</span>
               </div>
               <div class="h-1 bg-white/[0.05] rounded-full overflow-hidden">
                 <div
                   class="h-full bg-primary/75 rounded-full transition-all duration-700"
-                  :style="{ width: Math.round((matchingStats.matched / matchingStats.totalGrb) * 100) + '%' }"
+                  :style="{ width: coveragePct + '%' }"
                 ></div>
               </div>
             </div>
+            <p class="text-[9px] text-muted-foreground/70 pt-1.5 leading-relaxed">
+              {{ matchSummary }}. Open in JOSM to review before upload.
+            </p>
           </div>
         </div>
 
@@ -193,7 +269,16 @@
         <MatchModeControl />
       </div>
 
-      <ObjectInfoPanel :building="activeBuilding" :is-open="panelOpen" @close="panelOpen=false" @operation-complete="onOperationComplete" />
+      <ObjectInfoPanel :building="activeBuilding" :is-open="panelOpen" @close="panelOpen=false" />
+
+      <!-- JOSM setup help -->
+      <JosmHelpDialog
+        v-model:open="josmHelpOpen"
+        :connected="josmConnected"
+        :testing="josmTesting"
+        :instructions="josmInstructions"
+        @test="checkJosm"
+      />
 
       <!-- Feature Info Panel (hover / click) -->
       <div
@@ -546,7 +631,7 @@
 </template>
 
 <script setup lang="ts">
-import { Building2, ChevronDown, ExternalLink, GitCompareArrows, Landmark, Loader2, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
+import { Building2, Check, ChevronDown, CircleAlert, ExternalLink, GitCompareArrows, Landmark, Loader2, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
 import { Fill, Stroke, Style } from 'ol/style'
 import { GeoJSON, MVT } from 'ol/format'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -554,6 +639,8 @@ import { fromLonLat, toLonLat } from 'ol/proj'
 import Feature from 'ol/Feature'
 import MatchModeControl from '~/components/MatchModeControl.vue'
 import ObjectInfoPanel from '~/components/ObjectInfoPanel.vue'
+import GettingStartedCard from '~/components/GettingStartedCard.vue'
+import JosmHelpDialog from '~/components/JosmHelpDialog.vue'
 import type { BuildingData } from '~/composables/useBuildingData'
 import type { SearchResult } from '~/composables/useSearch'
 import Switch from '~/components/ui/switch.vue'
@@ -569,7 +656,8 @@ import { useToast } from '~/composables/useToast'
 const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
 
 const mapRef = ref<HTMLElement>()
-const { exportLayerToJosm, testJosmConnection } = useJosmExport()
+const { exportLayerToJosm, testJosmConnection, getJosmInstructions } = useJosmExport()
+const josmInstructions = getJosmInstructions()
 const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
 
@@ -656,21 +744,78 @@ const matchingStats = ref<{
 const originalCandidateFeatures = ref<any[]>([]) // Store original features for reset
 const isCalculatingDifference = ref(false) // Loading state for Get Difference button
 
+// Workflow prerequisites (issue: turn gates into visible guidance).
+// At least one source layer (GRB, KNW, PICC, or Urbis) must be loaded and visible.
+const hasSourceLayer = computed(() =>
+  Boolean(
+    (grbBuildingsLayerRef.value && overlayLayers.value.grbBuildings)
+    || (knwStructuresLayerRef.value && overlayLayers.value.knwStructures)
+    || (piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings)
+    || (urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings)
+  )
+)
+const hasOsmLayer = computed(() => Boolean(osmBuildingsLayerRef.value && overlayLayers.value.osmBuildings))
+const zoomReady = computed(() => currentZoom.value >= 16)
+
 // Computed property to check if Get Difference button should be enabled
-const canCalculateDifference = computed(() => {
-  if (!map.value) return false
-  if (!osmBuildingsLayerRef.value) return false
-  if (currentZoom.value < 16) return false
-  if (!overlayLayers.value.osmBuildings) return false
+const canCalculateDifference = computed(() =>
+  Boolean(map.value) && hasOsmLayer.value && zoomReady.value && hasSourceLayer.value
+)
 
-  // At least one source layer (GRB, KNW, PICC, or Urbis) must be loaded and visible
-  const grbReady = grbBuildingsLayerRef.value && overlayLayers.value.grbBuildings
-  const knwReady = knwStructuresLayerRef.value && overlayLayers.value.knwStructures
-  const piccReady = piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings
-  const urbisReady = urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings
-  if (!grbReady && !knwReady && !piccReady && !urbisReady) return false
+// Difference workflow lifecycle state, surfaced as a persistent results panel
+// instead of disappearing toasts.
+type DifferenceState = 'idle' | 'loading' | 'success' | 'empty' | 'error'
+const differenceState = ref<DifferenceState>('idle')
+const differenceError = ref('')
 
-  return true
+// JOSM remote-control connection status (null = not checked yet)
+const josmConnected = ref<boolean | null>(null)
+const josmTesting = ref(false)
+const josmHelpOpen = ref(false)
+
+const checkJosm = async () => {
+  josmTesting.value = true
+  try {
+    josmConnected.value = await testJosmConnection()
+  } catch {
+    josmConnected.value = false
+  } finally {
+    josmTesting.value = false
+  }
+}
+
+// Open the layers panel and scroll a hint into view (used by the checklist).
+const revealLayersPanel = () => {
+  layersCollapsed.value = false
+}
+
+const zoomToWorkingLevel = () => {
+  if (!map.value) return
+  const view = map.value.getView()
+  view.animate({ zoom: Math.max(16, view.getZoom() || 16), duration: 600 })
+}
+
+const dismissResults = () => {
+  differenceState.value = 'idle'
+  matchingStats.value = null
+}
+
+const coveragePct = computed(() => {
+  const s = matchingStats.value
+  if (!s || !s.totalGrb) return 0
+  return Math.round((s.matched / s.totalGrb) * 100)
+})
+
+// Short, human label for what produced the current results (which mode, freshness).
+const matchSummary = computed(() => {
+  const pct = Math.round(geometryThreshold.value * 100)
+  const mode = matchMode.value === 'source'
+    ? 'Source tag'
+    : matchMode.value === 'both'
+      ? `Geometry ${pct}% + source tag`
+      : `Geometry ${pct}%`
+  const freshness = useOverpass.value ? 'live Overpass' : 'OSM mirror'
+  return `${mode} · ${freshness}`
 })
 
 // Computed property to check if JOSM export button should be enabled
@@ -1624,6 +1769,8 @@ const calculateDifference = async () => {
 
   // Set loading state
   isCalculatingDifference.value = true
+  differenceState.value = 'loading'
+  differenceError.value = ''
 
   try {
     // Get map extent in Web Mercator (EPSG:3857)
@@ -1641,7 +1788,8 @@ const calculateDifference = async () => {
     const candidateGeoJSON = response as any
 
     if (!candidateGeoJSON || candidateGeoJSON.features.length === 0) {
-      toast.info('No candidates found', `All ${dataSource.toUpperCase()} buildings have matching OSM geometries or the area has no data.`)
+      // Persistent empty state in the results panel rather than a disappearing toast.
+      differenceState.value = 'empty'
 
       // Remove existing candidate buildings layer if present
       if (candidateBuildingsLayerRef.value) {
@@ -1651,6 +1799,7 @@ const calculateDifference = async () => {
 
       matchingStats.value = null
       candidateBuildingCount.value = 0
+      originalCandidateFeatures.value = []
       return
     }
 
@@ -1718,10 +1867,12 @@ const calculateDifference = async () => {
 
     // Enable candidate buildings layer
     overlayLayers.value.candidateBuildings = true
+    differenceState.value = 'success'
 
   } catch (error) {
     console.error('Error calculating difference:', error)
-    toast.error('Difference calculation failed', error instanceof Error ? error.message : String(error))
+    differenceState.value = 'error'
+    differenceError.value = error instanceof Error ? error.message : String(error)
   } finally {
     // Reset loading state
     isCalculatingDifference.value = false
@@ -1739,9 +1890,13 @@ const exportToJOSM = async () => {
 
   try {
     // Check JOSM connection first
+    josmTesting.value = true
     const isConnected = await testJosmConnection()
+    josmConnected.value = isConnected
+    josmTesting.value = false
     if (!isConnected) {
-      toast.error('JOSM not reachable', 'Start JOSM, go to Edit → Preferences (F12), and enable "Remote Control".')
+      // Open the setup dialog instead of cramming instructions into a toast.
+      josmHelpOpen.value = true
       return
     }
 
@@ -1777,13 +1932,9 @@ const exportToJOSM = async () => {
     toast.success('Exported to JOSM', `${result.featureCount} building${result.featureCount === 1 ? '' : 's'} loaded as a new layer in JOSM.`)
   } catch (error: any) {
     console.error('Error exporting candidate buildings to JOSM:', error)
-    toast.error('JOSM export failed', `${error.message}\nCheck that JOSM is running with remote control enabled on port 8111.`)
+    josmTesting.value = false
+    toast.error('JOSM export failed', error.message || 'Could not send data to JOSM.')
   }
-}
-
-const onOperationComplete = (res: any) => {
-  // Handle operation completion
-  console.log('Operation completed:', res)
 }
 
 // Remove a specific feature from the clicked features array
@@ -2412,6 +2563,9 @@ onMounted(() => {
       }, 100)
     }, 50)
   })
+
+  // One quiet probe so the JOSM status chip reflects reality on load.
+  checkJosm()
 })
 
 onUnmounted(() => {
