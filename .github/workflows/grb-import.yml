@@ -49,7 +49,7 @@ jobs:
           echo "After cleanup:"
           df -h /
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install PostgreSQL 18 client
         run: |
