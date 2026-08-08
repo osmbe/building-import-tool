@@ -115,7 +115,7 @@ jobs:
         run: PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f postgres/05-setup-picc.sql
 
       - name: Download all province dumps
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dumps
           pattern: picc-*
