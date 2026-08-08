@@ -116,7 +116,7 @@ jobs:
 
       - name: Upload GRB dump
         if: ${{ github.event.inputs.download_only != 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: be2osm-dump
           path: be2osm.sql.gz

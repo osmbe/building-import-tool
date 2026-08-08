@@ -70,7 +70,7 @@ jobs:
             processing just picc-province-import ${{ matrix.province }}
 
       - name: Upload province dump
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: picc-${{ matrix.province }}
           path: processing/data/picc/picc-${{ matrix.province }}.dump
@@ -147,7 +147,7 @@ jobs:
           ls -lh picc.sql.gz
 
       - name: Upload PICC dump
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: picc-dump
           path: picc.sql.gz
