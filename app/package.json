@@ -15,17 +15,17 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-vue-next": "^1.0.0",
-    "mapshaper": "^0.7.51",
-    "nuxt": "^4.5.1",
+    "mapshaper": "^0.7.55",
+    "nuxt": "^4.5.2",
     "ol": "^10.10.0",
-    "pg": "^8.22.0",
+    "pg": "^8.23.0",
     "radix-vue": "^1.9.17",
     "tailwind-merge": "^3.6.0",
-    "vue": "^3.5.29"
+    "vue": "^3.5.42"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
-    "@types/pg": "^8.20.4",
+    "@types/pg": "^8.23.1",
     "oxlint": "^1.77.0",
     "tailwindcss": "^4.2.4",
     "typescript": "^5.9.3",
