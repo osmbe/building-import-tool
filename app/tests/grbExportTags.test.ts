@@ -72,6 +72,27 @@ describe('filterFeatureProperties — source:geometry:date is date-only (#49)', 
   })
 })
 
+describe('filterFeatureProperties — PICC date_leve (#49)', () => {
+  it('maps date_leve to a date-only source:geometry:date and strips raw PICC fields', () => {
+    const out = tags({
+      _layer_type: 'picc',
+      objectid: 1,
+      date_leve: '2021-06-30 00:00:00',
+      date_modif: '2022-01-01',
+      georef_id: 'x',
+      natur_desc: 'Bâtiment'
+    })
+    expect(out['source:geometry:date']).toBe('2021-06-30')
+    for (const removed of ['date_leve', 'date_modif', 'georef_id', 'natur_desc']) {
+      expect(out).not.toHaveProperty(removed)
+    }
+  })
+
+  it('prefers survey_date over date_leve', () => {
+    expect(tags({ survey_date: '2020-01-02', date_leve: '2021-06-30' })['source:geometry:date']).toBe('2020-01-02')
+  })
+})
+
 describe('filterFeatureProperties — source:geometry:ref', () => {
   it('builds the ref from entity + oidn for GRB', () => {
     expect(tags({ oidn: 12345, lbltype: 'hoofdgebouw' })['source:geometry:ref']).toBe('Gbg/12345')
