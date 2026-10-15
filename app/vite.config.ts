@@ -18,7 +18,16 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.{test,spec}.ts'],
-    globals: true
+    globals: true,
+    restoreMocks: true,
+    unstubGlobals: true,
+    coverage: {
+      provider: 'v8',
+      // Logic modules. Vue components (OpenLayers map UI) are not unit-tested; keep logic out of them.
+      include: ['utils/**/*.ts', 'server/**/*.ts', 'composables/**/*.ts'],
+      reporter: ['text', 'html', 'json-summary'],
+      thresholds: { lines: 95, statements: 95, functions: 95, branches: 90 }
+    }
   },
   fmt: {
     singleQuote: true,

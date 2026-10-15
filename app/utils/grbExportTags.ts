@@ -70,10 +70,10 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
   const isVerdieping = polygonTypeLabel === 'verdieping'
   const isNonBuildingType = !isBuildingTypeLabel(polygonTypeLabel)
 
-  // Export candidate polygons as buildings by default (not for KNW structures).
-  // gbg-3 (virtual facade) and other non-building GRB types must not get a building tag.
+  // Export candidate polygons as buildings by default (not for KNW structures), preferring a detected
+  // auto_building value. gbg-3 (virtual facade) and other non-building GRB types must not get a building tag.
   if (!isKnw && !props.building && !isNonBuildingType) {
-    props.building = 'yes'
+    props.building = props.auto_building || 'yes'
   }
 
   // GBA "verdieping" (floor level): keep building tag but flag for manual correction in JOSM (issue #53)
@@ -143,11 +143,6 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
     props['source:geometry:ref'] = `${props['source:geometry:entity']}/${props['source:geometry:oidn']}`
   }
 
-  // Migrate auto_building to building tag (fallback)
-  if (props.auto_building && !props.building) {
-    props.building = props.auto_building
-  }
-
   // Issue #49: attach address information for GRB/PICC/Urbis exports.
   // OSM convention is one address per object, so auto-emit addr:* tags ONLY when the candidate
   // has exactly one address. Multi-address buildings are left for manual handling in JOSM.
@@ -164,7 +159,8 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
     if (street && remainder.toLowerCase().startsWith(street.toLowerCase())) {
       remainder = remainder.slice(street.length)
     }
-    const hnMatch = remainder.trim().match(/^\d+\s*[A-Za-z]?(?:\s*\/\s*\w+)?/)
+    // A letter suffix ("12A", "12 b") must be a single letter, not the start of the next word ("12 Main Street")
+    const hnMatch = remainder.trim().match(/^\d+(?:\s*[A-Za-z](?![A-Za-z]))?(?:\s*\/\s*\w+)?/)
 
     if (street && !props['addr:street']) props['addr:street'] = street
     if (hnMatch && !props['addr:housenumber']) {

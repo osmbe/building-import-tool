@@ -1,5 +1,5 @@
 import { type ProjectionLike, fromLonLat, get as getProjection, transformExtent } from 'ol/proj'
-import { type Ref, ref } from 'vue'
+import { type Ref, ref, shallowRef } from 'vue'
 import { getTopLeft, getWidth } from 'ol/extent'
 import OLMap from 'ol/Map'
 import TileLayer from 'ol/layer/Tile'
@@ -28,13 +28,15 @@ export interface MapConfig {
 
 // Main composable
 export const useMapLayers = () => {
-  const map = ref<OLMap | null>(null)
+  // OpenLayers objects are held in shallow refs: a deep ref would wrap them in reactive proxies, which is slow
+  // and breaks identity checks (map.value !== the real map).
+  const map = shallowRef<OLMap | null>(null)
   const currentBaseLayer = ref<'osm' | 'flanders' | 'wallonia' | 'brussels' | 'esri' | 'blank'>('osm')
-  const osmLayer = ref<TileLayer<XYZ>>()
-  const flandersLayer = ref<TileLayer<WMTS>>()
-  const walloniaLayer = ref<TileLayer<TileWMS>>()
-  const brusselsLayer = ref<TileLayer<TileWMS>>()
-  const esriLayer = ref<TileLayer<XYZ>>()
+  const osmLayer = shallowRef<TileLayer<XYZ>>()
+  const flandersLayer = shallowRef<TileLayer<WMTS>>()
+  const walloniaLayer = shallowRef<TileLayer<TileWMS>>()
+  const brusselsLayer = shallowRef<TileLayer<TileWMS>>()
+  const esriLayer = shallowRef<TileLayer<XYZ>>()
 
   // Initialize layers first (separate from map creation)
   const initializeLayers = () => {

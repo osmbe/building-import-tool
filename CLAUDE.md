@@ -16,6 +16,7 @@ npm install                 # runs `nuxt prepare` via postinstall
 npm run dev                 # http://0.0.0.0:3000
 npm run build
 npm test                    # vp test run (unit tests in app/tests/)
+npm run test:coverage       # with v8 coverage + thresholds (report in app/coverage/)
 npx vp test run tests/overpass.test.ts      # single test file
 npx vp test run -t "name of test"           # single test by name
 npm run lint                # nuxt prepare && vp lint (type-aware oxlint, must pass with 0 errors)
@@ -33,7 +34,9 @@ TypeScript is pinned to 6.x: vue-tsc doesn't work with TypeScript 7, the native 
 
 Type checking is split across two tools. `vue-tsc -b` checks everything including `.vue` files; the root `tsconfig.json` only holds project references, so the `-b` flag is required. `vp lint` runs type-aware rules plus a type check through tsgolint, which skips `.vue` files. Both scripts run `nuxt prepare` first because `nuxt build` rewrites `.nuxt/tsconfig.server.json` with a Nitro types path that its own `exclude` hides. After a build, running bare `vp lint` or `vue-tsc` reports spurious "Cannot find name 'defineEventHandler'" errors.
 
-Tests run without the Nuxt runtime. The test transform uses `app/tsconfig.test.json`, so it doesn't depend on the generated `.nuxt/tsconfig`. That file is deliberately not named `tsconfig.json` and not placed in `tests/`, so type-aware lint still checks the tests against Nuxt's project config. They can only cover pure modules (`utils/`, `server/utils/`), and nothing that depends on Nuxt auto-imports.
+Tests run without the Nuxt runtime. The test transform uses `app/tsconfig.test.json`, so it doesn't depend on the generated `.nuxt/tsconfig`. That file is deliberately not named `tsconfig.json` and not placed in `tests/`, so type-aware lint still checks the tests against Nuxt's project config. Nuxt/Nitro auto-imports are stubbed with `vi.stubGlobal` before the module under test is imported dynamically: `tests/server/nitro.ts` covers the h3/Nitro globals (`defineEventHandler`, `readBody`, `createError`, …) for server routes, and the composable tests stub `$fetch`, `useState` and friends. The database is mocked with `vi.mock('~/server/utils/db')`.
+
+Coverage (`npm run test:coverage`) covers `utils/`, `server/` and `composables/`, with thresholds of 95% for lines, statements and functions and 90% for branches; the run fails below them. Vue components are excluded, so keep logic in those modules rather than in components.
 
 ### Data processing (`processing/justfile`)
 

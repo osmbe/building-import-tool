@@ -108,7 +108,10 @@ function escapeXml(s: string): string {
 }
 
 function tagsXml(tags: Record<string, string>): string {
-  const entries = Object.entries(tags)
+  // OSM tags can't have empty values: skip null/undefined/'' instead of writing v="null"
+  const entries = Object.entries(tags as Record<string, string | number | boolean | null | undefined>)
+    .filter(([, v]) => v !== null && v !== undefined && String(v) !== '')
+    .map(([k, v]): [string, string] => [k, String(v)])
   if (entries.length === 0) return ''
   return entries.map(([k, v]) => `    <tag k="${escapeXml(k)}" v="${escapeXml(v)}"/>`).join('\n')
 }

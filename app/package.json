@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare",
     "test": "vp test run",
     "test:watch": "vp test",
+    "test:coverage": "vp test run --coverage",
     "lint": "nuxt prepare && vp lint",
     "fmt": "vp fmt",
     "typecheck": "nuxt prepare && vue-tsc -b --noEmit"
@@ -29,6 +30,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@types/pg": "^8.23.1",
+    "@vitest/coverage-v8": "^5.0.4",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vite-plus": "1.2.0",
