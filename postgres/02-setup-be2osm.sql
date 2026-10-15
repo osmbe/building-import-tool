@@ -20,6 +20,12 @@ CREATE EXTENSION IF NOT EXISTS btree_gin;
 -- Create schema for GRB buildings
 CREATE SCHEMA IF NOT EXISTS grb;
 
+-- When this schema's data was last imported (shown in the app, Issue #59).
+-- Written by the processing recipes; travels with the CI dump.
+CREATE TABLE IF NOT EXISTS grb.import_meta (
+    imported_at TIMESTAMPTZ NOT NULL
+);
+
 \echo '✓ GRB schema created'
 
 -- Building Polygons (GBG - Gebouwgeometrie)

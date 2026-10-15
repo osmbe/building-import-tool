@@ -24,6 +24,9 @@ echo "[restore-grb] Restoring to be2osm database..."
 PSQL="psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d be2osm"
 export PGPASSWORD="${POSTGRES_PASSWORD}"
 
+# import_meta may not exist yet on older deployments; the data-only dump COPYs into it
+${PSQL} -c "CREATE TABLE IF NOT EXISTS grb.import_meta (imported_at TIMESTAMPTZ NOT NULL);" || true
+${PSQL} -c "TRUNCATE grb.import_meta;" || true
 ${PSQL} -c "TRUNCATE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links, grb.polygon_building_rel RESTART IDENTITY CASCADE;" || true
 
 gunzip -c "${DUMP_FILE}" | ${PSQL}

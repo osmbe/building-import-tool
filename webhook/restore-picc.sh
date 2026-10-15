@@ -28,6 +28,7 @@ export PGPASSWORD="${POSTGRES_PASSWORD}"
 ${PSQL} -c "DROP MATERIALIZED VIEW IF EXISTS picc.buildings_with_addresses CASCADE;" || true
 ${PSQL} -c "DROP TABLE IF EXISTS picc.constr_batiemprise CASCADE;" || true
 ${PSQL} -c "DROP TABLE IF EXISTS picc.icar_adr_pt CASCADE;" || true
+${PSQL} -c "DROP TABLE IF EXISTS picc.import_meta CASCADE;" || true
 
 # Restore full dump (includes CREATE TABLE statements)
 gunzip -c "${DUMP_FILE}" | ${PSQL}

@@ -236,6 +236,7 @@
                   :key="opt.key"
                   class="layer-btn flex items-center justify-center gap-1.5"
                   :class="selectedSource === opt.key ? 'layer-btn-active' : ''"
+                  :title="dataDateTitle(opt.key, opt.label)"
                   @click="selectSource(opt.key)"
                 >
                   <span
@@ -1803,6 +1804,23 @@ const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
   { key: 'urbis', label: 'Urbis', varName: '--layer-urbis' }
 ]
 
+// Import dates of the official datasets, shown as a tooltip on the source buttons (Issue #59)
+const dataDates = ref<Partial<Record<SourceKind, string | null>>>({})
+const dataDateTitle = (src: SourceKind, label: string) => {
+  const iso = dataDates.value[src]
+  if (!iso) return label
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return label
+  return `${label} data imported on ${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
+}
+const loadDataDates = async () => {
+  try {
+    dataDates.value = await $fetch<Record<SourceKind, string | null>>('/api/meta/data-dates')
+  } catch (error) {
+    console.warn('Failed to load data dates:', error)
+  }
+}
+
 const selectSource = (src: SourceKind) => {
   // Clicking the active dataset turns it off; otherwise switch to it.
   const turnOn = selectedSource.value !== src
@@ -2959,6 +2977,7 @@ const setupHoverInteraction = () => {
 }
 
 onMounted(() => {
+  loadDataDates()
   nextTick(() => {
     setTimeout(() => {
       setupMap()

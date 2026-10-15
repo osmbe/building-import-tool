@@ -364,6 +364,7 @@ grb-import:
     @just _grb-import-address-links
     @just _grb-aggregate-buildings
     @just _grb-refresh-materialized-view
+    @just _save-import-meta grb
     @echo ""
     @just grb-status
     @echo ""
@@ -939,6 +940,7 @@ urbis-import:
     @just _urbis-import-addresses
     @just _urbis-import-lookups
     @just _urbis-create-matview
+    @just _save-import-meta urbis
     @echo ""
     @just urbis-status
     @echo ""
@@ -2342,6 +2344,7 @@ _grb-save-last-update:
     mkdir -p {{grb_data_dir}}
     date -u +%Y-%m-%dT00:00:00Z > {{grb_data_dir}}/last_update.txt
     echo "📅 Saved update timestamp: $(cat {{grb_data_dir}}/last_update.txt)"
+    just _save-import-meta grb
 
 # GRB: Create differential order for GBG (buildings) with temporalCrop
 _grb-order-diff-gbg:
@@ -2450,12 +2453,26 @@ _grb-import-diff-building-polygons:
 # INTERNAL TASKS - PICC Differential Updates
 # ============================================================================
 
+# Record in <schema>.import_meta when the data was imported (shown in the app, Issue #59).
+# Stored in the database, so it survives the CI dump -> webhook restore flow, and created
+# idempotently so existing deployments (init scripts only run on a fresh volume) work too.
+_save-import-meta schema:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    {{psql_be2osm}} -v ON_ERROR_STOP=1 <<'SQL'
+    CREATE TABLE IF NOT EXISTS {{schema}}.import_meta (imported_at TIMESTAMPTZ NOT NULL);
+    DELETE FROM {{schema}}.import_meta;
+    INSERT INTO {{schema}}.import_meta (imported_at) VALUES (now());
+    SQL
+    echo "📅 Recorded {{schema}} import time in {{schema}}.import_meta"
+
 # PICC: Save last update timestamp
 _picc-save-last-update:
     #!/usr/bin/env bash
     mkdir -p {{picc_data_dir}}
     date -u +%Y-%m-%dT00:00:00Z > {{picc_last_update_file}}
     echo "📅 Saved PICC update timestamp: $(cat {{picc_last_update_file}})"
+    just _save-import-meta picc
 
 # PICC: Check that a previous import exists (last update file)
 _picc-check-last-update:
