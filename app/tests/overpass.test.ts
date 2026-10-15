@@ -108,12 +108,12 @@ describe('fetchOverpassBuildings', () => {
           { lon: 3, lat: 3 },
           { lon: 2, lat: 2 }
         ],
-        tags: { building: 'yes', 'source:geometry:ref': 'Gbg/222' }
+        tags: { building: 'yes', 'source:geometry:ref': 'Gbg/222;Gba/333' }
       }
     ])
 
     const result = await fetchOverpassBuildings(BBOX_3857)
-    expect(result.oidnList.sort()).toEqual(['111', '222'])
+    expect(result.oidnList.sort()).toEqual(['111', '222', '333'])
   })
 
   it('skips degenerate ways with fewer than 3 nodes', async () => {
