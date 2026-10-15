@@ -39,6 +39,22 @@ describe('filterFeatureProperties — building defaults & pre-filtering (#53)', 
     expect(tags({ oidn: 3, lbltype: 'trap' }).building).toBeUndefined()
   })
 
+  it.each(['afdak', 'loopbrug', 'luifel', 'ingezonken garagetoegang', 'verheven garagetoegang'])(
+    'does NOT tag other GBA type "%s" as a building',
+    (lbltype) => {
+      expect(tags({ oidn: 6, lbltype }).building).toBeUndefined()
+      expect(tags({ oidn: 6, lbltype }).fixme).toBeUndefined()
+    }
+  )
+
+  it('tags bijgebouw (gbg-2) as a building and reads type_label too', () => {
+    expect(tags({ oidn: 7, type_label: 'bijgebouw' }).building).toBe('yes')
+  })
+
+  it('does not filter polygons without a type label (PICC/Urbis)', () => {
+    expect(tags({ oidn: 8 }).building).toBe('yes')
+  })
+
   it('keeps verdieping as a building and adds the required fixme', () => {
     const out = tags({ oidn: 4, lbltype: 'verdieping' })
     expect(out.building).toBe('yes')

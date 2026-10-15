@@ -114,13 +114,14 @@ The following metadata tags are **deleted** before sending to JOSM:
 | `ingezonken garagetoegang` | `garage1` | Recessed garage entrance |
 | `verheven garagetoegang` | `garage2` | Raised garage entrance |
 
-### LBLTYPE Values Removed
+### LBLTYPE Building Pre-filtering (issue #53)
 
-The following LBLTYPE values are **deleted** during processing:
+Only these LBLTYPE values are exported as buildings (allow-list `BUILDING_TYPE_LABELS` in `app/utils/grbExportTags.ts`):
 
-- `trap` (stairs)
-- `verdieping` (floor level)
-- `gebouw afgezoomd met virtuele gevels` (virtual building outline)
+- `hoofdgebouw` (gbg-1), `bijgebouw` (gbg-2)
+- `verdieping` (gba-1): tagged `building=yes` plus `fixme=verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!`
+
+All other values (`gebouw afgezoomd met virtuele gevels` = gbg-3, `trap`, and every other GBA type) get no building tag and are excluded from the candidate query.
 
 ## 5b. KNW (Kunstwerken) Type Mappings
 

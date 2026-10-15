@@ -1,9 +1,17 @@
 import type { Feature } from 'geojson'
 
-// GRB GBA/GBG polygon type labels (LBLTYPE) that must NOT be tagged as a building.
-// - "verdieping" is handled specially (kept as building + fixme), so it is NOT in this set.
-// - "gebouw afgezoomd met virtuele gevels" is the gbg-3 virtual-facade outline.
-export const NON_BUILDING_TYPE_LABELS = new Set(['trap', 'gebouw afgezoomd met virtuele gevels'])
+// GRB polygon type labels (LBLTYPE) that may be exported as a building (issue #53). Allow-list:
+// - GBG: only gbg-1 "hoofdgebouw" and gbg-2 "bijgebouw" (NOT gbg-3 "gebouw afgezoomd met virtuele gevels").
+// - GBA: only gba-1 "verdieping" (exported with a fixme). Every other GBA type (trap, afdak, ...) is excluded.
+// Polygons without a type label (PICC, Urbis, ...) are not affected.
+export const BUILDING_TYPE_LABELS = ['hoofdgebouw', 'bijgebouw', 'verdieping'] as const
+
+const BUILDING_TYPE_LABEL_SET: ReadonlySet<string> = new Set(BUILDING_TYPE_LABELS)
+
+export const isBuildingTypeLabel = (label: string): boolean => {
+  const normalized = label.toLowerCase().trim()
+  return normalized === '' || BUILDING_TYPE_LABEL_SET.has(normalized)
+}
 
 export const VERDIEPING_FIXME =
   'verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!'
@@ -47,7 +55,7 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
     .toLowerCase()
     .trim()
   const isVerdieping = polygonTypeLabel === 'verdieping'
-  const isNonBuildingType = NON_BUILDING_TYPE_LABELS.has(polygonTypeLabel)
+  const isNonBuildingType = !isBuildingTypeLabel(polygonTypeLabel)
 
   // Export candidate polygons as buildings by default (not for KNW structures).
   // gbg-3 (virtual facade) and other non-building GRB types must not get a building tag.

@@ -1,4 +1,5 @@
 import { queryGrb, queryOsm } from '~/server/utils/db'
+import { BUILDING_TYPE_LABELS } from '~/utils/grbExportTags'
 import { fetchOverpassBuildings, type OverpassBuildings } from '~/server/utils/overpass'
 
 export default defineEventHandler(async (event) => {
@@ -94,10 +95,10 @@ export default defineEventHandler(async (event) => {
     }
 
     // Issue #53: GRB building pre-filtering. GBG and GBA polygons share grb.building_polygons and are
-    // distinguished by type_label (LBLTYPE). gbg-3 ("gebouw afgezoomd met virtuele gevels") and "trap"
-    // are not buildings and must not appear as candidates. "verdieping" (gba1) IS kept — it is exported
-    // as a building with a fixme. coalesce keeps rows when no type_label column exists.
-    const grbBuildingTypeFilter = `coalesce(lower(${grbTypeLabelExpr}), '') <> ALL(ARRAY['trap', 'gebouw afgezoomd met virtuele gevels'])`
+    // distinguished by type_label (LBLTYPE). Only gbg-1/gbg-2 (hoofdgebouw, bijgebouw) and gba-1 (verdieping,
+    // exported with a fixme) are building candidates; gbg-3 (virtual facade) and all other GBA types are
+    // excluded. Rows without a type_label (or without the column) are kept.
+    const grbBuildingTypeFilter = `(coalesce(lower(${grbTypeLabelExpr}), '') = '' OR lower(${grbTypeLabelExpr}) = ANY(ARRAY[${BUILDING_TYPE_LABELS.map((l) => `'${l}'`).join(', ')}]))`
 
     // Issue #49: include address data in GRB exports. Addresses live in the grb.buildings_with_addresses
     // matview (keyed on oidn). Guard on its existence so deployments without the matview still work.
