@@ -28,23 +28,27 @@
           Geometry
         </button>
         <button
-          class="flex items-center justify-center px-1 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
+          class="flex items-center justify-center px-1 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
           :class="
             matchMode === 'source'
               ? 'bg-primary/18 text-primary border border-primary/30'
               : 'text-muted-foreground hover:text-foreground/70'
           "
+          :disabled="!sourceSupportsTags"
+          :title="sourceSupportsTags ? undefined : tagsUnavailableMessage"
           @click="setMatchMode('source')"
         >
           Source
         </button>
         <button
-          class="flex items-center justify-center px-1 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
+          class="flex items-center justify-center px-1 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
           :class="
             matchMode === 'both'
               ? 'bg-primary/18 text-primary border border-primary/30'
               : 'text-muted-foreground hover:text-foreground/70'
           "
+          :disabled="!sourceSupportsTags"
+          :title="sourceSupportsTags ? undefined : tagsUnavailableMessage"
           @click="setMatchMode('both')"
         >
           Both
@@ -56,7 +60,12 @@
         <template v-else>Spatially unmatched AND missing source tag (GRB only)</template>
       </p>
 
-      <div v-if="matchMode === 'geometry' || matchMode === 'both'" class="mt-2.5 space-y-1.5">
+      <p v-if="!sourceSupportsTags" class="text-[9px] text-amber-400/90 mt-1.5 leading-relaxed">
+        {{ tagsUnavailableMessage }}
+        <template v-if="matchMode !== 'geometry'">Using geometry matching instead.</template>
+      </p>
+
+      <div v-if="matchMode === 'geometry' || matchMode === 'both' || !sourceSupportsTags" class="mt-2.5 space-y-1.5">
         <div class="flex items-center justify-between text-[10px]">
           <span class="text-muted-foreground">Match strictness</span>
           <span class="font-mono text-foreground/70">{{ Math.round(geometryThreshold * 100) }}%</span>
@@ -102,6 +111,10 @@
 import { ChevronDown, Radio } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useMatchMode } from '~/composables/useMatchMode'
+
+withDefaults(defineProps<{ sourceSupportsTags?: boolean }>(), { sourceSupportsTags: true })
+
+const tagsUnavailableMessage = 'Source and Both modes need GRB data (PICC, Urbis and KNW have no source tags in OSM).'
 
 const { matchMode, geometryThreshold, useOverpass, setMatchMode, setGeometryThreshold, setUseOverpass } = useMatchMode()
 const collapsed = ref(false)

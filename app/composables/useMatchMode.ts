@@ -1,12 +1,12 @@
 import { ref } from 'vue'
+import type { MatchMode } from '~/utils/matchMode'
 
 /**
- * Match mode for comparing GRB and OSM buildings
+ * Match mode for comparing GRB and OSM buildings (see utils/matchMode.ts)
  * - 'geometry': Match based on spatial intersection
  * - 'source': Match based on source:geometry:oidn tag in OSM buildings (GRB only)
  * - 'both': Candidate only if it is BOTH spatially unmatched AND missing the source tag (GRB only)
  */
-export type MatchMode = 'geometry' | 'source' | 'both'
 
 const matchMode = ref<MatchMode>('geometry')
 const geometryThreshold = ref(0.7)
