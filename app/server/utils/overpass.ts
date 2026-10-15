@@ -2,6 +2,8 @@
 // as an opt-in alternative to the daily-refreshed Postgres mirror. This lets the
 // difference tool reflect very recent OSM edits without waiting for the next import.
 
+import { parseOsmSourceOidns } from '../../utils/osmSourceOidn'
+
 const OVERPASS_ENDPOINT = process.env.OVERPASS_API_URL || 'https://overpass-api.de/api/interpreter'
 const MERCATOR_R = 20037508.342789244
 
@@ -70,9 +72,9 @@ export async function fetchOverpassBuildings(bounds3857: [number, number, number
 
     // Collect GRB references for source-tag matching
     const tags = el.tags || {}
-    const oidn =
-      (tags['source:geometry:oidn'] || '').trim() || (tags['source:geometry:ref'] || '').split('/')[1]?.trim() || ''
-    if (oidn) oidnSet.add(oidn)
+    for (const id of parseOsmSourceOidns({ oidn: tags['source:geometry:oidn'], ref: tags['source:geometry:ref'] })) {
+      oidnSet.add(id)
+    }
   }
 
   const geomCollection = geometries.length > 0 ? JSON.stringify({ type: 'GeometryCollection', geometries }) : null

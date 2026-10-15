@@ -1,4 +1,5 @@
 import { queryGrb, queryOsm } from '~/server/utils/db'
+import { collectOsmSourceOidns } from '~/utils/osmSourceOidn'
 import { fetchOverpassBuildings, type OverpassBuildings } from '~/server/utils/overpass'
 
 export default defineEventHandler(async (event) => {
@@ -146,40 +147,35 @@ export default defineEventHandler(async (event) => {
       `)
       const hasLegacyOidn = Boolean(columnCheck[0]?.has_legacy_oidn)
 
-      const osmQuery = hasLegacyOidn
-        ? `
+      // Return the raw tag values; parsing (";"-separated "Gbg/123" refs, whitespace, leading zeros)
+      // is done in JS by collectOsmSourceOidns so it is unit-tested (issue #52). The previous
+      // SQL split_part(ref, '/', 2) broke on "Gbg/1;Gbg/2" and ignored the ref when an oidn tag existed.
+      // The 4326 geom predicate can use its GIST index; geom_mercator may be NULL after a re-import.
+      const osmQuery = `
         SELECT DISTINCT
-          COALESCE(
-            NULLIF(trim(tags->>'source:geometry:oidn'), ''),
-            NULLIF(trim(split_part(tags->>'source:geometry:ref', '/', 2)), ''),
-            NULLIF(oidn::text, '')
-          ) AS oidn
+          tags->>'source:geometry:oidn' AS oidn,
+          tags->>'source:geometry:ref' AS ref
+          ${hasLegacyOidn ? ', oidn::text AS legacy_oidn' : ''}
         FROM osm.osm_buildings
-        WHERE COALESCE(geom_mercator, ST_Transform(geom, 3857)) && ST_MakeEnvelope($1, $2, $3, $4, 3857)
-          AND ST_Intersects(COALESCE(geom_mercator, ST_Transform(geom, 3857)), ST_MakeEnvelope($1, $2, $3, $4, 3857))
-          AND (
-            tags ? 'source:geometry:oidn'
-            OR tags ? 'source:geometry:ref'
-            OR oidn IS NOT NULL
+        WHERE COALESCE(geom, ST_Transform(geom_mercator, 4326)) && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
+          AND ST_Intersects(
+            COALESCE(geom, ST_Transform(geom_mercator, 4326)),
+            ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
           )
-      `
-        : `
-        SELECT DISTINCT
-          COALESCE(
-            NULLIF(trim(tags->>'source:geometry:oidn'), ''),
-            NULLIF(trim(split_part(tags->>'source:geometry:ref', '/', 2)), '')
-          ) AS oidn
-        FROM osm.osm_buildings
-        WHERE COALESCE(geom_mercator, ST_Transform(geom, 3857)) && ST_MakeEnvelope($1, $2, $3, $4, 3857)
-          AND ST_Intersects(COALESCE(geom_mercator, ST_Transform(geom, 3857)), ST_MakeEnvelope($1, $2, $3, $4, 3857))
           AND (
             tags ? 'source:geometry:oidn'
             OR tags ? 'source:geometry:ref'
+            ${hasLegacyOidn ? 'OR oidn IS NOT NULL' : ''}
           )
       `
 
       const osmRows = await queryOsm(osmQuery, [minX, minY, maxX, maxY])
-      return osmRows.map((row: any) => row.oidn).filter(Boolean)
+      return collectOsmSourceOidns(
+        osmRows.map((row: any) => ({
+          oidn: row.oidn ?? row.legacy_oidn,
+          ref: row.ref
+        }))
+      )
     }
 
     // Pre-fetch the source-tag oidn list for the 'both' combined mode (source mode fetches inline below).
