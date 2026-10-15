@@ -128,8 +128,15 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
     }
   }
 
-  // Set source:geometry:entity from feature type
-  props['source:geometry:entity'] = isKnw ? 'Knw' : grbEntityForTypeLabel(polygonTypeLabel)
+  // Set source:geometry:entity: KNW, else the stored GRB entity (building_polygons.entity), else derived from
+  // the type label for databases that predate the entity column
+  props['source:geometry:entity'] = isKnw
+    ? 'Knw'
+    : explicitEntity === 'gba'
+      ? 'Gba'
+      : explicitEntity === 'gbg'
+        ? 'Gbg'
+        : grbEntityForTypeLabel(polygonTypeLabel)
 
   // Create source:geometry:ref composite property
   if (props['source:geometry:entity'] && props['source:geometry:oidn']) {
@@ -210,6 +217,7 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
     'source:geometry:oidn',
     'auto_target_landuse',
     'entity',
+    'polygon_id',
     '_layer_type',
     // Aggregated address fields (consumed above into addr:* tags)
     'addresses',

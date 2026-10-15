@@ -72,6 +72,7 @@ export default defineEventHandler(async (event) => {
     // can shift the day by one on servers in a non-UTC timezone (issue #49: must stay YYYY-MM-DD).
     let grbSurveyDateExpr = 'NULL::text'
     let grbTypeLabelExpr = 'NULL::text'
+    let hasGrbEntityColumn = false
 
     if (needsGrbPolygonColumns) {
       const grbColumns = await queryGrb(`
@@ -79,7 +80,7 @@ export default defineEventHandler(async (event) => {
         FROM information_schema.columns
         WHERE table_schema = 'grb'
           AND table_name = 'building_polygons'
-          AND column_name IN ('survey_date', 'opndatum', 'type_label', 'lbltype');
+          AND column_name IN ('survey_date', 'opndatum', 'type_label', 'lbltype', 'entity');
       `)
 
       const columnNames = new Set(grbColumns.map((row: any) => row.column_name))
@@ -95,6 +96,8 @@ export default defineEventHandler(async (event) => {
       } else if (columnNames.has('lbltype')) {
         grbTypeLabelExpr = 'bp.lbltype'
       }
+
+      hasGrbEntityColumn = columnNames.has('entity')
     }
 
     // Issue #53: GRB building pre-filtering. GBG and GBA polygons share grb.building_polygons and are
@@ -104,27 +107,40 @@ export default defineEventHandler(async (event) => {
     const grbBuildingTypeFilter = `(coalesce(lower(${grbTypeLabelExpr}), '') = '' OR lower(${grbTypeLabelExpr}) = ANY(ARRAY[${BUILDING_TYPE_LABELS.map((l) => `'${l}'`).join(', ')}]))`
 
     // Issue #52: OIDNs are only unique per entity (Gbg/2664 and Gba/2664 are different polygons), so source-tag
-    // matching compares "Entity/oidn" keys. The entity comes from the type label (see grbEntityForTypeLabel).
-    const grbRefExpr = (labelExpr: string, oidnExpr: string) =>
-      `(CASE WHEN coalesce(lower(${labelExpr}), '') = '' OR lower(${labelExpr}) = ANY(ARRAY[${GBG_TYPE_LABELS.map((l) => `'${l}'`).join(', ')}]) THEN 'Gbg' ELSE 'Gba' END || '/' || ${oidnExpr}::text)`
+    // matching compares "Entity/oidn" keys. The entity is stored in building_polygons.entity (migration 001);
+    // databases that are not migrated yet derive it from the type label (see grbEntityForTypeLabel).
+    const grbEntityExpr = hasGrbEntityColumn
+      ? 'bp.entity'
+      : `(CASE WHEN coalesce(lower(${grbTypeLabelExpr}), '') = '' OR lower(${grbTypeLabelExpr}) = ANY(ARRAY[${GBG_TYPE_LABELS.map((l) => `'${l}'`).join(', ')}]) THEN 'Gbg' ELSE 'Gba' END)`
+    const grbRefExpr = (entityExpr: string, oidnExpr: string) => `(${entityExpr} || '/' || ${oidnExpr}::text)`
 
     // Issue #49: include address data in GRB exports. Addresses live in the grb.buildings_with_addresses
-    // matview (keyed on oidn). Guard on its existence so deployments without the matview still work.
+    // matview. Guard on its existence so deployments without the matview still work. The migrated matview is
+    // keyed on polygon_id (one row per polygon); an older one only on oidn.
     let hasGrbAddresses = false
+    let grbAddressJoinOn = 'bwa.oidn = bp.oidn'
     if (needsGrbPolygonColumns) {
       const mv = await queryGrb(`
-        SELECT EXISTS (
-          SELECT 1 FROM pg_matviews
-          WHERE schemaname = 'grb' AND matviewname = 'buildings_with_addresses'
-        ) AS ok;
+        SELECT
+          EXISTS (
+            SELECT 1 FROM pg_matviews
+            WHERE schemaname = 'grb' AND matviewname = 'buildings_with_addresses'
+          ) AS ok,
+          EXISTS (
+            SELECT 1 FROM pg_attribute
+            WHERE attrelid = to_regclass('grb.buildings_with_addresses')
+              AND attname = 'polygon_id'
+              AND NOT attisdropped
+          ) AS has_polygon_id;
       `)
       hasGrbAddresses = Boolean(mv[0]?.ok)
+      if (mv[0]?.has_polygon_id) grbAddressJoinOn = 'bwa.polygon_id = bp.id'
     }
     const grbAddressColsCsv = hasGrbAddresses
       ? 'bwa.addresses, bwa.street_names, bwa.postcodes, bwa.municipalities, bwa.address_count'
       : ''
     const grbAddressSelect = grbAddressColsCsv ? `${grbAddressColsCsv},` : ''
-    const grbAddressJoin = hasGrbAddresses ? 'LEFT JOIN grb.buildings_with_addresses bwa ON bwa.oidn = bp.oidn' : ''
+    const grbAddressJoin = hasGrbAddresses ? `LEFT JOIN grb.buildings_with_addresses bwa ON ${grbAddressJoinOn}` : ''
     // For the CTE pass-through (geometry-with-osm branch): columns selected in CTE, re-selected from alias g
     const grbAddressCteSelect = hasGrbAddresses
       ? 'bwa.addresses, bwa.street_names, bwa.postcodes, bwa.municipalities, bwa.address_count,'
@@ -232,6 +248,7 @@ export default defineEventHandler(async (event) => {
           )
         SELECT
           ST_AsGeoJSON(bp.geom) AS geometry,
+          ${grbEntityExpr} AS entity,
           bp.oidn,
           bp.gebouw_id,
           ${grbSurveyDateExpr} AS opndatum,
@@ -241,9 +258,9 @@ export default defineEventHandler(async (event) => {
         FROM grb.building_polygons bp ${grbAddressJoin}, envelope_4326 e
         WHERE bp.geom && e.env
           AND ST_Intersects(bp.geom, e.env)
-          AND ${grbRefExpr(grbTypeLabelExpr, 'bp.oidn')} != ALL($6::text[])
+          AND ${grbRefExpr(grbEntityExpr, 'bp.oidn')} != ALL($6::text[])
           AND ${grbBuildingTypeFilter}
-        ORDER BY bp.oidn;
+        ORDER BY entity, bp.oidn;
       `
 
       rows = await queryGrb(grbQuery, [minX, minY, maxX, maxY, totalOsm, sourceRefs.length > 0 ? sourceRefs : ['-1']])
@@ -283,6 +300,7 @@ export default defineEventHandler(async (event) => {
           WITH grb_in_extent AS (
             SELECT
               bp.geom,
+              ${grbEntityExpr} AS entity,
               bp.oidn,
               bp.gebouw_id,
               ${grbAddressCteSelect}
@@ -295,6 +313,7 @@ export default defineEventHandler(async (event) => {
           )
           SELECT
             ST_AsGeoJSON(g.geom) AS geometry,
+            g.entity,
             g.oidn,
             g.gebouw_id,
             ${grbAddressOuterSelect}
@@ -302,8 +321,8 @@ export default defineEventHandler(async (event) => {
             g.lbltype,
             0::bigint AS total_osm
           FROM grb_in_extent g
-          ${matchMode === 'both' ? `WHERE ${grbRefExpr('g.lbltype', 'g.oidn')} != ALL($5::text[])` : ''}
-          ORDER BY g.oidn
+          ${matchMode === 'both' ? `WHERE ${grbRefExpr('g.entity', 'g.oidn')} != ALL($5::text[])` : ''}
+          ORDER BY g.entity, g.oidn
         `,
           matchMode === 'both'
             ? [minX, minY, maxX, maxY, bothSourceRefs.length > 0 ? bothSourceRefs : ['-1']]
@@ -322,6 +341,7 @@ export default defineEventHandler(async (event) => {
             grb_in_extent AS (
               SELECT
                 bp.geom,
+                ${grbEntityExpr} AS entity,
                 bp.oidn,
                 bp.gebouw_id,
                 ${grbAddressCteSelect}
@@ -334,6 +354,7 @@ export default defineEventHandler(async (event) => {
             )
           SELECT
             ST_AsGeoJSON(g.geom) AS geometry,
+            g.entity,
             g.oidn,
             g.gebouw_id,
             ${grbAddressOuterSelect}
@@ -341,7 +362,7 @@ export default defineEventHandler(async (event) => {
             g.lbltype,
             $6::bigint AS total_osm
           FROM grb_in_extent g
-          WHERE ${matchMode === 'both' ? `${grbRefExpr('g.lbltype', 'g.oidn')} != ALL($8::text[]) AND` : ''} NOT EXISTS (
+          WHERE ${matchMode === 'both' ? `${grbRefExpr('g.entity', 'g.oidn')} != ALL($8::text[]) AND` : ''} NOT EXISTS (
             SELECT 1 FROM osm_geoms o
             WHERE g.geom && o.geom
               AND ST_Intersects(g.geom, o.geom)
@@ -350,7 +371,7 @@ export default defineEventHandler(async (event) => {
               AND ST_Area(ST_Intersection(g.geom, o.geom))
                   / NULLIF(ST_Area(o.geom), 0) >= $7
           )
-          ORDER BY g.oidn
+          ORDER BY g.entity, g.oidn
         `,
           matchMode === 'both'
             ? [

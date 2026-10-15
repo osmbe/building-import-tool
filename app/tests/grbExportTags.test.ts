@@ -126,6 +126,19 @@ describe('filterFeatureProperties — source:geometry:ref', () => {
     expect(tags({ oidn: 7 })['source:geometry:ref']).toBe('Gbg/7')
     expect(tags({ oidn: 8, type_label: 'Bijgebouw' })['source:geometry:ref']).toBe('Gbg/8')
   })
+
+  it('prefers the stored entity column over the type label', () => {
+    // A GBA and a GBG polygon may share an OIDN; the stored entity disambiguates them
+    expect(tags({ oidn: 2664, entity: 'Gba', lbltype: 'verdieping' })['source:geometry:ref']).toBe('Gba/2664')
+    expect(tags({ oidn: 2664, entity: 'Gbg', lbltype: 'hoofdgebouw' })['source:geometry:ref']).toBe('Gbg/2664')
+    expect(tags({ oidn: 5, entity: 'GBA' })['source:geometry:ref']).toBe('Gba/5')
+  })
+
+  it('does not export the internal entity and polygon_id properties', () => {
+    const out = tags({ oidn: 5, entity: 'Gba', polygon_id: 42, lbltype: 'verdieping' })
+    expect(out).not.toHaveProperty('entity')
+    expect(out).not.toHaveProperty('polygon_id')
+  })
 })
 
 describe('filterFeatureProperties — KNW default tags (#22)', () => {

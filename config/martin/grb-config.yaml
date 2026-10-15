@@ -24,13 +24,17 @@ postgres:
       table: buildings_with_addresses
       srid: 3857
       geometry_column: geom
-      id_column: oidn
+      # OIDNs are only unique per entity (a GBG and a GBA polygon can share one), so the feature id is
+      # the unique polygon row id. Fragments of a polygon split across tiles are merged by this id.
+      id_column: polygon_id
       clip_geom: true
       buffer: 64
       extent: 4096
       minzoom: 10
       maxzoom: 22
       properties:
+        polygon_id: polygon_id
+        entity: entity
         oidn: oidn
         gebouw_id: gebouw_id
         polygon_area_m2: polygon_area_m2

@@ -59,6 +59,7 @@ default:
     @echo "🔧 Database Tasks"
     @echo "  db-shell-osm       - Open psql shell (osmbe database)"
     @echo "  db-shell-grb       - Open psql shell (be2osm database)"
+    @echo "  db-migrate         - Apply schema migrations (sql/migrations)"
     @echo "  db-sizes           - Show table sizes"
     @echo "  db-optimize        - Vacuum and optimize databases"
     @echo ""
@@ -354,6 +355,7 @@ grb-import:
     @echo ""
     @just _check-be2osm-database
     @just _check-be2osm-schema
+    @just db-migrate
     @echo ""
     @just _grb-import-gbg-gebouw-rel
     @just _grb-import-building-polygons
@@ -412,6 +414,7 @@ grb-update:
     @echo ""
     @just _check-server
     @just _check-be2osm-database
+    @just db-migrate
     @just _grb-order-diff-gbg
     @just _grb-wait-for-orders
     @just _grb-download-if-ready gbg-diff "$(just _grb-get-order-id gbg-diff)"
@@ -1190,6 +1193,16 @@ db-shell-osm:
 db-shell-grb:
     {{psql_be2osm}}
 
+# Apply schema migrations (sql/migrations/*.sql, in order). Init scripts only run on a fresh
+# volume, so changes to an existing database live here. Every migration is idempotent.
+db-migrate:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for file in $(ls sql/migrations/*.sql 2>/dev/null | sort); do
+        echo "🔧 Applying migration $(basename "$file")..."
+        {{psql_be2osm}} -q -v ON_ERROR_STOP=1 -f "$file"
+    done
+
 # Show database table sizes
 db-sizes:
     @echo "📊 Database Table Sizes:"
@@ -1415,6 +1428,10 @@ grb-import-remote:
     echo "🧹 Clearing existing GRB data..."
     {{psql_be2osm}} -c "TRUNCATE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links CASCADE;" || true
     {{psql_be2osm}} -c "TRUNCATE grb.kunstwerken CASCADE;" 2>/dev/null || true
+
+    # The data-only dump expects the current schema (e.g. building_polygons.entity). Migrating on the
+    # emptied tables is instant.
+    just db-migrate
 
     # Restore to local database
     echo ""
@@ -1915,8 +1932,9 @@ _grb-import-building-polygons:
 
         echo "   Transforming imported data..."
         PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c "
-            INSERT INTO grb.building_polygons (oidn, uidn, type_code, type_label, area_m2, length_m, version, origin_code, origin_label, opndatum_raw, geom)
+            INSERT INTO grb.building_polygons (entity, oidn, uidn, type_code, type_label, area_m2, length_m, version, origin_code, origin_label, opndatum_raw, geom)
             SELECT
+                'Gbg',
                 oidn::bigint,
                 uidn::bigint,
                 type::integer as type_code,
@@ -1929,7 +1947,7 @@ _grb-import-building-polygons:
                 opndatum as opndatum_raw,
                 geom
             FROM grb.building_polygons_raw
-            ON CONFLICT (oidn) DO NOTHING;
+            ON CONFLICT (entity, oidn) DO NOTHING;
             DROP TABLE IF EXISTS grb.building_polygons_raw;
         "
         echo "✅ Building polygons imported"
@@ -1956,8 +1974,9 @@ _grb-import-building-polygons:
     fi
 
 # GRB: Import GBA (Gebouwaanhorigheid / building attachments) into building_polygons
-# GBA has the same field structure as GBG and is appended to the same table.
-# gebouw_id will be NULL for these polygons (no RltGbaGebouw relationship file).
+# GBA has the same field structure as GBG and is appended to the same table with entity 'Gba'.
+# OIDNs are only unique per entity, so a GBA polygon may share its OIDN with a GBG polygon: the
+# unique key is (entity, oidn). gebouw_id will be NULL for these polygons (no RltGbaGebouw file).
 _grb-import-gba:
     #!/usr/bin/env bash
     GBA_FILE=$(find {{grb_data_dir}} -path "*/gba/*" -name "Gba*.shp" -type f 2>/dev/null | head -1)
@@ -1972,8 +1991,9 @@ _grb-import-gba:
         -gt 100000 --config PG_USE_COPY YES \
         -lco GEOMETRY_NAME=geom -lco SPATIAL_INDEX=OFF
     PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c "
-        INSERT INTO grb.building_polygons (oidn, uidn, type_code, type_label, area_m2, length_m, version, origin_code, origin_label, opndatum_raw, geom)
+        INSERT INTO grb.building_polygons (entity, oidn, uidn, type_code, type_label, area_m2, length_m, version, origin_code, origin_label, opndatum_raw, geom)
         SELECT
+            'Gba',
             oidn::bigint,
             uidn::bigint,
             type::integer as type_code,
@@ -1986,9 +2006,14 @@ _grb-import-gba:
             opndatum as opndatum_raw,
             geom
         FROM grb.building_polygons_raw
-        ON CONFLICT (oidn) DO NOTHING;
+        ON CONFLICT (entity, oidn) DO NOTHING;
         DROP TABLE IF EXISTS grb.building_polygons_raw;
     "
+    # Convert OPNDATUM to proper DATE (two passes: YYYY-MM-DD then DD/MM/YYYY)
+    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+        "UPDATE grb.building_polygons SET survey_date = opndatum_raw::date WHERE entity = 'Gba' AND opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\d{4}-\d{2}-\d{2}$';"
+    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+        "UPDATE grb.building_polygons SET survey_date = TO_DATE(opndatum_raw, 'DD/MM/YYYY') WHERE entity = 'Gba' AND opndatum_raw IS NOT NULL AND survey_date IS NULL AND opndatum_raw ~ '^\d{2}/\d{2}/\d{4}$';"
     echo "✅ GBA building attachments imported"
     echo "   🗑️  Cleaning up gba data..."
     rm -rf {{grb_data_dir}}/gba
@@ -2081,6 +2106,7 @@ _grb-update-gebouw-ids:
         SET gebouw_id = rel.gebouw_id
         FROM grb.polygon_building_rel rel
         WHERE bp.oidn = rel.oidn
+          AND bp.entity = 'Gbg'  -- RltGbgGebouw only references GBG polygon OIDNs
           AND bp.gebouw_id IS NULL;
     "
     echo "✅ gebouw_id updated"
@@ -2250,6 +2276,9 @@ _grb-refresh-materialized-view:
     set -e
     echo "📊 Refreshing materialized view..."
     echo "   This joins building_polygons with buildings and addresses..."
+
+    # (Re)creates the view if missing or outdated, e.g. after a restore onto an old schema
+    just db-migrate
 
     # Show expected row count
     POLYGONS=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c \

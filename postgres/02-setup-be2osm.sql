@@ -33,8 +33,10 @@ CREATE TABLE IF NOT EXISTS grb.import_meta (
 CREATE TABLE IF NOT EXISTS grb.building_polygons (
     id BIGSERIAL PRIMARY KEY,
 
-    -- GRB identifiers
-    oidn BIGINT UNIQUE NOT NULL,      -- Unique polygon identifier from GRB
+    -- GRB identifiers. OIDNs are only unique per entity (Gbg/2664 and Gba/2664 are different polygons),
+    -- so the unique key is (entity, oidn), see processing/sql/migrations/001-grb-polygon-entity.sql.
+    entity VARCHAR(3) NOT NULL DEFAULT 'Gbg', -- 'Gbg' (gebouw) or 'Gba' (gebouwaanhorigheid)
+    oidn BIGINT NOT NULL,             -- Polygon identifier from GRB (unique per entity)
     uidn BIGINT,                      -- Universal identifier
 
     -- Building reference (from RltGbgGebouw relationship)
@@ -410,89 +412,14 @@ GROUP BY municipality, postcode
 ORDER BY municipality, postcode;
 
 -- ============================================================================
--- MATERIALIZED VIEW: Building Polygons with Addresses and Parent Building Info
+-- MATERIALIZED VIEW: grb.buildings_with_addresses
 -- ============================================================================
 
--- This view joins building polygons with their addresses via spatial containment
--- (ST_Contains) and includes parent building aggregated stats for context.
--- Each row represents an individual polygon with oidn for OSM tagging.
---
--- Why spatial join instead of address_building_links?
--- The GEBOUWID in RltAdresGebouw (address links) uses a different ID namespace
--- than the GEBOUWID in RltGbgGebouw (polygon-building relationships), resulting
--- in only ~5% match rate. Spatial join reliably matches addresses to the polygon
--- that physically contains them. See docs/GRB_ADDRESS_JOIN.md for details.
-DROP MATERIALIZED VIEW IF EXISTS grb.buildings_with_addresses CASCADE;
+-- Defined in processing/sql/migrations/001-grb-polygon-entity.sql (single source of truth), which also adds
+-- the (entity, oidn) unique key. It runs right after this script as docker-entrypoint-initdb.d/07 and from
+-- the processing recipes (`just db-migrate`).
 
-CREATE MATERIALIZED VIEW grb.buildings_with_addresses AS
--- Pre-aggregate addresses per polygon via spatial containment.
--- GIST indexes on both building_polygons.geom and addresses.geom make this efficient.
-WITH addr_per_polygon AS (
-    SELECT
-        bp.oidn,
-        COUNT(a.adres_id) AS address_count,
-        array_to_string(ARRAY_AGG(DISTINCT a.full_address ORDER BY a.full_address)
-            FILTER (WHERE a.full_address IS NOT NULL), '; ') AS addresses,
-        array_to_string(ARRAY_AGG(DISTINCT a.street_name ORDER BY a.street_name)
-            FILTER (WHERE a.street_name IS NOT NULL), ', ') AS street_names,
-        array_to_string(ARRAY_AGG(DISTINCT a.postcode ORDER BY a.postcode)
-            FILTER (WHERE a.postcode IS NOT NULL), ', ') AS postcodes,
-        array_to_string(ARRAY_AGG(DISTINCT a.municipality ORDER BY a.municipality)
-            FILTER (WHERE a.municipality IS NOT NULL), ', ') AS municipalities
-    FROM grb.building_polygons bp
-    JOIN grb.addresses a ON ST_Contains(bp.geom, a.geom)
-    GROUP BY bp.oidn
-)
-SELECT
-    -- Polygon-level info (for OSM tagging with source:geometry:oidn)
-    -- Cast oidn to BIGINT for Martin tile server (source is numeric(15,0))
-    bp.oidn::BIGINT AS oidn,
-    bp.gebouw_id,
-    bp.area_m2::REAL AS polygon_area_m2,
-    bp.type_label AS polygon_type_label,
-
-    -- Survey date for source:geometry:date OSM tag (format: YYYY-MM-DD)
-    TO_CHAR(bp.survey_date, 'YYYY-MM-DD') AS survey_date,
-
-    -- Origin/inventory label (e.g. "terreinbezoek", "as-built plan")
-    bp.origin_label,
-
-    -- Transform to Web Mercator for tile serving (transform once at view creation, not per tile)
-    -- Explicit cast so PostGIS registers SRID=3857 in geometry_columns (required by Martin)
-    ST_Transform(bp.geom, 3857)::geometry(Geometry, 3857) AS geom,
-
-    -- Parent building aggregated stats (for context)
-    b.polygon_count,
-    b.total_area_m2,
-    b.type_label AS building_type_label,
-
-    -- Address data (pre-aggregated per polygon via spatial join)
-    COALESCE(app.addresses, '')     AS addresses,
-    COALESCE(app.street_names, '')  AS street_names,
-    COALESCE(app.postcodes, '')     AS postcodes,
-    COALESCE(app.municipalities, '') AS municipalities,
-    COALESCE(app.address_count, 0)  AS address_count
-FROM
-    grb.building_polygons bp
-    LEFT JOIN grb.buildings b ON bp.gebouw_id = b.gebouw_id
-    LEFT JOIN addr_per_polygon app ON bp.oidn = app.oidn;
-
--- Indexes on materialized view
-CREATE UNIQUE INDEX idx_mv_buildings_with_addresses_oidn ON grb.buildings_with_addresses(oidn);
-CREATE INDEX idx_mv_buildings_with_addresses_gebouw_id ON grb.buildings_with_addresses(gebouw_id);
-CREATE INDEX idx_mv_buildings_with_addresses_polygon_type ON grb.buildings_with_addresses(polygon_type_label);
-CREATE INDEX idx_mv_buildings_with_addresses_geom ON grb.buildings_with_addresses USING GIST(geom);
-CREATE INDEX idx_mv_buildings_with_addresses_postcodes ON grb.buildings_with_addresses USING GIN(postcodes);
-
--- Function to refresh materialized view
-CREATE OR REPLACE FUNCTION refresh_buildings_with_addresses()
-RETURNS void AS $$
-BEGIN
-    REFRESH MATERIALIZED VIEW CONCURRENTLY grb.buildings_with_addresses;
-END;
-$$ LANGUAGE plpgsql;
-
-\echo '✓ Views and Materialized View created'
+\echo '✓ Views created (materialized view: see processing/sql/migrations)'
 
 -- Import statistics table (simplified)
 CREATE TABLE IF NOT EXISTS grb.import_statistics (
@@ -511,8 +438,9 @@ CREATE TABLE IF NOT EXISTS grb.import_statistics (
 -- ============================================================================
 
 -- New normalized schema
-COMMENT ON TABLE grb.building_polygons IS 'GRB building polygons (GBG) - 5M+ individual polygon geometries';
-COMMENT ON COLUMN grb.building_polygons.oidn IS 'Unique polygon identifier from GRB';
+COMMENT ON TABLE grb.building_polygons IS 'GRB building polygons (GBG + GBA) - 5M+ individual polygon geometries';
+COMMENT ON COLUMN grb.building_polygons.oidn IS 'Polygon identifier from GRB, unique per entity';
+COMMENT ON COLUMN grb.building_polygons.entity IS 'GRB entity: Gbg (gebouw) or Gba (gebouwaanhorigheid)';
 COMMENT ON COLUMN grb.building_polygons.gebouw_id IS 'Building ID - one building can have multiple polygons';
 COMMENT ON COLUMN grb.building_polygons.geom IS 'Geometry in WGS84 (EPSG:4326)';
 

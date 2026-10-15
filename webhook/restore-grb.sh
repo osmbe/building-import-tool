@@ -29,8 +29,20 @@ ${PSQL} -c "CREATE TABLE IF NOT EXISTS grb.import_meta (imported_at TIMESTAMPTZ 
 ${PSQL} -c "TRUNCATE grb.import_meta;" || true
 ${PSQL} -c "TRUNCATE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links, grb.polygon_building_rel RESTART IDENTITY CASCADE;" || true
 
+# Bring the schema up to date before restoring: the data-only dump COPYs columns of the current schema
+# (e.g. building_polygons.entity) and refreshes the materialized view. On the emptied tables this is instant.
+for MIGRATION in $(ls "${COMPOSE_PROJECT_DIR}"/processing/sql/migrations/*.sql 2>/dev/null | sort); do
+    echo "[restore-grb] Applying migration $(basename "${MIGRATION}")..."
+    ${PSQL} -q -v ON_ERROR_STOP=1 -f "${MIGRATION}"
+done
+
 gunzip -c "${DUMP_FILE}" | ${PSQL}
 
 ${PSQL} -c "ANALYZE grb.building_polygons; ANALYZE grb.buildings; ANALYZE grb.addresses; ANALYZE grb.address_building_links; ANALYZE grb.polygon_building_rel;"
+
+# The data-only dump carries no materialized view data: rebuild it from the restored tables (tiles + addresses).
+# CONCURRENTLY keeps the previous contents readable while it runs (20-30 min for the full dataset).
+echo "[restore-grb] Refreshing grb.buildings_with_addresses..."
+${PSQL} -v ON_ERROR_STOP=1 -c "REFRESH MATERIALIZED VIEW CONCURRENTLY grb.buildings_with_addresses;"
 
 echo "[restore-grb] Done."

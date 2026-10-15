@@ -448,7 +448,7 @@
                 }}</span>
                 <span class="opacity-50 font-mono">{{
                   feat._layer_type === 'grb'
-                    ? feat.gebouw_id || feat.id
+                    ? feat.gebouw_id || feat.oidn || feat.id
                     : feat._layer_type === 'knw'
                       ? feat.oidn || feat.id
                       : feat._layer_type === 'picc'
@@ -484,11 +484,11 @@
                         formatGRBBuildingType(currentFeature.polygon_type_label || currentFeature.building_type_label)
                       }}
                     </h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
-                      Building ID: {{ currentFeature.gebouw_id || currentFeature.id }}
+                    <div v-if="currentFeature.gebouw_id" class="text-[10px] font-mono text-muted-foreground mt-0.5">
+                      Building ID: {{ currentFeature.gebouw_id }}
                     </div>
                     <div v-if="currentFeature.oidn" class="text-[10px] font-mono text-muted-foreground">
-                      OIDN: {{ currentFeature.oidn }}
+                      OIDN: {{ currentFeature.entity ? `${currentFeature.entity}/` : '' }}{{ currentFeature.oidn }}
                     </div>
                   </div>
                   <button

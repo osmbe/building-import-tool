@@ -18,7 +18,7 @@ The GRB building data undergoes property transformation before being exported to
 | GRB Property | OSM Tag | Value/Logic |
 |--------------|---------|-------------|
 | `LBLTYPE` (hoofdgebouw, bijgebouw, verdieping) | `building` | `yes` (see section 5; other types are not exported as buildings) |
-| `OIDN` | `source:geometry:oidn` | Unique GRB object identifier |
+| `OIDN` | `source:geometry:oidn` | GRB object identifier (unique per entity) |
 | `OPNDATUM` | `source:geometry:date` | Date (formatted to YYYY-MM-DD) |
 
 ### Export Contract (Issue #10 Current Situation)
@@ -63,9 +63,10 @@ source:geometry:ref = source:geometry:entity + "/" + source:geometry:oidn
 
 **Example:** `Gbg/718523` (GBG polygon) or `Gba/2664` (GBA `verdieping` polygon)
 
-GBG and GBA OIDNs are only unique per entity, so the entity is derived from the polygon's LBLTYPE
-(`grbEntityForTypeLabel`): `hoofdgebouw`, `bijgebouw` and `gebouw afgezoomd met virtuele gevels` are GBG, every
-other label is GBA. Source-tag matching (issue #52) compares these `Entity/oidn` keys, not bare numbers.
+GBG and GBA OIDNs are only unique per entity, so the entity is stored per polygon
+(`grb.building_polygons.entity`, set by the GBG/GBA import). Databases from before that column derive it from the
+polygon's LBLTYPE (`grbEntityForTypeLabel`): `hoofdgebouw`, `bijgebouw` and `gebouw afgezoomd met virtuele gevels`
+are GBG, every other label is GBA. Source-tag matching (issue #52) compares these `Entity/oidn` keys, not bare numbers.
 
 **Components:**
 - `source:geometry:entity`: Entity type

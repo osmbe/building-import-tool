@@ -15,13 +15,21 @@ All branches merged into `main`. Verified against a seeded PostGIS (difference A
 | 9  | Use Overpass to source OSM buildings | — | infra/backend | ✅ implemented (opt-in, all sources, map layer + difference) |
 | 8  | Change reference of buildings.osm.be | — | infra/docs | 📝 docs in INSTALL.md; DNS/proxy/OAuth out of repo |
 
-### Known limitation (GRB import)
+### GRB import: GBA polygons sharing a GBG OIDN (fixed)
 
-GBG and GBA polygons share `grb.building_polygons`, whose `oidn` column is `UNIQUE`, and `_grb-import-gba`
-inserts with `ON CONFLICT (oidn) DO NOTHING`. OIDNs are only unique per entity, so a GBA polygon whose OIDN equals
-a GBG OIDN is silently not imported. The proper fix is an `entity` column with `UNIQUE (entity, oidn)`, which also
-touches the update recipes, Martin tiles and the data-only GRB restore. Matching and export already work on
-`Entity/oidn` keys (entity derived from the type label), so they are ready for that change.
+GBG and GBA polygons share `grb.building_polygons`. Its `oidn` column used to be `UNIQUE` and the GBA import used
+`ON CONFLICT (oidn) DO NOTHING`, so a GBA polygon whose OIDN equalled a GBG OIDN was silently dropped. Fixed by
+`processing/sql/migrations/001-grb-polygon-entity.sql`:
+
+- `entity` column (`Gbg`/`Gba`, backfilled from the type label) and `UNIQUE (entity, oidn)`. The GBG and GBA imports
+  set the entity explicitly. `gebouw_id` (RltGbgGebouw) is only applied to GBG polygons.
+- `grb.buildings_with_addresses` gains `entity` and a unique `polygon_id`, which is now the Martin feature id (an OIDN
+  is no longer unique, and the map merges tile fragments by feature id).
+- The difference API uses the stored entity and joins addresses on `polygon_id`. Databases that are not migrated yet
+  keep working (entity derived from the type label).
+- The migration runs as an init script on fresh volumes, from `just db-migrate` (called by `grb-import`,
+  `grb-update` and the view refresh) and from `webhook/restore-grb.sh` before the data-only dump is restored.
+  The restore now also refreshes the view, which the data-only dump does not carry.
 
 ---
 
