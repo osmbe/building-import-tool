@@ -67,7 +67,9 @@ export default defineEventHandler(async (event) => {
 
     // GRB schema compatibility (legacy vs normalized column names)
     const needsGrbPolygonColumns = dataSource === 'grb'
-    let grbSurveyDateExpr = 'NULL::date'
+    // Cast dates to text in SQL: node-pg turns DATE into a JS Date, which JSON-serialises through UTC and
+    // can shift the day by one on servers in a non-UTC timezone (issue #49: must stay YYYY-MM-DD).
+    let grbSurveyDateExpr = 'NULL::text'
     let grbTypeLabelExpr = 'NULL::text'
 
     if (needsGrbPolygonColumns) {
@@ -82,9 +84,9 @@ export default defineEventHandler(async (event) => {
       const columnNames = new Set(grbColumns.map((row: any) => row.column_name))
 
       if (columnNames.has('survey_date')) {
-        grbSurveyDateExpr = 'bp.survey_date'
+        grbSurveyDateExpr = 'bp.survey_date::text'
       } else if (columnNames.has('opndatum')) {
-        grbSurveyDateExpr = 'bp.opndatum'
+        grbSurveyDateExpr = 'bp.opndatum::text'
       }
 
       if (columnNames.has('type_label')) {
@@ -360,7 +362,7 @@ export default defineEventHandler(async (event) => {
             k.oidn,
             k.type_code,
             k.type_label,
-            k.survey_date,
+            k.survey_date::text AS survey_date,
             k.entity,
             COUNT(*) OVER() AS total_grb,
             0::bigint AS total_osm
@@ -392,7 +394,7 @@ export default defineEventHandler(async (event) => {
             k.oidn,
             k.type_code,
             k.type_label,
-            k.survey_date,
+            k.survey_date::text AS survey_date,
             k.entity,
             (SELECT COUNT(*) FROM knw_in_extent)::bigint AS total_grb,
             $6::bigint AS total_osm
@@ -515,6 +517,7 @@ export default defineEventHandler(async (event) => {
             ST_AsGeoJSON(ST_Transform(b.geom, 4326)) AS geometry,
             b.objectid,
             b.natur_code,
+            b.date_leve::text AS date_leve,
             b.addresses,
             b.street_names,
             b.postcodes,
@@ -537,7 +540,7 @@ export default defineEventHandler(async (event) => {
               SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON($5), 3857))).geom AS geom
             ),
             picc_in_extent AS (
-              SELECT b.geom, b.objectid, b.natur_code,
+              SELECT b.geom, b.objectid, b.natur_code, b.date_leve,
                      b.addresses, b.street_names, b.postcodes, b.municipalities, b.address_count
               FROM picc.buildings_with_addresses b
               WHERE b.geom && ST_MakeEnvelope($1, $2, $3, $4, 3857)
@@ -547,6 +550,7 @@ export default defineEventHandler(async (event) => {
             ST_AsGeoJSON(ST_Transform(p.geom, 4326)) AS geometry,
             p.objectid,
             p.natur_code,
+            p.date_leve::text AS date_leve,
             p.addresses,
             p.street_names,
             p.postcodes,

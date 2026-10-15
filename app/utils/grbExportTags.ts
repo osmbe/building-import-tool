@@ -98,8 +98,10 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
 
   // Map GRB OPNDATUM/survey_date to source:geometry:date, always date-only (YYYY-MM-DD).
   // Values may arrive as DD/MM/YYYY, YYYY-MM-DD, or a full ISO datetime (e.g. 2023-03-15T00:00:00).
-  if (props.opndatum || props.survey_date) {
-    const raw = String(props.opndatum || props.survey_date).trim()
+  // PICC (Wallonia) provides its survey date as date_leve (levé).
+  const rawDate = props.opndatum || props.survey_date || props.date_leve
+  if (rawDate) {
+    const raw = String(rawDate).trim()
     // Strip any time component (T-separated or space-separated)
     const dateOnly = raw.split(/[T ]/)[0] ?? ''
     if (dateOnly.includes('/')) {
@@ -168,6 +170,10 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
     'lbltype',
     'opndatum',
     'survey_date',
+    'date_leve',
+    'date_modif',
+    'georef_id',
+    'natur_desc',
     'bgninv',
     'lblbgninv',
     'lengte',
