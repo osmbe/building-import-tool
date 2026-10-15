@@ -84,7 +84,7 @@
         </p>
       </div>
 
-      <!-- Issue #9: opt-in to live OSM data from Overpass (GRB only) -->
+      <!-- Issue #9: opt-in to live OSM data from Overpass -->
       <div class="mt-3 pt-2.5 border-t border-white/[0.05]">
         <label class="flex items-center justify-between gap-2 cursor-pointer select-none">
           <span class="flex items-center gap-1.5 text-[10px] text-foreground/80">
@@ -99,8 +99,8 @@
           />
         </label>
         <p class="text-[9px] text-muted-foreground/80 mt-1.5 leading-relaxed">
-          Queries OpenStreetMap live for this view instead of our daily copy. Slower, but reflects edits from the last
-          day. GRB only.
+          Queries OpenStreetMap live (Overpass) for this view instead of our daily copy, for the map and the difference.
+          Slower, and limited to a small view (about a city block to a town centre).
         </p>
       </div>
     </div>

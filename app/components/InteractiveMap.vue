@@ -1034,6 +1034,9 @@ const { map, currentBaseLayer, initializeMap, switchBaseLayer, destroy } = useMa
 // OSM Buildings layer state
 const osmBuildingsLayerRef = ref<any>(null)
 
+// Live OSM layer (Overpass, issue #9): replaces the tile layer while "Live OSM data" is on
+const liveOsmLayerRef = ref<any>(null)
+
 // GRB Buildings layer state
 const grbBuildingsLayerRef = ref<any>(null)
 const isLoadingGRB = ref(false)
@@ -1245,7 +1248,8 @@ watch(geometryThreshold, () => {
   }
 })
 
-watch(useOverpass, () => {
+watch(useOverpass, (live) => {
+  if (!live) clearLiveOsmLayer()
   if (candidateBuildingsLayerRef.value) {
     calculateDifference()
   }
@@ -1312,7 +1316,12 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
 
   // Only show/hide existing layers, don't auto-load
   if (osmBuildingsLayerRef.value) {
-    osmBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.osmBuildings)
+    osmBuildingsLayerRef.value.setVisible(
+      shouldShowBuildings && overlayLayers.value.osmBuildings && !liveOsmLayerRef.value
+    )
+  }
+  if (liveOsmLayerRef.value) {
+    liveOsmLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.osmBuildings)
   }
   if (grbBuildingsLayerRef.value) {
     grbBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.grbBuildings)
@@ -1690,7 +1699,10 @@ const toggleOsmBuildings = (visible: boolean) => {
 
   // Toggle visibility of OSM buildings layer
   if (osmBuildingsLayerRef.value) {
-    osmBuildingsLayerRef.value.setVisible(visible)
+    osmBuildingsLayerRef.value.setVisible(visible && !liveOsmLayerRef.value)
+  }
+  if (liveOsmLayerRef.value) {
+    liveOsmLayerRef.value.setVisible(visible)
   }
 }
 
@@ -2108,6 +2120,51 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
 }
 
 // Calculate difference between source (GRB/PICC) and OSM buildings and display them
+// Issue #9: drop the live OSM layer and show the tile layer (Postgres mirror) again.
+const clearLiveOsmLayer = () => {
+  if (liveOsmLayerRef.value && map.value) map.value.removeLayer(liveOsmLayerRef.value)
+  liveOsmLayerRef.value = null
+  if (osmBuildingsLayerRef.value) {
+    osmBuildingsLayerRef.value.setVisible(
+      overlayLayers.value.osmBuildings && Math.round(map.value?.getView().getZoom() || 0) >= 16
+    )
+  }
+}
+
+// Issue #9: draw the fresh Overpass buildings for the view so the map matches the difference results.
+const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
+  if (!map.value) return
+  const geojson: any = await $fetch('/api/buildings/osm-live', { method: 'POST', body: { bounds } })
+
+  const { default: VectorLayer } = await import('ol/layer/Vector')
+  const { default: VectorSource } = await import('ol/source/Vector')
+  const { default: GeoJSONFormat } = await import('ol/format/GeoJSON')
+
+  if (liveOsmLayerRef.value) map.value.removeLayer(liveOsmLayerRef.value)
+
+  const features = new GeoJSONFormat().readFeatures(geojson, {
+    dataProjection: 'EPSG:4326',
+    featureProjection: 'EPSG:3857'
+  })
+  const layer = new VectorLayer({
+    source: new VectorSource({ features }),
+    style: new Style({
+      fill: new Fill({ color: hslVar('--layer-osm', 0.15) }),
+      stroke: new Stroke({ color: hslVar('--layer-osm', 1), width: 2 })
+    }),
+    zIndex: 9,
+    visible: overlayLayers.value.osmBuildings,
+    properties: { title: 'OSM Buildings (live)', type: 'overlay' }
+  })
+  liveOsmLayerRef.value = layer
+  map.value.addLayer(layer)
+  osmBuildingsLayerRef.value?.setVisible(false)
+}
+
+// Prefer the API's message (e.g. Overpass rate limit) over the generic fetch error text.
+const apiErrorMessage = (error: any): string =>
+  error?.data?.statusMessage || error?.statusMessage || (error instanceof Error ? error.message : String(error))
+
 const calculateDifference = async () => {
   if (!map.value) return
 
@@ -2150,6 +2207,13 @@ const calculateDifference = async () => {
 
     // Send Web Mercator bounds to API - PostGIS will handle transformation
     const bounds = [mapExtent[0], mapExtent[1], mapExtent[2], mapExtent[3]]
+
+    // Live mode: refresh the OSM layer from Overpass too (non-fatal; the difference call reports errors)
+    if (useOverpass.value) {
+      await refreshLiveOsmLayer(bounds).catch((e) => console.warn('Live OSM layer failed:', e))
+    } else {
+      clearLiveOsmLayer()
+    }
 
     // Call backend API to calculate difference
     const response = await $fetch('/api/buildings/difference', {
@@ -2271,7 +2335,7 @@ const calculateDifference = async () => {
   } catch (error) {
     console.error('Error calculating difference:', error)
     differenceState.value = 'error'
-    differenceError.value = error instanceof Error ? error.message : String(error)
+    differenceError.value = apiErrorMessage(error)
   } finally {
     // Reset loading state
     isCalculatingDifference.value = false

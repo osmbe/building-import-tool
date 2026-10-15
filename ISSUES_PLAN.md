@@ -12,7 +12,7 @@ Branch: `fix/open-issues-batch` (from `origin/main`).
 | 22 | add some "kunstwerken" KNW | data | export (KNW tag map) | ✅ already done (prior commits) |
 | 6  | Combine difference + source tag filter | — | match mode | ✅ implemented (`both` mode) |
 | 59 | Show extraction date of official data | — | frontend layer UI | ⬜ needs date-source decision |
-| 9  | Use Overpass to source OSM buildings | — | infra/backend | ✅ implemented (GRB, opt-in) |
+| 9  | Use Overpass to source OSM buildings | — | infra/backend | ✅ implemented (opt-in, all sources, map layer + difference) |
 | 8  | Change reference of buildings.osm.be | — | infra/docs | 📝 docs in INSTALL.md; DNS/proxy/OAuth out of repo |
 
 ---
