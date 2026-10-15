@@ -5,7 +5,7 @@ This guide covers setting up the Building Import Tool on a fresh Linux server wi
 ## Prerequisites
 
 - Linux server (Debian 12+, Ubuntu 22.04+, or similar)
-- Domain name pointing to server IP (e.g., `new.buildings.osm.be`)
+- Domain name pointing to server IP (e.g., `buildings.osm.be`)
 - GitHub account with access to the private repository
 - GitHub repository secrets configured (Settings → Secrets and variables → Actions):
 
@@ -71,11 +71,11 @@ Update the following variables:
 | `POSTGRES_USER` | Database username | `be2osm` |
 | `POSTGRES_PASSWORD` | Database password | `secure-password-here` |
 | `POSTGRES_DB` | Database name | `be2osm` |
-| `DOMAIN` | Your domain name | `new.buildings.osm.be` |
+| `DOMAIN` | Your domain name | `buildings.osm.be` |
 | `JWT_SECRET` | Random 32+ character string | `your-random-secret-here` |
 | `OSM_CLIENT_ID` | From OSM OAuth registration | `your-client-id` |
 | `OSM_CLIENT_SECRET` | From OSM OAuth registration | `your-client-secret` |
-| `OSM_REDIRECT_URI` | OAuth callback URL | `https://new.buildings.osm.be/api/auth/osm-callback` |
+| `OSM_REDIRECT_URI` | OAuth callback URL | `https://buildings.osm.be/api/auth/osm-callback` |
 | `OSM_REGION` | OSM region to download from Geofabrik | `europe/belgium` |
 | `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data | `your-api-key` |
 | `DIGITAL_VLAANDEREN_API_BASE_URL` | Digital Vlaanderen API URL | `https://download.api.vlaanderen.be/v2` |
@@ -116,9 +116,9 @@ docker compose exec postgres pg_isready
 Verify via public domain:
 
 ```bash
-curl -f https://new.buildings.osm.be/api/health
-curl -f https://new.buildings.osm.be/tiles/grb/health
-curl -f https://new.buildings.osm.be/tiles/osm/health
+curl -f https://buildings.osm.be/api/health
+curl -f https://buildings.osm.be/tiles/grb/health
+curl -f https://buildings.osm.be/tiles/osm/health
 ```
 
 ## Step 8: Import Data (Remote Processing)
@@ -192,6 +192,20 @@ Then download artifacts manually with:
 ```bash
 gh run download <RUN_ID> -R osmbe/building-import-tool -n osmbe-dump
 ```
+
+## Switching buildings.osm.be to this tool
+
+The production domain is `buildings.osm.be`. When moving it from the old tool to this one
+(the old tool is kept at `old-buildings-tool.osm.be`; hostname assumed from issue #8):
+
+1. DNS (https://github.com/osmbe/dns): point `old-buildings-tool.osm.be` to the old server, and
+   `buildings.osm.be` to this server (currently `buildings.osm.be` is a CNAME to `grb.byteless.net`).
+2. Reverse proxy (Nginx Proxy Manager): add a host for `old-buildings-tool.osm.be` forwarding to the old
+   tool, and change the `buildings.osm.be` host to forward to this stack.
+3. Register `https://buildings.osm.be/api/auth/osm-callback` as a redirect URI of the OSM OAuth2
+   application (https://www.openstreetmap.org/oauth2/applications).
+4. Set `DOMAIN=buildings.osm.be` and `OSM_REDIRECT_URI=https://buildings.osm.be/api/auth/osm-callback`
+   in the server `.env` and the GitHub secret `OSM_REDIRECT_URI` (it is baked in at build time), then redeploy.
 
 ## Troubleshooting
 
