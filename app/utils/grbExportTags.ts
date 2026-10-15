@@ -13,12 +13,25 @@ export const isBuildingTypeLabel = (label: string): boolean => {
   return normalized === '' || BUILDING_TYPE_LABEL_SET.has(normalized)
 }
 
+// GBG (gebouw) type labels. GBG and GBA polygons share grb.building_polygons, and their OIDNs are only unique
+// per entity, so the label is what tells "Gbg/2664" from "Gba/2664". Every other label is a GBA type.
+export const GBG_TYPE_LABELS = ['hoofdgebouw', 'bijgebouw', 'gebouw afgezoomd met virtuele gevels'] as const
+
+const GBG_TYPE_LABEL_SET: ReadonlySet<string> = new Set(GBG_TYPE_LABELS)
+
+/** GRB entity ("Gbg" or "Gba") of a building polygon, from its type label. Unlabelled polygons are GBG. */
+export const grbEntityForTypeLabel = (label: string | null | undefined): 'Gbg' | 'Gba' => {
+  const normalized = (label ?? '').toLowerCase().trim()
+  return normalized === '' || GBG_TYPE_LABEL_SET.has(normalized) ? 'Gbg' : 'Gba'
+}
+
 export const VERDIEPING_FIXME =
   'verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!'
 
 // Default OSM tags for supported KNW (kunstwerken) structure types, keyed by GRB type_code (issue #22).
 export const KNW_TAG_MAP_BY_CODE: Record<string, Record<string, string>> = {
-  '1': { bridge: 'yes' },
+  // Overbrugging outlines are bridge areas; bridge=yes belongs on the crossing way, not the outline.
+  '1': { man_made: 'bridge' },
   '5': { man_made: 'bridge_support' },
   '7': { man_made: 'chimney' },
   '8': { man_made: 'cooling_tower' },
@@ -33,16 +46,16 @@ export const KNW_TAG_MAP_BY_CODE: Record<string, Record<string, string>> = {
   '24': { man_made: 'pier' }
 }
 
+// First entry of a comma-separated aggregate column (e.g. street_names), trimmed.
+const firstListItem = (value: string | number | null | undefined): string =>
+  (String(value || '').split(',')[0] ?? '').trim()
+
 /**
  * Transform a GRB/PICC/Urbis/KNW candidate feature into one carrying OSM-ready tags.
  *
  * Pure function (no Vue/runtime deps) so it can be unit-tested in isolation. Maps GRB properties
  * to OSM tags per docs/GRB_PROPERTY_MAPPINGS.md and the rules in issues #22, #49 and #53.
  */
-// First entry of a comma-separated aggregate column (e.g. street_names), trimmed.
-const firstListItem = (value: string | number | null | undefined): string =>
-  (String(value || '').split(',')[0] ?? '').trim()
-
 export const filterFeatureProperties = (feature: Feature): Feature => {
   const props: Record<string, any> = { ...feature.properties }
 
@@ -116,7 +129,7 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
   }
 
   // Set source:geometry:entity from feature type
-  props['source:geometry:entity'] = isKnw ? 'Knw' : 'Gbg'
+  props['source:geometry:entity'] = isKnw ? 'Knw' : grbEntityForTypeLabel(polygonTypeLabel)
 
   // Create source:geometry:ref composite property
   if (props['source:geometry:entity'] && props['source:geometry:oidn']) {

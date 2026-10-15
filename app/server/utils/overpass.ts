@@ -2,7 +2,7 @@
 // as an opt-in alternative to the daily-refreshed Postgres mirror. This lets the
 // difference tool reflect very recent OSM edits without waiting for the next import.
 
-import { parseOsmSourceOidns } from '../../utils/osmSourceOidn'
+import { parseOsmSourceRefs } from '../../utils/osmSourceOidn'
 
 const OVERPASS_ENDPOINT = process.env.OVERPASS_API_URL || 'https://overpass-api.de/api/interpreter'
 const MERCATOR_R = 20037508.342789244
@@ -14,6 +14,12 @@ export const MAX_BBOX_KM2 = 12
 /** Results are reused for a short while so the difference and the map layer share one request. */
 const CACHE_TTL_MS = 30_000
 const RETRY_DELAY_MS = 2_000
+/**
+ * The public Overpass instances reject generic clients (Node's default User-Agent gets HTTP 406),
+ * so identify the tool as their usage policy asks.
+ */
+const USER_AGENT =
+  process.env.OVERPASS_USER_AGENT || 'be2osm-building-import-tool (+https://github.com/osmbe/building-import-tool)'
 
 type Ring = [number, number][]
 type Bounds3857 = [number, number, number, number]
@@ -168,7 +174,8 @@ export interface OverpassBuildings {
   /** Number of building footprints returned. */
   totalOsm: number
   /** GRB OIDN references found in OSM tags (source:geometry:oidn / source:geometry:ref). */
-  oidnList: string[]
+  /** GRB references ("Gbg/123") found in source:geometry:* tags, for source-tag matching. */
+  sourceRefs: string[]
   /** The same footprints as GeoJSON features (EPSG:4326), for drawing the live map layer. */
   features: OverpassFeature[]
 }
@@ -176,7 +183,7 @@ export interface OverpassBuildings {
 /** Turn an Overpass JSON `elements` array (out geom) into building footprints. */
 export function parseOverpassElements(elements: any[]): OverpassBuildings {
   const polygons: { coords: Ring[]; tags: Record<string, string>; id: string }[] = []
-  const oidnSet = new Set<string>()
+  const sourceRefSet = new Set<string>()
 
   for (const el of elements) {
     if (!el) continue
@@ -194,8 +201,12 @@ export function parseOverpassElements(elements: any[]): OverpassBuildings {
     for (const poly of coords) polygons.push({ coords: poly, tags, id: `${el.type}/${el.id ?? ''}` })
 
     // Collect GRB references for source-tag matching
-    for (const id of parseOsmSourceOidns({ oidn: tags['source:geometry:oidn'], ref: tags['source:geometry:ref'] })) {
-      oidnSet.add(id)
+    for (const id of parseOsmSourceRefs({
+      oidn: tags['source:geometry:oidn'],
+      ref: tags['source:geometry:ref'],
+      entity: tags['source:geometry:entity']
+    })) {
+      sourceRefSet.add(id)
     }
   }
 
@@ -212,7 +223,7 @@ export function parseOverpassElements(elements: any[]): OverpassBuildings {
     geomCollection: collection((p) => p),
     geomCollection3857: collection(toMercator),
     totalOsm: polygons.length,
-    oidnList: Array.from(oidnSet),
+    sourceRefs: Array.from(sourceRefSet),
     features: polygons.map((p) => ({
       type: 'Feature',
       geometry: { type: 'Polygon', coordinates: p.coords },
@@ -236,18 +247,24 @@ export function overpassHttpError(status: number, text: string): OverpassError {
   if (status === 504 || status === 408) {
     return new OverpassError('Overpass timed out (server busy). Try a smaller area or retry shortly.', 504)
   }
-  return new OverpassError(`Overpass request failed (${status}): ${text.slice(0, 200)}`, 502)
+  if (text) console.warn(`[overpass] HTTP ${status}:`, text.slice(0, 500))
+  // The body is usually an HTML or Markdown error page: log it, but keep it out of the user-facing message.
+  return new OverpassError(`Overpass request failed (${status}). Try again shortly.`, 502)
 }
 
 async function requestOverpass(query: string): Promise<{ elements?: any[] }> {
   let lastError: OverpassError | null = null
-  // One retry on rate limit / gateway timeout: those are usually transient on the public instances.
+  // One retry on rate limit / overload / gateway timeout: those are usually transient on the public instances.
   for (let attempt = 0; attempt < 2; attempt++) {
     let response: Response
     try {
       response = await fetch(OVERPASS_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/json',
+          'User-Agent': USER_AGENT
+        },
         body: `data=${encodeURIComponent(query)}`,
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
       })
@@ -271,7 +288,7 @@ async function requestOverpass(query: string): Promise<{ elements?: any[] }> {
     }
 
     lastError = overpassHttpError(response.status, await response.text().catch(() => ''))
-    if (attempt === 0 && (response.status === 429 || response.status === 504)) {
+    if (attempt === 0 && [429, 502, 503, 504].includes(response.status)) {
       await sleep(RETRY_DELAY_MS)
       continue
     }

@@ -117,6 +117,15 @@ describe('filterFeatureProperties — source:geometry:ref', () => {
   it('uses the Knw entity for kunstwerken', () => {
     expect(tags({ oidn: 99, _layer_type: 'knw', type_code: '7' })['source:geometry:ref']).toBe('Knw/99')
   })
+
+  it('uses the Gba entity for GBA polygons (verdieping)', () => {
+    expect(tags({ oidn: 2664, lbltype: 'verdieping' })['source:geometry:ref']).toBe('Gba/2664')
+  })
+
+  it('treats unlabelled and bijgebouw polygons as GBG', () => {
+    expect(tags({ oidn: 7 })['source:geometry:ref']).toBe('Gbg/7')
+    expect(tags({ oidn: 8, type_label: 'Bijgebouw' })['source:geometry:ref']).toBe('Gbg/8')
+  })
 })
 
 describe('filterFeatureProperties — KNW default tags (#22)', () => {
@@ -144,7 +153,7 @@ describe('filterFeatureProperties — KNW default tags (#22)', () => {
   })
 
   it.each([
-    ['1', { bridge: 'yes' }],
+    ['1', { man_made: 'bridge' }],
     ['5', { man_made: 'bridge_support' }],
     ['7', { man_made: 'chimney' }],
     ['8', { man_made: 'cooling_tower' }],

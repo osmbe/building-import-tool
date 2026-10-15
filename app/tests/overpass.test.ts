@@ -124,7 +124,7 @@ describe('fetchOverpassBuildings', () => {
     ])
 
     const result = await fetchOverpassBuildings(BBOX_3857)
-    expect(result.oidnList.sort()).toEqual(['111', '222', '333'])
+    expect(result.sourceRefs.sort()).toEqual(['Gba/333', 'Gbg/111', 'Gbg/222'])
   })
 
   it('skips degenerate ways with fewer than 3 nodes', async () => {
@@ -150,7 +150,7 @@ describe('fetchOverpassBuildings', () => {
       geomCollection: null,
       geomCollection3857: null,
       totalOsm: 0,
-      oidnList: [],
+      sourceRefs: [],
       features: []
     })
   })
@@ -163,6 +163,13 @@ describe('fetchOverpassBuildings', () => {
     const init = fn.mock.calls[0]?.[1]
     expect(init?.method).toBe('POST')
     expect(String(init?.body)).toContain('way%5B%22building%22%5D') // way["building"] url-encoded
+  })
+
+  it('identifies itself with a descriptive User-Agent (public Overpass answers 406 to generic clients)', async () => {
+    const fn = mockFetch([])
+    await fetchOverpassBuildings(BBOX_3857)
+    const headers = fn.mock.calls[0]?.[1]?.headers as Record<string, string> | undefined
+    expect(headers?.['User-Agent']).toMatch(/be2osm/)
   })
 
   it('throws when Overpass returns a non-OK status', async () => {
@@ -260,7 +267,7 @@ describe('parseOverpassElements', () => {
     expect(result.totalOsm).toBe(1)
     expect(result.features[0]?.geometry.coordinates).toHaveLength(2)
     expect(result.features[0]?.properties.osm_id).toBe('relation/5')
-    expect(result.oidnList).toEqual(['42'])
+    expect(result.sourceRefs).toEqual(['Gbg/42'])
   })
 
   it('provides a Web Mercator collection alongside the WGS84 one', () => {
@@ -277,6 +284,7 @@ describe('overpassHttpError', () => {
     expect(overpassHttpError(429, '').statusCode).toBe(429)
     expect(overpassHttpError(504, '').statusCode).toBe(504)
     expect(overpassHttpError(500, 'boom').statusCode).toBe(502)
+    expect(overpassHttpError(406, '<html><body><h1>406 Not Acceptable</h1></body></html>').message).not.toMatch(/</)
   })
 })
 

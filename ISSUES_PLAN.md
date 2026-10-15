@@ -1,19 +1,27 @@
 # Open Issues — Resolution Plan
 
-Branch: `fix/open-issues-batch` (from `origin/main`).
+All branches merged into `main`. Verified against a seeded PostGIS (difference API, all match modes); still needs a check against production data.
 
 8 open issues. Grouped by area; critical ones first.
 
 | # | Title | Label | Area | Status |
 |---|-------|-------|------|--------|
-| 53 | GRB building pre-filtering | critical | difference API + export | ✅ implemented |
-| 52 | filter by id broke again | critical | difference API (source mode) | ✅ fix + needs live verify |
-| 49 | Exported data missing info | critical | difference API + export | ✅ implemented |
-| 22 | add some "kunstwerken" KNW | data | export (KNW tag map) | ✅ already done (prior commits) |
-| 6  | Combine difference + source tag filter | — | match mode | ✅ implemented (`both` mode) |
-| 59 | Show extraction date of official data | — | frontend layer UI | ⬜ needs date-source decision |
+| 53 | GRB building pre-filtering | critical | difference API + export | ✅ allow-list (hoofdgebouw, bijgebouw, verdieping) shared by SQL + export |
+| 52 | filter by id broke again | critical | difference API (source mode) | ✅ fixed: `;`-separated refs, ref ignored when oidn set; matching on `Entity/oidn` keys |
+| 49 | Exported data missing info | critical | difference API + export | ✅ dates as text (no TZ shift), PICC `date_leve`; addresses for GRB/PICC/Urbis |
+| 22 | add some "kunstwerken" KNW | data | export (KNW tag map) | ✅ implemented; type 1 now `man_made=bridge`; scope of types 3/4/6/10/12/13 open |
+| 6  | Combine difference + source tag filter | — | match mode | ✅ `both` mode; correct stats; Source/Both disabled for non-GRB |
+| 59 | Show extraction date of official data | — | frontend layer UI | ✅ `<schema>.import_meta` + `/api/meta/data-dates` + source-button tooltips |
 | 9  | Use Overpass to source OSM buildings | — | infra/backend | ✅ implemented (opt-in, all sources, map layer + difference) |
 | 8  | Change reference of buildings.osm.be | — | infra/docs | 📝 docs in INSTALL.md; DNS/proxy/OAuth out of repo |
+
+### Known limitation (GRB import)
+
+GBG and GBA polygons share `grb.building_polygons`, whose `oidn` column is `UNIQUE`, and `_grb-import-gba`
+inserts with `ON CONFLICT (oidn) DO NOTHING`. OIDNs are only unique per entity, so a GBA polygon whose OIDN equals
+a GBG OIDN is silently not imported. The proper fix is an `entity` column with `UNIQUE (entity, oidn)`, which also
+touches the update recipes, Martin tiles and the data-only GRB restore. Matching and export already work on
+`Entity/oidn` keys (entity derived from the type label), so they are ready for that change.
 
 ---
 

@@ -17,11 +17,7 @@ The GRB building data undergoes property transformation before being exported to
 
 | GRB Property | OSM Tag | Value/Logic |
 |--------------|---------|-------------|
-| `LBLTYPE` (hoofdgebouw) | `building` | `house` |
-| `LBLTYPE` (bijgebouw) | `building` | `shed` |
-| `LBLTYPE` (afdak) | `building` | `roof` |
-| `LBLTYPE` (ingezonken garagetoegang) | `building` | `garage1` |
-| `LBLTYPE` (verheven garagetoegang) | `building` | `garage2` |
+| `LBLTYPE` (hoofdgebouw, bijgebouw, verdieping) | `building` | `yes` (see section 5; other types are not exported as buildings) |
 | `OIDN` | `source:geometry:oidn` | Unique GRB object identifier |
 | `OPNDATUM` | `source:geometry:date` | Date (formatted to YYYY-MM-DD) |
 
@@ -65,7 +61,11 @@ This composite property is **created** during export:
 source:geometry:ref = source:geometry:entity + "/" + source:geometry:oidn
 ```
 
-**Example:** `Gbg/718523`
+**Example:** `Gbg/718523` (GBG polygon) or `Gba/2664` (GBA `verdieping` polygon)
+
+GBG and GBA OIDNs are only unique per entity, so the entity is derived from the polygon's LBLTYPE
+(`grbEntityForTypeLabel`): `hoofdgebouw`, `bijgebouw` and `gebouw afgezoomd met virtuele gevels` are GBG, every
+other label is GBA. Source-tag matching (issue #52) compares these `Entity/oidn` keys, not bare numbers.
 
 **Components:**
 - `source:geometry:entity`: Entity type
@@ -106,13 +106,15 @@ The following metadata tags are **deleted** before sending to JOSM:
 
 ### GRB LBLTYPE → OSM building Tag
 
-| GRB LBLTYPE | OSM `building=` | Description |
-|-------------|-----------------|-------------|
-| `hoofdgebouw` | `house` | Main building |
-| `bijgebouw` | `shed` | Secondary/auxiliary building |
-| `afdak` | `roof` | Roof structure only |
-| `ingezonken garagetoegang` | `garage1` | Recessed garage entrance |
-| `verheven garagetoegang` | `garage2` | Raised garage entrance |
+| GRB LBLTYPE | Entity | OSM tags |
+|-------------|--------|----------|
+| `hoofdgebouw` | GBG (gbg-1) | `building=yes` |
+| `bijgebouw` | GBG (gbg-2) | `building=yes` |
+| `verdieping` | GBA (gba-1) | `building=yes` + `fixme` (see below) |
+| `gebouw afgezoomd met virtuele gevels` | GBG (gbg-3) | not exported |
+| every other GBA type (`trap`, `afdak`, `luifel`, `loopbrug`, garage entrances, ...) | GBA | not exported |
+
+Refine the generic `building=yes` in JOSM where the actual use is known.
 
 ### LBLTYPE Building Pre-filtering (issue #53)
 
@@ -131,7 +133,7 @@ Supported phase-1 KNW defaults (issue #22 scope):
 
 | KNW Type (`type_code`) | KNW Type (`type_label`) | Default OSM tags |
 |------------------------|-------------------------|------------------|
-| `1` | `overbrugging` | `bridge=yes` |
+| `1` | `overbrugging` | `man_made=bridge` (bridge outline area) |
 | `5` | `pijler` | `man_made=bridge_support` |
 | `7` | `schoorsteen` | `man_made=chimney` |
 | `8` | `koeltoren` | `man_made=cooling_tower` |
