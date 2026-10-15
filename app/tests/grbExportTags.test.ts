@@ -106,6 +106,31 @@ describe('filterFeatureProperties — KNW default tags (#22)', () => {
     )
   })
 
+  it.each([
+    ['1', { bridge: 'yes' }],
+    ['5', { man_made: 'bridge_support' }],
+    ['7', { man_made: 'chimney' }],
+    ['8', { man_made: 'cooling_tower' }],
+    ['11', { man_made: 'water_tower' }],
+    ['22', { man_made: 'breakwater' }],
+    ['23', { man_made: 'breakwater' }],
+    ['24', { man_made: 'pier' }]
+  ])('maps type %s to its documented default tags', (typeCode, expected) => {
+    const out = tags({ oidn: 1, _layer_type: 'knw', type_code: typeCode })
+    for (const [key, value] of Object.entries(expected)) expect(out[key]).toBe(value)
+    expect(out.building).toBeUndefined()
+  })
+
+  it.each(['2', '3', '4', '6', '10', '12', '13'])('leaves out-of-scope type %s without default tags', (typeCode) => {
+    const out = tags({ oidn: 1, _layer_type: 'knw', type_code: typeCode })
+    for (const key of ['man_made', 'bridge', 'power']) expect(out[key]).toBeUndefined()
+    expect(out.building).toBeUndefined()
+  })
+
+  it('does not overwrite a tag already present on the feature', () => {
+    expect(tags({ oidn: 1, _layer_type: 'knw', type_code: '7', man_made: 'tower' }).man_made).toBe('tower')
+  })
+
   it('leaves an out-of-scope KNW type untagged (no man_made, no building)', () => {
     const out = tags({ oidn: 1, _layer_type: 'knw', type_code: '3' })
     expect(out.man_made).toBeUndefined()
