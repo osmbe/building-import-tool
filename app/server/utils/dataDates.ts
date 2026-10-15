@@ -13,8 +13,10 @@ async function readImportedAt(query: QueryFn, schema: (typeof SCHEMAS)[number]):
     const rows = await query(`SELECT max(imported_at) AS imported_at FROM ${schema}.import_meta`)
     const value = rows[0]?.imported_at
     if (!value) return null
-    const date = value instanceof Date ? value : new Date(String(value))
-    return Number.isNaN(date.getTime()) ? null : date.toISOString()
+    let date: Date | null = null
+    if (value instanceof Date) date = value
+    else if (typeof value === 'string' || typeof value === 'number') date = new Date(value)
+    return date && !Number.isNaN(date.getTime()) ? date.toISOString() : null
   } catch {
     return null
   }
