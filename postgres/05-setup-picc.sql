@@ -7,6 +7,12 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE SCHEMA IF NOT EXISTS picc;
 
+-- When this schema's data was last imported (shown in the app, Issue #59).
+-- Written by the processing recipes; travels with the CI dump.
+CREATE TABLE IF NOT EXISTS picc.import_meta (
+    imported_at TIMESTAMPTZ NOT NULL
+);
+
 \echo '✓ PICC schema created'
 \echo ''
 \echo 'Next steps:'

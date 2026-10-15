@@ -7,6 +7,12 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE SCHEMA IF NOT EXISTS urbis;
 
+-- When this schema's data was last imported (shown in the app, Issue #59).
+-- Written by the processing recipes; travels with the CI dump.
+CREATE TABLE IF NOT EXISTS urbis.import_meta (
+    imported_at TIMESTAMPTZ NOT NULL
+);
+
 \echo '✓ Urbis schema created'
 \echo ''
 \echo 'Next steps:'
