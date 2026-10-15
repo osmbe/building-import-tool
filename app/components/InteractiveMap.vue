@@ -393,7 +393,9 @@
         </div>
 
         <!-- Match Mode Control -->
-        <MatchModeControl />
+        <MatchModeControl
+          :source-supports-tags="supportsSourceTags(selectedSource === 'none' ? 'grb' : selectedSource)"
+        />
       </div>
 
       <ObjectInfoPanel :building="activeBuilding" :is-open="panelOpen" @close="panelOpen = false" />
@@ -1014,6 +1016,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useJosmExport } from '~/composables/useJosmExport'
 import { useMapLayers } from '~/composables/useMapLayers'
 import { useMatchMode } from '~/composables/useMatchMode'
+import { resolveMatchMode, supportsSourceTags } from '~/utils/matchMode'
 import { useToast } from '~/composables/useToast'
 
 const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
@@ -1189,13 +1192,18 @@ const coveragePct = computed(() => {
   return Math.round((s.matched / s.totalGrb) * 100)
 })
 
+// Source/combined modes are GRB-only; other sources are matched by geometry (see resolveMatchMode).
+const effectiveMatchMode = computed(
+  () => resolveMatchMode(matchMode.value, selectedSource.value === 'none' ? 'grb' : selectedSource.value).mode
+)
+
 // Short, human label for what produced the current results (which mode, freshness).
 const matchSummary = computed(() => {
   const pct = Math.round(geometryThreshold.value * 100)
   const mode =
-    matchMode.value === 'source'
+    effectiveMatchMode.value === 'source'
       ? 'Source tag'
-      : matchMode.value === 'both'
+      : effectiveMatchMode.value === 'both'
         ? `Geometry ${pct}% + source tag`
         : `Geometry ${pct}%`
   const freshness = useOverpass.value ? 'live Overpass' : 'OSM mirror'
@@ -2130,7 +2138,7 @@ const calculateDifference = async () => {
       method: 'POST',
       body: {
         bounds,
-        matchMode: matchMode.value,
+        matchMode: resolveMatchMode(matchMode.value, dataSource).mode,
         dataSource,
         geometryThreshold: geometryThreshold.value,
         useOverpass: useOverpass.value

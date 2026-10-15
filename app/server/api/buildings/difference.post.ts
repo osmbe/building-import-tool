@@ -258,21 +258,31 @@ export default defineEventHandler(async (event) => {
         // No OSM buildings in extent — all GRB buildings are candidates
         rows = await queryGrb(
           `
+          WITH grb_in_extent AS (
+            SELECT
+              bp.geom,
+              bp.oidn,
+              bp.gebouw_id,
+              ${grbAddressCteSelect}
+              ${grbSurveyDateExpr} AS opndatum,
+              ${grbTypeLabelExpr} AS lbltype
+            FROM grb.building_polygons bp ${grbAddressJoin}
+            WHERE bp.geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
+              AND ST_Intersects(bp.geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
+              AND ${grbBuildingTypeFilter}
+          )
           SELECT
-            ST_AsGeoJSON(bp.geom) AS geometry,
-            bp.oidn,
-            bp.gebouw_id,
-            ${grbSurveyDateExpr} AS opndatum,
-            ${grbTypeLabelExpr} AS lbltype,
-            ${grbAddressSelect}
-            COUNT(*) OVER() AS total_grb,
+            ST_AsGeoJSON(g.geom) AS geometry,
+            g.oidn,
+            g.gebouw_id,
+            ${grbAddressOuterSelect}
+            g.opndatum,
+            g.lbltype,
+            (SELECT COUNT(*) FROM grb_in_extent)::bigint AS total_grb,
             0::bigint AS total_osm
-          FROM grb.building_polygons bp ${grbAddressJoin}
-          WHERE bp.geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
-            AND ST_Intersects(bp.geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
-            AND ${grbBuildingTypeFilter}
-            ${matchMode === 'both' ? 'AND bp.oidn::text != ALL($5::text[])' : ''}
-          ORDER BY bp.oidn
+          FROM grb_in_extent g
+          ${matchMode === 'both' ? 'WHERE g.oidn::text != ALL($5::text[])' : ''}
+          ORDER BY g.oidn
         `,
           matchMode === 'both'
             ? [minX, minY, maxX, maxY, bothOidnList.length > 0 ? bothOidnList : ['-1']]
@@ -300,7 +310,6 @@ export default defineEventHandler(async (event) => {
               WHERE bp.geom && e.env
                 AND ST_Intersects(bp.geom, e.env)
                 AND ${grbBuildingTypeFilter}
-                ${matchMode === 'both' ? 'AND bp.oidn::text != ALL($8::text[])' : ''}
             )
           SELECT
             ST_AsGeoJSON(g.geom) AS geometry,
@@ -312,7 +321,7 @@ export default defineEventHandler(async (event) => {
             (SELECT COUNT(*) FROM grb_in_extent)::bigint AS total_grb,
             $6::bigint AS total_osm
           FROM grb_in_extent g
-          WHERE NOT EXISTS (
+          WHERE ${matchMode === 'both' ? 'g.oidn::text != ALL($8::text[]) AND' : ''} NOT EXISTS (
             SELECT 1 FROM osm_geoms o
             WHERE g.geom && o.geom
               AND ST_Intersects(g.geom, o.geom)
