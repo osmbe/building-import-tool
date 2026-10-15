@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount } from 'vue'
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Info,
-  X,
-  XCircle,
-} from 'lucide-vue-next'
+import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-vue-next'
 import { useToast, type ToastType } from '~/composables/useToast'
 
 const { toasts, removeToast } = useToast()
@@ -15,20 +9,26 @@ const timers = new Map<number, ReturnType<typeof setTimeout>>()
 
 function startTimer(id: number, duration: number) {
   if (timers.has(id)) return
-  timers.set(id, setTimeout(() => {
-    removeToast(id)
-    timers.delete(id)
-  }, duration))
+  timers.set(
+    id,
+    setTimeout(() => {
+      removeToast(id)
+      timers.delete(id)
+    }, duration)
+  )
 }
 
 function dismiss(id: number) {
   const timer = timers.get(id)
-  if (timer) { clearTimeout(timer); timers.delete(id) }
+  if (timer) {
+    clearTimeout(timer)
+    timers.delete(id)
+  }
   removeToast(id)
 }
 
 onBeforeUnmount(() => {
-  timers.forEach(t => clearTimeout(t))
+  timers.forEach((t) => clearTimeout(t))
   timers.clear()
 })
 
@@ -36,14 +36,14 @@ const icons: Record<ToastType, typeof Info> = {
   info: Info,
   success: CheckCircle2,
   warning: AlertTriangle,
-  error: XCircle,
+  error: XCircle
 }
 
 const accentColor: Record<ToastType, string> = {
-  info:    'hsl(192 90% 46%)',
+  info: 'hsl(192 90% 46%)',
   success: 'hsl(152 68% 56%)',
   warning: 'hsl(38 92% 55%)',
-  error:   'hsl(0 68% 56%)',
+  error: 'hsl(0 68% 56%)'
 }
 </script>
 
@@ -63,12 +63,7 @@ const accentColor: Record<ToastType, string> = {
           <span class="toast-accent" />
 
           <!-- Icon -->
-          <component
-            :is="icons[toast.type]"
-            class="toast-icon"
-            :size="18"
-            :stroke-width="2"
-          />
+          <component :is="icons[toast.type]" class="toast-icon" :size="18" :stroke-width="2" />
 
           <!-- Text -->
           <div class="toast-body">
@@ -82,10 +77,7 @@ const accentColor: Record<ToastType, string> = {
           </button>
 
           <!-- Progress bar -->
-          <span
-            class="toast-progress"
-            :style="{ animationDuration: toast.duration + 'ms' }"
-          />
+          <span class="toast-progress" :style="{ animationDuration: toast.duration + 'ms' }" />
         </div>
       </TransitionGroup>
     </div>
@@ -163,7 +155,9 @@ const accentColor: Record<ToastType, string> = {
   height: 1.25rem;
   border-radius: 0.25rem;
   color: hsl(216 12% 40%);
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 .toast-close:hover {
   background: rgba(255, 255, 255, 0.08);
@@ -183,8 +177,12 @@ const accentColor: Record<ToastType, string> = {
   animation: shrink linear forwards;
 }
 @keyframes shrink {
-  from { transform: scaleX(1); }
-  to   { transform: scaleX(0); }
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
 }
 
 /* Transition group */

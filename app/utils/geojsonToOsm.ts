@@ -1,4 +1,4 @@
-import type { Feature, FeatureCollection, Geometry, Position } from 'geojson'
+import type { FeatureCollection, Position } from 'geojson'
 
 /**
  * Convert a GeoJSON FeatureCollection to OSM XML string.
@@ -104,34 +104,28 @@ interface Relation {
 // --- Helpers ---
 
 function escapeXml(s: string): string {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
 function tagsXml(tags: Record<string, string>): string {
   const entries = Object.entries(tags)
   if (entries.length === 0) return ''
-  return entries
-    .map(([k, v]) => `    <tag k="${escapeXml(k)}" v="${escapeXml(v)}"/>`)
-    .join('\n')
+  return entries.map(([k, v]) => `    <tag k="${escapeXml(k)}" v="${escapeXml(v)}"/>`).join('\n')
 }
 
 function coordHash(coords: Position): string {
   return `${coords[0]},${coords[1]}`
 }
 
-function getOrCreateNode(
-  coords: Position,
-  nodes: Node[],
-  nodesIndex: Map<string, Node>,
-): Node {
+function getOrCreateNode(coords: Position, nodes: Node[], nodesIndex: Map<string, Node>): Node {
+  const [lon, lat] = coords
+  if (lon === undefined || lat === undefined) {
+    throw new Error(`Invalid GeoJSON position: [${coords.join(', ')}]`)
+  }
   const hash = coordHash(coords)
   let node = nodesIndex.get(hash)
   if (!node) {
-    node = { id: 0, lat: coords[1], lon: coords[0], tags: {} }
+    node = { id: 0, lat, lon, tags: {} }
     nodes.push(node)
     nodesIndex.set(hash, node)
   }
@@ -142,7 +136,7 @@ function processPoint(
   coords: Position,
   properties: Record<string, any>,
   nodes: Node[],
-  nodesIndex: Map<string, Node>,
+  nodesIndex: Map<string, Node>
 ): void {
   const node = getOrCreateNode(coords, nodes, nodesIndex)
   Object.assign(node.tags, properties)
@@ -153,7 +147,7 @@ function processLineString(
   properties: Record<string, any>,
   ways: Way[],
   nodes: Node[],
-  nodesIndex: Map<string, Node>,
+  nodesIndex: Map<string, Node>
 ): void {
   const way: Way = { id: 0, tags: { ...properties }, nodes: [] }
   ways.push(way)
@@ -168,30 +162,30 @@ function processMultiPolygon(
   relations: Relation[],
   ways: Way[],
   nodes: Node[],
-  nodesIndex: Map<string, Node>,
+  nodesIndex: Map<string, Node>
 ): void {
   // Simple polygon with single outer ring → closed way
-  if (coordinates.length === 1 && coordinates[0].length === 1) {
-    return processLineString(coordinates[0][0], properties, ways, nodes, nodesIndex)
+  const outerRing = coordinates[0]?.[0]
+  if (coordinates.length === 1 && coordinates[0]?.length === 1 && outerRing) {
+    return processLineString(outerRing, properties, ways, nodes, nodesIndex)
   }
 
   // Multipolygon relation
   const relation: Relation = {
     id: 0,
     tags: { ...properties, type: 'multipolygon' },
-    members: [],
+    members: []
   }
   relations.push(relation)
 
   for (const polygon of coordinates) {
-    for (let i = 0; i < polygon.length; i++) {
-      const ring = polygon[i]
+    for (const [i, ring] of polygon.entries()) {
       const way: Way = { id: 0, tags: {}, nodes: [] }
       ways.push(way)
       relation.members.push({
         elem: way,
         type: 'way',
-        role: i === 0 ? 'outer' : 'inner',
+        role: i === 0 ? 'outer' : 'inner'
       })
       for (const point of ring) {
         way.nodes.push(getOrCreateNode(point, nodes, nodesIndex))

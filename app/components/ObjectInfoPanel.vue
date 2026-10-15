@@ -38,19 +38,27 @@
         <TabsContent value="overview" class="p-4 mt-0">
           <div class="space-y-2 text-xs">
             <div class="flex gap-4">
-              <span class="text-muted-foreground w-20 shrink-0 flex items-center gap-1.5"><Building class="h-3 w-3" /> Type</span>
+              <span class="text-muted-foreground w-20 shrink-0 flex items-center gap-1.5"
+                ><Building class="h-3 w-3" /> Type</span
+              >
               <span class="text-foreground/80">{{ building.properties.buildingType || '—' }}</span>
             </div>
             <div class="flex gap-4">
-              <span class="text-muted-foreground w-20 shrink-0 flex items-center gap-1.5"><Ruler class="h-3 w-3" /> Height</span>
+              <span class="text-muted-foreground w-20 shrink-0 flex items-center gap-1.5"
+                ><Ruler class="h-3 w-3" /> Height</span
+              >
               <span class="text-foreground/80 font-mono">{{ building.properties.height ?? '—' }} m</span>
             </div>
             <div class="flex gap-4">
-              <span class="text-muted-foreground w-20 shrink-0 flex items-center gap-1.5"><Layers class="h-3 w-3" /> Levels</span>
+              <span class="text-muted-foreground w-20 shrink-0 flex items-center gap-1.5"
+                ><Layers class="h-3 w-3" /> Levels</span
+              >
               <span class="text-foreground/80 font-mono">{{ building.properties.levels ?? '—' }}</span>
             </div>
             <div class="flex gap-4">
-              <span class="text-muted-foreground w-20 shrink-0 flex items-center gap-1.5"><Calendar class="h-3 w-3" /> Source date</span>
+              <span class="text-muted-foreground w-20 shrink-0 flex items-center gap-1.5"
+                ><Calendar class="h-3 w-3" /> Source date</span
+              >
               <span class="text-foreground/80 font-mono">{{ building.properties.sourceDate || '—' }}</span>
             </div>
           </div>
@@ -65,11 +73,13 @@
               </div>
               <div class="max-h-72 overflow-y-auto space-y-1 pr-1">
                 <div
-                  v-for="(value, key) in building.osmData.tags"
+                  v-for="(value, key) in building.osmData?.tags"
                   :key="key"
                   class="flex gap-4 py-1 border-b border-white/[0.04] last:border-0"
                 >
-                  <span class="text-muted-foreground w-32 shrink-0 truncate font-mono" :title="String(key)">{{ key }}</span>
+                  <span class="text-muted-foreground w-32 shrink-0 truncate font-mono" :title="String(key)">{{
+                    key
+                  }}</span>
                   <span class="text-foreground/80 break-words" :title="String(value)">{{ value || '—' }}</span>
                 </div>
               </div>

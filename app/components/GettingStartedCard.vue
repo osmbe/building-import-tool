@@ -1,9 +1,6 @@
 <template>
   <Transition name="gs-fade">
-    <div
-      v-if="visible"
-      class="absolute top-4 left-1/2 -translate-x-1/2 z-30 w-[min(92vw,30rem)]"
-    >
+    <div v-if="visible" class="absolute top-4 left-1/2 -translate-x-1/2 z-30 w-[min(92vw,30rem)]">
       <div class="glass-panel rounded-lg overflow-hidden">
         <div class="flex items-center justify-between px-4 pt-3 pb-2.5 border-b border-white/[0.05]">
           <div class="flex items-center gap-2">
@@ -21,7 +18,9 @@
 
         <ol class="px-4 py-3 space-y-2">
           <li v-for="(step, i) in steps" :key="i" class="flex gap-2.5 text-[11px] text-foreground/80 leading-relaxed">
-            <span class="h-4 w-4 mt-px shrink-0 rounded-full bg-primary/12 border border-primary/25 text-primary text-[9px] font-mono flex items-center justify-center">
+            <span
+              class="h-4 w-4 mt-px shrink-0 rounded-full bg-primary/12 border border-primary/25 text-primary text-[9px] font-mono flex items-center justify-center"
+            >
               {{ i + 1 }}
             </span>
             <span>{{ step }}</span>
@@ -59,7 +58,7 @@ const steps = [
   'Pan to an area, then turn on a source dataset (GRB, KNW, PICC or Urbis) plus OSM Buildings.',
   'Zoom in to street level so the building layers load.',
   'Run "Get Difference" to list buildings present in the source but missing from OSM.',
-  'Review the candidates, then open them in JOSM to check and upload.',
+  'Review the candidates, then open them in JOSM to check and upload.'
 ]
 
 const dismiss = () => {
@@ -70,7 +69,9 @@ const dismiss = () => {
 <style scoped>
 .gs-fade-enter-active,
 .gs-fade-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 .gs-fade-enter-from,
 .gs-fade-leave-to {

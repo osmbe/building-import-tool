@@ -7,41 +7,56 @@ export default defineEventHandler(async (event) => {
     const { bounds, matchMode = 'geometry', dataSource = 'grb', geometryThreshold = 0.7, useOverpass = false } = body
 
     if (!bounds || bounds.length !== 4) {
-      return sendError(event, createError({
-        statusCode: 400,
-        statusMessage: 'Invalid bounds. Expected [minX, minY, maxX, maxY]'
-      }))
+      return sendError(
+        event,
+        createError({
+          statusCode: 400,
+          statusMessage: 'Invalid bounds. Expected [minX, minY, maxX, maxY]'
+        })
+      )
     }
 
     if (matchMode !== 'geometry' && matchMode !== 'source' && matchMode !== 'both') {
-      return sendError(event, createError({
-        statusCode: 400,
-        statusMessage: 'Invalid matchMode. Expected "geometry", "source", or "both"'
-      }))
+      return sendError(
+        event,
+        createError({
+          statusCode: 400,
+          statusMessage: 'Invalid matchMode. Expected "geometry", "source", or "both"'
+        })
+      )
     }
 
     if (dataSource !== 'grb' && dataSource !== 'knw' && dataSource !== 'picc' && dataSource !== 'urbis') {
-      return sendError(event, createError({
-        statusCode: 400,
-        statusMessage: 'Invalid dataSource. Expected "grb", "knw", "picc", or "urbis"'
-      }))
+      return sendError(
+        event,
+        createError({
+          statusCode: 400,
+          statusMessage: 'Invalid dataSource. Expected "grb", "knw", "picc", or "urbis"'
+        })
+      )
     }
 
     const numericThreshold = Number(geometryThreshold)
     if (Number.isNaN(numericThreshold) || numericThreshold < 0.3 || numericThreshold > 0.95) {
-      return sendError(event, createError({
-        statusCode: 400,
-        statusMessage: 'Invalid geometryThreshold. Expected a number between 0.3 and 0.95'
-      }))
+      return sendError(
+        event,
+        createError({
+          statusCode: 400,
+          statusMessage: 'Invalid geometryThreshold. Expected a number between 0.3 and 0.95'
+        })
+      )
     }
 
     // Source tag matching (and combined mode) only work for GRB
     // (PICC/Urbis have no source:geometry:oidn tags in OSM)
     if ((matchMode === 'source' || matchMode === 'both') && dataSource !== 'grb') {
-      return sendError(event, createError({
-        statusCode: 400,
-        statusMessage: 'Source tag matching is only available for GRB data. Use geometry mode for KNW/PICC/Urbis.'
-      }))
+      return sendError(
+        event,
+        createError({
+          statusCode: 400,
+          statusMessage: 'Source tag matching is only available for GRB data. Use geometry mode for KNW/PICC/Urbis.'
+        })
+      )
     }
 
     const [minX, minY, maxX, maxY] = bounds
@@ -82,8 +97,7 @@ export default defineEventHandler(async (event) => {
     // distinguished by type_label (LBLTYPE). gbg-3 ("gebouw afgezoomd met virtuele gevels") and "trap"
     // are not buildings and must not appear as candidates. "verdieping" (gba1) IS kept — it is exported
     // as a building with a fixme. coalesce keeps rows when no type_label column exists.
-    const grbBuildingTypeFilter =
-      `coalesce(lower(${grbTypeLabelExpr}), '') <> ALL(ARRAY['trap', 'gebouw afgezoomd met virtuele gevels'])`
+    const grbBuildingTypeFilter = `coalesce(lower(${grbTypeLabelExpr}), '') <> ALL(ARRAY['trap', 'gebouw afgezoomd met virtuele gevels'])`
 
     // Issue #49: include address data in GRB exports. Addresses live in the grb.buildings_with_addresses
     // matview (keyed on oidn). Guard on its existence so deployments without the matview still work.
@@ -101,9 +115,7 @@ export default defineEventHandler(async (event) => {
       ? 'bwa.addresses, bwa.street_names, bwa.postcodes, bwa.municipalities, bwa.address_count'
       : ''
     const grbAddressSelect = grbAddressColsCsv ? `${grbAddressColsCsv},` : ''
-    const grbAddressJoin = hasGrbAddresses
-      ? 'LEFT JOIN grb.buildings_with_addresses bwa ON bwa.oidn = bp.oidn'
-      : ''
+    const grbAddressJoin = hasGrbAddresses ? 'LEFT JOIN grb.buildings_with_addresses bwa ON bwa.oidn = bp.oidn' : ''
     // For the CTE pass-through (geometry-with-osm branch): columns selected in CTE, re-selected from alias g
     const grbAddressCteSelect = hasGrbAddresses
       ? 'bwa.addresses, bwa.street_names, bwa.postcodes, bwa.municipalities, bwa.address_count,'
@@ -115,9 +127,7 @@ export default defineEventHandler(async (event) => {
     // Issue #9: optionally source OSM buildings live from Overpass for the current bbox
     // (opt-in; GRB only in this v1). Falls back to the Postgres mirror when not set.
     const overpassData: OverpassBuildings | null =
-      (useOverpass && dataSource === 'grb')
-        ? await fetchOverpassBuildings([minX, minY, maxX, maxY])
-        : null
+      useOverpass && dataSource === 'grb' ? await fetchOverpassBuildings([minX, minY, maxX, maxY]) : null
 
     // Collect OSM source:geometry:oidn references in the extent (GRB only).
     // Shared by 'source' mode and 'both' mode (issue #6: combine geometry + source-tag filtering).
@@ -212,7 +222,6 @@ export default defineEventHandler(async (event) => {
       `
 
       rows = await queryGrb(grbQuery, [minX, minY, maxX, maxY, totalOsm, oidnList.length > 0 ? oidnList : ['-1']])
-
     } else if (dataSource === 'grb') {
       // Geometry matching for GRB: GRB polygons with no corresponding OSM building
       // A match = overlap threshold reached in both directions (source and OSM)
@@ -226,14 +235,17 @@ export default defineEventHandler(async (event) => {
         osmGeomCollection = overpassData.geomCollection
         totalOsm = overpassData.totalOsm
       } else {
-        const osmResult = await queryOsm(`
+        const osmResult = await queryOsm(
+          `
           SELECT
             ST_AsGeoJSON(ST_Collect(COALESCE(geom, ST_Transform(geom_mercator, 4326)))) AS geom_collection,
             COUNT(*) AS total_osm
           FROM osm.osm_buildings
           WHERE COALESCE(geom, ST_Transform(geom_mercator, 4326)) && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
             AND ST_Intersects(COALESCE(geom, ST_Transform(geom_mercator, 4326)), ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
-        `, [minX, minY, maxX, maxY])
+        `,
+          [minX, minY, maxX, maxY]
+        )
 
         osmGeomCollection = osmResult[0]?.geom_collection ?? null
         totalOsm = parseInt(osmResult[0]?.total_osm || '0')
@@ -241,7 +253,8 @@ export default defineEventHandler(async (event) => {
 
       if (!osmGeomCollection) {
         // No OSM buildings in extent — all GRB buildings are candidates
-        rows = await queryGrb(`
+        rows = await queryGrb(
+          `
           SELECT
             ST_AsGeoJSON(bp.geom) AS geometry,
             bp.oidn,
@@ -257,11 +270,14 @@ export default defineEventHandler(async (event) => {
             AND ${grbBuildingTypeFilter}
             ${matchMode === 'both' ? 'AND bp.oidn::text != ALL($5::text[])' : ''}
           ORDER BY bp.oidn
-        `, matchMode === 'both'
-          ? [minX, minY, maxX, maxY, bothOidnList.length > 0 ? bothOidnList : ['-1']]
-          : [minX, minY, maxX, maxY])
+        `,
+          matchMode === 'both'
+            ? [minX, minY, maxX, maxY, bothOidnList.length > 0 ? bothOidnList : ['-1']]
+            : [minX, minY, maxX, maxY]
+        )
       } else {
-        rows = await queryGrb(`
+        rows = await queryGrb(
+          `
           WITH
             envelope_4326 AS (
               SELECT ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326) AS env
@@ -303,27 +319,41 @@ export default defineEventHandler(async (event) => {
                   / NULLIF(ST_Area(o.geom), 0) >= $7
           )
           ORDER BY g.oidn
-        `, matchMode === 'both'
-          ? [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold, bothOidnList.length > 0 ? bothOidnList : ['-1']]
-          : [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold])
+        `,
+          matchMode === 'both'
+            ? [
+                minX,
+                minY,
+                maxX,
+                maxY,
+                osmGeomCollection,
+                totalOsm,
+                numericThreshold,
+                bothOidnList.length > 0 ? bothOidnList : ['-1']
+              ]
+            : [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold]
+        )
       }
-
     } else if (dataSource === 'knw') {
       // Geometry matching for KNW: GRB kunstwerken with no corresponding OSM geometry
-      const osmResult = await queryOsm(`
+      const osmResult = await queryOsm(
+        `
         SELECT
           ST_AsGeoJSON(ST_Collect(COALESCE(geom, ST_Transform(geom_mercator, 4326)))) AS geom_collection,
           COUNT(*) AS total_osm
         FROM osm.osm_buildings
         WHERE COALESCE(geom, ST_Transform(geom_mercator, 4326)) && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
           AND ST_Intersects(COALESCE(geom, ST_Transform(geom_mercator, 4326)), ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
-      `, [minX, minY, maxX, maxY])
+      `,
+        [minX, minY, maxX, maxY]
+      )
 
       const osmGeomCollection = osmResult[0]?.geom_collection
       totalOsm = parseInt(osmResult[0]?.total_osm || '0')
 
       if (!osmGeomCollection) {
-        rows = await queryGrb(`
+        rows = await queryGrb(
+          `
           SELECT
             ST_AsGeoJSON(k.geom) AS geometry,
             k.oidn,
@@ -337,9 +367,12 @@ export default defineEventHandler(async (event) => {
           WHERE k.geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
             AND ST_Intersects(k.geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
           ORDER BY k.oidn
-        `, [minX, minY, maxX, maxY])
+        `,
+          [minX, minY, maxX, maxY]
+        )
       } else {
-        rows = await queryGrb(`
+        rows = await queryGrb(
+          `
           WITH
             envelope_4326 AS (
               SELECT ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326) AS env
@@ -373,26 +406,31 @@ export default defineEventHandler(async (event) => {
                   / NULLIF(ST_Area(o.geom), 0) >= $7
           )
           ORDER BY k.oidn
-        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold])
+        `,
+          [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold]
+        )
       }
-
     } else if (dataSource === 'urbis') {
       // Geometry matching for Urbis: uses urbis.buildings_with_addresses matview (EPSG:3857)
       // Two-step approach: fetch OSM geometries directly from osmbe to avoid FDW overhead
-      const osmResult = await queryOsm(`
+      const osmResult = await queryOsm(
+        `
         SELECT
           ST_AsGeoJSON(ST_Collect(geom_mercator)) AS geom_collection,
           COUNT(*) AS total_osm
         FROM osm.osm_buildings
         WHERE geom_mercator && ST_MakeEnvelope($1, $2, $3, $4, 3857)
           AND ST_Intersects(geom_mercator, ST_MakeEnvelope($1, $2, $3, $4, 3857))
-      `, [minX, minY, maxX, maxY])
+      `,
+        [minX, minY, maxX, maxY]
+      )
 
       const osmGeomCollection = osmResult[0]?.geom_collection
       totalOsm = parseInt(osmResult[0]?.total_osm || '0')
 
       if (!osmGeomCollection) {
-        rows = await queryGrb(`
+        rows = await queryGrb(
+          `
           SELECT
             ST_AsGeoJSON(ST_Transform(b.geom, 4326)) AS geometry,
             b.building_id,
@@ -408,9 +446,12 @@ export default defineEventHandler(async (event) => {
           WHERE b.geom && ST_MakeEnvelope($1, $2, $3, $4, 3857)
             AND ST_Intersects(b.geom, ST_MakeEnvelope($1, $2, $3, $4, 3857))
           ORDER BY b.building_id
-        `, [minX, minY, maxX, maxY])
+        `,
+          [minX, minY, maxX, maxY]
+        )
       } else {
-        rows = await queryGrb(`
+        rows = await queryGrb(
+          `
           WITH
             osm_geoms AS (
               SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON($5), 3857))).geom AS geom
@@ -444,26 +485,31 @@ export default defineEventHandler(async (event) => {
                   / NULLIF(ST_Area(o.geom), 0) >= $7
           )
           ORDER BY u.building_id
-        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold])
+        `,
+          [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold]
+        )
       }
-
     } else {
       // Geometry matching for PICC: uses picc.buildings_with_addresses matview (EPSG:3857)
       // Two-step approach: fetch OSM geometries directly from osmbe to avoid FDW overhead
-      const osmResult = await queryOsm(`
+      const osmResult = await queryOsm(
+        `
         SELECT
           ST_AsGeoJSON(ST_Collect(geom_mercator)) AS geom_collection,
           COUNT(*) AS total_osm
         FROM osm.osm_buildings
         WHERE geom_mercator && ST_MakeEnvelope($1, $2, $3, $4, 3857)
           AND ST_Intersects(geom_mercator, ST_MakeEnvelope($1, $2, $3, $4, 3857))
-      `, [minX, minY, maxX, maxY])
+      `,
+        [minX, minY, maxX, maxY]
+      )
 
       const osmGeomCollection = osmResult[0]?.geom_collection
       totalOsm = parseInt(osmResult[0]?.total_osm || '0')
 
       if (!osmGeomCollection) {
-        rows = await queryGrb(`
+        rows = await queryGrb(
+          `
           SELECT
             ST_AsGeoJSON(ST_Transform(b.geom, 4326)) AS geometry,
             b.objectid,
@@ -479,9 +525,12 @@ export default defineEventHandler(async (event) => {
           WHERE b.geom && ST_MakeEnvelope($1, $2, $3, $4, 3857)
             AND ST_Intersects(b.geom, ST_MakeEnvelope($1, $2, $3, $4, 3857))
           ORDER BY b.objectid
-        `, [minX, minY, maxX, maxY])
+        `,
+          [minX, minY, maxX, maxY]
+        )
       } else {
-        rows = await queryGrb(`
+        rows = await queryGrb(
+          `
           WITH
             osm_geoms AS (
               SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON($5), 3857))).geom AS geom
@@ -515,7 +564,9 @@ export default defineEventHandler(async (event) => {
                   / NULLIF(ST_Area(o.geom), 0) >= $7
           )
           ORDER BY p.objectid
-        `, [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold])
+        `,
+          [minX, minY, maxX, maxY, osmGeomCollection, totalOsm, numericThreshold]
+        )
       }
     }
 
@@ -549,13 +600,15 @@ export default defineEventHandler(async (event) => {
         bounds
       }
     }
-
   } catch (error) {
     console.error('Error in buildings/difference endpoint:', error)
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
-    return sendError(event, createError({
-      statusCode: 500,
-      statusMessage: `Error calculating difference: ${error instanceof Error ? error.message : JSON.stringify(error)}`
-    }))
+    return sendError(
+      event,
+      createError({
+        statusCode: 500,
+        statusMessage: `Error calculating difference: ${error instanceof Error ? error.message : JSON.stringify(error)}`
+      })
+    )
   }
 })

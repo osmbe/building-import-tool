@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
     // Fetch user details from OSM API
     const userResponse = await $fetch('https://api.openstreetmap.org/api/0.6/user/details.json', {
       headers: {
-        'Authorization': `Bearer ${access_token}`
+        Authorization: `Bearer ${access_token}`
       }
     })
 

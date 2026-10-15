@@ -2,7 +2,13 @@
   <div class="h-full w-full">
     <div class="h-full w-full relative">
       <!-- OpenLayers Map Container -->
-      <div id="map" ref="mapRef" class="absolute inset-0" :class="currentBaseLayer === 'blank' ? 'bg-[#f5f0e8]' : ''" style="width: 100%; height: 100%; min-height: 400px;"></div>
+      <div
+        id="map"
+        ref="mapRef"
+        class="absolute inset-0"
+        :class="currentBaseLayer === 'blank' ? 'bg-[#f5f0e8]' : ''"
+        style="width: 100%; height: 100%; min-height: 400px"
+      ></div>
 
       <!-- First-run guidance -->
       <GettingStartedCard :has-candidates="candidateBuildingCount > 0" />
@@ -17,7 +23,10 @@
             @click="controlsCollapsed = !controlsCollapsed"
           >
             <span class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Controls</span>
-            <ChevronDown class="h-3 w-3 text-muted-foreground transition-transform duration-200" :class="controlsCollapsed ? '-rotate-90' : ''" />
+            <ChevronDown
+              class="h-3 w-3 text-muted-foreground transition-transform duration-200"
+              :class="controlsCollapsed ? '-rotate-90' : ''"
+            />
           </div>
 
           <!-- Collapsible body -->
@@ -39,30 +48,82 @@
             <div class="p-2 border-b border-white/[0.05]">
               <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Basemap</div>
               <div class="flex flex-wrap gap-1">
-                <button class="layer-btn" :class="currentBaseLayer === 'blank'    ? 'layer-btn-active' : ''" @click="switchBaseLayer('blank')"    title="No background">Blank</button>
-                <button class="layer-btn" :class="currentBaseLayer === 'osm'      ? 'layer-btn-active' : ''" @click="switchBaseLayer('osm')"      title="OpenStreetMap Belgium (tile.openstreetmap.be)">OSM</button>
-                <button class="layer-btn" :class="currentBaseLayer === 'esri'     ? 'layer-btn-active' : ''" @click="switchBaseLayer('esri')"     title="Esri World Imagery (Maxar/Earthstar) — mosaic, dates vary by area — Belgium only">Esri</button>
-                <button class="layer-btn" :class="currentBaseLayer === 'flanders' ? 'layer-btn-active' : ''" @click="switchBaseLayer('flanders')" title="Orthophoto Vlaanderen — Digitaal Vlaanderen (OFW, always latest)">Flanders <span class="opacity-60">latest</span></button>
-                <button class="layer-btn" :class="currentBaseLayer === 'brussels' ? 'layer-btn-active' : ''" @click="switchBaseLayer('brussels')" title="Ortho UrbIS 2024 (nadir) — geoservices-urbis.irisnet.be">Brussels <span class="opacity-60">'24</span></button>
-                <button class="layer-btn" :class="currentBaseLayer === 'wallonia' ? 'layer-btn-active' : ''" @click="switchBaseLayer('wallonia')" title="Orthophoto Wallonie 2024 — geoservices.wallonie.be">Wallonia <span class="opacity-60">'24</span></button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'blank' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('blank')"
+                  title="No background"
+                >
+                  Blank
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'osm' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('osm')"
+                  title="OpenStreetMap Belgium (tile.openstreetmap.be)"
+                >
+                  OSM
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'esri' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('esri')"
+                  title="Esri World Imagery (Maxar/Earthstar) — mosaic, dates vary by area — Belgium only"
+                >
+                  Esri
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'flanders' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('flanders')"
+                  title="Orthophoto Vlaanderen — Digitaal Vlaanderen (OFW, always latest)"
+                >
+                  Flanders <span class="opacity-60">latest</span>
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'brussels' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('brussels')"
+                  title="Ortho UrbIS 2024 (nadir) — geoservices-urbis.irisnet.be"
+                >
+                  Brussels <span class="opacity-60">'24</span>
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'wallonia' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('wallonia')"
+                  title="Orthophoto Wallonie 2024 — geoservices.wallonie.be"
+                >
+                  Wallonia <span class="opacity-60">'24</span>
+                </button>
               </div>
             </div>
 
             <!-- Prerequisite checklist (shown until everything is ready) -->
             <div v-if="!canCalculateDifference" class="px-2 pt-2 pb-1.5 space-y-1 border-b border-white/[0.05]">
-              <div class="text-[8px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Before you start</div>
+              <div class="text-[8px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                Before you start
+              </div>
               <button class="check-row" @click="revealLayersPanel">
-                <span class="check-mark" :class="hasSourceLayer ? 'check-done' : ''"><Check v-if="hasSourceLayer" class="h-2 w-2" /></span>
-                <span class="flex-1 text-left" :class="hasSourceLayer ? 'text-emerald-400/80' : ''">Source dataset on</span>
+                <span class="check-mark" :class="hasSourceLayer ? 'check-done' : ''"
+                  ><Check v-if="hasSourceLayer" class="h-2 w-2"
+                /></span>
+                <span class="flex-1 text-left" :class="hasSourceLayer ? 'text-emerald-400/80' : ''"
+                  >Source dataset on</span
+                >
                 <span v-if="!hasSourceLayer" class="check-action">Layers</span>
               </button>
               <button class="check-row" @click="revealLayersPanel">
-                <span class="check-mark" :class="hasOsmLayer ? 'check-done' : ''"><Check v-if="hasOsmLayer" class="h-2 w-2" /></span>
+                <span class="check-mark" :class="hasOsmLayer ? 'check-done' : ''"
+                  ><Check v-if="hasOsmLayer" class="h-2 w-2"
+                /></span>
                 <span class="flex-1 text-left" :class="hasOsmLayer ? 'text-emerald-400/80' : ''">OSM Buildings on</span>
                 <span v-if="!hasOsmLayer" class="check-action">Layers</span>
               </button>
               <button class="check-row" @click="zoomToWorkingLevel">
-                <span class="check-mark" :class="zoomReady ? 'check-done' : ''"><Check v-if="zoomReady" class="h-2 w-2" /></span>
+                <span class="check-mark" :class="zoomReady ? 'check-done' : ''"
+                  ><Check v-if="zoomReady" class="h-2 w-2"
+                /></span>
                 <span class="flex-1 text-left" :class="zoomReady ? 'text-emerald-400/80' : ''">Zoom in to ≥ 16</span>
                 <span v-if="!zoomReady" class="check-action">Zoom</span>
               </button>
@@ -97,17 +158,24 @@
                 <div class="flex items-center gap-1.5">
                   <span
                     class="h-1.5 w-1.5 rounded-full shrink-0"
-                    :class="josmConnected === true ? 'bg-emerald-400'
-                      : josmConnected === false ? 'bg-red-400'
-                      : 'bg-muted-foreground/40'"
+                    :class="
+                      josmConnected === true
+                        ? 'bg-emerald-400'
+                        : josmConnected === false
+                          ? 'bg-red-400'
+                          : 'bg-muted-foreground/40'
+                    "
                   ></span>
                   <span class="text-[9px] text-muted-foreground">
-                    {{ josmConnected === true ? 'JOSM ready'
-                      : josmConnected === false ? 'JOSM offline'
-                      : 'JOSM unknown' }}
+                    {{
+                      josmConnected === true ? 'JOSM ready' : josmConnected === false ? 'JOSM offline' : 'JOSM unknown'
+                    }}
                   </span>
                 </div>
-                <button class="text-[9px] text-primary/80 hover:text-primary transition-colors" @click="josmHelpOpen = true">
+                <button
+                  class="text-[9px] text-primary/80 hover:text-primary transition-colors"
+                  @click="josmHelpOpen = true"
+                >
                   Set up
                 </button>
               </div>
@@ -126,7 +194,10 @@
             @click="layersCollapsed = !layersCollapsed"
           >
             <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Layers</h3>
-            <ChevronDown class="h-3 w-3 text-muted-foreground transition-transform duration-200" :class="layersCollapsed ? '-rotate-90' : ''" />
+            <ChevronDown
+              class="h-3 w-3 text-muted-foreground transition-transform duration-200"
+              :class="layersCollapsed ? '-rotate-90' : ''"
+            />
           </div>
 
           <!-- Collapsible body -->
@@ -134,17 +205,20 @@
             <div class="space-y-2.5">
               <div class="layer-row">
                 <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="color: hsl(var(--layer-candidate)); background: currentColor;"></span>
+                  <span class="layer-dot" style="color: hsl(var(--layer-candidate)); background: currentColor"></span>
                   <span class="text-xs text-foreground/85">Candidate Buildings</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-[10px] font-mono text-muted-foreground">{{ candidateBuildingCount }}</span>
-                  <Switch v-model:checked="overlayLayers.candidateBuildings" @update:checked="toggleCandidateBuildings" />
+                  <Switch
+                    v-model:checked="overlayLayers.candidateBuildings"
+                    @update:checked="toggleCandidateBuildings"
+                  />
                 </div>
               </div>
               <div class="layer-row">
                 <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="color: hsl(var(--layer-osm)); background: currentColor;"></span>
+                  <span class="layer-dot" style="color: hsl(var(--layer-osm)); background: currentColor"></span>
                   <span class="text-xs text-foreground/85">OSM Buildings</span>
                 </div>
                 <Switch v-model:checked="overlayLayers.osmBuildings" @update:checked="toggleOsmBuildings" />
@@ -153,7 +227,9 @@
 
             <!-- Source dataset (single-select; compared against OSM) -->
             <div class="mt-3 pt-3 border-t border-white/[0.05]">
-              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Source dataset</div>
+              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                Source dataset
+              </div>
               <div class="grid grid-cols-2 gap-1">
                 <button
                   v-for="opt in sourceOptions"
@@ -162,7 +238,10 @@
                   :class="selectedSource === opt.key ? 'layer-btn-active' : ''"
                   @click="selectSource(opt.key)"
                 >
-                  <span class="layer-dot" :style="{ color: `hsl(var(${opt.varName}))`, background: 'currentColor' }"></span>
+                  <span
+                    class="layer-dot"
+                    :style="{ color: `hsl(var(${opt.varName}))`, background: 'currentColor' }"
+                  ></span>
                   {{ opt.label }}
                 </button>
               </div>
@@ -177,7 +256,9 @@
               </div>
               <div class="flex items-center justify-between text-[10px]">
                 <span class="text-muted-foreground">Center</span>
-                <span class="font-mono text-foreground/55">{{ currentCenter[1].toFixed(4) }}, {{ currentCenter[0].toFixed(4) }}</span>
+                <span class="font-mono text-foreground/55"
+                  >{{ currentCenter[1].toFixed(4) }}, {{ currentCenter[0].toFixed(4) }}</span
+                >
               </div>
             </div>
           </div>
@@ -199,13 +280,20 @@
                 Live
               </span>
             </div>
-            <button class="text-muted-foreground hover:text-foreground transition-colors" aria-label="Dismiss results" @click="dismissResults">
+            <button
+              class="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Dismiss results"
+              @click="dismissResults"
+            >
               <X class="h-3 w-3" />
             </button>
           </div>
 
           <!-- Loading -->
-          <div v-if="differenceState === 'loading'" class="flex items-center gap-2 text-[11px] text-muted-foreground py-1">
+          <div
+            v-if="differenceState === 'loading'"
+            class="flex items-center gap-2 text-[11px] text-muted-foreground py-1"
+          >
             <Loader2 class="h-3 w-3 animate-spin shrink-0" />
             <span>Searching this view…</span>
           </div>
@@ -216,7 +304,9 @@
               <CircleAlert class="h-3.5 w-3.5 shrink-0 mt-px text-red-400" />
               <span>Could not calculate the difference.</span>
             </div>
-            <p v-if="differenceError" class="text-[10px] text-muted-foreground break-words leading-relaxed">{{ differenceError }}</p>
+            <p v-if="differenceError" class="text-[10px] text-muted-foreground break-words leading-relaxed">
+              {{ differenceError }}
+            </p>
             <button class="result-retry" @click="calculateDifference">
               <RotateCcw class="h-2.5 w-2.5" />
               Retry
@@ -227,7 +317,8 @@
           <div v-else-if="differenceState === 'empty'" class="space-y-1.5">
             <p class="text-[11px] text-foreground/85">No missing buildings here.</p>
             <p class="text-[10px] text-muted-foreground leading-relaxed">
-              Everything in view already matches OSM. Pan to a new area, lower the match strictness, or switch match mode.
+              Everything in view already matches OSM. Pan to a new area, lower the match strictness, or switch match
+              mode.
             </p>
             <p class="text-[9px] text-muted-foreground/70 pt-0.5">{{ matchSummary }}</p>
           </div>
@@ -267,14 +358,17 @@
             <!-- Cap notice when there are more candidates than we render/export at once -->
             <div v-if="candidateCapped" class="flex items-start gap-1.5 pt-2 text-[10px] text-amber-300/90">
               <CircleAlert class="h-3 w-3 shrink-0 mt-px text-amber-400" />
-              <span>Showing the first {{ candidateBuildingCount.toLocaleString() }} of {{ candidateTotalInView.toLocaleString() }}. Zoom in to review the rest.</span>
+              <span
+                >Showing the first {{ candidateBuildingCount.toLocaleString() }} of
+                {{ candidateTotalInView.toLocaleString() }}. Zoom in to review the rest.</span
+              >
             </div>
 
             <!-- Optional simplification before export -->
             <div class="pt-2 mt-1 border-t border-white/[0.05]">
               <label class="flex items-center justify-between gap-2 cursor-pointer select-none">
                 <span class="text-[10px] text-foreground/80">Simplify geometry on export</span>
-                <input type="checkbox" class="accent-primary h-3 w-3" v-model="simplifyOnExport">
+                <input type="checkbox" class="accent-primary h-3 w-3" v-model="simplifyOnExport" />
               </label>
               <div v-if="simplifyOnExport" class="mt-1.5 flex items-center gap-2">
                 <input
@@ -284,7 +378,7 @@
                   step="1"
                   class="flex-1 accent-primary"
                   v-model.number="simplifyPercent"
-                >
+                />
                 <span class="font-mono text-[10px] text-foreground/60 w-8 text-right">{{ simplifyPercent }}%</span>
               </div>
               <p v-if="simplifyOnExport" class="text-[9px] text-muted-foreground/70 mt-1 leading-relaxed">
@@ -302,7 +396,7 @@
         <MatchModeControl />
       </div>
 
-      <ObjectInfoPanel :building="activeBuilding" :is-open="panelOpen" @close="panelOpen=false" />
+      <ObjectInfoPanel :building="activeBuilding" :is-open="panelOpen" @close="panelOpen = false" />
 
       <!-- JOSM setup help -->
       <JosmHelpDialog
@@ -338,11 +432,35 @@
                 @click="activeFeatureIndex = idx"
               >
                 <span class="feature-pill__dot" />
-                <span>{{ feat._layer_type === 'grb' ? 'GRB' : feat._layer_type === 'knw' ? 'KNW' : feat._layer_type === 'picc' ? 'PICC' : feat._layer_type === 'urbis' ? 'Urbis' : 'OSM' }}</span>
-                <span class="opacity-50 font-mono">{{ feat._layer_type === 'grb' ? (feat.gebouw_id || feat.id) : feat._layer_type === 'knw' ? (feat.oidn || feat.id) : feat._layer_type === 'picc' ? feat.objectid : feat._layer_type === 'urbis' ? feat.building_id : feat.osm_id }}</span>
+                <span>{{
+                  feat._layer_type === 'grb'
+                    ? 'GRB'
+                    : feat._layer_type === 'knw'
+                      ? 'KNW'
+                      : feat._layer_type === 'picc'
+                        ? 'PICC'
+                        : feat._layer_type === 'urbis'
+                          ? 'Urbis'
+                          : 'OSM'
+                }}</span>
+                <span class="opacity-50 font-mono">{{
+                  feat._layer_type === 'grb'
+                    ? feat.gebouw_id || feat.id
+                    : feat._layer_type === 'knw'
+                      ? feat.oidn || feat.id
+                      : feat._layer_type === 'picc'
+                        ? feat.objectid
+                        : feat._layer_type === 'urbis'
+                          ? feat.building_id
+                          : feat.osm_id
+                }}</span>
               </button>
               <!-- Close button -->
-              <button v-if="isTooltipSticky" class="ml-auto text-muted-foreground hover:text-foreground transition-colors shrink-0" @click="closeTooltip">
+              <button
+                v-if="isTooltipSticky"
+                class="ml-auto text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                @click="closeTooltip"
+              >
                 <X class="h-3.5 w-3.5" />
               </button>
             </div>
@@ -353,23 +471,42 @@
               <template v-if="currentFeature._layer_type === 'grb'">
                 <div class="flex items-start justify-between mb-3">
                   <div>
-                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-grb border px-1.5 py-0.5 rounded mb-1.5">
+                    <div
+                      class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-grb border px-1.5 py-0.5 rounded mb-1.5"
+                    >
                       <Building2 class="h-2.5 w-2.5" />GRB
                     </div>
-                    <h2 class="text-sm font-semibold text-foreground">{{ formatGRBBuildingType(currentFeature.polygon_type_label || currentFeature.building_type_label) }}</h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">Building ID: {{ currentFeature.gebouw_id || currentFeature.id }}</div>
-                    <div v-if="currentFeature.oidn" class="text-[10px] font-mono text-muted-foreground">OIDN: {{ currentFeature.oidn }}</div>
+                    <h2 class="text-sm font-semibold text-foreground">
+                      {{
+                        formatGRBBuildingType(currentFeature.polygon_type_label || currentFeature.building_type_label)
+                      }}
+                    </h2>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
+                      Building ID: {{ currentFeature.gebouw_id || currentFeature.id }}
+                    </div>
+                    <div v-if="currentFeature.oidn" class="text-[10px] font-mono text-muted-foreground">
+                      OIDN: {{ currentFeature.oidn }}
+                    </div>
                   </div>
-                  <button v-if="isTooltipSticky && activeFeatures.length <= 1" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="closeTooltip">
+                  <button
+                    v-if="isTooltipSticky && activeFeatures.length <= 1"
+                    class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1"
+                    @click="closeTooltip"
+                  >
                     <X class="h-3.5 w-3.5" />
                   </button>
                 </div>
 
                 <!-- Addresses (grouped by base address) -->
                 <div v-if="currentFeature.addresses" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Addresses</div>
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Addresses
+                  </div>
                   <div class="space-y-1">
-                    <div v-for="(group, idx) in groupAddresses(parsePostgresArray(currentFeature.addresses))" :key="idx">
+                    <div
+                      v-for="(group, idx) in groupAddresses(parsePostgresArray(currentFeature.addresses))"
+                      :key="idx"
+                    >
                       <div class="text-xs text-foreground font-medium">{{ group.base }}</div>
                       <div v-if="group.boxes.length > 0" class="text-[10px] text-muted-foreground mt-0.5 pl-2">
                         bus {{ group.boxes.join(', ') }}
@@ -379,31 +516,56 @@
                 </div>
 
                 <!-- Location -->
-                <div v-if="!currentFeature.addresses && (currentFeature.street_names || currentFeature.postcodes || currentFeature.municipalities)" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Location</div>
+                <div
+                  v-if="
+                    !currentFeature.addresses &&
+                    (currentFeature.street_names || currentFeature.postcodes || currentFeature.municipalities)
+                  "
+                  class="mb-3"
+                >
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Location
+                  </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.street_names" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Street</span>
-                      <span class="text-foreground font-medium">{{ parsePostgresArray(currentFeature.street_names).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{
+                        parsePostgresArray(currentFeature.street_names).join(', ')
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.postcodes" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Postcode</span>
-                      <span class="text-foreground font-medium">{{ parsePostgresArray(currentFeature.postcodes).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{
+                        parsePostgresArray(currentFeature.postcodes).join(', ')
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.municipalities" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Municipality</span>
-                      <span class="text-foreground font-medium">{{ parsePostgresArray(currentFeature.municipalities).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{
+                        parsePostgresArray(currentFeature.municipalities).join(', ')
+                      }}</span>
                     </div>
                   </div>
                 </div>
 
                 <!-- Details (only show if at least one field present) -->
-                <div v-if="currentFeature.total_area_m2 || currentFeature.polygon_count || currentFeature.survey_date || currentFeature.origin_label">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Details</div>
+                <div
+                  v-if="
+                    currentFeature.total_area_m2 ||
+                    currentFeature.polygon_count ||
+                    currentFeature.survey_date ||
+                    currentFeature.origin_label
+                  "
+                >
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Details
+                  </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.total_area_m2" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Area</span>
-                      <span class="text-foreground font-medium font-mono">{{ formatArea(currentFeature.total_area_m2) }}</span>
+                      <span class="text-foreground font-medium font-mono">{{
+                        formatArea(currentFeature.total_area_m2)
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.polygon_count" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Parts</span>
@@ -415,7 +577,9 @@
                     </div>
                     <div v-if="currentFeature.origin_label" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Source</span>
-                      <span class="text-foreground font-medium">{{ formatOriginLabel(currentFeature.origin_label) }}</span>
+                      <span class="text-foreground font-medium">{{
+                        formatOriginLabel(currentFeature.origin_label)
+                      }}</span>
                     </div>
                   </div>
                 </div>
@@ -425,19 +589,39 @@
               <template v-else-if="currentFeature._layer_type === 'knw'">
                 <div class="flex items-start justify-between mb-3">
                   <div>
-                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-knw border px-1.5 py-0.5 rounded mb-1.5">
+                    <div
+                      class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-knw border px-1.5 py-0.5 rounded mb-1.5"
+                    >
                       <Landmark class="h-2.5 w-2.5" />KNW
                     </div>
-                    <h2 class="text-sm font-semibold text-foreground">{{ currentFeature.type_label || 'Structure' }}</h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">OIDN: {{ currentFeature.oidn || currentFeature.id }}</div>
+                    <h2 class="text-sm font-semibold text-foreground">
+                      {{ currentFeature.type_label || 'Structure' }}
+                    </h2>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
+                      OIDN: {{ currentFeature.oidn || currentFeature.id }}
+                    </div>
                   </div>
-                  <button v-if="isTooltipSticky && activeFeatures.length <= 1" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="closeTooltip">
+                  <button
+                    v-if="isTooltipSticky && activeFeatures.length <= 1"
+                    class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1"
+                    @click="closeTooltip"
+                  >
                     <X class="h-3.5 w-3.5" />
                   </button>
                 </div>
 
-                <div v-if="currentFeature.area_m2 || currentFeature.length_m || currentFeature.survey_date || currentFeature.origin_label || currentFeature.type_code">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Details</div>
+                <div
+                  v-if="
+                    currentFeature.area_m2 ||
+                    currentFeature.length_m ||
+                    currentFeature.survey_date ||
+                    currentFeature.origin_label ||
+                    currentFeature.type_code
+                  "
+                >
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Details
+                  </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.type_code" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Type code</span>
@@ -445,11 +629,15 @@
                     </div>
                     <div v-if="currentFeature.area_m2" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Area</span>
-                      <span class="text-foreground font-medium font-mono">{{ formatArea(currentFeature.area_m2) }}</span>
+                      <span class="text-foreground font-medium font-mono">{{
+                        formatArea(currentFeature.area_m2)
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.length_m" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Length</span>
-                      <span class="text-foreground font-medium font-mono">{{ Number(currentFeature.length_m).toFixed(2) }} m</span>
+                      <span class="text-foreground font-medium font-mono"
+                        >{{ Number(currentFeature.length_m).toFixed(2) }} m</span
+                      >
                     </div>
                     <div v-if="currentFeature.survey_date" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Surveyed</span>
@@ -457,7 +645,9 @@
                     </div>
                     <div v-if="currentFeature.origin_label" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Source</span>
-                      <span class="text-foreground font-medium">{{ formatOriginLabel(currentFeature.origin_label) }}</span>
+                      <span class="text-foreground font-medium">{{
+                        formatOriginLabel(currentFeature.origin_label)
+                      }}</span>
                     </div>
                   </div>
                 </div>
@@ -467,69 +657,118 @@
               <template v-else-if="currentFeature._layer_type === 'picc'">
                 <div class="flex items-start justify-between mb-3">
                   <div>
-                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-picc border px-1.5 py-0.5 rounded mb-1.5">
+                    <div
+                      class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-picc border px-1.5 py-0.5 rounded mb-1.5"
+                    >
                       <Building2 class="h-2.5 w-2.5" />PICC
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">{{ currentFeature.natur_desc || 'Building' }}</h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ currentFeature.objectid }}</div>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
+                      ID: {{ currentFeature.objectid }}
+                    </div>
                   </div>
-                  <button v-if="isTooltipSticky && activeFeatures.length <= 1" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="closeTooltip">
+                  <button
+                    v-if="isTooltipSticky && activeFeatures.length <= 1"
+                    class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1"
+                    @click="closeTooltip"
+                  >
                     <X class="h-3.5 w-3.5" />
                   </button>
                 </div>
 
                 <!-- Addresses -->
                 <div v-if="currentFeature.addresses" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Addresses</div>
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Addresses
+                  </div>
                   <div class="space-y-0.5 text-xs">
-                    <div v-for="(addr, idx) in parseSemicolonList(currentFeature.addresses)" :key="idx" class="text-foreground font-medium">
+                    <div
+                      v-for="(addr, idx) in parseSemicolonList(currentFeature.addresses)"
+                      :key="idx"
+                      class="text-foreground font-medium"
+                    >
                       {{ addr }}
                     </div>
                   </div>
                 </div>
 
                 <!-- Location (when no detailed addresses) -->
-                <div v-if="!currentFeature.addresses && (currentFeature.street_names || currentFeature.postcodes || currentFeature.municipalities)" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Location</div>
+                <div
+                  v-if="
+                    !currentFeature.addresses &&
+                    (currentFeature.street_names || currentFeature.postcodes || currentFeature.municipalities)
+                  "
+                  class="mb-3"
+                >
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Location
+                  </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.street_names" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Street</span>
-                      <span class="text-foreground font-medium">{{ parseSemicolonList(currentFeature.street_names).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{
+                        parseSemicolonList(currentFeature.street_names).join(', ')
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.postcodes" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Postcode</span>
-                      <span class="text-foreground font-medium">{{ parseSemicolonList(currentFeature.postcodes).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{
+                        parseSemicolonList(currentFeature.postcodes).join(', ')
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.municipalities" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Municipality</span>
-                      <span class="text-foreground font-medium">{{ parseSemicolonList(currentFeature.municipalities).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{
+                        parseSemicolonList(currentFeature.municipalities).join(', ')
+                      }}</span>
                     </div>
                   </div>
                 </div>
 
                 <!-- Details -->
-                <div v-if="currentFeature.area_m2 || currentFeature.natur_code || currentFeature.date_modif || currentFeature.date_leve">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Details</div>
+                <div
+                  v-if="
+                    currentFeature.area_m2 ||
+                    currentFeature.natur_code ||
+                    currentFeature.date_modif ||
+                    currentFeature.date_leve
+                  "
+                >
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Details
+                  </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.area_m2" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Area</span>
-                      <span class="text-foreground font-medium font-mono">{{ formatArea(currentFeature.area_m2) }}</span>
+                      <span class="text-foreground font-medium font-mono">{{
+                        formatArea(currentFeature.area_m2)
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.natur_code" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Type</span>
-                      <span class="text-foreground font-medium">{{ currentFeature.natur_desc || currentFeature.natur_code }}</span>
+                      <span class="text-foreground font-medium">{{
+                        currentFeature.natur_desc || currentFeature.natur_code
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.date_leve" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Surveyed</span>
-                      <span class="text-foreground font-medium font-mono">{{ formatPiccDate(currentFeature.date_leve) }}</span>
+                      <span class="text-foreground font-medium font-mono">{{
+                        formatPiccDate(currentFeature.date_leve)
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.date_modif" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Modified</span>
-                      <span class="text-foreground font-medium font-mono">{{ formatPiccDate(currentFeature.date_modif) }}</span>
+                      <span class="text-foreground font-medium font-mono">{{
+                        formatPiccDate(currentFeature.date_modif)
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.georef_id" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">GeoRef</span>
-                      <span class="text-foreground font-medium font-mono text-[10px] truncate" :title="currentFeature.georef_id">{{ currentFeature.georef_id }}</span>
+                      <span
+                        class="text-foreground font-medium font-mono text-[10px] truncate"
+                        :title="currentFeature.georef_id"
+                        >{{ currentFeature.georef_id }}</span
+                      >
                     </div>
                   </div>
                 </div>
@@ -539,57 +778,91 @@
               <template v-else-if="currentFeature._layer_type === 'urbis'">
                 <div class="flex items-start justify-between mb-3">
                   <div>
-                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-urbis border px-1.5 py-0.5 rounded mb-1.5">
+                    <div
+                      class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-urbis border px-1.5 py-0.5 rounded mb-1.5"
+                    >
                       <Building2 class="h-2.5 w-2.5" />Urbis
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">Building</h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ currentFeature.building_id }}</div>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
+                      ID: {{ currentFeature.building_id }}
+                    </div>
                   </div>
-                  <button v-if="isTooltipSticky && activeFeatures.length <= 1" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="closeTooltip">
+                  <button
+                    v-if="isTooltipSticky && activeFeatures.length <= 1"
+                    class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1"
+                    @click="closeTooltip"
+                  >
                     <X class="h-3.5 w-3.5" />
                   </button>
                 </div>
 
                 <!-- Addresses -->
                 <div v-if="currentFeature.addresses" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Addresses</div>
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Addresses
+                  </div>
                   <div class="space-y-0.5 text-xs">
-                    <div v-for="(addr, idx) in parseSemicolonList(currentFeature.addresses)" :key="idx" class="text-foreground font-medium">
+                    <div
+                      v-for="(addr, idx) in parseSemicolonList(currentFeature.addresses)"
+                      :key="idx"
+                      class="text-foreground font-medium"
+                    >
                       {{ addr }}
                     </div>
                   </div>
                 </div>
 
                 <!-- Location (when no detailed addresses) -->
-                <div v-if="!currentFeature.addresses && (currentFeature.street_names || currentFeature.postcodes || currentFeature.municipalities)" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Location</div>
+                <div
+                  v-if="
+                    !currentFeature.addresses &&
+                    (currentFeature.street_names || currentFeature.postcodes || currentFeature.municipalities)
+                  "
+                  class="mb-3"
+                >
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Location
+                  </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.street_names" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Street</span>
-                      <span class="text-foreground font-medium">{{ parseSemicolonList(currentFeature.street_names).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{
+                        parseSemicolonList(currentFeature.street_names).join(', ')
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.postcodes" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Postcode</span>
-                      <span class="text-foreground font-medium">{{ parseSemicolonList(currentFeature.postcodes).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{
+                        parseSemicolonList(currentFeature.postcodes).join(', ')
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.municipalities" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Municipality</span>
-                      <span class="text-foreground font-medium">{{ parseSemicolonList(currentFeature.municipalities).join(', ') }}</span>
+                      <span class="text-foreground font-medium">{{
+                        parseSemicolonList(currentFeature.municipalities).join(', ')
+                      }}</span>
                     </div>
                   </div>
                 </div>
 
                 <!-- Details -->
                 <div v-if="currentFeature.area_m2 || currentFeature.inspire_id">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Details</div>
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Details
+                  </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.area_m2" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Area</span>
-                      <span class="text-foreground font-medium font-mono">{{ formatArea(currentFeature.area_m2) }}</span>
+                      <span class="text-foreground font-medium font-mono">{{
+                        formatArea(currentFeature.area_m2)
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.inspire_id" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">INSPIRE</span>
-                      <span class="text-foreground font-medium font-mono text-[10px]">{{ currentFeature.inspire_id }}</span>
+                      <span class="text-foreground font-medium font-mono text-[10px]">{{
+                        currentFeature.inspire_id
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.block_id" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Block</span>
@@ -603,46 +876,88 @@
               <template v-else>
                 <div class="flex items-start justify-between mb-3">
                   <div>
-                    <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-osm border px-1.5 py-0.5 rounded mb-1.5">
+                    <div
+                      class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-osm border px-1.5 py-0.5 rounded mb-1.5"
+                    >
                       <Building2 class="h-2.5 w-2.5" />OSM
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">
-                      {{ (currentFeature.building && currentFeature.building !== 'yes' ? currentFeature.building : null) || 'Building' }}
+                      {{
+                        (currentFeature.building && currentFeature.building !== 'yes'
+                          ? currentFeature.building
+                          : null) || 'Building'
+                      }}
                     </h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {{ currentFeature.osm_id }}</div>
+                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
+                      ID: {{ currentFeature.osm_id }}
+                    </div>
                   </div>
-                  <button v-if="isTooltipSticky && activeFeatures.length <= 1" class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1" @click="closeTooltip">
+                  <button
+                    v-if="isTooltipSticky && activeFeatures.length <= 1"
+                    class="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-1"
+                    @click="closeTooltip"
+                  >
                     <X class="h-3.5 w-3.5" />
                   </button>
                 </div>
                 <!-- Grouped OSM tags -->
                 <!-- Address group -->
                 <div v-if="getGroupedOsmProperties(currentFeature).address.length > 0" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Address</div>
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Address
+                  </div>
                   <div class="space-y-1 text-xs">
-                    <div v-for="[key, value] in getGroupedOsmProperties(currentFeature).address" :key="key" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{ formatPropertyKey(key) }}</span>
-                      <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{ formatPropertyValue(value) }}</span>
+                    <div
+                      v-for="[key, value] in getGroupedOsmProperties(currentFeature).address"
+                      :key="key"
+                      class="flex gap-3"
+                    >
+                      <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{
+                        formatPropertyKey(key)
+                      }}</span>
+                      <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{
+                        formatPropertyValue(value)
+                      }}</span>
                     </div>
                   </div>
                 </div>
                 <!-- GRB Source group -->
                 <div v-if="getGroupedOsmProperties(currentFeature).source.length > 0" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">GRB Source</div>
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    GRB Source
+                  </div>
                   <div class="space-y-1 text-xs">
-                    <div v-for="[key, value] in getGroupedOsmProperties(currentFeature).source" :key="key" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{ formatPropertyKey(key) }}</span>
-                      <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{ formatPropertyValue(value) }}</span>
+                    <div
+                      v-for="[key, value] in getGroupedOsmProperties(currentFeature).source"
+                      :key="key"
+                      class="flex gap-3"
+                    >
+                      <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{
+                        formatPropertyKey(key)
+                      }}</span>
+                      <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{
+                        formatPropertyValue(value)
+                      }}</span>
                     </div>
                   </div>
                 </div>
                 <!-- Other properties -->
                 <div v-if="getGroupedOsmProperties(currentFeature).other.length > 0">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Properties</div>
+                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Properties
+                  </div>
                   <div class="space-y-1 text-xs">
-                    <div v-for="[key, value] in getGroupedOsmProperties(currentFeature).other" :key="key" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{ formatPropertyKey(key) }}</span>
-                      <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{ formatPropertyValue(value) }}</span>
+                    <div
+                      v-for="[key, value] in getGroupedOsmProperties(currentFeature).other"
+                      :key="key"
+                      class="flex gap-3"
+                    >
+                      <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{
+                        formatPropertyKey(key)
+                      }}</span>
+                      <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{
+                        formatPropertyValue(value)
+                      }}</span>
                     </div>
                   </div>
                 </div>
@@ -655,7 +970,9 @@
             <p class="text-[9px] text-muted-foreground text-center tracking-wide">Click to pin · Esc to close</p>
           </div>
           <div v-else-if="activeFeatures.length > 1" class="px-4 py-1.5 border-t border-white/[0.05]">
-            <p class="text-[9px] text-muted-foreground text-center tracking-wide">{{ activeFeatureIndex + 1 }} / {{ activeFeatures.length }} features</p>
+            <p class="text-[9px] text-muted-foreground text-center tracking-wide">
+              {{ activeFeatureIndex + 1 }} / {{ activeFeatures.length }} features
+            </p>
           </div>
         </div>
       </div>
@@ -664,7 +981,20 @@
 </template>
 
 <script setup lang="ts">
-import { Building2, Check, ChevronDown, CircleAlert, ExternalLink, GitCompareArrows, Landmark, Loader2, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-vue-next'
+import {
+  Building2,
+  Check,
+  ChevronDown,
+  CircleAlert,
+  ExternalLink,
+  GitCompareArrows,
+  Landmark,
+  Loader2,
+  RotateCcw,
+  X,
+  ZoomIn,
+  ZoomOut
+} from 'lucide-vue-next'
 import { Fill, Stroke, Style } from 'ol/style'
 import { GeoJSON, MVT } from 'ol/format'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -695,13 +1025,7 @@ const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
 
 // Use the map layers composable
-const {
-  map,
-  currentBaseLayer,
-  initializeMap,
-  switchBaseLayer,
-  destroy
-} = useMapLayers()
+const { map, currentBaseLayer, initializeMap, switchBaseLayer, destroy } = useMapLayers()
 
 // OSM Buildings layer state
 const osmBuildingsLayerRef = ref<any>(null)
@@ -735,14 +1059,15 @@ const activeFeatures = computed(() =>
 )
 
 // Currently selected feature from the switcher
-const currentFeature = computed(() =>
-  activeFeatures.value[activeFeatureIndex.value] || activeFeatures.value[0]
-)
+const currentFeature = computed(() => activeFeatures.value[activeFeatureIndex.value] || activeFeatures.value[0])
 
 // Reset switcher index when the feature list changes
-watch(() => activeFeatures.value.length, () => {
-  activeFeatureIndex.value = 0
-})
+watch(
+  () => activeFeatures.value.length,
+  () => {
+    activeFeatureIndex.value = 0
+  }
+)
 
 const controlsCollapsed = ref(false)
 const layersCollapsed = ref(false)
@@ -781,18 +1106,18 @@ const isCalculatingDifference = ref(false) // Loading state for Get Difference b
 // At least one source layer (GRB, KNW, PICC, or Urbis) must be loaded and visible.
 const hasSourceLayer = computed(() =>
   Boolean(
-    (grbBuildingsLayerRef.value && overlayLayers.value.grbBuildings)
-    || (knwStructuresLayerRef.value && overlayLayers.value.knwStructures)
-    || (piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings)
-    || (urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings)
+    (grbBuildingsLayerRef.value && overlayLayers.value.grbBuildings) ||
+    (knwStructuresLayerRef.value && overlayLayers.value.knwStructures) ||
+    (piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings) ||
+    (urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings)
   )
 )
 const hasOsmLayer = computed(() => Boolean(osmBuildingsLayerRef.value && overlayLayers.value.osmBuildings))
 const zoomReady = computed(() => currentZoom.value >= 16)
 
 // Computed property to check if Get Difference button should be enabled
-const canCalculateDifference = computed(() =>
-  Boolean(map.value) && hasOsmLayer.value && zoomReady.value && hasSourceLayer.value
+const canCalculateDifference = computed(
+  () => Boolean(map.value) && hasOsmLayer.value && zoomReady.value && hasSourceLayer.value
 )
 
 // Difference workflow lifecycle state, surfaced as a persistent results panel
@@ -867,30 +1192,35 @@ const coveragePct = computed(() => {
 // Short, human label for what produced the current results (which mode, freshness).
 const matchSummary = computed(() => {
   const pct = Math.round(geometryThreshold.value * 100)
-  const mode = matchMode.value === 'source'
-    ? 'Source tag'
-    : matchMode.value === 'both'
-      ? `Geometry ${pct}% + source tag`
-      : `Geometry ${pct}%`
+  const mode =
+    matchMode.value === 'source'
+      ? 'Source tag'
+      : matchMode.value === 'both'
+        ? `Geometry ${pct}% + source tag`
+        : `Geometry ${pct}%`
   const freshness = useOverpass.value ? 'live Overpass' : 'OSM mirror'
   return `${mode} · ${freshness}`
 })
 
 // Computed property to check if JOSM export button should be enabled
-const canExportToJOSM = computed(() =>
-  // Check if there are candidate buildings
-  candidateBuildingCount.value > 0
+const canExportToJOSM = computed(
+  () =>
+    // Check if there are candidate buildings
+    candidateBuildingCount.value > 0
 )
 
-watch(() => selectedLocation, (loc) => {
-  if (!loc || !map.value) return
-  const coords = fromLonLat(loc.coordinates)
-  map.value.getView().animate({
-    center: coords,
-    zoom: 16,
-    duration: 1000
-  })
-})
+watch(
+  () => selectedLocation,
+  (loc) => {
+    if (!loc || !map.value) return
+    const coords = fromLonLat(loc.coordinates)
+    map.value.getView().animate({
+      center: coords,
+      zoom: 16,
+      duration: 1000
+    })
+  }
+)
 
 // Watch for match mode changes and refetch candidate buildings if they're already loaded
 watch(matchMode, () => {
@@ -912,7 +1242,6 @@ watch(useOverpass, () => {
   }
 })
 
-
 const setupMap = () => {
   if (!mapRef.value) return
 
@@ -930,8 +1259,8 @@ const setupMap = () => {
     currentZoom.value = zoom
     const center = view.getCenter()
     if (center) {
-      const lonLat = toLonLat(center)
-      currentCenter.value = [lonLat[0], lonLat[1]]
+      const [lon, lat] = toLonLat(center)
+      if (lon !== undefined && lat !== undefined) currentCenter.value = [lon, lat]
     }
 
     // Handle visibility of building layers based on zoom
@@ -965,7 +1294,6 @@ const resetView = () => {
     duration: 1000
   })
 }
-
 
 // Handle visibility of building layers based on zoom level
 const handleZoomBasedLayerVisibility = (zoom: number) => {
@@ -1048,7 +1376,6 @@ const handleLoadKNW = () => {
     console.error('Failed to load GRB kunstwerken:', error)
   }
 }
-
 
 // Read HSL CSS variable and return color string for OpenLayers
 const hslVar = (name: string, alpha: number): string => {
@@ -1208,7 +1535,6 @@ const handleLoadGRB = () => {
   }
 }
 
-
 // Handle Load PICC Buildings using Vector Tiles from Martin
 const handleLoadPICC = () => {
   if (!map.value) {
@@ -1338,7 +1664,6 @@ const handleLoadUrbis = () => {
     console.error('Failed to load Urbis buildings:', error)
   }
 }
-
 
 // Layer toggle functions (kept for layer panel compatibility)
 
@@ -1490,7 +1815,8 @@ const selectSource = (src: SourceKind) => {
 // Helper function to calculate polygon centroid
 const getPolygonCentroid = (coords: [number, number][]): [number, number] => {
   if (!coords || coords.length === 0) return [0, 0]
-  let x = 0, y = 0
+  let x = 0,
+    y = 0
   for (const coord of coords) {
     x += coord[0]
     y += coord[1]
@@ -1504,10 +1830,13 @@ const pointInPolygon = (point: [number, number], polygon: [number, number][]): b
   let inside = false
 
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i]
-    const [xj, yj] = polygon[j]
+    const pi = polygon[i]
+    const pj = polygon[j]
+    if (!pi || !pj) continue
+    const [xi, yi] = pi
+    const [xj, yj] = pj
 
-    const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)
+    const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi
     if (intersect) inside = !inside
   }
 
@@ -1564,92 +1893,13 @@ const hasMatchingOSMFeature = (grbFeature: any, osmFeatures: any[]): boolean => 
   return false
 }
 
-// Helper function to convert flat coordinates array to GeoJSON rings format
-const convertFlatCoordinatesToRings = (flatCoords: number[], geometryType: string): any[] => {
-  if (!flatCoords || flatCoords.length === 0) return []
-
-  // Group coordinates into pairs [x, y]
-  const coords: [number, number][] = []
-  for (let i = 0; i < flatCoords.length; i += 2) {
-    if (i + 1 < flatCoords.length) {
-      coords.push([flatCoords[i], flatCoords[i + 1]])
-    }
-  }
-
-  // For polygons, wrap coordinates in an array (exterior ring)
-  if (geometryType === 'Polygon' || geometryType === 1) {
-    return [coords]
-  }
-
-  // For other types, return as is
-  return coords as any
-}
-
-// Helper function to check if a feature's geometry is within the map extent
-const isFeatureInExtent = (geometry: any, extent: number[]): boolean => {
-  if (!geometry || !geometry.coordinates) return false
-
-  // Get bounding box of geometry
-  let maxX = -Infinity, maxY = -Infinity, minX = Infinity, minY = Infinity
-
-  const coords = geometry.type === 'Polygon' ? geometry.coordinates[0] : geometry.coordinates
-
-  for (const [x, y] of coords) {
-    minX = Math.min(minX, x)
-    minY = Math.min(minY, y)
-    maxX = Math.max(maxX, x)
-    maxY = Math.max(maxY, y)
-  }
-
-  // Check if bounding box intersects with extent
-  // extent = [minX, minY, maxX, maxY]
-  return !(maxX < extent[0] || minX > extent[2] || maxY < extent[1] || minY > extent[3])
-}
-
-// Helper function to calculate polygon area using shoelace formula
-const getPolygonArea = (coords: [number, number][]): number => {
-  if (!coords || coords.length < 3) return 0
-
-  let area = 0
-  for (let i = 0; i < coords.length - 1; i++) {
-    area += coords[i][0] * coords[i + 1][1] - coords[i + 1][0] * coords[i][1]
-  }
-  // Close the polygon
-  area += coords[coords.length - 1][0] * coords[0][1] - coords[0][0] * coords[coords.length - 1][1]
-
-  return Math.abs(area) / 2
-}
-
-// Helper function to check if a polygon is contained within another
-const isPolygonContainedInOther = (polygon1: any, otherPolygons: any[]): boolean => {
-  const coords1 = polygon1.geometry?.coordinates?.[0]
-  if (!coords1) return false
-
-  const area1 = getPolygonArea(coords1)
-  const minAreaRatio = 0.3 // If feature is less than 30% of another feature, it's likely contained
-
-  for (const otherPoly of otherPolygons) {
-    const coords2 = otherPoly.geometry?.coordinates?.[0]
-    if (!coords2 || coords2 === coords1) continue
-
-    const area2 = getPolygonArea(coords2)
-
-    // Check if all vertices of polygon1 are inside polygon2
-    const allInside = coords1.every(coord => pointInPolygon(coord, coords2))
-
-    // If all vertices are inside AND polygon1 is much smaller, it's contained
-    if (allInside && area1 < area2 * minAreaRatio) {
-      return true
-    }
-  }
-
-  return false
-}
-
 // Helper function to get bounding box of a polygon
 const getBoundingBox = (coords: [number, number][]): [number, number, number, number] => {
   if (!coords || coords.length === 0) return [0, 0, 0, 0]
-  let maxX = -Infinity, maxY = -Infinity, minX = Infinity, minY = Infinity
+  let maxX = -Infinity,
+    maxY = -Infinity,
+    minX = Infinity,
+    minY = Infinity
   for (const [x, y] of coords) {
     minX = Math.min(minX, x)
     minY = Math.min(minY, y)
@@ -1660,15 +1910,25 @@ const getBoundingBox = (coords: [number, number][]): [number, number, number, nu
 }
 
 // Helper function to check if two bounding boxes overlap or are very close
-const boundingBoxesIntersect = (bbox1: [number, number, number, number], bbox2: [number, number, number, number], tolerance = 5): boolean =>
+const boundingBoxesIntersect = (
+  bbox1: [number, number, number, number],
+  bbox2: [number, number, number, number],
+  tolerance = 5
+): boolean =>
   // tolerance in map units (meters in EPSG:31370)
-  !(bbox1[2] + tolerance < bbox2[0] || bbox1[0] - tolerance > bbox2[2] || bbox1[3] + tolerance < bbox2[1] || bbox1[1] - tolerance > bbox2[3])
+  !(
+    bbox1[2] + tolerance < bbox2[0] ||
+    bbox1[0] - tolerance > bbox2[2] ||
+    bbox1[3] + tolerance < bbox2[1] ||
+    bbox1[1] - tolerance > bbox2[3]
+  )
 
 // Helper function to merge polygon fragments properly
 // Combines all coordinates from fragments and reconstructs the polygon
 const mergePolygonFragments = (polygons: [number, number][][]): [number, number][] => {
-  if (polygons.length === 0) return []
-  if (polygons.length === 1) return polygons[0]
+  const [firstPolygon] = polygons
+  if (!firstPolygon) return []
+  if (polygons.length === 1) return firstPolygon
 
   // For 2+ fragments, combine all unique coordinates and reconstruct
   // The key insight: vector tile fragments overlap at boundaries,
@@ -1683,20 +1943,20 @@ const mergePolygonFragments = (polygons: [number, number][][]): [number, number]
   const uniqueCoords: [number, number][] = []
   for (const coord of allCoords) {
     const isDuplicate = uniqueCoords.some(
-      existing => Math.abs(existing[0] - coord[0]) < 0.01 && Math.abs(existing[1] - coord[1]) < 0.01
+      (existing) => Math.abs(existing[0] - coord[0]) < 0.01 && Math.abs(existing[1] - coord[1]) < 0.01
     )
     if (!isDuplicate) {
       uniqueCoords.push(coord)
     }
   }
 
-  if (uniqueCoords.length < 3) return polygons[0]
+  if (uniqueCoords.length < 3) return firstPolygon
 
   // Use Concave Hull (radial sweep) to order points while preserving concavity
   // This is more accurate than angle-from-centroid for concave shapes
   const ordered = concaveHull(uniqueCoords)
 
-  return ordered.length >= 3 ? ordered : polygons[0]
+  return ordered.length >= 3 ? ordered : firstPolygon
 }
 
 // Concave hull algorithm - orders points to form a polygon preserving concavity
@@ -1704,11 +1964,11 @@ const concaveHull = (points: [number, number][]): [number, number][] => {
   if (points.length <= 3) return points
 
   // Find the leftmost point
-  let [leftmost] = points
   let leftmostIdx = 0
-  for (let i = 1; i < points.length; i++) {
-    if (points[i][0] < leftmost[0]) {
-      leftmost = points[i]
+  let leftmostX = Infinity
+  for (const [i, [x]] of points.entries()) {
+    if (x < leftmostX) {
+      leftmostX = x
       leftmostIdx = i
     }
   }
@@ -1719,20 +1979,20 @@ const concaveHull = (points: [number, number][]): [number, number][] => {
   let previous = -1
 
   do {
-    hull.push(points[current])
+    const curr = points[current]
+    if (!curr) break
+    hull.push(curr)
     let next = 0
 
-    for (let i = 0; i < points.length; i++) {
+    for (const [i, candidate] of points.entries()) {
       if (i === current || i === previous) continue
 
       const cross = (a: [number, number], b: [number, number], c: [number, number]) =>
         (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
 
-      const curr = points[current]
       const nxt = points[next]
-      const candidate = points[i]
 
-      if (next === previous) {
+      if (next === previous || !nxt) {
         next = i
       } else {
         const crossProduct = cross(curr, nxt, candidate)
@@ -1802,7 +2062,7 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
 
     // Merge all found fragments
     if (fragmentsToMerge.length > 1) {
-      const coordsToMerge = fragmentsToMerge.map(f => f.coords)
+      const coordsToMerge = fragmentsToMerge.map((f) => f.coords)
       // Merge all fragments by combining coordinates and reconstructing polygon
       const mergedCoords = mergePolygonFragments(coordsToMerge)
       merged.push({
@@ -1868,7 +2128,13 @@ const calculateDifference = async () => {
     // Call backend API to calculate difference
     const response = await $fetch('/api/buildings/difference', {
       method: 'POST',
-      body: { bounds, matchMode: matchMode.value, dataSource, geometryThreshold: geometryThreshold.value, useOverpass: useOverpass.value }
+      body: {
+        bounds,
+        matchMode: matchMode.value,
+        dataSource,
+        geometryThreshold: geometryThreshold.value,
+        useOverpass: useOverpass.value
+      }
     })
 
     const candidateGeoJSON = response as any
@@ -1903,10 +2169,8 @@ const calculateDifference = async () => {
 
     // Stamp the source kind on each candidate so the review tooltip and JOSM export
     // know what they are looking at (the candidate layer is a single OL layer).
-    const sourceKind = dataSource === 'knw' ? 'knw'
-      : dataSource === 'picc' ? 'picc'
-      : dataSource === 'urbis' ? 'urbis'
-      : 'grb'
+    const sourceKind =
+      dataSource === 'knw' ? 'knw' : dataSource === 'picc' ? 'picc' : dataSource === 'urbis' ? 'urbis' : 'grb'
     for (const f of candidateGeoJSON.features) {
       f.properties = f.properties || {}
       f.properties._layer_type = sourceKind
@@ -1949,15 +2213,16 @@ const calculateDifference = async () => {
     const candidateSource = new VectorSource({ features })
 
     // Style function for candidate buildings
-    const candidateStyleFunction = () => new Style({
-      fill: new Fill({
-        color: hslVar('--layer-candidate', 0.35)
-      }),
-      stroke: new Stroke({
-        color: hslVar('--layer-candidate', 1),
-        width: 2
+    const candidateStyleFunction = () =>
+      new Style({
+        fill: new Fill({
+          color: hslVar('--layer-candidate', 0.35)
+        }),
+        stroke: new Stroke({
+          color: hslVar('--layer-candidate', 1),
+          width: 2
+        })
       })
-    })
 
     // Create vector layer for candidate buildings
     const candidateLayer = new VectorLayer({
@@ -1977,7 +2242,6 @@ const calculateDifference = async () => {
     // Enable candidate buildings layer
     overlayLayers.value.candidateBuildings = true
     differenceState.value = 'success'
-
   } catch (error) {
     console.error('Error calculating difference:', error)
     differenceState.value = 'error'
@@ -2039,7 +2303,10 @@ const exportToJOSM = async () => {
     )
 
     console.log('✅ Export successful')
-    toast.success('Exported to JOSM', `${result.featureCount} building${result.featureCount === 1 ? '' : 's'} loaded as a new layer in JOSM.`)
+    toast.success(
+      'Exported to JOSM',
+      `${result.featureCount} building${result.featureCount === 1 ? '' : 's'} loaded as a new layer in JOSM.`
+    )
   } catch (error: any) {
     console.error('Error exporting candidate buildings to JOSM:', error)
     josmTesting.value = false
@@ -2093,12 +2360,15 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
     }
     if (current) items.push(current.trim())
 
-    return items.map(item => item.replace(/^"|"$/g, ''))
+    return items.map((item) => item.replace(/^"|"$/g, ''))
   }
 
   // Handle '; '-separated strings (STRING_AGG with '; ' separator, e.g. addresses column)
   if (str.includes('; ')) {
-    return str.split('; ').map(s => s.trim()).filter(Boolean)
+    return str
+      .split('; ')
+      .map((s) => s.trim())
+      .filter(Boolean)
   }
 
   return [str]
@@ -2107,7 +2377,10 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
 // Group addresses that share the same base address, collapsing box numbers
 // e.g. ["Boekfos 49, 1730 Asse", "Boekfos 49 bus 1, 1730 Asse", "Boekfos 49 bus 2, 1730 Asse"]
 //   → [{ base: "Boekfos 49, 1730 Asse", boxes: ["1", "2"] }]
-interface GroupedAddress { base: string; boxes: string[] }
+interface GroupedAddress {
+  base: string
+  boxes: string[]
+}
 const groupAddresses = (addresses: string[]): GroupedAddress[] => {
   // Pattern: "<street> <number> bus <box>, <postcode> <city>"
   const busPattern = /^(.+?)\s+bus\s+(.+?),\s*(.+)$/i
@@ -2115,14 +2388,14 @@ const groupAddresses = (addresses: string[]): GroupedAddress[] => {
   const order: string[] = []
 
   for (const addr of addresses) {
-    const match = addr.match(busPattern)
-    if (match) {
-      const base = `${match[1]}, ${match[3]}`
+    const [, street, box, locality] = addr.match(busPattern) ?? []
+    if (street && box && locality) {
+      const base = `${street}, ${locality}`
       if (!groups.has(base)) {
         groups.set(base, [])
         order.push(base)
       }
-      groups.get(base)!.push(match[2])
+      groups.get(base)!.push(box)
     } else {
       // No bus number — standalone address
       if (!groups.has(addr)) {
@@ -2135,7 +2408,7 @@ const groupAddresses = (addresses: string[]): GroupedAddress[] => {
   // Sort box numbers naturally (1, 2, 3, ... 10, 11 instead of 1, 10, 11, 2)
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
 
-  return order.map(base => ({
+  return order.map((base) => ({
     base,
     boxes: groups.get(base)!.sort(collator.compare)
   }))
@@ -2144,7 +2417,10 @@ const groupAddresses = (addresses: string[]): GroupedAddress[] => {
 // Helper to parse semicolon-separated lists from PICC matview
 const parseSemicolonList = (value: string | undefined): string[] => {
   if (!value) return []
-  return value.split(';').map(s => s.trim()).filter(Boolean)
+  return value
+    .split(';')
+    .map((s) => s.trim())
+    .filter(Boolean)
 }
 
 // Helper to format PICC dates to yyyy-mm-dd
@@ -2173,19 +2449,19 @@ const formatGRBBuildingType = (type: string | undefined): string => {
   if (!type) return 'Building'
 
   const translations: Record<string, string> = {
-    'hoofdgebouw': 'Main Building',
-    'bijgebouw': 'Outbuilding',
-    'afdak': 'Shelter',
-    'garage': 'Garage',
-    'berging': 'Storage',
-    'serre': 'Conservatory',
+    hoofdgebouw: 'Main Building',
+    bijgebouw: 'Outbuilding',
+    afdak: 'Shelter',
+    garage: 'Garage',
+    berging: 'Storage',
+    serre: 'Conservatory',
     'ingezonken garagetoegang': 'Sunken Garage Entrance',
-    'verdieping': 'Upper Floor',
-    'trap': 'Staircase',
+    verdieping: 'Upper Floor',
+    trap: 'Staircase',
     'zichtbare onderkeldering': 'Visible Basement',
     'gebouw afgezoomd met virtuele gevels': 'Building with Virtual Facades',
     'verheven garagetoegang': 'Elevated Garage Entrance',
-    'loopbrug': 'Walkway'
+    loopbrug: 'Walkway'
   }
 
   return translations[type.toLowerCase()] || type
@@ -2195,20 +2471,22 @@ const formatGRBBuildingType = (type: string | undefined): string => {
 const formatOriginLabel = (label: string | undefined): string => {
   if (!label) return ''
   const translations: Record<string, string> = {
-    'terreinbezoek': 'Field Survey',
+    terreinbezoek: 'Field Survey',
     'as-built plan': 'As-Built Plan',
     'gemeentelijk as-built plan': 'Municipal As-Built Plan',
-    'fotogrammetrisch': 'Photogrammetry',
-    'luchtfoto': 'Aerial Photo',
-    'gedigitaliseerd': 'Digitized',
+    fotogrammetrisch: 'Photogrammetry',
+    luchtfoto: 'Aerial Photo',
+    gedigitaliseerd: 'Digitized',
     'niet gekend': 'Unknown',
-    'andere': 'Other'
+    andere: 'Other'
   }
   return translations[label.toLowerCase()] || label
 }
 
 // Group OSM properties into address, source:geometry, and other
-const getGroupedOsmProperties = (feature: any): { address: [string, any][], source: [string, any][], other: [string, any][] } => {
+const getGroupedOsmProperties = (
+  feature: any
+): { address: [string, any][]; source: [string, any][]; other: [string, any][] } => {
   const all = getDisplayableProperties(feature)
   const address: [string, any][] = []
   const source: [string, any][] = []
@@ -2243,6 +2521,11 @@ function sortFeatures(features: any[]): any[] {
   })
 }
 
+const setMapCursor = (cursor: string) => {
+  const target = map.value?.getTargetElement()
+  if (target) target.style.cursor = cursor
+}
+
 // Helper function to parse PostgreSQL hstore tags format
 const parseHstoreTags = (tagsString: string): Record<string, string> => {
   const tags: Record<string, string> = {}
@@ -2252,8 +2535,8 @@ const parseHstoreTags = (tagsString: string): Record<string, string> => {
   let match
 
   while ((match = regex.exec(tagsString)) !== null) {
-    const [, key, value] = match
-    tags[key] = value
+    const [, key, value = ''] = match
+    if (key) tags[key] = value
   }
 
   return tags
@@ -2262,19 +2545,19 @@ const parseHstoreTags = (tagsString: string): Record<string, string> => {
 // Property mapping for GRB features (Dutch to English)
 const grbPropertyMapping: Record<string, string | null> = {
   // Map to English
-  'BEGINDATUM': 'begin_date',
-  'VERSDATUM': 'version_date',
-  'LBLBGNINV': 'source_inventory_label',
-  'BGNINV': 'source_inventory',
+  BEGINDATUM: 'begin_date',
+  VERSDATUM: 'version_date',
+  LBLBGNINV: 'source_inventory_label',
+  BGNINV: 'source_inventory',
 
   // Keep important fields
-  'source': 'source',
-  'source_dataset': 'source_dataset',
-  'source_geometry': 'source_geometry',
-  'source_geometry_date': 'source_geometry_date',
-  'source_geometry_entity': 'source_geometry_entity',
-  'postal_code': 'postal_code',
-  'building_type': 'building_type',
+  source: 'source',
+  source_dataset: 'source_dataset',
+  source_geometry: 'source_geometry',
+  source_geometry_date: 'source_geometry_date',
+  source_geometry_entity: 'source_geometry_entity',
+  postal_code: 'postal_code',
+  building_type: 'building_type',
 
   // Filter out duplicates and noise
   'begin date': null,
@@ -2283,28 +2566,28 @@ const grbPropertyMapping: Record<string, string | null> = {
   'source inventory label': null,
   'imported at': null,
   'updated at': null,
-  'source_geometry_version': null,
-  'importedAt': null,
-  'updatedAt': null
+  source_geometry_version: null,
+  importedAt: null,
+  updatedAt: null
 }
 
 // Property display names (for formatting)
 const propertyDisplayNames: Record<string, string> = {
-  'begin_date': 'Begin Date',
-  'version_date': 'Version Date',
-  'source_inventory': 'Inventory',
-  'source_inventory_label': 'Inventory Label',
-  'source_dataset': 'Dataset',
-  'source_geometry': 'Geometry Source',
-  'source_geometry_date': 'Geometry Date',
-  'source_geometry_entity': 'Entity',
-  'postal_code': 'Postal Code',
-  'building_type': 'Building Type',
-  'source': 'Source',
-  'name': 'Name',
-  'addr_street': 'Street',
-  'addr_housenumber': 'House Number',
-  'building': 'Building'
+  begin_date: 'Begin Date',
+  version_date: 'Version Date',
+  source_inventory: 'Inventory',
+  source_inventory_label: 'Inventory Label',
+  source_dataset: 'Dataset',
+  source_geometry: 'Geometry Source',
+  source_geometry_date: 'Geometry Date',
+  source_geometry_entity: 'Entity',
+  postal_code: 'Postal Code',
+  building_type: 'Building Type',
+  source: 'Source',
+  name: 'Name',
+  addr_street: 'Street',
+  addr_housenumber: 'House Number',
+  building: 'Building'
 }
 
 // Helper functions for tooltip display
@@ -2315,28 +2598,38 @@ const getDisplayableProperties = (feature: any) => {
   const isOsm = feature._layer_type === 'osm'
 
   // Properties to exclude from display (internal or already shown)
-  const excludedProps = ['geometry', 'osm_id', 'osm_type', 'hovered', 'id', 'grbid', '_layer_type', 'tags', 'layer', 'extent', 'type']
+  const excludedProps = [
+    'geometry',
+    'osm_id',
+    'osm_type',
+    'hovered',
+    'id',
+    'grbid',
+    '_layer_type',
+    'tags',
+    'layer',
+    'extent',
+    'type'
+  ]
 
   const properties: [string, any][] = []
 
   // First, add all regular properties (including source)
   Object.entries(feature)
-    .filter(([key, value]) =>
-      // Exclude internal properties and empty values
-      !excludedProps.includes(key) &&
-             value !== null &&
-             value !== undefined &&
-             value !== ''
+    .filter(
+      ([key, value]) =>
+        // Exclude internal properties and empty values
+        !excludedProps.includes(key) && value !== null && value !== undefined && value !== ''
     )
     .forEach(([key, value]) => {
       // Apply GRB mapping if it's a GRB feature
       if (isGrb && Object.hasOwn(grbPropertyMapping, key)) {
         const mappedKey = grbPropertyMapping[key]
-        if (mappedKey !== null) {
+        if (typeof mappedKey === 'string') {
           properties.push([mappedKey, value])
         }
         // If mapped to null, skip this property
-      } else if (!isGrb || !Object.keys(grbPropertyMapping).some(k => k.toLowerCase() === key.toLowerCase())) {
+      } else if (!isGrb || !Object.keys(grbPropertyMapping).some((k) => k.toLowerCase() === key.toLowerCase())) {
         // For OSM features or unmapped GRB properties, include them
         properties.push([key, value])
       }
@@ -2356,11 +2649,7 @@ const getDisplayableProperties = (feature: any) => {
 
     // For OSM features, show all tags
     Object.entries(parsedTags)
-      .filter(([, value]) =>
-        value !== null &&
-               value !== undefined &&
-               value !== ''
-      )
+      .filter(([, value]) => value !== null && value !== undefined && value !== '')
       .forEach(([key, value]) => {
         properties.push([key, value])
       })
@@ -2464,49 +2753,58 @@ const setupHoverInteraction = () => {
     const pixel = map.value.getEventPixel(evt.originalEvent)
 
     const foundFeatures: any[] = []
-    map.value.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === knwStructuresLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value || layer === candidateBuildingsLayerRef.value) {
-        // Get properties for clicked feature
-        let properties: any
-        try {
-          if (feature instanceof Feature) {
+    map.value.forEachFeatureAtPixel(
+      pixel,
+      (feature, layer) => {
+        if (
+          layer === osmBuildingsLayerRef.value ||
+          layer === grbBuildingsLayerRef.value ||
+          layer === knwStructuresLayerRef.value ||
+          layer === piccBuildingsLayerRef.value ||
+          layer === urbisBuildingsLayerRef.value ||
+          layer === candidateBuildingsLayerRef.value
+        ) {
+          // Get properties for clicked feature
+          let properties: any
+          try {
             properties = feature.getProperties()
-          } else if (feature.getProperties) {
-            properties = feature.getProperties()
-          } else if (feature.values_) {
-            properties = feature.values_
-          } else {
-            properties = feature
+          } catch (error) {
+            console.warn('Error getting clicked feature properties:', error)
+            properties = {}
           }
-        } catch (error) {
-          console.warn('Error getting clicked feature properties:', error)
-          properties = {}
-        }
 
-        // Extract feature ID and add it to properties
-        const featureId = feature.getId ? feature.getId() : (feature.id_ || null)
-        if (featureId) {
-          if (layer === osmBuildingsLayerRef.value) {
-            properties.osm_id = featureId
-          } else {
-            properties.id = featureId
+          // Extract feature ID and add it to properties
+          const featureId = feature.getId() ?? null
+          if (featureId) {
+            if (layer === osmBuildingsLayerRef.value) {
+              properties.osm_id = featureId
+            } else {
+              properties.id = featureId
+            }
           }
+
+          // Add layer type to distinguish OSM from GRB/PICC features
+          properties._layer_type =
+            layer === osmBuildingsLayerRef.value
+              ? 'osm'
+              : layer === knwStructuresLayerRef.value
+                ? 'knw'
+                : layer === piccBuildingsLayerRef.value
+                  ? 'picc'
+                  : layer === urbisBuildingsLayerRef.value
+                    ? 'urbis'
+                    : layer === candidateBuildingsLayerRef.value
+                      ? properties._layer_type || 'grb'
+                      : 'grb'
+
+          foundFeatures.push(properties)
         }
-
-        // Add layer type to distinguish OSM from GRB/PICC features
-        properties._layer_type = layer === osmBuildingsLayerRef.value ? 'osm'
-          : layer === knwStructuresLayerRef.value ? 'knw'
-          : layer === piccBuildingsLayerRef.value ? 'picc'
-          : layer === urbisBuildingsLayerRef.value ? 'urbis'
-          : layer === candidateBuildingsLayerRef.value ? (properties._layer_type || 'grb')
-          : 'grb'
-
-        foundFeatures.push(properties)
+        return false // Continue to collect all features
+      },
+      {
+        hitTolerance: 3
       }
-      return false // Continue to collect all features
-    }, {
-      hitTolerance: 3
-    })
+    )
 
     if (foundFeatures.length > 0) {
       // Make tooltip sticky with all found features
@@ -2539,115 +2837,122 @@ const setupHoverInteraction = () => {
       }
 
       // Clear previous hover state (only if not sticky)
-    if (currentHoveredFeatureObj && !isTooltipSticky.value) {
-      try {
-        if (currentHoveredFeatureObj instanceof Feature) {
-          currentHoveredFeatureObj.set('hovered', false)
-        }
-      } catch (error) {
-        // Ignore errors when clearing hover state
-      }
-      currentHoveredFeatureObj = null
-      hoveredFeatures.value = []
-      if (map.value) {
-        map.value.getTargetElement().style.cursor = ''
-      }
-    }
-
-    // Check if we're hovering over features from building layers (collect all)
-    const foundFeatures: any[] = []
-    let firstFeature: any = null
-
-    map.value.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer === osmBuildingsLayerRef.value || layer === grbBuildingsLayerRef.value || layer === knwStructuresLayerRef.value || layer === piccBuildingsLayerRef.value || layer === urbisBuildingsLayerRef.value || layer === candidateBuildingsLayerRef.value) {
-        if (!firstFeature) {
-          firstFeature = feature
-        }
-
-        // Get properties - handle both regular features and vector tile features
-        let properties: any
+      if (currentHoveredFeatureObj && !isTooltipSticky.value) {
         try {
-          if (feature instanceof Feature) {
-            properties = feature.getProperties()
-          } else if (feature.getProperties) {
-            properties = feature.getProperties()
-          } else if (feature.values_) {
-            // Vector tile features store properties in values_
-            properties = feature.values_
-          } else {
-            properties = feature
-          }
-        } catch (error) {
-          console.warn('Error getting feature properties:', error)
-          properties = {}
-        }
-
-        // Extract feature ID and add it to properties
-        const featureId = feature.getId ? feature.getId() : (feature.id_ || null)
-        if (featureId) {
-          if (layer === osmBuildingsLayerRef.value) {
-            properties.osm_id = featureId
-          } else {
-            properties.id = featureId
-          }
-        }
-
-        // Add layer type to distinguish OSM from GRB/PICC features
-        properties._layer_type = layer === osmBuildingsLayerRef.value ? 'osm'
-          : layer === knwStructuresLayerRef.value ? 'knw'
-          : layer === piccBuildingsLayerRef.value ? 'picc'
-          : layer === urbisBuildingsLayerRef.value ? 'urbis'
-          : layer === candidateBuildingsLayerRef.value ? (properties._layer_type || 'grb')
-          : 'grb'
-
-        foundFeatures.push(properties)
-      }
-      return false // Continue to collect all features
-    }, {
-      hitTolerance: 3
-    })
-
-    if (foundFeatures.length > 0 && !isTooltipSticky.value) {
-      // Clear previous hover state
-      if (currentHoveredFeatureObj && currentHoveredFeatureObj !== firstFeature) {
-        if (currentHoveredFeatureObj instanceof Feature) {
-          currentHoveredFeatureObj.set('hovered', false)
-        }
-      }
-
-      // Set new hover state on first feature
-      if (currentHoveredFeatureObj !== firstFeature) {
-        // Only set hover state for regular features, not vector tile features
-        try {
-          if (firstFeature instanceof Feature && firstFeature.set) {
-            firstFeature.set('hovered', true)
-          }
-        } catch (error) {
-          // Vector tile features don't support set method
-        }
-        currentHoveredFeatureObj = firstFeature
-
-        hoveredFeatures.value = foundFeatures
-
-        // Change cursor to pointer
-        map.value.getTargetElement().style.cursor = 'pointer'
-      }
-    } else if (!isTooltipSticky.value) {
-      // Clear hover state
-      if (currentHoveredFeatureObj) {
-        try {
-          if (currentHoveredFeatureObj instanceof Feature && currentHoveredFeatureObj.set) {
+          if (currentHoveredFeatureObj instanceof Feature) {
             currentHoveredFeatureObj.set('hovered', false)
           }
         } catch (error) {
-          // Vector tile features don't support set method
+          // Ignore errors when clearing hover state
         }
         currentHoveredFeatureObj = null
         hoveredFeatures.value = []
-
-        // Reset cursor
-        map.value.getTargetElement().style.cursor = ''
+        setMapCursor('')
       }
+
+      // Check if we're hovering over features from building layers (collect all)
+      const foundFeatures: any[] = []
+      let firstFeature: any = null
+
+      map.value.forEachFeatureAtPixel(
+        pixel,
+        (feature, layer) => {
+          if (
+            layer === osmBuildingsLayerRef.value ||
+            layer === grbBuildingsLayerRef.value ||
+            layer === knwStructuresLayerRef.value ||
+            layer === piccBuildingsLayerRef.value ||
+            layer === urbisBuildingsLayerRef.value ||
+            layer === candidateBuildingsLayerRef.value
+          ) {
+            if (!firstFeature) {
+              firstFeature = feature
+            }
+
+            // Get properties - handle both regular features and vector tile features
+            let properties: any
+            try {
+              // Both Feature and vector tile RenderFeature expose getProperties()
+              properties = feature.getProperties()
+            } catch (error) {
+              console.warn('Error getting feature properties:', error)
+              properties = {}
+            }
+
+            // Extract feature ID and add it to properties
+            const featureId = feature.getId() ?? null
+            if (featureId) {
+              if (layer === osmBuildingsLayerRef.value) {
+                properties.osm_id = featureId
+              } else {
+                properties.id = featureId
+              }
+            }
+
+            // Add layer type to distinguish OSM from GRB/PICC features
+            properties._layer_type =
+              layer === osmBuildingsLayerRef.value
+                ? 'osm'
+                : layer === knwStructuresLayerRef.value
+                  ? 'knw'
+                  : layer === piccBuildingsLayerRef.value
+                    ? 'picc'
+                    : layer === urbisBuildingsLayerRef.value
+                      ? 'urbis'
+                      : layer === candidateBuildingsLayerRef.value
+                        ? properties._layer_type || 'grb'
+                        : 'grb'
+
+            foundFeatures.push(properties)
+          }
+          return false // Continue to collect all features
+        },
+        {
+          hitTolerance: 3
+        }
+      )
+
+      if (foundFeatures.length > 0 && !isTooltipSticky.value) {
+        // Clear previous hover state
+        if (currentHoveredFeatureObj && currentHoveredFeatureObj !== firstFeature) {
+          if (currentHoveredFeatureObj instanceof Feature) {
+            currentHoveredFeatureObj.set('hovered', false)
+          }
+        }
+
+        // Set new hover state on first feature
+        if (currentHoveredFeatureObj !== firstFeature) {
+          // Only set hover state for regular features, not vector tile features
+          try {
+            if (firstFeature instanceof Feature && firstFeature.set) {
+              firstFeature.set('hovered', true)
+            }
+          } catch (error) {
+            // Vector tile features don't support set method
+          }
+          currentHoveredFeatureObj = firstFeature
+
+          hoveredFeatures.value = foundFeatures
+
+          // Change cursor to pointer
+          setMapCursor('pointer')
+        }
+      } else if (!isTooltipSticky.value) {
+        // Clear hover state
+        if (currentHoveredFeatureObj) {
+          try {
+            if (currentHoveredFeatureObj instanceof Feature && currentHoveredFeatureObj.set) {
+              currentHoveredFeatureObj.set('hovered', false)
+            }
+          } catch (error) {
+            // Vector tile features don't support set method
+          }
+          currentHoveredFeatureObj = null
+          hoveredFeatures.value = []
+
+          // Reset cursor
+          setMapCursor('')
+        }
       }
     }, 16) // ~60fps, reduces canvas reads significantly
   })

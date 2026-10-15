@@ -19,7 +19,7 @@
         </div>
         <Slider
           :model-value="[tolerance]"
-          @update:model-value="(value) => handleToleranceChange(value[0])"
+          @update:model-value="(value?: number[]) => value?.[0] !== undefined && handleToleranceChange(value[0])"
           :min="0.0001"
           :max="0.001"
           :step="0.0001"

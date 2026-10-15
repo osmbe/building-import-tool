@@ -16,7 +16,7 @@ export function useAuth() {
   onMounted(async () => {
     // Check if user is authenticated via cookie
     try {
-      const response = await $fetch('/api/auth/me')
+      const response = await $fetch<{ user: OSMUser | null }>('/api/auth/me')
       if (response.user) {
         user.value = response.user
       }
@@ -31,7 +31,7 @@ export function useAuth() {
     if (urlParams.get('auth') === 'success') {
       // Reload user data after successful auth
       try {
-        const response = await $fetch('/api/auth/me')
+        const response = await $fetch<{ user: OSMUser | null }>('/api/auth/me')
         if (response.user) {
           user.value = response.user
         }

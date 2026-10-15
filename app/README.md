@@ -23,6 +23,7 @@ They use **shadcn-vue** primitives (`@/components/ui/*`) and `lucide-vue-next` i
 ## Install
 
 In your Nuxt app, install:
+
 - shadcn-vue (and generate the UI components you need)
 - lucide-vue-next
 - tailwindcss + postcss (if not already)

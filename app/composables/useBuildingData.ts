@@ -15,7 +15,7 @@ export interface BuildingData {
     constructionYear?: number
     lastModified?: string
     contributor?: string
-    qaIssues?: { id: string; type: string; severity: 'low'|'medium'|'high'; message: string }[]
+    qaIssues?: { id: string; type: string; severity: 'low' | 'medium' | 'high'; message: string }[]
   }
   osmData?: {
     levels?: number
@@ -24,6 +24,7 @@ export interface BuildingData {
     source?: string
     lastModified?: string
     contributor?: string
+    tags?: Record<string, string>
   }
   authoritativeData?: {
     levels?: number
@@ -47,9 +48,7 @@ export const mockBuildingData: BuildingData[] = [
       buildingType: 'residential',
       sourceDate: '2024-10-02T10:00:00Z',
       source: 'authoritative',
-      qaIssues: [
-        { id: 'q1', type: 'geometry', severity: 'medium', message: 'Polygon has slight self-intersection' }
-      ]
+      qaIssues: [{ id: 'q1', type: 'geometry', severity: 'medium', message: 'Polygon has slight self-intersection' }]
     },
     osmData: {
       levels: 3,
@@ -86,9 +85,7 @@ export const mockBuildingData: BuildingData[] = [
       height: 35,
       buildingType: 'office',
       source: 'authoritative',
-      qaIssues: [
-        { id: 'q2', type: 'metadata', severity: 'high', message: 'Levels mismatch with OSM' }
-      ]
+      qaIssues: [{ id: 'q2', type: 'metadata', severity: 'high', message: 'Levels mismatch with OSM' }]
     }
   },
   {

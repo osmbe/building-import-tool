@@ -1,9 +1,6 @@
 <template>
   <Label
-    :class="cn(
-      'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
-      className
-    )"
+    :class="cn('text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70', className)"
     v-bind="$attrs"
   >
     <slot />

@@ -1,4 +1,3 @@
-
 export type Provider = 'osm' | 'google'
 
 export interface SearchResult {
@@ -25,7 +24,7 @@ interface NominatimResult {
   lon: string
   display_name: string
   address: {
-    [key: string]: string
+    [key: string]: string | undefined
     country?: string
     country_code?: string
     postcode?: string
@@ -104,7 +103,7 @@ export async function searchLocations(query: string, provider: Provider): Promis
         parseFloat(result.boundingbox[2]), // minLon
         parseFloat(result.boundingbox[0]), // minLat
         parseFloat(result.boundingbox[3]), // maxLon
-        parseFloat(result.boundingbox[1])  // maxLat
+        parseFloat(result.boundingbox[1]) // maxLat
       ]
 
       return {
@@ -139,7 +138,7 @@ export function getSearchHistory(): SearchResult[] {
 
 export function addToSearchHistory(item: SearchResult) {
   const hist = getSearchHistory()
-  const exists = hist.find(h => h.id === item.id)
+  const exists = hist.find((h) => h.id === item.id)
   const next = exists ? hist : [item, ...hist].slice(0, 10)
   localStorage.setItem('search_history', JSON.stringify(next))
   return next

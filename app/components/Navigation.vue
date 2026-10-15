@@ -1,5 +1,7 @@
 <template>
-  <header class="fixed top-0 left-0 right-0 z-50 h-12 glass-panel border-t-0 border-l-0 border-r-0 flex items-center px-4 gap-4">
+  <header
+    class="fixed top-0 left-0 right-0 z-50 h-12 glass-panel border-t-0 border-l-0 border-r-0 flex items-center px-4 gap-4"
+  >
     <!-- Logo mark -->
     <div class="flex items-center gap-2.5 shrink-0">
       <div class="w-7 h-7 rounded bg-primary/10 border border-primary/25 flex items-center justify-center">
@@ -30,7 +32,12 @@
           Sign in with OSM
         </button>
       </template>
-      <AuthDialog :open="openAuth" @update:open="(v:boolean) => openAuth = v" :on-sign-in="signIn" :is-loading="isLoading" />
+      <AuthDialog
+        :open="openAuth"
+        @update:open="(v: boolean) => (openAuth = v)"
+        :on-sign-in="signIn"
+        :is-loading="isLoading"
+      />
     </div>
   </header>
 </template>

@@ -4,24 +4,26 @@
       <DialogHeader>
         <DialogTitle class="text-base font-semibold">Set up JOSM</DialogTitle>
         <DialogDescription class="text-xs text-muted-foreground mt-1">
-          Candidates open in JOSM, where you review and upload them. JOSM must be running with
-          Remote Control enabled on this machine.
+          Candidates open in JOSM, where you review and upload them. JOSM must be running with Remote Control enabled on
+          this machine.
         </DialogDescription>
       </DialogHeader>
 
       <!-- Connection status -->
-      <div class="mt-3 flex items-center justify-between rounded-md border border-white/[0.07] bg-white/[0.02] px-3 py-2">
+      <div
+        class="mt-3 flex items-center justify-between rounded-md border border-white/[0.07] bg-white/[0.02] px-3 py-2"
+      >
         <div class="flex items-center gap-2">
           <span
             class="h-2 w-2 rounded-full shrink-0"
-            :class="connected === true ? 'bg-emerald-400'
-              : connected === false ? 'bg-red-400'
-              : 'bg-muted-foreground/50'"
+            :class="
+              connected === true ? 'bg-emerald-400' : connected === false ? 'bg-red-400' : 'bg-muted-foreground/50'
+            "
           ></span>
           <span class="text-xs text-foreground/80">
-            {{ connected === true ? 'JOSM connected'
-              : connected === false ? 'JOSM not reachable'
-              : 'Connection unknown' }}
+            {{
+              connected === true ? 'JOSM connected' : connected === false ? 'JOSM not reachable' : 'Connection unknown'
+            }}
           </span>
         </div>
         <button
@@ -37,12 +39,10 @@
 
       <!-- Steps -->
       <ol class="mt-4 space-y-2">
-        <li
-          v-for="(step, i) in instructions"
-          :key="i"
-          class="flex gap-3 text-xs text-foreground/80 leading-relaxed"
-        >
-          <span class="h-4 w-4 mt-0.5 shrink-0 rounded-full bg-primary/12 border border-primary/25 text-primary text-[9px] font-mono flex items-center justify-center">
+        <li v-for="(step, i) in instructions" :key="i" class="flex gap-3 text-xs text-foreground/80 leading-relaxed">
+          <span
+            class="h-4 w-4 mt-0.5 shrink-0 rounded-full bg-primary/12 border border-primary/25 text-primary text-[9px] font-mono flex items-center justify-center"
+          >
             {{ i + 1 }}
           </span>
           <span>{{ step }}</span>

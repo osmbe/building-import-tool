@@ -5,7 +5,9 @@
       <div class="px-4 pt-4 pb-3 border-b border-white/[0.05]">
         <div class="flex items-start justify-between">
           <div>
-            <div class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded mb-2">
+            <div
+              class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded mb-2"
+            >
               <Building2 class="h-2.5 w-2.5" />
               GRB Building
             </div>
@@ -22,7 +24,9 @@
       <div class="p-4 space-y-4">
         <!-- Addresses (grouped by base address) -->
         <div v-if="addresses.length > 0">
-          <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5">
+          <div
+            class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5"
+          >
             <MapPin class="h-3 w-3" /> Addresses ({{ addresses.length }})
           </div>
           <div class="space-y-1 pl-0">
@@ -37,7 +41,9 @@
 
         <!-- Location -->
         <div v-if="hasLocationData">
-          <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5">
+          <div
+            class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5"
+          >
             <MapPinned class="h-3 w-3" /> Location
           </div>
           <div class="space-y-1.5 text-xs">
@@ -58,7 +64,9 @@
 
         <!-- Building details -->
         <div v-if="hasBuildingDetails">
-          <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5">
+          <div
+            class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5"
+          >
             <Ruler class="h-3 w-3" /> Building Details
           </div>
           <div class="space-y-1.5 text-xs">
@@ -139,42 +147,54 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
     }
     if (current) items.push(current.trim())
 
-    return items.map(item => item.replace(/^"|"$/g, ''))
+    return items.map((item) => item.replace(/^"|"$/g, ''))
   }
 
   // Handle '; '-separated strings (STRING_AGG with '; ' separator, e.g. addresses column)
   if (str.includes('; ')) {
-    return str.split('; ').map(s => s.trim()).filter(Boolean)
+    return str
+      .split('; ')
+      .map((s) => s.trim())
+      .filter(Boolean)
   }
 
   return [str]
 }
 
-const addresses     = computed(() => parsePostgresArray(building?.addresses))
-const streetNames   = computed(() => parsePostgresArray(building?.street_names))
-const postcodes     = computed(() => parsePostgresArray(building?.postcodes))
+const addresses = computed(() => parsePostgresArray(building?.addresses))
+const streetNames = computed(() => parsePostgresArray(building?.street_names))
+const postcodes = computed(() => parsePostgresArray(building?.postcodes))
 const municipalities = computed(() => parsePostgresArray(building?.municipalities))
 
 // Group addresses that share the same base, collapsing box numbers
-interface GroupedAddress { base: string; boxes: string[] }
+interface GroupedAddress {
+  base: string
+  boxes: string[]
+}
 const groupAddresses = (addrs: string[]): GroupedAddress[] => {
   const busPattern = /^(.+?)\s+bus\s+(.+?),\s*(.+)$/i
   const groups = new Map<string, string[]>()
   const order: string[] = []
 
   for (const addr of addrs) {
-    const match = addr.match(busPattern)
-    if (match) {
-      const base = `${match[1]}, ${match[3]}`
-      if (!groups.has(base)) { groups.set(base, []); order.push(base) }
-      groups.get(base)!.push(match[2])
+    const [, street, box, locality] = addr.match(busPattern) ?? []
+    if (street && box && locality) {
+      const base = `${street}, ${locality}`
+      if (!groups.has(base)) {
+        groups.set(base, [])
+        order.push(base)
+      }
+      groups.get(base)!.push(box)
     } else {
-      if (!groups.has(addr)) { groups.set(addr, []); order.push(addr) }
+      if (!groups.has(addr)) {
+        groups.set(addr, [])
+        order.push(addr)
+      }
     }
   }
 
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
-  return order.map(base => ({ base, boxes: groups.get(base)!.sort(collator.compare) }))
+  return order.map((base) => ({ base, boxes: groups.get(base)!.sort(collator.compare) }))
 }
 
 const groupedAddresses = computed(() => groupAddresses(addresses.value))
@@ -182,28 +202,26 @@ const groupedAddresses = computed(() => groupAddresses(addresses.value))
 const formattedArea = computed(() => {
   if (!building?.total_area_m2) return '—'
   const area = building.total_area_m2
-  return area >= 1000
-    ? `${(area / 1000).toFixed(2)} km²`
-    : `${area.toFixed(0)} m²`
+  return area >= 1000 ? `${(area / 1000).toFixed(2)} km²` : `${area.toFixed(0)} m²`
 })
 
 const buildingTypeLabel = computed(() => {
   const type = building?.type_label
   if (!type) return 'Building'
   const translations: Record<string, string> = {
-    'hoofdgebouw': 'Main Building',
-    'bijgebouw':   'Outbuilding',
-    'afdak':       'Shelter',
-    'garage':      'Garage',
-    'berging':     'Storage',
-    'serre':       'Conservatory',
+    hoofdgebouw: 'Main Building',
+    bijgebouw: 'Outbuilding',
+    afdak: 'Shelter',
+    garage: 'Garage',
+    berging: 'Storage',
+    serre: 'Conservatory',
     'ingezonken garagetoegang': 'Sunken Garage Entrance',
-    'verdieping':  'Upper Floor',
-    'trap':        'Staircase',
+    verdieping: 'Upper Floor',
+    trap: 'Staircase',
     'zichtbare onderkeldering': 'Visible Basement',
     'gebouw afgezoomd met virtuele gevels': 'Building with Virtual Facades',
     'verheven garagetoegang': 'Elevated Garage Entrance',
-    'loopbrug':    'Walkway'
+    loopbrug: 'Walkway'
   }
   return translations[type.toLowerCase()] || type
 })
@@ -211,23 +229,28 @@ const buildingTypeLabel = computed(() => {
 const formatOriginLabel = (label: string | undefined): string => {
   if (!label) return ''
   const translations: Record<string, string> = {
-    'terreinbezoek': 'Field Survey',
+    terreinbezoek: 'Field Survey',
     'as-built plan': 'As-Built Plan',
     'gemeentelijk as-built plan': 'Municipal As-Built Plan',
-    'fotogrammetrisch': 'Photogrammetry',
-    'luchtfoto': 'Aerial Photo',
-    'gedigitaliseerd': 'Digitized',
+    fotogrammetrisch: 'Photogrammetry',
+    luchtfoto: 'Aerial Photo',
+    gedigitaliseerd: 'Digitized',
     'niet gekend': 'Unknown',
-    'andere': 'Other'
+    andere: 'Other'
   }
   return translations[label.toLowerCase()] || label
 }
 
-const hasLocationData = computed(() =>
-  postcodes.value.length > 0 || municipalities.value.length > 0 || streetNames.value.length > 0
+const hasLocationData = computed(
+  () => postcodes.value.length > 0 || municipalities.value.length > 0 || streetNames.value.length > 0
 )
 
-const hasBuildingDetails = computed(() =>
-  building?.total_area_m2 || building?.polygon_count || building?.type_label || building?.survey_date || building?.origin_label
+const hasBuildingDetails = computed(
+  () =>
+    building?.total_area_m2 ||
+    building?.polygon_count ||
+    building?.type_label ||
+    building?.survey_date ||
+    building?.origin_label
 )
 </script>

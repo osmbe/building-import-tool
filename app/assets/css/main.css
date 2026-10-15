@@ -1,27 +1,27 @@
-@import "tailwindcss";
-@import "ol/ol.css";
+@import 'tailwindcss';
+@import 'ol/ol.css';
 
 @theme {
   /* ── Blueprint Cyan palette ── */
-  --color-background:           hsl(224 42% 6%);
-  --color-foreground:           hsl(208 18% 88%);
-  --color-card:                 hsl(224 38% 9%);
-  --color-card-foreground:      hsl(208 18% 88%);
-  --color-popover:              hsl(224 38% 11%);
-  --color-popover-foreground:   hsl(208 18% 88%);
-  --color-primary:              hsl(192 90% 46%);
-  --color-primary-foreground:   hsl(224 42% 6%);
-  --color-secondary:            hsl(224 26% 14%);
+  --color-background: hsl(224 42% 6%);
+  --color-foreground: hsl(208 18% 88%);
+  --color-card: hsl(224 38% 9%);
+  --color-card-foreground: hsl(208 18% 88%);
+  --color-popover: hsl(224 38% 11%);
+  --color-popover-foreground: hsl(208 18% 88%);
+  --color-primary: hsl(192 90% 46%);
+  --color-primary-foreground: hsl(224 42% 6%);
+  --color-secondary: hsl(224 26% 14%);
   --color-secondary-foreground: hsl(208 14% 72%);
-  --color-muted:                hsl(224 26% 12%);
-  --color-muted-foreground:     hsl(212 12% 62%);
-  --color-accent:               hsl(192 90% 46% / 0.10);
-  --color-accent-foreground:    hsl(192 80% 62%);
-  --color-destructive:          hsl(0 68% 56%);
+  --color-muted: hsl(224 26% 12%);
+  --color-muted-foreground: hsl(212 12% 62%);
+  --color-accent: hsl(192 90% 46% / 0.1);
+  --color-accent-foreground: hsl(192 80% 62%);
+  --color-destructive: hsl(0 68% 56%);
   --color-destructive-foreground: hsl(0 0% 100%);
-  --color-border:               hsl(224 22% 15%);
-  --color-input:                hsl(224 26% 12%);
-  --color-ring:                 hsl(192 90% 46%);
+  --color-border: hsl(224 22% 15%);
+  --color-input: hsl(224 26% 12%);
+  --color-ring: hsl(192 90% 46%);
 
   --radius: 0.375rem;
 
@@ -31,22 +31,24 @@
 
 /* ── Layer color tokens ── */
 :root {
-  --layer-osm:        215 70% 50%;   /* cobalt blue */
-  --layer-osm-light:  215 60% 62%;   /* lighter blue for GRB-sourced */
-  --layer-grb:        30 85% 52%;    /* vivid orange */
-  --layer-grb-dark:   30 75% 42%;    /* darker orange for sheds */
-  --layer-grb-light:  30 80% 62%;    /* lighter orange for hover */
-  --layer-knw:        12 78% 56%;    /* warm red-orange for KNW */
-  --layer-knw-light:  12 72% 66%;    /* lighter KNW hover */
-  --layer-picc:       300 60% 50%;   /* magenta */
-  --layer-picc-light: 300 55% 62%;   /* lighter magenta for hover */
-  --layer-urbis:      170 65% 45%;   /* teal-cyan */
-  --layer-urbis-light: 170 55% 57%;  /* lighter teal for hover */
-  --layer-candidate:  165 65% 43%;   /* emerald teal */
+  --layer-osm: 215 70% 50%; /* cobalt blue */
+  --layer-osm-light: 215 60% 62%; /* lighter blue for GRB-sourced */
+  --layer-grb: 30 85% 52%; /* vivid orange */
+  --layer-grb-dark: 30 75% 42%; /* darker orange for sheds */
+  --layer-grb-light: 30 80% 62%; /* lighter orange for hover */
+  --layer-knw: 12 78% 56%; /* warm red-orange for KNW */
+  --layer-knw-light: 12 72% 66%; /* lighter KNW hover */
+  --layer-picc: 300 60% 50%; /* magenta */
+  --layer-picc-light: 300 55% 62%; /* lighter magenta for hover */
+  --layer-urbis: 170 65% 45%; /* teal-cyan */
+  --layer-urbis-light: 170 55% 57%; /* lighter teal for hover */
+  --layer-candidate: 165 65% 43%; /* emerald teal */
 }
 
 @layer base {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     @apply border-border;
   }
   body {
@@ -65,11 +67,13 @@
 
 /* ── Glass panel ── */
 .glass-panel {
-  background: rgba(6, 9, 22, 0.90);
+  background: rgba(6, 9, 22, 0.9);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(14, 200, 228, 0.07);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(14, 200, 228, 0.04) inset;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(14, 200, 228, 0.04) inset;
 }
 
 /* ── Map icon button ── */
@@ -82,7 +86,9 @@
   border-radius: 0.25rem;
   color: hsl(215 12% 48%);
   border: 1px solid rgba(255, 255, 255, 0.055);
-  transition: background 0.12s ease, color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
   cursor: pointer;
 }
 .map-icon-btn:hover {
@@ -99,7 +105,10 @@
   letter-spacing: 0.02em;
   color: hsl(215 12% 48%);
   border: 1px solid rgba(255, 255, 255, 0.055);
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -125,7 +134,9 @@
   font-weight: 500;
   color: hsl(215 12% 48%);
   border: 1px solid rgba(255, 255, 255, 0.055);
-  transition: background 0.12s ease, color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
   cursor: pointer;
 }
 .action-btn:hover:not(:disabled) {
@@ -229,7 +240,10 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
   border: 1px solid transparent;
   opacity: 0.45;
   white-space: nowrap;
@@ -316,38 +330,52 @@
 /* ── Layer badge classes (for template use) ── */
 .layer-badge-osm {
   color: hsl(var(--layer-osm));
-  background: hsl(var(--layer-osm) / 0.10);
-  border-color: hsl(var(--layer-osm) / 0.20);
+  background: hsl(var(--layer-osm) / 0.1);
+  border-color: hsl(var(--layer-osm) / 0.2);
 }
 .layer-badge-grb {
   color: hsl(var(--layer-grb));
-  background: hsl(var(--layer-grb) / 0.10);
-  border-color: hsl(var(--layer-grb) / 0.20);
+  background: hsl(var(--layer-grb) / 0.1);
+  border-color: hsl(var(--layer-grb) / 0.2);
 }
 .layer-badge-knw {
   color: hsl(var(--layer-knw));
-  background: hsl(var(--layer-knw) / 0.10);
-  border-color: hsl(var(--layer-knw) / 0.20);
+  background: hsl(var(--layer-knw) / 0.1);
+  border-color: hsl(var(--layer-knw) / 0.2);
 }
 .layer-badge-picc {
   color: hsl(var(--layer-picc));
-  background: hsl(var(--layer-picc) / 0.10);
-  border-color: hsl(var(--layer-picc) / 0.20);
+  background: hsl(var(--layer-picc) / 0.1);
+  border-color: hsl(var(--layer-picc) / 0.2);
 }
 .layer-badge-urbis {
   color: hsl(var(--layer-urbis));
-  background: hsl(var(--layer-urbis) / 0.10);
-  border-color: hsl(var(--layer-urbis) / 0.20);
+  background: hsl(var(--layer-urbis) / 0.1);
+  border-color: hsl(var(--layer-urbis) / 0.2);
 }
 
 /* ── Animations ── */
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
-.animate-fade-up  { animation: fade-up  0.2s ease forwards; }
-.animate-fade-in  { animation: fade-in  0.15s ease forwards; }
+.animate-fade-up {
+  animation: fade-up 0.2s ease forwards;
+}
+.animate-fade-in {
+  animation: fade-in 0.15s ease forwards;
+}

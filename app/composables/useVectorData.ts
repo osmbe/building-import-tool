@@ -33,10 +33,7 @@ export function useVectorData() {
     }
   ]
 
-  async function fetchVectorTileData(
-    source: MartinDataSource, 
-    bounds: VectorTileBounds
-  ): Promise<any> {
+  async function fetchVectorTileData(source: MartinDataSource, bounds: VectorTileBounds): Promise<any> {
     try {
       const params = new URLSearchParams({
         bbox: `${bounds.minLon},${bounds.minLat},${bounds.maxLon},${bounds.maxLat}`,
@@ -51,7 +48,7 @@ export function useVectorData() {
 
       const response = await fetch(url, {
         headers: {
-          'Accept': source.format === 'geojson' ? 'application/json' : 'application/x-protobuf'
+          Accept: source.format === 'geojson' ? 'application/json' : 'application/x-protobuf'
         }
       })
 
@@ -94,7 +91,7 @@ export function useVectorData() {
   function combineGeoJSONFeatures(datasets: Record<string, any>): any {
     const combined = {
       type: 'FeatureCollection',
-      features: []
+      features: [] as any[]
     }
 
     Object.entries(datasets).forEach(([name, data]) => {

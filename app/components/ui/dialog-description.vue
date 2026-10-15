@@ -1,8 +1,5 @@
 <template>
-  <DialogDescription
-    :class="cn('text-sm text-muted-foreground', className)"
-    v-bind="$attrs"
-  >
+  <DialogDescription :class="cn('text-sm text-muted-foreground', className)" v-bind="$attrs">
     <slot />
   </DialogDescription>
 </template>

@@ -1,8 +1,8 @@
-import tailwindcss from "@tailwindcss/vite";
+import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: '2025-09-09',
   ssr: false,
-  typescript: { strict: false, typeCheck: false },
+  typescript: { strict: true, typeCheck: false },
   modules: [],
   devServer: {
     host: '0.0.0.0', // Listen on all network interfaces (allows both localhost and 127.0.0.1)
@@ -21,19 +21,15 @@ export default defineNuxtConfig({
           href: 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap'
         }
       ],
-      meta: [
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      ]
+      meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1' }]
     }
   },
   css: ['~/assets/css/main.css'],
   alias: {
-    '@': '.',
+    '@': '.'
   },
   vite: {
-    plugins: [
-      tailwindcss(),
-    ],
+    plugins: [tailwindcss()]
   },
   runtimeConfig: {
     // Private keys (only available server-side)

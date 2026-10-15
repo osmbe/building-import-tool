@@ -1,11 +1,19 @@
 import type { Feature } from 'geojson'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { VERDIEPING_FIXME, filterFeatureProperties } from '~/utils/grbExportTags'
 
 // Minimal square polygon — geometry is irrelevant to property filtering.
 const GEOM: Feature['geometry'] = {
   type: 'Polygon',
-  coordinates: [[[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]]
+  coordinates: [
+    [
+      [0, 0],
+      [0, 1],
+      [1, 1],
+      [1, 0],
+      [0, 0]
+    ]
+  ]
 }
 
 const feature = (properties: Record<string, any>): Feature => ({
@@ -44,13 +52,11 @@ describe('filterFeatureProperties — building defaults & pre-filtering (#53)', 
 
 describe('filterFeatureProperties — source:geometry:date is date-only (#49)', () => {
   it('strips a T-separated time component', () => {
-    expect(tags({ oidn: 1, survey_date: '2023-03-15T00:00:00' })['source:geometry:date'])
-      .toBe('2023-03-15')
+    expect(tags({ oidn: 1, survey_date: '2023-03-15T00:00:00' })['source:geometry:date']).toBe('2023-03-15')
   })
 
   it('strips a space-separated time component', () => {
-    expect(tags({ oidn: 1, survey_date: '2023-03-15 12:34:56' })['source:geometry:date'])
-      .toBe('2023-03-15')
+    expect(tags({ oidn: 1, survey_date: '2023-03-15 12:34:56' })['source:geometry:date']).toBe('2023-03-15')
   })
 
   it('converts DD/MM/YYYY to YYYY-MM-DD', () => {
@@ -72,8 +78,7 @@ describe('filterFeatureProperties — source:geometry:ref', () => {
   })
 
   it('uses the Knw entity for kunstwerken', () => {
-    expect(tags({ oidn: 99, _layer_type: 'knw', type_code: '7' })['source:geometry:ref'])
-      .toBe('Knw/99')
+    expect(tags({ oidn: 99, _layer_type: 'knw', type_code: '7' })['source:geometry:ref']).toBe('Knw/99')
   })
 })
 
@@ -92,13 +97,13 @@ describe('filterFeatureProperties — KNW default tags (#22)', () => {
   })
 
   it('maps type 9 to silo by default', () => {
-    expect(tags({ oidn: 1, _layer_type: 'knw', type_code: '9', type_label: 'silo' }).man_made)
-      .toBe('silo')
+    expect(tags({ oidn: 1, _layer_type: 'knw', type_code: '9', type_label: 'silo' }).man_made).toBe('silo')
   })
 
   it('maps type 9 to storage_tank when the label is an opslagtank', () => {
-    expect(tags({ oidn: 1, _layer_type: 'knw', type_code: '9', type_label: 'opslagtank' }).man_made)
-      .toBe('storage_tank')
+    expect(tags({ oidn: 1, _layer_type: 'knw', type_code: '9', type_label: 'opslagtank' }).man_made).toBe(
+      'storage_tank'
+    )
   })
 
   it('leaves an out-of-scope KNW type untagged (no man_made, no building)', () => {
@@ -127,7 +132,10 @@ describe('filterFeatureProperties — addresses (#49)', () => {
 
   it('parses house numbers with letters and box suffixes', () => {
     const out = tags({
-      oidn: 1, address_count: 1, addresses: 'Rue de la Gare 5A/3', street_names: 'Rue de la Gare'
+      oidn: 1,
+      address_count: 1,
+      addresses: 'Rue de la Gare 5A/3',
+      street_names: 'Rue de la Gare'
     })
     expect(out['addr:housenumber']).toBe('5A/3')
   })
@@ -165,10 +173,23 @@ describe('filterFeatureProperties — internal property stripping', () => {
       inspire_id: 9
     })
     for (const removed of [
-      'oidn', 'lbltype', 'type_code', 'type_label', 'opndatum', 'survey_date',
-      'addresses', 'street_names', 'postcodes', 'municipalities', 'address_count',
-      'objectid', 'natur_code', 'building_id', 'inspire_id',
-      'source:geometry:oidn', 'source:geometry:entity'
+      'oidn',
+      'lbltype',
+      'type_code',
+      'type_label',
+      'opndatum',
+      'survey_date',
+      'addresses',
+      'street_names',
+      'postcodes',
+      'municipalities',
+      'address_count',
+      'objectid',
+      'natur_code',
+      'building_id',
+      'inspire_id',
+      'source:geometry:oidn',
+      'source:geometry:entity'
     ]) {
       expect(out, `expected ${removed} to be stripped`).not.toHaveProperty(removed)
     }

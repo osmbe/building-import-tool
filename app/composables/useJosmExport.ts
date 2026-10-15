@@ -7,7 +7,7 @@ export const useJosmExport = () => {
   const useSSL = ref(false)
 
   // Update JOSM URL based on SSL preference
-  const getJosmUrl = () => useSSL.value ? 'https://127.0.0.1:8112' : 'http://127.0.0.1:8111'
+  const getJosmUrl = () => (useSSL.value ? 'https://127.0.0.1:8112' : 'http://127.0.0.1:8111')
 
   /**
    * Test if JOSM is running and compatible
@@ -104,7 +104,9 @@ export const useJosmExport = () => {
           format: 'geojson'
         })
 
-        geojson = JSON.parse(output[0].content)
+        const content = output[0]?.content
+        if (!content) throw new Error('Mapshaper returned no output')
+        geojson = JSON.parse(content)
       } catch (err) {
         console.warn('Mapshaper simplification failed, exporting without simplification:', err)
       }

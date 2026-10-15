@@ -90,10 +90,10 @@ export const useMapLayers = () => {
       source: new TileWMS({
         url: 'https://geoservices.wallonie.be/arcgis/services/IMAGERIE/ORTHO_2024/MapServer/WMSServer',
         params: {
-          'LAYERS': '0',
-          'TILED': true,
-          'VERSION': '1.3.0',
-          'FORMAT': 'image/png'
+          LAYERS: '0',
+          TILED: true,
+          VERSION: '1.3.0',
+          FORMAT: 'image/png'
         },
         serverType: 'mapserver',
         crossOrigin: 'anonymous'
@@ -126,10 +126,10 @@ export const useMapLayers = () => {
       source: new TileWMS({
         url: '/api/proxy/brussels-wms',
         params: {
-          'LAYERS': 'Ortho2024Ns',
-          'TILED': true,
-          'VERSION': '1.1.1',
-          'FORMAT': 'image/jpeg'
+          LAYERS: 'Ortho2024Ns',
+          TILED: true,
+          VERSION: '1.1.1',
+          FORMAT: 'image/jpeg'
         },
         serverType: 'geoserver',
         crossOrigin: 'anonymous'
@@ -143,10 +143,7 @@ export const useMapLayers = () => {
   }
 
   // Initialize map
-  const initializeMap = (
-    target: HTMLElement,
-    config: MapConfig = {}
-  ): OLMap => {
+  const initializeMap = (target: HTMLElement, config: MapConfig = {}): OLMap => {
     if (map.value) {
       console.warn('Map already initialized')
       return map.value as OLMap
@@ -209,7 +206,14 @@ export const useMapLayers = () => {
 
   // Switch base layer following OpenLayers best practices
   const switchBaseLayer = (layerName: 'osm' | 'flanders' | 'wallonia' | 'brussels' | 'esri' | 'blank') => {
-    if (!osmLayer.value || !flandersLayer.value || !walloniaLayer.value || !brusselsLayer.value || !esriLayer.value || !map.value) {
+    if (
+      !osmLayer.value ||
+      !flandersLayer.value ||
+      !walloniaLayer.value ||
+      !brusselsLayer.value ||
+      !esriLayer.value ||
+      !map.value
+    ) {
       console.warn('Layers or map not initialized')
       return
     }

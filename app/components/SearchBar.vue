@@ -1,7 +1,9 @@
 <template>
   <div class="relative w-full">
     <div class="relative">
-      <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+      <Search
+        class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
+      />
       <input
         v-model="query"
         type="text"
@@ -32,7 +34,13 @@
 </template>
 
 <script setup lang="ts">
-import { type Provider, type SearchResult, addToSearchHistory, getSearchHistory, searchLocations } from '~/composables/useSearch'
+import {
+  type Provider,
+  type SearchResult,
+  addToSearchHistory,
+  getSearchHistory,
+  searchLocations
+} from '~/composables/useSearch'
 import { Search, X } from 'lucide-vue-next'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import SearchResults from '~/components/SearchResults.vue'

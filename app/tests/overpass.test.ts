@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import { fetchOverpassBuildings, mercatorToLonLat } from '~/server/utils/overpass'
 
 // Small bbox in Web Mercator (roughly central Belgium); exact values are not asserted.
@@ -42,7 +42,11 @@ describe('fetchOverpassBuildings', () => {
       {
         type: 'way',
         geometry: [
-          { lon: 0, lat: 0 }, { lon: 0, lat: 1 }, { lon: 1, lat: 1 }, { lon: 1, lat: 0 }, { lon: 0, lat: 0 }
+          { lon: 0, lat: 0 },
+          { lon: 0, lat: 1 },
+          { lon: 1, lat: 1 },
+          { lon: 1, lat: 0 },
+          { lon: 0, lat: 0 }
         ],
         tags: { building: 'yes' }
       }
@@ -56,7 +60,11 @@ describe('fetchOverpassBuildings', () => {
     expect(collection.geometries).toHaveLength(1)
     expect(collection.geometries[0].type).toBe('Polygon')
     expect(collection.geometries[0].coordinates[0]).toEqual([
-      [0, 0], [0, 1], [1, 1], [1, 0], [0, 0]
+      [0, 0],
+      [0, 1],
+      [1, 1],
+      [1, 0],
+      [0, 0]
     ])
   })
 
@@ -64,7 +72,12 @@ describe('fetchOverpassBuildings', () => {
     mockFetch([
       {
         type: 'way',
-        geometry: [{ lon: 0, lat: 0 }, { lon: 0, lat: 1 }, { lon: 1, lat: 1 }, { lon: 1, lat: 0 }],
+        geometry: [
+          { lon: 0, lat: 0 },
+          { lon: 0, lat: 1 },
+          { lon: 1, lat: 1 },
+          { lon: 1, lat: 0 }
+        ],
         tags: { building: 'house' }
       }
     ])
@@ -79,12 +92,22 @@ describe('fetchOverpassBuildings', () => {
     mockFetch([
       {
         type: 'way',
-        geometry: [{ lon: 0, lat: 0 }, { lon: 0, lat: 1 }, { lon: 1, lat: 1 }, { lon: 0, lat: 0 }],
+        geometry: [
+          { lon: 0, lat: 0 },
+          { lon: 0, lat: 1 },
+          { lon: 1, lat: 1 },
+          { lon: 0, lat: 0 }
+        ],
         tags: { building: 'yes', 'source:geometry:oidn': '111' }
       },
       {
         type: 'way',
-        geometry: [{ lon: 2, lat: 2 }, { lon: 2, lat: 3 }, { lon: 3, lat: 3 }, { lon: 2, lat: 2 }],
+        geometry: [
+          { lon: 2, lat: 2 },
+          { lon: 2, lat: 3 },
+          { lon: 3, lat: 3 },
+          { lon: 2, lat: 2 }
+        ],
         tags: { building: 'yes', 'source:geometry:ref': 'Gbg/222' }
       }
     ])
@@ -95,7 +118,14 @@ describe('fetchOverpassBuildings', () => {
 
   it('skips degenerate ways with fewer than 3 nodes', async () => {
     mockFetch([
-      { type: 'way', geometry: [{ lon: 0, lat: 0 }, { lon: 1, lat: 1 }], tags: { building: 'yes' } }
+      {
+        type: 'way',
+        geometry: [
+          { lon: 0, lat: 0 },
+          { lon: 1, lat: 1 }
+        ],
+        tags: { building: 'yes' }
+      }
     ])
     const result = await fetchOverpassBuildings(BBOX_3857)
     expect(result.totalOsm).toBe(0)
@@ -113,9 +143,9 @@ describe('fetchOverpassBuildings', () => {
     await fetchOverpassBuildings(BBOX_3857)
 
     expect(fn).toHaveBeenCalledOnce()
-    const [, init] = fn.mock.calls[0]
-    expect(init.method).toBe('POST')
-    expect(String(init.body)).toContain('way%5B%22building%22%5D') // way["building"] url-encoded
+    const init = fn.mock.calls[0]?.[1]
+    expect(init?.method).toBe('POST')
+    expect(String(init?.body)).toContain('way%5B%22building%22%5D') // way["building"] url-encoded
   })
 
   it('throws when Overpass returns a non-OK status', async () => {

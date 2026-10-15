@@ -7,7 +7,10 @@
       @click="collapsed = !collapsed"
     >
       <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Match Mode</div>
-      <ChevronDown class="h-3 w-3 text-muted-foreground transition-transform duration-200" :class="collapsed ? '-rotate-90' : ''" />
+      <ChevronDown
+        class="h-3 w-3 text-muted-foreground transition-transform duration-200"
+        :class="collapsed ? '-rotate-90' : ''"
+      />
     </div>
 
     <!-- Collapsible body -->
@@ -15,27 +18,33 @@
       <div class="grid grid-cols-3 gap-1 bg-white/[0.03] rounded p-0.5">
         <button
           class="flex items-center justify-center px-1 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
-          :class="matchMode === 'geometry'
-            ? 'bg-primary/18 text-primary border border-primary/30'
-            : 'text-muted-foreground hover:text-foreground/70'"
+          :class="
+            matchMode === 'geometry'
+              ? 'bg-primary/18 text-primary border border-primary/30'
+              : 'text-muted-foreground hover:text-foreground/70'
+          "
           @click="setMatchMode('geometry')"
         >
           Geometry
         </button>
         <button
           class="flex items-center justify-center px-1 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
-          :class="matchMode === 'source'
-            ? 'bg-primary/18 text-primary border border-primary/30'
-            : 'text-muted-foreground hover:text-foreground/70'"
+          :class="
+            matchMode === 'source'
+              ? 'bg-primary/18 text-primary border border-primary/30'
+              : 'text-muted-foreground hover:text-foreground/70'
+          "
           @click="setMatchMode('source')"
         >
           Source
         </button>
         <button
           class="flex items-center justify-center px-1 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
-          :class="matchMode === 'both'
-            ? 'bg-primary/18 text-primary border border-primary/30'
-            : 'text-muted-foreground hover:text-foreground/70'"
+          :class="
+            matchMode === 'both'
+              ? 'bg-primary/18 text-primary border border-primary/30'
+              : 'text-muted-foreground hover:text-foreground/70'
+          "
           @click="setMatchMode('both')"
         >
           Both
@@ -60,7 +69,7 @@
           class="w-full accent-primary"
           :value="Math.round(geometryThreshold * 100)"
           @input="onThresholdInput"
-        >
+        />
         <p class="text-[9px] text-muted-foreground leading-relaxed">
           Requires both footprints to overlap by at least this percentage.
         </p>
@@ -78,11 +87,11 @@
             class="accent-primary h-3 w-3"
             :checked="useOverpass"
             @change="setUseOverpass(($event.target as HTMLInputElement).checked)"
-          >
+          />
         </label>
         <p class="text-[9px] text-muted-foreground/80 mt-1.5 leading-relaxed">
-          Queries OpenStreetMap live for this view instead of our daily copy. Slower, but reflects
-          edits from the last day. GRB only.
+          Queries OpenStreetMap live for this view instead of our daily copy. Slower, but reflects edits from the last
+          day. GRB only.
         </p>
       </div>
     </div>

@@ -53,9 +53,10 @@ export default defineEventHandler(async (event) => {
   const token = crypto.randomBytes(16).toString('hex')
   const filename = `${token}.osm`
 
-  const exportsDir = process.env.NODE_ENV === 'production'
-    ? join(process.cwd(), '.output', 'public', 'exports')
-    : join(process.cwd(), 'public', 'exports')
+  const exportsDir =
+    process.env.NODE_ENV === 'production'
+      ? join(process.cwd(), '.output', 'public', 'exports')
+      : join(process.cwd(), 'public', 'exports')
 
   const filePath = join(exportsDir, filename)
 
@@ -76,8 +77,8 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const protocol = getRequestHeader(event, 'x-forwarded-proto') ||
-                   (process.env.NODE_ENV === 'production' ? 'https' : 'http')
+  const protocol =
+    getRequestHeader(event, 'x-forwarded-proto') || (process.env.NODE_ENV === 'production' ? 'https' : 'http')
   const host = getRequestHeader(event, 'host') || 'localhost:3000'
   const baseUrl = `${protocol}://${host}`
 

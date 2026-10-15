@@ -3,10 +3,7 @@ import type { Feature } from 'geojson'
 // GRB GBA/GBG polygon type labels (LBLTYPE) that must NOT be tagged as a building.
 // - "verdieping" is handled specially (kept as building + fixme), so it is NOT in this set.
 // - "gebouw afgezoomd met virtuele gevels" is the gbg-3 virtual-facade outline.
-export const NON_BUILDING_TYPE_LABELS = new Set([
-  'trap',
-  'gebouw afgezoomd met virtuele gevels'
-])
+export const NON_BUILDING_TYPE_LABELS = new Set(['trap', 'gebouw afgezoomd met virtuele gevels'])
 
 export const VERDIEPING_FIXME =
   'verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!'
@@ -14,18 +11,18 @@ export const VERDIEPING_FIXME =
 // Default OSM tags for supported KNW (kunstwerken) structure types, keyed by GRB type_code (issue #22).
 export const KNW_TAG_MAP_BY_CODE: Record<string, Record<string, string>> = {
   '1': { bridge: 'yes' },
-  '5': { 'man_made': 'bridge_support' },
-  '7': { 'man_made': 'chimney' },
-  '8': { 'man_made': 'cooling_tower' },
-  '11': { 'man_made': 'water_tower' },
+  '5': { man_made: 'bridge_support' },
+  '7': { man_made: 'chimney' },
+  '8': { man_made: 'cooling_tower' },
+  '11': { man_made: 'water_tower' },
   '14': {
     power: 'generator',
     'generator:source': 'wind',
     'generator:method': 'wind_turbine'
   },
-  '22': { 'man_made': 'breakwater' },
-  '23': { 'man_made': 'breakwater' },
-  '24': { 'man_made': 'pier' }
+  '22': { man_made: 'breakwater' },
+  '23': { man_made: 'breakwater' },
+  '24': { man_made: 'pier' }
 }
 
 /**
@@ -34,6 +31,10 @@ export const KNW_TAG_MAP_BY_CODE: Record<string, Record<string, string>> = {
  * Pure function (no Vue/runtime deps) so it can be unit-tested in isolation. Maps GRB properties
  * to OSM tags per docs/GRB_PROPERTY_MAPPINGS.md and the rules in issues #22, #49 and #53.
  */
+// First entry of a comma-separated aggregate column (e.g. street_names), trimmed.
+const firstListItem = (value: string | number | null | undefined): string =>
+  (String(value || '').split(',')[0] ?? '').trim()
+
 export const filterFeatureProperties = (feature: Feature): Feature => {
   const props: Record<string, any> = { ...feature.properties }
 
@@ -42,7 +43,9 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
   const isKnw = sourceLayerType === 'knw' || explicitEntity === 'knw' || explicitEntity === 'kunstwerken'
 
   // GRB polygon type label (LBLTYPE) drives building pre-filtering (issue #53)
-  const polygonTypeLabel = String(props.type_label || props.lbltype || '').toLowerCase().trim()
+  const polygonTypeLabel = String(props.type_label || props.lbltype || '')
+    .toLowerCase()
+    .trim()
   const isVerdieping = polygonTypeLabel === 'verdieping'
   const isNonBuildingType = NON_BUILDING_TYPE_LABELS.has(polygonTypeLabel)
 
@@ -60,11 +63,14 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
   // Add default tags for supported KNW structure types
   if (isKnw) {
     const typeCode = String(props.type_code || '').trim()
-    const typeLabel = String(props.type_label || props.lbltype || '').toLowerCase().trim()
+    const typeLabel = String(props.type_label || props.lbltype || '')
+      .toLowerCase()
+      .trim()
 
-    const mappedTags = typeCode === '9'
-      ? { 'man_made': typeLabel.includes('opslagtank') && !typeLabel.includes('silo') ? 'storage_tank' : 'silo' }
-      : KNW_TAG_MAP_BY_CODE[typeCode]
+    const mappedTags =
+      typeCode === '9'
+        ? { man_made: typeLabel.includes('opslagtank') && !typeLabel.includes('silo') ? 'storage_tank' : 'silo' }
+        : KNW_TAG_MAP_BY_CODE[typeCode]
 
     if (mappedTags) {
       Object.entries(mappedTags).forEach(([key, value]) => {
@@ -87,11 +93,12 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
   if (props.opndatum || props.survey_date) {
     const raw = String(props.opndatum || props.survey_date).trim()
     // Strip any time component (T-separated or space-separated)
-    const dateOnly = raw.split('T')[0].split(' ')[0]
+    const dateOnly = raw.split(/[T ]/)[0] ?? ''
     if (dateOnly.includes('/')) {
       const parts = dateOnly.split('/')
       if (parts.length === 3) {
-        props['source:geometry:date'] = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
+        const [day = '', month = '', year = ''] = parts
+        props['source:geometry:date'] = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
       }
     } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
       props['source:geometry:date'] = dateOnly
@@ -103,8 +110,7 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
 
   // Create source:geometry:ref composite property
   if (props['source:geometry:entity'] && props['source:geometry:oidn']) {
-    props['source:geometry:ref'] =
-      `${props['source:geometry:entity']}/${props['source:geometry:oidn']}`
+    props['source:geometry:ref'] = `${props['source:geometry:entity']}/${props['source:geometry:oidn']}`
   }
 
   // Migrate auto_building to building tag (fallback)
@@ -118,9 +124,9 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
   const addressCount = Number(props.address_count || 0)
   const addressesStr = String(props.addresses || '').trim()
   if (!isKnw && addressCount === 1 && addressesStr) {
-    const street = String(props.street_names || '').split(',')[0].trim()
-    const postcode = String(props.postcodes || '').split(',')[0].trim()
-    const city = String(props.municipalities || '').split(',')[0].trim()
+    const street = firstListItem(props.street_names)
+    const postcode = firstListItem(props.postcodes)
+    const city = firstListItem(props.municipalities)
 
     // Derive the house number from the full address by stripping the street prefix,
     // then keep only a house-number-shaped token (e.g. "12", "12A", "12/3").
@@ -190,7 +196,7 @@ export const filterFeatureProperties = (feature: Feature): Feature => {
     'natur_code'
   ]
 
-  tagsToRemove.forEach(tag => {
+  tagsToRemove.forEach((tag) => {
     delete props[tag]
   })
 

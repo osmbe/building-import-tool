@@ -66,7 +66,7 @@ RUN for attempt in 1 2 3 4 5; do \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Just task runner (pinned version from GitHub releases - more reliable than install.sh CDN)
-ENV JUST_VERSION=1.40.0
+ENV JUST_VERSION=1.59.0
 RUN ARCH=$(uname -m) \
     && if [ "$ARCH" = "x86_64" ]; then JUST_ARCH="x86_64-unknown-linux-musl"; \
        elif [ "$ARCH" = "aarch64" ]; then JUST_ARCH="aarch64-unknown-linux-musl"; \
@@ -86,7 +86,7 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | d
     && rm -rf /var/lib/apt/lists/*
 
 # Install Go (needed for building imposm3 on arm64)
-ENV GO_VERSION=1.21.5
+ENV GO_VERSION=1.27.2
 RUN ARCH=$(uname -m) \
     && if [ "$ARCH" = "aarch64" ]; then \
         wget -q https://go.dev/dl/go${GO_VERSION}.linux-arm64.tar.gz \

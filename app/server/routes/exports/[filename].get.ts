@@ -14,9 +14,10 @@ export default defineEventHandler(async (event) => {
   try {
     // In production, files are in .output/public/exports
     // In development, files are in public/exports
-    const filePath = process.env.NODE_ENV === 'production'
-      ? join(process.cwd(), '.output', 'public', 'exports', filename)
-      : join(process.cwd(), 'public', 'exports', filename)
+    const filePath =
+      process.env.NODE_ENV === 'production'
+        ? join(process.cwd(), '.output', 'public', 'exports', filename)
+        : join(process.cwd(), 'public', 'exports', filename)
 
     const content = await readFile(filePath, 'utf-8')
 

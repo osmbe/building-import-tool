@@ -21,19 +21,19 @@
       <!-- Results list -->
       <div class="max-h-80 overflow-auto">
         <template v-if="query && query.length >= 3 && results.length === 0">
-          <div class="px-3 py-6 text-[11px] text-muted-foreground text-center">
-            No results for "{{ query }}"
-          </div>
+          <div class="px-3 py-6 text-[11px] text-muted-foreground text-center">No results for "{{ query }}"</div>
         </template>
         <template v-else>
           <button
-            v-for="item in (query && query.length >= 3 ? results : searchHistory)"
+            v-for="item in query && query.length >= 3 ? results : searchHistory"
             :key="item.id"
             class="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-white/[0.05] transition-colors group border-t border-white/[0.04] first:border-t-0"
             @click="$emit('select', item)"
           >
             <div class="flex items-center gap-2.5 min-w-0">
-              <div class="h-6 w-6 rounded flex items-center justify-center bg-white/[0.04] text-muted-foreground shrink-0">
+              <div
+                class="h-6 w-6 rounded flex items-center justify-center bg-white/[0.04] text-muted-foreground shrink-0"
+              >
                 <component :is="iconFor(item.type)" class="h-3.5 w-3.5" />
               </div>
               <div class="min-w-0">
@@ -43,7 +43,9 @@
                 </div>
               </div>
             </div>
-            <span class="text-[9px] font-mono text-muted-foreground/50 ml-2 shrink-0 group-hover:text-muted-foreground/80 transition-colors">
+            <span
+              class="text-[9px] font-mono text-muted-foreground/50 ml-2 shrink-0 group-hover:text-muted-foreground/80 transition-colors"
+            >
               {{ item.provider.toUpperCase() }}
             </span>
           </button>
@@ -68,10 +70,14 @@ defineEmits<{ (e: 'select', item: SearchResult): void }>()
 
 const iconFor = (type: SearchResult['type']) => {
   switch (type) {
-    case 'city': return MapPin
-    case 'building': return Building
-    case 'address': return Home
-    default: return Star
+    case 'city':
+      return MapPin
+    case 'building':
+      return Building
+    case 'address':
+      return Home
+    default:
+      return Star
   }
 }
 </script>

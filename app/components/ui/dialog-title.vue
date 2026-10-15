@@ -1,8 +1,5 @@
 <template>
-  <DialogTitle
-    :class="cn('text-lg font-semibold leading-none tracking-tight', className)"
-    v-bind="$attrs"
-  >
+  <DialogTitle :class="cn('text-lg font-semibold leading-none tracking-tight', className)" v-bind="$attrs">
     <slot />
   </DialogTitle>
 </template>

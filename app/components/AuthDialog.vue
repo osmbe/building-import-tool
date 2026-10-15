@@ -12,7 +12,9 @@
         <!-- Benefits list -->
         <div class="space-y-3">
           <div v-for="item in benefits" :key="item.text" class="flex items-start gap-3">
-            <div class="h-6 w-6 rounded bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+            <div
+              class="h-6 w-6 rounded bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5"
+            >
               <component :is="item.icon" class="h-3 w-3 text-primary" />
             </div>
             <span class="text-xs text-foreground/80 leading-relaxed">{{ item.text }}</span>
@@ -20,7 +22,9 @@
         </div>
 
         <!-- OSM brand mark -->
-        <div class="h-20 w-20 rounded-lg bg-primary/8 border border-primary/15 flex flex-col items-center justify-center gap-1.5 shrink-0">
+        <div
+          class="h-20 w-20 rounded-lg bg-primary/8 border border-primary/15 flex flex-col items-center justify-center gap-1.5 shrink-0"
+        >
           <MapIcon class="h-9 w-9 text-primary/60" />
           <span class="text-[8px] font-mono text-primary/50 uppercase tracking-widest">OAuth 2.0</span>
         </div>
@@ -57,14 +61,14 @@ import DialogTitle from '~/components/ui/dialog-title.vue'
 
 const { open, onSignIn, isLoading } = defineProps<{
   open: boolean
-  onSignIn: () => Promise<void>
+  onSignIn: () => void | Promise<void>
   isLoading: boolean
 }>()
 
 const benefits = [
-  { icon: MapPin,  text: 'Your imports are attributed to your OSM account' },
-  { icon: Users,   text: 'Track your contribution history and changesets' },
-  { icon: Shield,  text: 'Edits go through JOSM, where you review before upload' },
+  { icon: MapPin, text: 'Your imports are attributed to your OSM account' },
+  { icon: Users, text: 'Track your contribution history and changesets' },
+  { icon: Shield, text: 'Edits go through JOSM, where you review before upload' }
 ]
 
 function handleSignIn() {

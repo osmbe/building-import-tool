@@ -26,9 +26,7 @@ export interface OverpassBuildings {
  * Fetch OSM building footprints in the given Web Mercator bbox from Overpass.
  * Only closed ways tagged building=* are used (multipolygon relations are skipped in this v1).
  */
-export async function fetchOverpassBuildings(
-  bounds3857: [number, number, number, number]
-): Promise<OverpassBuildings> {
+export async function fetchOverpassBuildings(bounds3857: [number, number, number, number]): Promise<OverpassBuildings> {
   const [minX, minY, maxX, maxY] = bounds3857
   const [west, south] = mercatorToLonLat(minX, minY)
   const [east, north] = mercatorToLonLat(maxX, maxY)
@@ -48,7 +46,7 @@ export async function fetchOverpassBuildings(
     throw new Error(`Overpass request failed (${response.status}): ${text.slice(0, 200)}`)
   }
 
-  const data = await response.json() as { elements?: any[] }
+  const data = (await response.json()) as { elements?: any[] }
   const elements = Array.isArray(data.elements) ? data.elements : []
 
   const geometries: Array<{ type: 'Polygon'; coordinates: number[][][] }> = []
@@ -58,13 +56,13 @@ export async function fetchOverpassBuildings(
     if (el.type !== 'way' || !Array.isArray(el.geometry)) continue
 
     // Build a closed linear ring from the node list
-    const ring: number[][] = el.geometry
+    const ring: [number, number][] = el.geometry
       .filter((n: any) => n && typeof n.lon === 'number' && typeof n.lat === 'number')
-      .map((n: any) => [n.lon, n.lat])
+      .map((n: any): [number, number] => [n.lon, n.lat])
 
-    if (ring.length < 3) continue
     const first = ring[0]
-    const last = ring[ring.length - 1]
+    const last = ring.at(-1)
+    if (ring.length < 3 || !first || !last) continue
     if (first[0] !== last[0] || first[1] !== last[1]) ring.push([first[0], first[1]])
     if (ring.length < 4) continue
 
@@ -72,15 +70,12 @@ export async function fetchOverpassBuildings(
 
     // Collect GRB references for source-tag matching
     const tags = el.tags || {}
-    const oidn = (tags['source:geometry:oidn'] || '').trim()
-      || (tags['source:geometry:ref'] || '').split('/')[1]?.trim()
-      || ''
+    const oidn =
+      (tags['source:geometry:oidn'] || '').trim() || (tags['source:geometry:ref'] || '').split('/')[1]?.trim() || ''
     if (oidn) oidnSet.add(oidn)
   }
 
-  const geomCollection = geometries.length > 0
-    ? JSON.stringify({ type: 'GeometryCollection', geometries })
-    : null
+  const geomCollection = geometries.length > 0 ? JSON.stringify({ type: 'GeometryCollection', geometries }) : null
 
   return {
     geomCollection,

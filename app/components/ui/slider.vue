@@ -1,14 +1,6 @@
 <template>
-  <SliderRoot
-    :class="cn(
-      'relative flex w-full touch-none select-none items-center',
-      className
-    )"
-    v-bind="$attrs"
-  >
-    <SliderTrack
-      class="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary"
-    >
+  <SliderRoot :class="cn('relative flex w-full touch-none select-none items-center', className)" v-bind="$attrs">
+    <SliderTrack class="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
       <SliderRange class="absolute h-full bg-primary" />
     </SliderTrack>
     <SliderThumb
