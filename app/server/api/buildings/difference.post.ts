@@ -1,5 +1,5 @@
 import { queryGrb, queryOsm } from '~/server/utils/db'
-import { fetchOverpassBuildings, type OverpassBuildings } from '~/server/utils/overpass'
+import { fetchOverpassBuildings, OverpassError, type OverpassBuildings } from '~/server/utils/overpass'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -125,9 +125,10 @@ export default defineEventHandler(async (event) => {
       : ''
 
     // Issue #9: optionally source OSM buildings live from Overpass for the current bbox
-    // (opt-in; GRB only in this v1). Falls back to the Postgres mirror when not set.
-    const overpassData: OverpassBuildings | null =
-      useOverpass && dataSource === 'grb' ? await fetchOverpassBuildings([minX, minY, maxX, maxY]) : null
+    // (opt-in; all sources). Falls back to the Postgres mirror when not set.
+    const overpassData: OverpassBuildings | null = useOverpass
+      ? await fetchOverpassBuildings([minX, minY, maxX, maxY])
+      : null
 
     // Collect OSM source:geometry:oidn references in the extent (GRB only).
     // Shared by 'source' mode and 'both' mode (issue #6: combine geometry + source-tag filtering).
@@ -336,8 +337,10 @@ export default defineEventHandler(async (event) => {
       }
     } else if (dataSource === 'knw') {
       // Geometry matching for KNW: GRB kunstwerken with no corresponding OSM geometry
-      const osmResult = await queryOsm(
-        `
+      const osmResult = overpassData
+        ? [{ geom_collection: overpassData.geomCollection, total_osm: overpassData.totalOsm }]
+        : await queryOsm(
+            `
         SELECT
           ST_AsGeoJSON(ST_Collect(COALESCE(geom, ST_Transform(geom_mercator, 4326)))) AS geom_collection,
           COUNT(*) AS total_osm
@@ -345,8 +348,8 @@ export default defineEventHandler(async (event) => {
         WHERE COALESCE(geom, ST_Transform(geom_mercator, 4326)) && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
           AND ST_Intersects(COALESCE(geom, ST_Transform(geom_mercator, 4326)), ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
       `,
-        [minX, minY, maxX, maxY]
-      )
+            [minX, minY, maxX, maxY]
+          )
 
       const osmGeomCollection = osmResult[0]?.geom_collection
       totalOsm = parseInt(osmResult[0]?.total_osm || '0')
@@ -413,8 +416,10 @@ export default defineEventHandler(async (event) => {
     } else if (dataSource === 'urbis') {
       // Geometry matching for Urbis: uses urbis.buildings_with_addresses matview (EPSG:3857)
       // Two-step approach: fetch OSM geometries directly from osmbe to avoid FDW overhead
-      const osmResult = await queryOsm(
-        `
+      const osmResult = overpassData
+        ? [{ geom_collection: overpassData.geomCollection3857, total_osm: overpassData.totalOsm }]
+        : await queryOsm(
+            `
         SELECT
           ST_AsGeoJSON(ST_Collect(geom_mercator)) AS geom_collection,
           COUNT(*) AS total_osm
@@ -422,8 +427,8 @@ export default defineEventHandler(async (event) => {
         WHERE geom_mercator && ST_MakeEnvelope($1, $2, $3, $4, 3857)
           AND ST_Intersects(geom_mercator, ST_MakeEnvelope($1, $2, $3, $4, 3857))
       `,
-        [minX, minY, maxX, maxY]
-      )
+            [minX, minY, maxX, maxY]
+          )
 
       const osmGeomCollection = osmResult[0]?.geom_collection
       totalOsm = parseInt(osmResult[0]?.total_osm || '0')
@@ -492,8 +497,10 @@ export default defineEventHandler(async (event) => {
     } else {
       // Geometry matching for PICC: uses picc.buildings_with_addresses matview (EPSG:3857)
       // Two-step approach: fetch OSM geometries directly from osmbe to avoid FDW overhead
-      const osmResult = await queryOsm(
-        `
+      const osmResult = overpassData
+        ? [{ geom_collection: overpassData.geomCollection3857, total_osm: overpassData.totalOsm }]
+        : await queryOsm(
+            `
         SELECT
           ST_AsGeoJSON(ST_Collect(geom_mercator)) AS geom_collection,
           COUNT(*) AS total_osm
@@ -501,8 +508,8 @@ export default defineEventHandler(async (event) => {
         WHERE geom_mercator && ST_MakeEnvelope($1, $2, $3, $4, 3857)
           AND ST_Intersects(geom_mercator, ST_MakeEnvelope($1, $2, $3, $4, 3857))
       `,
-        [minX, minY, maxX, maxY]
-      )
+            [minX, minY, maxX, maxY]
+          )
 
       const osmGeomCollection = osmResult[0]?.geom_collection
       totalOsm = parseInt(osmResult[0]?.total_osm || '0')
@@ -606,8 +613,11 @@ export default defineEventHandler(async (event) => {
     return sendError(
       event,
       createError({
-        statusCode: 500,
-        statusMessage: `Error calculating difference: ${error instanceof Error ? error.message : JSON.stringify(error)}`
+        statusCode: error instanceof OverpassError ? error.statusCode : 500,
+        statusMessage:
+          error instanceof OverpassError
+            ? error.message
+            : `Error calculating difference: ${error instanceof Error ? error.message : JSON.stringify(error)}`
       })
     )
   }

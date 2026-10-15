@@ -1,5 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
-import { fetchOverpassBuildings, mercatorToLonLat } from '~/server/utils/overpass'
+import {
+  bboxAreaKm2,
+  buildOverpassQuery,
+  clearOverpassCache,
+  fetchOverpassBuildings,
+  lonLatToMercator,
+  mercatorToLonLat,
+  overpassHttpError,
+  parseOverpassElements,
+  stitchRings
+} from '~/server/utils/overpass'
 
 // Small bbox in Web Mercator (roughly central Belgium); exact values are not asserted.
 const BBOX_3857: [number, number, number, number] = [484000, 6594000, 484200, 6594200]
@@ -16,6 +26,7 @@ const mockFetch = (elements: any[], ok = true, status = 200) => {
 }
 
 afterEach(() => {
+  clearOverpassCache()
   vi.unstubAllGlobals()
 })
 
@@ -135,7 +146,13 @@ describe('fetchOverpassBuildings', () => {
   it('returns a null collection when Overpass yields no buildings', async () => {
     mockFetch([])
     const result = await fetchOverpassBuildings(BBOX_3857)
-    expect(result).toEqual({ geomCollection: null, totalOsm: 0, oidnList: [] })
+    expect(result).toEqual({
+      geomCollection: null,
+      geomCollection3857: null,
+      totalOsm: 0,
+      oidnList: [],
+      features: []
+    })
   })
 
   it('POSTs an Overpass QL query containing the converted bbox', async () => {
@@ -149,7 +166,124 @@ describe('fetchOverpassBuildings', () => {
   })
 
   it('throws when Overpass returns a non-OK status', async () => {
-    mockFetch([], false, 429)
-    await expect(fetchOverpassBuildings(BBOX_3857)).rejects.toThrow(/Overpass request failed \(429\)/)
+    mockFetch([], false, 500)
+    await expect(fetchOverpassBuildings(BBOX_3857)).rejects.toMatchObject({
+      statusCode: 502,
+      message: expect.stringMatching(/Overpass request failed \(500\)/)
+    })
+  })
+
+  it('reuses a cached result for an identical bbox', async () => {
+    const fn = mockFetch([])
+    await fetchOverpassBuildings(BBOX_3857)
+    await fetchOverpassBuildings(BBOX_3857)
+    expect(fn).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('lonLatToMercator', () => {
+  it('round-trips with mercatorToLonLat', () => {
+    const [x, y] = lonLatToMercator(4.35, 50.85)
+    const [lon, lat] = mercatorToLonLat(x, y)
+    expect(lon).toBeCloseTo(4.35, 8)
+    expect(lat).toBeCloseTo(50.85, 8)
+  })
+})
+
+describe('bboxAreaKm2', () => {
+  it('is roughly 0.04 km2 for a 200 m square', () => {
+    expect(bboxAreaKm2(BBOX_3857)).toBeGreaterThan(0.01)
+    expect(bboxAreaKm2(BBOX_3857)).toBeLessThan(0.05)
+  })
+})
+
+describe('buildOverpassQuery', () => {
+  it('queries both ways and relations tagged building', () => {
+    const q = buildOverpassQuery(BBOX_3857)
+    expect(q).toContain('way["building"]')
+    expect(q).toContain('relation["building"]')
+    expect(q).toContain('out geom tags')
+  })
+})
+
+describe('stitchRings', () => {
+  it('joins two half-rings (one reversed) into a single closed ring', () => {
+    const a: [number, number][] = [
+      [0, 0],
+      [0, 1],
+      [1, 1]
+    ]
+    const b: [number, number][] = [
+      [0, 0],
+      [1, 0],
+      [1, 1]
+    ]
+    const rings = stitchRings([a, b])
+    expect(rings).toHaveLength(1)
+    expect(rings[0]?.[0]).toEqual(rings[0]?.at(-1))
+    expect(rings[0]).toHaveLength(5)
+  })
+
+  it('drops segments that cannot be closed', () => {
+    expect(
+      stitchRings([
+        [
+          [0, 0],
+          [1, 1]
+        ]
+      ])
+    ).toEqual([])
+  })
+})
+
+describe('parseOverpassElements', () => {
+  const square = (x: number, y: number, s: number) => [
+    { lon: x, lat: y },
+    { lon: x, lat: y + s },
+    { lon: x + s, lat: y + s },
+    { lon: x + s, lat: y },
+    { lon: x, lat: y }
+  ]
+
+  it('builds a polygon with a hole from a multipolygon relation', () => {
+    const result = parseOverpassElements([
+      {
+        type: 'relation',
+        id: 5,
+        tags: { building: 'yes', 'source:geometry:oidn': '42' },
+        members: [
+          { type: 'way', role: 'outer', geometry: square(0, 0, 10) },
+          { type: 'way', role: 'inner', geometry: square(2, 2, 2) }
+        ]
+      }
+    ])
+    expect(result.totalOsm).toBe(1)
+    expect(result.features[0]?.geometry.coordinates).toHaveLength(2)
+    expect(result.features[0]?.properties.osm_id).toBe('relation/5')
+    expect(result.oidnList).toEqual(['42'])
+  })
+
+  it('provides a Web Mercator collection alongside the WGS84 one', () => {
+    const result = parseOverpassElements([{ type: 'way', id: 1, geometry: square(4, 50, 0.001), tags: {} }])
+    const wgs = JSON.parse(result.geomCollection as string)
+    const merc = JSON.parse(result.geomCollection3857 as string)
+    expect(wgs.geometries[0].coordinates[0][0][0]).toBeCloseTo(4)
+    expect(merc.geometries[0].coordinates[0][0][0]).toBeGreaterThan(400000)
+  })
+})
+
+describe('overpassHttpError', () => {
+  it('maps rate limit and timeout statuses', () => {
+    expect(overpassHttpError(429, '').statusCode).toBe(429)
+    expect(overpassHttpError(504, '').statusCode).toBe(504)
+    expect(overpassHttpError(500, 'boom').statusCode).toBe(502)
+  })
+})
+
+describe('fetchOverpassBuildings limits', () => {
+  it('rejects a bbox that is too large without calling Overpass', async () => {
+    const fn = mockFetch([])
+    await expect(fetchOverpassBuildings([0, 6000000, 20000, 6020000])).rejects.toMatchObject({ statusCode: 400 })
+    expect(fn).not.toHaveBeenCalled()
   })
 })
