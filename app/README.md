@@ -1,51 +1,79 @@
-# Nuxt 3 + shadcn-vue: Buildings Mapping Tool (Vue Port)
+# BE2OSM web app
 
-This folder contains Vue/Nuxt 3 components converted from your Next.js + shadcn React demo.
-They use **shadcn-vue** primitives (`@/components/ui/*`) and `lucide-vue-next` icons.
+A Nuxt 4 single-page app (`ssr: false`) with its API as Nitro server routes, served from one container. The map
+uses [OpenLayers](https://openlayers.org/), the UI uses Tailwind v4 and shadcn-vue-style components
+(`components/ui/`, built on radix-vue). Dev tooling is [Vite+](https://viteplus.dev) (`vp`), which bundles Vitest,
+Oxlint and Oxfmt.
 
-## What’s included
-
-- `pages/index.vue` – main page with fixed Navigation and InteractiveMap area
-- `components/Navigation.vue` – top bar (search, theme toggle, auth)
-- `components/SearchBar.vue` + `components/SearchResults.vue`
-- `components/UserMenu.vue`
-- `components/AuthDialog.vue`
-- `components/InteractiveMap.vue` – map placeholder with controls and layer toggles
-- `components/ObjectInfoPanel.vue` – right drawer-like panel with tabs
-- `components/QAToolsPanel.vue` – simple QA operations list
-- `composables/useAuth.ts` – mock OSM auth (localStorage)
-- `composables/useSearch.ts` – mock geocoder + history
-- `composables/useBuildingData.ts` – mock buildings
-- minimal `nuxt.config.ts`, `app.vue`, and Tailwind base
-
-> NOTE: The "map" is a styled placeholder. Plug in your preferred map lib (OpenLayers, MapLibre, Leaflet) where `InteractiveMap.vue` currently simulates clicks.
-
-## Install
-
-In your Nuxt app, install:
-
-- shadcn-vue (and generate the UI components you need)
-- lucide-vue-next
-- tailwindcss + postcss (if not already)
+## Commands
 
 ```bash
-pnpm add lucide-vue-next
-# or npm i lucide-vue-next
+npm install                 # also runs `nuxt prepare`
+npm run dev                 # http://localhost:3000
+npm run build
+npm test                    # unit tests
+npm run test:coverage       # with the coverage thresholds CI enforces
+npx vp test run tests/overpass.test.ts     # one file
+npx vp test run -t "name of test"          # one test
+npm run lint                # type-aware oxlint (0 errors required)
+npm run typecheck           # vue-tsc -b
+npx vp fmt                  # format
 ```
 
-Set up **shadcn-vue** following its docs, so imports like `@/components/ui/button` resolve.
+`npm run dev` alone has no source data: tiles come through Caddy (`/tiles/...`), and the API needs PostgreSQL.
+The [README](../README.md#getting-started) shows how to run against the test stack's database.
 
-## Theme toggle
+Configuration comes from environment variables (`nuxt.config.ts`): `POSTGRES_HOST/PORT/USER/PASSWORD`,
+`JWT_SECRET`, `OSM_CLIENT_ID`, `OSM_CLIENT_SECRET`, `OSM_REDIRECT_URI`, and `GIT_SHA` (baked in by CI, reported
+by readiness).
 
-If you use `@nuxtjs/color-mode`, remove the manual `setTheme` logic in `Navigation.vue`.
-Otherwise, the component toggles the `dark` class on `<html>`.
+## Layout
 
-## Hooking a real map
+| Path                                                                       | What                                                                                                                                                       |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages/index.vue`                                                          | the only page: navigation bar and the map                                                                                                                  |
+| `components/InteractiveMap.vue`                                            | most of the app (about 2700 lines): the OpenLayers map, a vector tile layer per source, selection, the difference request, the info panel, the JOSM export |
+| `components/`                                                              | navigation, search, login dialog, match mode control, JOSM help, info panel, toasts                                                                        |
+| `components/ui/`                                                           | UI primitives (buttons, dialogs, tabs, ...)                                                                                                                |
+| `composables/useMapLayers.ts`                                              | base layers: OSM Belgium, the Flanders, Wallonia and Brussels orthophotos, Esri imagery                                                                    |
+| `composables/useJosmExport.ts`                                             | candidates → OSM XML → `/api/export/upload` → JOSM remote control (`127.0.0.1:8111`)                                                                       |
+| `composables/useAuth.ts`, `useSearch.ts`, `useMatchMode.ts`, `useToast.ts` | OSM login state, Nominatim search, the match mode setting, notifications                                                                                   |
+| `utils/candidates.ts`                                                      | the candidates contract on the app side: columns, views, tile URLs, `candidateTags` (OSM tags per source)                                                  |
+| `utils/grbExportTags.ts`                                                   | GRB building types and KNW default tags ([docs/GRB_PROPERTY_MAPPINGS.md](../docs/GRB_PROPERTY_MAPPINGS.md))                                                |
+| `utils/geojsonToOsm.ts`                                                    | GeoJSON → OSM XML                                                                                                                                          |
+| `utils/osmSourceOidn.ts`                                                   | parsing the GRB references of OSM buildings (`source:geometry:ref`, the older `:oidn` tags)                                                                |
+| `utils/matchMode.ts`, `utils/openlayers.ts`                                | match mode rules, OpenLayers helpers                                                                                                                       |
+| `plugins/chunk-reload.client.ts`                                           | reloads the page once when a deploy made the old JS chunks disappear                                                                                       |
 
-Replace the placeholder in `InteractiveMap.vue` with your map component and call `panelOpen = true` and `activeBuilding = ...` when a feature is clicked.
+### Server routes (`server/`)
 
-## Paths
+| Route                                            | What                                                                                                                                                                                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/buildings/difference`                 | the candidates in view with no OSM match. Body: `bounds` (EPSG:3857), `dataSource` (`grb`, `knw`, `picc`, `urbis`), `matchMode` (`geometry`, `source`, `both`), `geometryThreshold` (0.3–0.95), `useOverpass`, `contract` |
+| `POST /api/buildings/osm-live`                   | OSM buildings in view from Overpass ("Live OSM data")                                                                                                                                                                     |
+| `POST /api/export/upload`, `GET /exports/<file>` | stores an OSM XML export for an hour, so JOSM can load it by URL                                                                                                                                                          |
+| `/api/auth/*`                                    | OSM OAuth 2.0 login; the session is a JWT cookie                                                                                                                                                                          |
+| `GET /api/meta/data-dates`                       | when each source was last imported                                                                                                                                                                                        |
+| `GET /api/health`, `GET /api/health/ready`       | liveness; readiness for deploys (commit, migrations, candidates views)                                                                                                                                                    |
+| `GET /api/proxy/brussels-wms`                    | proxy for the Urbis WMS (tile size and projection fixes)                                                                                                                                                                  |
 
-Components import shadcn-vue as `@/components/ui/*`. Adjust if your generator outputs a different path.
+`server/utils/db.ts` has two pools: `queryGrb` (database `be2osm`) and `queryOsm` (`osmbe`).
+`server/utils/overpass.ts` is the Overpass client; keep its descriptive `User-Agent`, because public instances
+answer HTTP 406 to generic clients.
 
-Have fun!
+## Tests
+
+- `tests/` holds the unit tests. They run without the Nuxt runtime: auto-imports and Nitro globals are stubbed
+  with `vi.stubGlobal` before the module under test is imported (`tests/server/nitro.ts`), and the database is
+  mocked with `vi.mock('~/server/utils/db')`. Import the test APIs from `vite-plus/test`.
+- Coverage counts `utils/`, `server/` and `composables/`, not components. Keep logic out of `.vue` files.
+- `tests/integration/` runs against a real database. The repository's `tests/db/run.sh 70` runs it, and it is
+  skipped unless `TEST_PG_PORT` is set. Its snapshots record the difference responses and JOSM exports per source.
+
+## Type checking notes
+
+- TypeScript is strict with `noUncheckedIndexedAccess`, pinned to 6.x (vue-tsc doesn't support 7).
+- `vue-tsc -b` checks `.vue` files; `vp lint` runs the type-aware rules and skips them.
+- Both scripts run `nuxt prepare` first. After a `nuxt build`, a bare `vp lint` or `vue-tsc` reports spurious
+  "Cannot find name 'defineEventHandler'" errors.
+- Tests are compiled with `tsconfig.test.json`, which is deliberately not named `tsconfig.json`.

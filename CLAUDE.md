@@ -144,8 +144,9 @@ The frontend fetches tiles from relative `/tiles/...` URLs. Nuxt has no dev prox
 
 ## Other docs
 
+- `README.md`, `CONTRIBUTING.md`, `docs/ARCHITECTURE.md`, `app/README.md`: the human-facing versions of this file (overview, checks and schema rules, design). Keep them in step when behaviour changes.
 - `INSTALL.md`: production server setup
 - `docs/RUNBOOK.md`: deploys, the one-time server bootstrap (`scripts/server-bootstrap.sh`), heavy migrations, rollbacks, job logs
-- `processing/README.md`, `processing/DOCKER.md`: processing details
+- `processing/README.md`: recipes per source, import and update flow
 - `docs/GRB_ADDRESS_JOIN.md`: how GRB addresses are linked to buildings
 - `UX_PLAN.md`: the UX improvement plan (code comments cite issue numbers like `Issue #53`)

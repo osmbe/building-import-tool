@@ -122,7 +122,7 @@
 <script setup lang="ts">
 import { Building, Calendar, Layers, Ruler, X } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
-import type { BuildingData } from '~/composables/useBuildingData'
+import type { BuildingData } from '~/types/buildingData'
 import Tabs from '~/components/ui/tabs.vue'
 import TabsContent from '~/components/ui/tabs-content.vue'
 import TabsList from '~/components/ui/tabs-list.vue'

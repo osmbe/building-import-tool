@@ -15,6 +15,15 @@ This guide covers setting up the Building Import Tool on a fresh Linux server wi
 | `OSM_CLIENT_SECRET` | From OSM OAuth registration |
 | `OSM_REDIRECT_URI` | OAuth callback URL |
 | `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data from Digital Vlaanderen |
+| `WEBHOOK_SECRET` | Shared secret for the server's webhook (same value as `WEBHOOK_SECRET` in the server `.env`) |
+
+And these repository variables:
+
+| Variable | Description |
+|----------|-------------|
+| `WEBHOOK_URL` | The server's webhook, e.g. `https://buildings.osm.be/webhook` |
+| `DEPLOY_V2` | `true` once the server is bootstrapped (step 6): turns on automatic deploys |
+| `APP_URL` | Optional: public URL checked for readiness after each deploy |
 
 These secrets are used by the CI/CD pipeline to build Docker images and run data imports.
 
@@ -46,14 +55,14 @@ gh auth logout
 
 ## Step 4: Authenticate Docker with GHCR
 
-The Nuxt application image is stored in GitHub Container Registry (private). Create a Personal Access Token (PAT) with `read:packages` scope and use it to authenticate Docker:
+The images CI builds (`nuxt-app`, `processing`, `webhook`) are stored in GitHub Container Registry (private). Create a Personal Access Token (PAT) with `read:packages` scope and use it to authenticate Docker:
 
 ```bash
 # Login to GitHub Container Registry (token will be saved for future pulls)
 echo "YOUR_GHCR_PAT" | docker login ghcr.io -u YOUR_USERNAME --password-stdin
 ```
 
-Replace `YOUR_GHCR_PAT` with the same PAT used in the GitHub secrets (`GHCR_PAT`).
+The `GH_TOKEN` of the next step (a classic PAT with `repo` and `read:packages`) works for this.
 
 ## Step 5: Configure Environment
 
@@ -132,77 +141,32 @@ curl -f https://buildings.osm.be/tiles/grb/health
 curl -f https://buildings.osm.be/tiles/osm/health
 ```
 
-## Step 8: Import Data (Remote Processing)
+## Step 8: Import Data
 
-Data processing is offloaded to GitHub Actions runners (free compute). The VPS triggers the workflow, waits for completion, downloads the result, and restores to the local database.
-
-### Prerequisites
-
-Ensure GitHub CLI is authenticated on your VPS (required for private repo access):
+The full imports run on GitHub Actions runners, not on the server. Each workflow builds the data in a throwaway
+database, uploads a dump, and then asks the server's webhook to restore it. The server swaps it in next to the live
+data, so the site keeps working during an import. Start them from **Actions** on GitHub, or with `gh`:
 
 ```bash
-gh auth login
+gh workflow run "OSM Import" -R osmbe/building-import-tool       # 30-60 minutes
+gh workflow run "GRB Import" -R osmbe/building-import-tool       # 1-2 hours, needs DIGITAL_VLAANDEREN_API_KEY
+gh workflow run "PICC Import" -R osmbe/building-import-tool
+gh workflow run "Urbis Import" -R osmbe/building-import-tool
 ```
 
-This creates `~/.config/gh/` which is mounted into the processing container.
+The workflow fails if the restore job fails; the job log is in the workflow output (see docs/RUNBOOK.md). Updates
+run on their own afterwards: OSM daily and Urbis monthly. GRB and PICC updates are started by hand for now.
 
-### Import OSM Data
-
-```bash
-cd /opt/docker/buildings
-docker compose run --rm processing just osm-import-remote
-```
-
-This will:
-1. Trigger the OSM Import workflow on GitHub Actions
-2. Wait for the workflow to complete (30-60 minutes)
-3. Download the database dump artifact
-4. Restore to your local PostgreSQL
-
-### Import GRB Data
+Check the result:
 
 ```bash
-docker compose run --rm processing just grb-import-remote
-```
-
-This will:
-1. Trigger the GRB Import workflow on GitHub Actions
-2. Wait for the workflow to complete (1-2 hours)
-3. Download the database dump artifact
-4. Restore to your local PostgreSQL
-
-### Verify Data Import
-
-```bash
-# Check OSM building count
 docker compose run --rm processing just osm-status
-
-# Check GRB building count
 docker compose run --rm processing just grb-status
+curl -s https://buildings.osm.be/api/meta/data-dates
 ```
 
-### Required GitHub Secrets for Data Import
-
-For GRB import, ensure this secret is configured (Settings → Secrets and variables → Actions):
-
-| Secret | Description |
-|--------|-------------|
-| `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data from Digital Vlaanderen |
-
-Note: OSM import doesn't require any secrets.
-
-### Manual Workflow Trigger (Alternative)
-
-You can also trigger workflows manually from GitHub:
-
-1. Go to the repository on GitHub
-2. Navigate to **Actions** → **OSM Import** or **GRB Import**
-3. Click **Run workflow** → **Run workflow**
-
-Then download artifacts manually with:
-```bash
-gh run download <RUN_ID> -R osmbe/building-import-tool -n osmbe-dump
-```
+`docker compose run --rm processing just grb-import-remote` (also `osm-`, `picc-`) does the same from the server:
+it starts the workflow, waits, downloads the artifact and restores it.
 
 ## Switching buildings.osm.be to this tool
 
