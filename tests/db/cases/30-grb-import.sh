@@ -19,5 +19,10 @@ assert_eq "$(sql "SELECT entity || '/' || oidn || ':' || addresses FROM grb.buil
 assert_eq "$(sql "SELECT polygon_count FROM grb.buildings_with_addresses WHERE entity = 'Gbg' AND oidn = 1001")" "2" \
     "parent building stats come from grb.buildings"
 assert_true "SELECT imported_at IS NOT NULL FROM grb.import_meta" "the import time is recorded"
-assert_eq "$(sql "SELECT string_agg(gebouw_id || ':' || polygon_count || ':' || GeometryType(geom), ',' ORDER BY gebouw_id) FROM grb.buildings")" \
-    "5001:2:MULTIPOLYGON,5002:1:MULTIPOLYGON" "buildings aggregate per gebouw_id (single-polygon buildings too)"
+assert_eq "$(sql "SELECT string_agg(gebouw_id || ':' || polygon_count, ',' ORDER BY gebouw_id) FROM grb.buildings")" \
+    "5001:2,5002:1" "buildings aggregate per gebouw_id (single-polygon buildings too)"
+# Geometry is stored once per object (plus the 3857 serving copy of the view): no Web Mercator copies, no union
+assert_true "SELECT NOT EXISTS (SELECT 1 FROM grb.building_polygons WHERE geom_mercator IS NOT NULL)
+    AND NOT EXISTS (SELECT 1 FROM grb.addresses WHERE geom_mercator IS NOT NULL)
+    AND NOT EXISTS (SELECT 1 FROM grb.buildings WHERE geom IS NOT NULL OR geom_mercator IS NOT NULL)" \
+    "the import writes no geometry copies"

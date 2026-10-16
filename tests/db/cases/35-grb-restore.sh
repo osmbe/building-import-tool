@@ -45,9 +45,9 @@ wait "$reader" || true
 assert_eq "$(snapshot)" "$expected" "the live schema has exactly the imported data"
 assert_eq "$(sql "SELECT count(*) FROM pg_namespace WHERE nspname IN ('grb_next', 'grb_prev')")" "0" "nothing is left next to it"
 assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "$(migration_count grb)" "the migration tracking came with it"
-psql_db -c "INSERT INTO grb.building_polygons (oidn, geom) VALUES
-  (9998, ST_GeomFromText('POLYGON((4.40 51.20,4.4001 51.20,4.4001 51.2001,4.40 51.2001,4.40 51.20))', 4326))" >/dev/null
-assert_true "SELECT geom_mercator IS NOT NULL FROM grb.building_polygons WHERE oidn = 9998" "the triggers of the swapped-in tables work"
+psql_db -c "INSERT INTO grb.building_polygons (oidn, geom, updated_at) VALUES
+  (9998, ST_GeomFromText('POLYGON((4.40 51.20,4.4001 51.20,4.4001 51.2001,4.40 51.2001,4.40 51.20))', 4326), '2000-01-01')" >/dev/null
+assert_true "SELECT updated_at > '2000-01-02' FROM grb.building_polygons WHERE oidn = 9998" "the triggers of the swapped-in tables work"
 assert_true "SELECT relispopulated FROM pg_class WHERE oid = 'grb.buildings_with_addresses'::regclass" "the view is populated"
 psql_db -c "DELETE FROM grb.building_polygons WHERE oidn = 9998" >/dev/null
 

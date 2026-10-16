@@ -19,8 +19,8 @@ assert_eq "$rc" "0" "the diff is applied"
 assert_eq "$(polygons)" "$expected" "1001 changed (gebouw_id kept), 1002 removed, 1004 added, GBA untouched"
 grep -q "removed: 1, changed: 1, added (or already present): 1" <<<"$out" \
     && pass "the counts are reported" || fail "the counts are reported: $out"
-assert_true "SELECT ST_Area(geom_mercator) > 0 FROM grb.building_polygons WHERE entity = 'Gbg' AND oidn = 1001" \
-    "the changed polygon's mercator geometry is recomputed"
+assert_true "SELECT ST_Area(geom) > 0 FROM grb.candidates WHERE source_ref = 'Gbg/1001'" \
+    "the view is refreshed with the changed polygon"
 assert_true "SELECT to_regclass('grb._diff_add') IS NULL AND to_regclass('grb._diff_del') IS NULL AND to_regclass('grb._diff_load') IS NULL" \
     "no staging table is left behind"
 

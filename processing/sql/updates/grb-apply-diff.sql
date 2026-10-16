@@ -57,8 +57,7 @@ ON CONFLICT (entity, oidn) DO UPDATE SET
     origin_label = EXCLUDED.origin_label,
     opndatum_raw = EXCLUDED.opndatum_raw,
     survey_date = EXCLUDED.survey_date,
-    geom = EXCLUDED.geom,
-    geom_mercator = NULL; -- recomputed by the trigger
+    geom = EXCLUDED.geom;
 
 SELECT format('   removed: %s, changed: %s, added (or already present): %s',
     (SELECT count(*) FROM diff_removed r

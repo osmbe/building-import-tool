@@ -1813,7 +1813,8 @@ _grb-import-address-links:
     rm -rf {{grb_data_dir}}/address-links
     rm -rf {{grb_data_dir}}/addresses
 
-# GRB: Aggregate building polygons into buildings (batched to avoid OOM)
+# GRB: Aggregate building polygons into buildings: polygon count, area and type per gebouw_id (batched).
+# The building geometry is not stored: tiles and the API work per polygon.
 _grb-aggregate-buildings:
     #!/usr/bin/env bash
     set -e
@@ -1840,21 +1841,19 @@ _grb-aggregate-buildings:
         echo "   Batch $BATCH_NUM/$TOTAL_BATCHES: gebouw_id $((LAST_ID + 1))-$BATCH_MAX ($PERCENT%)..."
 
         PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -c "
-            INSERT INTO grb.buildings (gebouw_id, polygon_count, total_area_m2, type_label, geom)
+            INSERT INTO grb.buildings (gebouw_id, polygon_count, total_area_m2, type_label)
             SELECT
                 bp.gebouw_id,
                 COUNT(*) as polygon_count,
                 SUM(bp.area_m2)::real as total_area_m2,
-                MAX(bp.type_label) as type_label,
-                ST_Union(bp.geom) as geom
+                MAX(bp.type_label) as type_label
             FROM grb.building_polygons bp
             WHERE bp.gebouw_id > $LAST_ID AND bp.gebouw_id <= $BATCH_MAX
             GROUP BY bp.gebouw_id
             ON CONFLICT (gebouw_id) DO UPDATE SET
                 polygon_count = EXCLUDED.polygon_count,
                 total_area_m2 = EXCLUDED.total_area_m2,
-                type_label = EXCLUDED.type_label,
-                geom = EXCLUDED.geom;
+                type_label = EXCLUDED.type_label;
         "
 
         LAST_ID=$BATCH_MAX
