@@ -47,4 +47,11 @@ check_martin martin-grb candidates 4.40005 51.20003 "${CONTRACT[@]}"
 check_martin martin-grb knw_candidates 4.40505 51.20003 "${CONTRACT[@]}"
 check_martin martin-picc candidates 4.87005 50.46503 "${CONTRACT[@]}"
 check_martin martin-urbis candidates 4.35005 50.84603 "${CONTRACT[@]}"
+# details (jsonb) reaches the tiles as one property per key
+read -r z x y < <(tile_xyz 4.87005 50.46503 16)
+if curl -fsS "http://127.0.0.1:$(martin_port martin-picc)/candidates/${z}/${x}/${y}" | grep -aq georef_id; then
+    pass "martin-picc/candidates tiles carry the details keys"
+else
+    fail "martin-picc/candidates tiles carry the details keys"
+fi
 martin_down

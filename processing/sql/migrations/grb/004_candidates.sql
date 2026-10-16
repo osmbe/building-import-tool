@@ -15,7 +15,8 @@
 --   area_m2         area of the polygon
 --   parent_*        the object this polygon belongs to: the GRB building (gebouw_id) or the Urbis building block
 --   addresses ...   addresses inside the polygon (text lists) and their count; NULL / 0 for KNW
---   details         remaining source-specific fields (API only, not in tiles)
+--   details         remaining source-specific fields (in tiles, ST_AsMVT writes each key as a property: keys
+--                   must not clash with the columns above)
 --   geom            EPSG:3857
 --
 -- Plain views over the existing materialized views and tables, so they cost no storage or refresh. A migration

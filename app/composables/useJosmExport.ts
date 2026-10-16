@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection } from 'geojson'
 import { geojsonToOsm } from '~/utils/geojsonToOsm'
-import { filterFeatureProperties } from '~/utils/grbExportTags'
+import { candidateToOsmFeature } from '~/utils/candidates'
 
 export const useJosmExport = () => {
   const josmBaseUrl = ref('http://127.0.0.1:8111')
@@ -86,7 +86,7 @@ export const useJosmExport = () => {
     // Create GeoJSON FeatureCollection
     let geojson: FeatureCollection = {
       type: 'FeatureCollection',
-      features: includeMeta ? features : features.map(filterFeatureProperties)
+      features: includeMeta ? features : features.map(candidateToOsmFeature)
     }
 
     // Optional: Simplify geometry using mapshaper

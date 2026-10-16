@@ -247,7 +247,8 @@ for tiles in grb-tiles osm-tiles picc-tiles urbis-tiles; do
     fi
 done
 # Antwerp centre, EPSG:3857
-body='{"bounds":[489583,6659946,490362,6660657],"dataSource":"grb","matchMode":"geometry"}'
+# (contract: CANDIDATES_CONTRACT of app/utils/candidates.ts, checked by its unit test)
+body='{"bounds":[489583,6659946,490362,6660657],"dataSource":"grb","matchMode":"geometry","contract":1}'
 if diff="$(in_webhook curl -fsS --max-time 60 -H 'Content-Type: application/json' -d "$body" \
     http://nuxt-app:3000/api/buildings/difference)"; then
     info "GRB difference: $(grep -o '"stats":{[^}]*}' <<<"$diff")"

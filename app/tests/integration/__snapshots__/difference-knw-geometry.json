@@ -9,11 +9,29 @@
   "features": [
     {
       "properties": {
-        "oidn": "7001",
-        "type_code": 7,
+        "fid": "7001",
+        "source": "knw",
+        "entity": "Knw",
+        "source_id": "7001",
+        "source_ref": "Knw/7001",
+        "type_code": "7",
         "type_label": "schoorsteen",
         "survey_date": "2022-01-10",
-        "entity": "Knw"
+        "origin_label": "terreinbezoek",
+        "area_m2": 50.544075,
+        "parent_id": null,
+        "parent_type_label": null,
+        "parent_part_count": null,
+        "parent_area_m2": null,
+        "addresses": null,
+        "street_names": null,
+        "postcodes": null,
+        "municipalities": null,
+        "address_count": 0,
+        "details": {
+          "uidn": 70010,
+          "length_m": 8
+        }
       },
       "coordinates": [
         [

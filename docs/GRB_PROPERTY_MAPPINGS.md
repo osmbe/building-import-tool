@@ -1,136 +1,54 @@
-# GRB Building Property Mappings for JOSM Export
+# Property mappings for the JOSM export
 
-This document details how GRB (Grootschalig Referentie Bestand) building properties are mapped to OpenStreetMap tags before exporting to JOSM.
+How the candidates of every source (GRB, KNW, PICC, Urbis) become OpenStreetMap tags when they are exported to
+JOSM.
 
-## Overview
+## 1. How the export works
 
-The GRB building data undergoes property transformation before being exported to JOSM. This includes:
-- Mapping GRB-specific properties to OSM standard tags
-- Removing internal metadata tags
-- Formatting dates to OSM standards
-- Creating composite reference tags
-- Mapping building types
+Every source exposes its buildings through the same **candidates contract** (database views
+`grb.candidates`, `grb.knw_candidates`, `picc.candidates`, `urbis.candidates`; see CLAUDE.md). The difference API
+returns candidates with these properties, and `candidateTags` in `app/utils/candidates.ts` builds the OSM tags from
+them, per `source`. Only the tags below are written: no source property is ever copied into OSM.
 
-## 1. Core Property Mappings
+| Contract property | Source column | OSM tag |
+|---|---|---|
+| `source`, `type_label` | GRB LBLTYPE, KNW type, PICC nature | `building=yes` (section 2), KNW defaults (section 3) |
+| `survey_date` | GRB OPNDATUM, KNW OPNDATUM, PICC DATE_LEVE | `source:geometry:date` (YYYY-MM-DD) |
+| `source_ref` | GRB entity + OIDN | `source:geometry:ref` (`Gbg/718523`, `Gba/2664`, `Knw/7001`) |
+| `addresses`, `street_names`, `postcodes`, `municipalities`, `address_count` | addresses inside the polygon | `addr:*` (section 4) |
 
-### GRB Properties → OSM Tags
-
-| GRB Property | OSM Tag | Value/Logic |
-|--------------|---------|-------------|
-| `LBLTYPE` (hoofdgebouw, bijgebouw, verdieping) | `building` | `yes` (see section 5; other types are not exported as buildings) |
-| `OIDN` | `source:geometry:oidn` | GRB object identifier (unique per entity) |
-| `OPNDATUM` | `source:geometry:date` | Date (formatted to YYYY-MM-DD) |
-
-### Export Contract (Issue #10 Current Situation)
-
-When exporting GRB candidates to JOSM, the following must always hold:
-
-- `gebouw_id` is **never exported**
-- Buildings include `building=yes` when no explicit building tag is present
-- `source:geometry:date` is exported when date data is available (`OPNDATUM` or `survey_date`)
-
-### Properties Removed During Export
-
-The following GRB properties are **deleted** before export:
-
-| Property | Description |
-|----------|-------------|
-| `LENGTE` | Geometry length |
-| `OPPERVL` | Surface area |
-| `TYPE` | Type code |
-| `UIDN` | Unique identifier |
-
-## 2. Address Properties
-
-Address information is sourced from DBF database files and mapped as follows:
-
-| DBF Field | OSM Tag | Source Files |
-|-----------|---------|--------------|
-| `huisnr` | `addr:housenumber` | TblGbgAdr/TblGbaAdr/TblKnwAdr |
-| `busnr` | `addr:flats` | TblGbgAdr (apartment ranges) |
-| `straatnm` | `addr:street` | TblGbgAdr |
-| `appartnr` | (specialized address) | TblGbgAdr |
-
-## 3. Synthetic Properties
+Tags are written in this order: `building`, `fixme`, the KNW defaults, `source:geometry:date`,
+`source:geometry:ref`, `addr:street`, `addr:housenumber`, `addr:postcode`, `addr:city`. The API integration
+tests compare the export of every source with a recorded snapshot (`app/tests/integration/__snapshots__/export-*.osm`).
 
 ### source:geometry:ref
 
-This composite property is **created** during export:
+GBG and GBA OIDNs are only unique per entity, so the reference always carries the entity:
+`<entity>/<oidn>`. The entity is stored per polygon (`grb.building_polygons.entity`, set by the GBG/GBA import).
+Source-tag matching (issue #52) compares these `Entity/oidn` keys, not bare numbers. PICC and Urbis have no
+reference in OSM, so they get no `source:geometry:ref`.
 
-```
-source:geometry:ref = source:geometry:entity + "/" + source:geometry:oidn
-```
+## 2. Buildings
 
-**Example:** `Gbg/718523` (GBG polygon) or `Gba/2664` (GBA `verdieping` polygon)
-
-GBG and GBA OIDNs are only unique per entity, so the entity is stored per polygon
-(`grb.building_polygons.entity`, set by the GBG/GBA import). Databases from before that column derive it from the
-polygon's LBLTYPE (`grbEntityForTypeLabel`): `hoofdgebouw`, `bijgebouw` and `gebouw afgezoomd met virtuele gevels`
-are GBG, every other label is GBA. Source-tag matching (issue #52) compares these `Entity/oidn` keys, not bare numbers.
-
-**Components:**
-- `source:geometry:entity`: Entity type
-  - `Gbg` = Gebouwen (Buildings)
-  - `Knw` = Kunstwerken (Structures)
-  - `Gba` = Gebouwaanhorigheid (Building attachments)
-  - `Picc` = PICC data (Walloon region)
-  - `Urbis` = URBIS data (Brussels region)
-- `source:geometry:oidn`: Object ID Number
-
-After creation, the component properties (`source:geometry:entity` and `source:geometry:oidn`) are deleted.
-
-## 4. Metadata Tags Removed Before Export
-
-The following metadata tags are **deleted** before sending to JOSM:
-
-| Tag | Description |
-|-----|-------------|
-| `size_grb_building` | GRB building size metric |
-| `source:geometry:uidn` | Unique identifier |
-| `source` | Source information (redundant) |
-| `H_DTM_MIN` | Digital Terrain Model minimum height |
-| `H_DTM_GEM` | Digital Terrain Model mean height |
-| `H_DSM_MAX` | Digital Surface Model maximum height |
-| `H_DSM_P99` | Digital Surface Model 99th percentile height |
-| `HN_MAX` | Building height maximum |
-| `HN_P99` | Building height 99th percentile |
-| `detection_method` | Detection algorithm identifier |
-| `size_shared` | Shared size metric |
-| `size_source_building` | Source building size |
-| `auto_building` | Temporary tag (migrated to `building`) |
-| `size_source_landuse` | Landuse size metric |
-| `source:geometry:entity` | Entity type (after creating ref) |
-| `source:geometry:oidn` | Object ID (after creating ref) |
-| `auto_target_landuse` | Landuse target tag |
-
-## 5. Building Type Mappings
-
-### GRB LBLTYPE → OSM building Tag
+GRB polygons are filtered on their LBLTYPE (issue #53, allow-list `BUILDING_TYPE_LABELS` in
+`app/utils/grbExportTags.ts`). The difference API leaves the other types out of the candidates, and the export
+never tags them as buildings:
 
 | GRB LBLTYPE | Entity | OSM tags |
 |-------------|--------|----------|
 | `hoofdgebouw` | GBG (gbg-1) | `building=yes` |
 | `bijgebouw` | GBG (gbg-2) | `building=yes` |
-| `verdieping` | GBA (gba-1) | `building=yes` + `fixme` (see below) |
+| `verdieping` | GBA (gba-1) | `building=yes` + `fixme=verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!` |
 | `gebouw afgezoomd met virtuele gevels` | GBG (gbg-3) | not exported |
 | every other GBA type (`trap`, `afdak`, `luifel`, `loopbrug`, garage entrances, ...) | GBA | not exported |
+| no label | GBG | `building=yes` |
 
-Refine the generic `building=yes` in JOSM where the actual use is known.
+PICC and Urbis buildings always get `building=yes`: the allow-list is GRB only (a PICC nature such as `Batiment`
+is not a GRB type). Refine the generic `building=yes` in JOSM where the actual use is known.
 
-### LBLTYPE Building Pre-filtering (issue #53)
+## 3. KNW (kunstwerken)
 
-Only these LBLTYPE values are exported as buildings (allow-list `BUILDING_TYPE_LABELS` in `app/utils/grbExportTags.ts`):
-
-- `hoofdgebouw` (gbg-1), `bijgebouw` (gbg-2)
-- `verdieping` (gba-1): tagged `building=yes` plus `fixme=verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!`
-
-All other values (`gebouw afgezoomd met virtuele gevels` = gbg-3, `trap`, and every other GBA type) get no building tag and are excluded from the candidate query.
-
-## 5b. KNW (Kunstwerken) Type Mappings
-
-For GRB KNW structures, `source:geometry:entity` is set to `Knw` and `source:geometry:ref` is generated as `Knw/<oidn>`.
-
-Supported phase-1 KNW defaults (issue #22 scope):
+KNW structures get no building tag. Their reference is `Knw/<oidn>`. Supported defaults (issue #22):
 
 | KNW Type (`type_code`) | KNW Type (`type_label`) | Default OSM tags |
 |------------------------|-------------------------|------------------|
@@ -138,73 +56,31 @@ Supported phase-1 KNW defaults (issue #22 scope):
 | `5` | `pijler` | `man_made=bridge_support` |
 | `7` | `schoorsteen` | `man_made=chimney` |
 | `8` | `koeltoren` | `man_made=cooling_tower` |
-| `9` | `silo, opslagtank` | `man_made=silo` (or `man_made=storage_tank` when subtype indicates tank) |
+| `9` | `silo, opslagtank` | `man_made=silo` (or `man_made=storage_tank` when the label says opslagtank and not silo) |
 | `11` | `watertoren` | `man_made=water_tower` |
 | `14` | `nutspaal type windturbine` | `power=generator`, `generator:source=wind`, `generator:method=wind_turbine` |
 | `22` | `golfbreker, strandhoofd en lage havendam` | `man_made=breakwater` |
 | `23` | `havendam` | `man_made=breakwater` |
 | `24` | `staketsel` | `man_made=pier` |
 
-KNW types outside this scope are exported without a default structural tag and require manual tagging in JOSM.
+KNW types outside this list are exported without a structure tag and need manual tagging in JOSM.
 
-## 6. Property Transformations
+## 4. Addresses
 
-### Date Formatting
+Addresses are joined to the polygon that contains them (docs/GRB_ADDRESS_JOIN.md). OSM puts one address on one
+object, so `addr:*` tags are written only when the candidate has exactly one address (issue #49), never for KNW:
 
-GRB dates are converted from `DD/MM/YYYY` to `YYYY-MM-DD` format:
+- `addr:street`: the first street name;
+- `addr:housenumber`: what follows the street name in the address, when it looks like a house number (`12`,
+  `12A`, `12/3`; a letter suffix is one letter, not the next word);
+- `addr:postcode`, `addr:city`: the first postcode and municipality.
 
-```javascript
-// Example: "15/03/2023" → "2023-03-15"
-source:geometry:date = formatDate(OPNDATUM)
-```
+Candidates with several addresses are left for manual handling in JOSM.
 
-### auto_building → building
+## 5. Export workflow
 
-The intermediate `auto_building` tag is migrated to the standard `building` tag:
-
-```javascript
-if (auto_building exists) {
-  building = auto_building
-  delete auto_building
-}
-```
-
-## 7. Metadata Tags Preserved
-
-The following metadata is **retained** for traceability in JOSM:
-
-| Tag | Description |
-|-----|-------------|
-| `source:geometry:ref` | GRB reference (format: "Entity/OIDN") |
-| `source:geometry:date` | Date of geometry data |
-| `source:geometry:version` | Version (for URBIS data) |
-| `addr:street` | Street name |
-| `addr:housenumber` | House number |
-| `addr:flats` | Flat/apartment numbers |
-| `building:levels` | Number of building levels |
-| `building:min_level` | Minimum building level |
-| `man_made` | For non-building structures |
-| `highway` | For road features |
-
-## 8. Data Sources
-
-The property mappings support data from multiple Belgian regional sources:
-
-- **GRB**: Flemish government building registry
-  - Gebouwen (Gbg) - Buildings
-  - Kunstwerken (Knw) - Structures
-  - Gebouwaanhorigheid (Gba) - Building attachments
-- **PICC**: Walloon region building data
-- **URBIS**: Brussels region building data
-
-## 9. Export Workflow
-
-1. **Feature Extraction**: Features extracted from OpenLayers vector layer
-2. **Property Filtering**: Remove metadata, transform properties
-3. **Geometry Simplification**: Optional (using mapshaper at 85% default)
-4. **JSON to OSM-XML Conversion**: Using geojsontoosm library
-5. **Deduplication**: Remove overlapping buildings based on:
-   - `source:geometry:ref` comparison
-   - Date comparison (keeps newer version)
-   - Regional boundary checking
-6. **Upload to JOSM**: Via Remote Control API
+1. **Candidates**: the features of the candidate layer (difference API results).
+2. **Tags**: `candidateToOsmFeature` replaces their properties with the tags above.
+3. **Geometry simplification**: optional (mapshaper, 85% by default).
+4. **OSM XML**: `app/utils/geojsonToOsm.ts`.
+5. **JOSM**: through the remote control API (`composables/useJosmExport.ts`).

@@ -81,3 +81,5 @@ postgres:
         postcodes: postcodes
         municipalities: municipalities
         address_count: address_count
+        # jsonb: ST_AsMVT writes each key as a tile property (georef_id, length_m, ...)
+        details: details

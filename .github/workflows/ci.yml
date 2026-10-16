@@ -169,10 +169,10 @@ jobs:
           done
           echo "::error::${{ vars.APP_URL }} does not report ${{ github.sha }}"
           exit 1
-      - name: Notify server to deploy nuxt-app (server not bootstrapped yet)
+      # The old /nuxt-deploy route only replaced nuxt-app. The app now reads the candidates views and the Martin
+      # "candidates" sources, which only the migrations and the new Martin configs bring: deploying it alone onto
+      # a server that is not bootstrapped would break the difference API and the tiles.
+      - name: No deploy before the server bootstrap
         if: vars.DEPLOY_V2 != 'true'
         run: |
-          curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/nuxt-deploy" \
-            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
-            -H "Content-Type: application/json" \
-            -d '{"run_id": "${{ github.run_id }}"}'
+          echo "::warning::The server is not bootstrapped (DEPLOY_V2 is not set): ${{ github.sha }} is not deployed. Run scripts/server-bootstrap.sh (docs/RUNBOOK.md), then set DEPLOY_V2=true."

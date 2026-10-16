@@ -19,7 +19,15 @@ const { useJosmExport } = await import('~/composables/useJosmExport')
 
 const square = (x: number): Feature => ({
   type: 'Feature',
-  properties: { oidn: 2664 + x, lbltype: 'hoofdgebouw', survey_date: '2023-03-15', gebouw_id: 9 },
+  properties: {
+    source: 'grb',
+    entity: 'Gbg',
+    source_id: String(2664 + x),
+    source_ref: `Gbg/${2664 + x}`,
+    type_label: 'hoofdgebouw',
+    survey_date: '2023-03-15',
+    parent_id: '9'
+  },
   geometry: {
     type: 'Polygon',
     coordinates: [
@@ -138,8 +146,8 @@ describe('useJosmExport', () => {
       expect(xml).toContain('k="building" v="yes"')
       expect(xml).toContain('k="source:geometry:ref" v="Gbg/2664"')
       expect(xml).toContain('k="source:geometry:date" v="2023-03-15"')
-      // Internal GRB properties are not exported
-      expect(xml).not.toContain('gebouw_id')
+      // Only OSM tags are exported, not the contract properties
+      expect(xml).not.toContain('parent_id')
       expect(globalThis.$fetch).not.toHaveBeenCalled()
     })
 
@@ -147,7 +155,7 @@ describe('useJosmExport', () => {
       const fetchMock = stubFetch({})
       await useJosmExport().exportLayerToJosm([square(0)], 'raw', { includeMeta: true })
       const xml = loadDataParams(fetchMock).get('data') ?? ''
-      expect(xml).toContain('k="gebouw_id" v="9"')
+      expect(xml).toContain('k="parent_id" v="9"')
       expect(xml).not.toContain('source:geometry:ref')
     })
 

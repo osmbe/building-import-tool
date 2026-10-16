@@ -9,14 +9,29 @@
   "features": [
     {
       "properties": {
-        "objectid": "11",
-        "natur_code": "BAT",
-        "date_leve": "2019-05-20",
+        "fid": "11",
+        "source": "picc",
+        "entity": null,
+        "source_id": "11",
+        "source_ref": null,
+        "type_code": "BAT",
+        "type_label": "Batiment",
+        "survey_date": "2019-05-20",
+        "origin_label": null,
+        "area_m2": 51.33103,
+        "parent_id": null,
+        "parent_type_label": null,
+        "parent_part_count": null,
+        "parent_area_m2": null,
         "addresses": "Rue de Fer 5",
         "street_names": "Rue de Fer",
         "postcodes": "5000",
         "municipalities": "Namur",
-        "address_count": "1"
+        "address_count": 1,
+        "details": {
+          "georef_id": "G-11",
+          "date_modif": "2020-01-01"
+        }
       },
       "coordinates": [
         [

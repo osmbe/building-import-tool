@@ -1,0 +1,44 @@
+{
+  "stats": {
+    "total": 1,
+    "totalGrb": 1,
+    "totalOsm": 3,
+    "dataSource": "knw",
+    "matchMode": "geometry"
+  },
+  "features": [
+    {
+      "properties": {
+        "oidn": "7001",
+        "type_code": 7,
+        "type_label": "schoorsteen",
+        "survey_date": "2022-01-10",
+        "entity": "Knw"
+      },
+      "coordinates": [
+        [
+          [
+            4.405,
+            51.2
+          ],
+          [
+            4.405,
+            51.200065
+          ],
+          [
+            4.4051,
+            51.200065
+          ],
+          [
+            4.4051,
+            51.2
+          ],
+          [
+            4.405,
+            51.2
+          ]
+        ]
+      ]
+    }
+  ]
+}

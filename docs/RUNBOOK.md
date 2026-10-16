@@ -11,8 +11,9 @@ The moving parts:
 
 ## One-time bootstrap
 
-Until the bootstrap is done, deploys only update `nuxt-app` (the old `/nuxt-deploy` route). The server checkout,
-the Martin configs, the webhook scripts and the database schema stay as they are. **Don't run the GRB Import
+Until the bootstrap is done, CI deploys nothing: the deploy job only warns. (It used to update `nuxt-app` alone
+through the old `/nuxt-deploy` route, but the app now needs the migrations and the Martin `candidates` sources.)
+The server keeps running the release it has. **Don't run the GRB Import
 workflow before the bootstrap:** the old restore script empties the GRB tables and cannot load the new dump
 (a `grb_next` schema), so GRB would stay empty.
 

@@ -9,37 +9,47 @@
   "features": [
     {
       "properties": {
-        "entity": "Gba",
-        "oidn": "1001",
-        "gebouw_id": null,
+        "fid": "2",
+        "source": "grb",
+        "entity": "Gbg",
+        "source_id": "1002",
+        "source_ref": "Gbg/1002",
+        "type_code": null,
+        "type_label": "bijgebouw",
+        "survey_date": "2021-06-30",
+        "origin_label": "terreinbezoek",
+        "area_m2": 55.5,
+        "parent_id": "5001",
+        "parent_type_label": "hoofdgebouw",
+        "parent_part_count": 2,
+        "parent_area_m2": 111,
         "addresses": "",
         "street_names": "",
         "postcodes": "",
         "municipalities": "",
-        "address_count": "0",
-        "opndatum": "2023-03-15",
-        "lbltype": "verdieping"
+        "address_count": 0,
+        "details": {}
       },
       "coordinates": [
         [
           [
-            4.403,
+            4.401,
             51.2
           ],
           [
-            4.403,
+            4.401,
             51.200065
           ],
           [
-            4.4031,
+            4.4011,
             51.200065
           ],
           [
-            4.4031,
+            4.4011,
             51.2
           ],
           [
-            4.403,
+            4.401,
             51.2
           ]
         ]
@@ -47,37 +57,47 @@
     },
     {
       "properties": {
-        "entity": "Gbg",
-        "oidn": "1002",
-        "gebouw_id": "5001",
+        "fid": "4",
+        "source": "grb",
+        "entity": "Gba",
+        "source_id": "1001",
+        "source_ref": "Gba/1001",
+        "type_code": null,
+        "type_label": "verdieping",
+        "survey_date": "2023-03-15",
+        "origin_label": "terreinbezoek",
+        "area_m2": 55.5,
+        "parent_id": null,
+        "parent_type_label": null,
+        "parent_part_count": null,
+        "parent_area_m2": null,
         "addresses": "",
         "street_names": "",
         "postcodes": "",
         "municipalities": "",
-        "address_count": "0",
-        "opndatum": "2021-06-30",
-        "lbltype": "bijgebouw"
+        "address_count": 0,
+        "details": {}
       },
       "coordinates": [
         [
           [
-            4.401,
+            4.403,
             51.2
           ],
           [
-            4.401,
+            4.403,
             51.200065
           ],
           [
-            4.4011,
+            4.4031,
             51.200065
           ],
           [
-            4.4011,
+            4.4031,
             51.2
           ],
           [
-            4.401,
+            4.403,
             51.2
           ]
         ]

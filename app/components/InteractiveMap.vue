@@ -447,15 +447,7 @@
                           : 'OSM'
                 }}</span>
                 <span class="opacity-50 font-mono">{{
-                  feat._layer_type === 'grb'
-                    ? feat.gebouw_id || feat.oidn || feat.id
-                    : feat._layer_type === 'knw'
-                      ? feat.oidn || feat.id
-                      : feat._layer_type === 'picc'
-                        ? feat.objectid
-                        : feat._layer_type === 'urbis'
-                          ? feat.building_id
-                          : feat.osm_id
+                  feat._layer_type === 'osm' ? feat.osm_id : candidateDisplayId(feat)
                 }}</span>
               </button>
               <!-- Close button -->
@@ -480,15 +472,13 @@
                       <Building2 class="h-2.5 w-2.5" />GRB
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">
-                      {{
-                        formatGRBBuildingType(currentFeature.polygon_type_label || currentFeature.building_type_label)
-                      }}
+                      {{ formatGRBBuildingType(currentFeature.type_label || currentFeature.parent_type_label) }}
                     </h2>
-                    <div v-if="currentFeature.gebouw_id" class="text-[10px] font-mono text-muted-foreground mt-0.5">
-                      Building ID: {{ currentFeature.gebouw_id }}
+                    <div v-if="currentFeature.parent_id" class="text-[10px] font-mono text-muted-foreground mt-0.5">
+                      Building ID: {{ currentFeature.parent_id }}
                     </div>
-                    <div v-if="currentFeature.oidn" class="text-[10px] font-mono text-muted-foreground">
-                      OIDN: {{ currentFeature.entity ? `${currentFeature.entity}/` : '' }}{{ currentFeature.oidn }}
+                    <div v-if="currentFeature.source_ref" class="text-[10px] font-mono text-muted-foreground">
+                      OIDN: {{ currentFeature.source_ref }}
                     </div>
                   </div>
                   <button
@@ -554,8 +544,8 @@
                 <!-- Details (only show if at least one field present) -->
                 <div
                   v-if="
-                    currentFeature.total_area_m2 ||
-                    currentFeature.polygon_count ||
+                    currentFeature.parent_area_m2 ||
+                    currentFeature.parent_part_count ||
                     currentFeature.survey_date ||
                     currentFeature.origin_label
                   "
@@ -564,15 +554,15 @@
                     Details
                   </div>
                   <div class="space-y-1 text-xs">
-                    <div v-if="currentFeature.total_area_m2" class="flex gap-3">
+                    <div v-if="currentFeature.parent_area_m2" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Area</span>
                       <span class="text-foreground font-medium font-mono">{{
-                        formatArea(currentFeature.total_area_m2)
+                        formatArea(currentFeature.parent_area_m2)
                       }}</span>
                     </div>
-                    <div v-if="currentFeature.polygon_count" class="flex gap-3">
+                    <div v-if="currentFeature.parent_part_count" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Parts</span>
-                      <span class="text-foreground font-medium font-mono">{{ currentFeature.polygon_count }}</span>
+                      <span class="text-foreground font-medium font-mono">{{ currentFeature.parent_part_count }}</span>
                     </div>
                     <div v-if="currentFeature.survey_date" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Surveyed</span>
@@ -601,7 +591,7 @@
                       {{ currentFeature.type_label || 'Structure' }}
                     </h2>
                     <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
-                      OIDN: {{ currentFeature.oidn || currentFeature.id }}
+                      OIDN: {{ currentFeature.source_id }}
                     </div>
                   </div>
                   <button
@@ -616,7 +606,7 @@
                 <div
                   v-if="
                     currentFeature.area_m2 ||
-                    currentFeature.length_m ||
+                    candidateDetail(currentFeature, 'length_m') ||
                     currentFeature.survey_date ||
                     currentFeature.origin_label ||
                     currentFeature.type_code
@@ -636,10 +626,10 @@
                         formatArea(currentFeature.area_m2)
                       }}</span>
                     </div>
-                    <div v-if="currentFeature.length_m" class="flex gap-3">
+                    <div v-if="candidateDetail(currentFeature, 'length_m')" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Length</span>
                       <span class="text-foreground font-medium font-mono"
-                        >{{ Number(currentFeature.length_m).toFixed(2) }} m</span
+                        >{{ Number(candidateDetail(currentFeature, 'length_m')).toFixed(2) }} m</span
                       >
                     </div>
                     <div v-if="currentFeature.survey_date" class="flex gap-3">
@@ -665,9 +655,9 @@
                     >
                       <Building2 class="h-2.5 w-2.5" />PICC
                     </div>
-                    <h2 class="text-sm font-semibold text-foreground">{{ currentFeature.natur_desc || 'Building' }}</h2>
+                    <h2 class="text-sm font-semibold text-foreground">{{ currentFeature.type_label || 'Building' }}</h2>
                     <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
-                      ID: {{ currentFeature.objectid }}
+                      ID: {{ currentFeature.source_id }}
                     </div>
                   </div>
                   <button
@@ -732,9 +722,9 @@
                 <div
                   v-if="
                     currentFeature.area_m2 ||
-                    currentFeature.natur_code ||
-                    currentFeature.date_modif ||
-                    currentFeature.date_leve
+                    currentFeature.type_code ||
+                    candidateDetail(currentFeature, 'date_modif') ||
+                    currentFeature.survey_date
                   "
                 >
                   <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
@@ -747,30 +737,30 @@
                         formatArea(currentFeature.area_m2)
                       }}</span>
                     </div>
-                    <div v-if="currentFeature.natur_code" class="flex gap-3">
+                    <div v-if="currentFeature.type_code" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Type</span>
                       <span class="text-foreground font-medium">{{
-                        currentFeature.natur_desc || currentFeature.natur_code
+                        currentFeature.type_label || currentFeature.type_code
                       }}</span>
                     </div>
-                    <div v-if="currentFeature.date_leve" class="flex gap-3">
+                    <div v-if="currentFeature.survey_date" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Surveyed</span>
                       <span class="text-foreground font-medium font-mono">{{
-                        formatPiccDate(currentFeature.date_leve)
+                        formatPiccDate(currentFeature.survey_date)
                       }}</span>
                     </div>
-                    <div v-if="currentFeature.date_modif" class="flex gap-3">
+                    <div v-if="candidateDetail(currentFeature, 'date_modif')" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Modified</span>
                       <span class="text-foreground font-medium font-mono">{{
-                        formatPiccDate(currentFeature.date_modif)
+                        formatPiccDate(String(candidateDetail(currentFeature, 'date_modif')))
                       }}</span>
                     </div>
-                    <div v-if="currentFeature.georef_id" class="flex gap-3">
+                    <div v-if="candidateDetail(currentFeature, 'georef_id')" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">GeoRef</span>
                       <span
                         class="text-foreground font-medium font-mono text-[10px] truncate"
-                        :title="currentFeature.georef_id"
-                        >{{ currentFeature.georef_id }}</span
+                        :title="String(candidateDetail(currentFeature, 'georef_id'))"
+                        >{{ candidateDetail(currentFeature, 'georef_id') }}</span
                       >
                     </div>
                   </div>
@@ -788,7 +778,7 @@
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">Building</h2>
                     <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
-                      ID: {{ currentFeature.building_id }}
+                      ID: {{ currentFeature.source_id }}
                     </div>
                   </div>
                   <button
@@ -850,7 +840,7 @@
                 </div>
 
                 <!-- Details -->
-                <div v-if="currentFeature.area_m2 || currentFeature.inspire_id">
+                <div v-if="currentFeature.area_m2 || currentFeature.source_id">
                   <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
                     Details
                   </div>
@@ -861,15 +851,15 @@
                         formatArea(currentFeature.area_m2)
                       }}</span>
                     </div>
-                    <div v-if="currentFeature.inspire_id" class="flex gap-3">
+                    <div v-if="currentFeature.source_id" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">INSPIRE</span>
                       <span class="text-foreground font-medium font-mono text-[10px]">{{
-                        currentFeature.inspire_id
+                        currentFeature.source_id
                       }}</span>
                     </div>
-                    <div v-if="currentFeature.block_id" class="flex gap-3">
+                    <div v-if="currentFeature.parent_id" class="flex gap-3">
                       <span class="text-muted-foreground w-20 shrink-0">Block</span>
-                      <span class="text-foreground font-medium font-mono">{{ currentFeature.block_id }}</span>
+                      <span class="text-foreground font-medium font-mono">{{ currentFeature.parent_id }}</span>
                     </div>
                   </div>
                 </div>
@@ -1013,6 +1003,7 @@ import Switch from '~/components/ui/switch.vue'
 import VectorTileLayer from 'ol/layer/VectorTile'
 import VectorTileSource from 'ol/source/VectorTile'
 import { extractFeaturesFromLayer } from '~/utils/openlayers'
+import { CANDIDATES_CONTRACT, candidateDetail, candidateDisplayId, candidateTileUrl } from '~/utils/candidates'
 import { useAuth } from '~/composables/useAuth'
 import { useJosmExport } from '~/composables/useJosmExport'
 import { useMapLayers } from '~/composables/useMapLayers'
@@ -1351,7 +1342,7 @@ const handleLoadKNW = () => {
 
     const knwTileSource = new VectorTileSource({
       format: new MVT(),
-      url: '/tiles/grb/kunstwerken/{z}/{x}/{y}',
+      url: candidateTileUrl('knw'),
       minZoom: 10,
       maxZoom: 18,
       attributions: '© GRB Kunstwerken'
@@ -1497,7 +1488,7 @@ const handleLoadGRB = () => {
     // Create vector tile source for GRB buildings
     const grbTileSource = new VectorTileSource({
       format: new MVT(),
-      url: '/tiles/grb/buildings/{z}/{x}/{y}',
+      url: candidateTileUrl('grb'),
       minZoom: 10,
       maxZoom: 18,
       attributions: '© GRB Buildings'
@@ -1569,7 +1560,7 @@ const handleLoadPICC = () => {
     // Create vector tile source for PICC buildings
     const piccTileSource = new VectorTileSource({
       format: new MVT(),
-      url: '/tiles/picc/buildings/{z}/{x}/{y}',
+      url: candidateTileUrl('picc'),
       minZoom: 10,
       maxZoom: 18,
       attributions: '© PICC Wallonia'
@@ -1634,7 +1625,7 @@ const handleLoadUrbis = () => {
     // Create vector tile source for Urbis buildings
     const urbisTileSource = new VectorTileSource({
       format: new MVT(),
-      url: '/tiles/urbis/buildings/{z}/{x}/{y}',
+      url: candidateTileUrl('urbis'),
       minZoom: 10,
       maxZoom: 18,
       attributions: '© UrbIS Brussels'
@@ -2223,7 +2214,8 @@ const calculateDifference = async () => {
         matchMode: resolveMatchMode(matchMode.value, dataSource).mode,
         dataSource,
         geometryThreshold: geometryThreshold.value,
-        useOverpass: useOverpass.value
+        useOverpass: useOverpass.value,
+        contract: CANDIDATES_CONTRACT
       }
     })
 
