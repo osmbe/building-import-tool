@@ -5,5 +5,3 @@
 # assertion (not a snapshot) this commit changes on purpose.
 # Empty this list in the commit after the one that needed it.
 #
-# grb/000_baseline is a new migration: the previous readiness test expected the exact list
-skip-test: readiness reports the applied migrations

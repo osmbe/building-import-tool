@@ -32,7 +32,7 @@ assert_eq "$(sql "SELECT string_agg(objectid::text, ',' ORDER BY objectid) FROM 
     "the live schema has the dump's data"
 assert_eq "$(sql "SELECT count(*) FROM pg_namespace WHERE nspname IN ('picc_next', 'picc_prev')")" "0" \
     "nothing is left next to it"
-assert_eq "$(sql "SELECT count(*) FROM picc.schema_migrations")" "2" "the migration tracking came with it"
+assert_eq "$(sql "SELECT count(*) FROM picc.schema_migrations")" "$(migration_count picc)" "the migration tracking came with it"
 assert_true "SELECT imported_at IS NOT NULL FROM picc.import_meta" "and the import time"
 
 for run in 6101 6102 6199; do

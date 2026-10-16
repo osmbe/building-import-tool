@@ -40,4 +40,11 @@ check_martin martin-grb kunstwerken 4.40505 51.20003 oidn entity type_code type_
 check_martin martin-osm osm_buildings 4.40005 51.20003 osm_id tags
 check_martin martin-picc buildings 4.87005 50.46503 objectid natur_code date_leve addresses
 check_martin martin-urbis buildings 4.35005 50.84603 building_id addresses address_count
+# The candidates contract: the same properties for every source
+CONTRACT=(fid source entity source_id source_ref type_code type_label survey_date origin_label area_m2 parent_id
+    parent_type_label parent_part_count parent_area_m2 addresses street_names postcodes municipalities address_count)
+check_martin martin-grb candidates 4.40005 51.20003 "${CONTRACT[@]}"
+check_martin martin-grb knw_candidates 4.40505 51.20003 "${CONTRACT[@]}"
+check_martin martin-picc candidates 4.87005 50.46503 "${CONTRACT[@]}"
+check_martin martin-urbis candidates 4.35005 50.84603 "${CONTRACT[@]}"
 martin_down

@@ -78,3 +78,69 @@ postgres:
         origin_label: origin_label
         area_m2: area_m2
         length_m: length_m
+
+    # The candidates contract (processing/sql/migrations/grb/004_candidates.sql): the same properties for
+    # every source. The app reads these; the sources above stay for the previous release until they are removed.
+    candidates:
+      schema: grb
+      table: candidates
+      srid: 3857
+      geometry_column: geom
+      id_column: fid
+      clip_geom: true
+      buffer: 64
+      extent: 4096
+      minzoom: 10
+      maxzoom: 22
+      properties:
+        fid: fid
+        source: source
+        entity: entity
+        source_id: source_id
+        source_ref: source_ref
+        type_code: type_code
+        type_label: type_label
+        survey_date: survey_date
+        origin_label: origin_label
+        area_m2: area_m2
+        parent_id: parent_id
+        parent_type_label: parent_type_label
+        parent_part_count: parent_part_count
+        parent_area_m2: parent_area_m2
+        addresses: addresses
+        street_names: street_names
+        postcodes: postcodes
+        municipalities: municipalities
+        address_count: address_count
+
+    knw_candidates:
+      schema: grb
+      table: knw_candidates
+      srid: 3857
+      geometry_column: geom
+      id_column: fid
+      clip_geom: true
+      buffer: 64
+      extent: 4096
+      minzoom: 10
+      maxzoom: 22
+      properties:
+        fid: fid
+        source: source
+        entity: entity
+        source_id: source_id
+        source_ref: source_ref
+        type_code: type_code
+        type_label: type_label
+        survey_date: survey_date
+        origin_label: origin_label
+        area_m2: area_m2
+        parent_id: parent_id
+        parent_type_label: parent_type_label
+        parent_part_count: parent_part_count
+        parent_area_m2: parent_area_m2
+        addresses: addresses
+        street_names: street_names
+        postcodes: postcodes
+        municipalities: municipalities
+        address_count: address_count

@@ -44,7 +44,7 @@ assert_eq "$rc" "0" "the restore succeeds while the live view is being read"
 wait "$reader" || true
 assert_eq "$(snapshot)" "$expected" "the live schema has exactly the imported data"
 assert_eq "$(sql "SELECT count(*) FROM pg_namespace WHERE nspname IN ('grb_next', 'grb_prev')")" "0" "nothing is left next to it"
-assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "4" "the migration tracking came with it"
+assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "$(migration_count grb)" "the migration tracking came with it"
 psql_db -c "INSERT INTO grb.building_polygons (oidn, geom) VALUES
   (9998, ST_GeomFromText('POLYGON((4.40 51.20,4.4001 51.20,4.4001 51.2001,4.40 51.2001,4.40 51.20))', 4326))" >/dev/null
 assert_true "SELECT geom_mercator IS NOT NULL FROM grb.building_polygons WHERE oidn = 9998" "the triggers of the swapped-in tables work"
@@ -70,7 +70,7 @@ out=$(restore 4242) && rc=0 || rc=$?
 assert_eq "$rc" "0" "the restore succeeds on an old-schema database"
 [ "$rc" = 0 ] || log "$out"
 assert_eq "$(snapshot)" "$expected" "the server has exactly the imported data (old rows and KNW replaced)"
-assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "4" "the schema was migrated first"
+assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "$(migration_count grb)" "the schema was migrated first"
 
 out=$(restore 4242) && rc=0 || rc=$?
 assert_eq "$rc" "0" "restoring again succeeds"

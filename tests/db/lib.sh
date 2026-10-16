@@ -63,6 +63,15 @@ schema_of() { # <schema...>
         grep -v '^\\\(restrict\|unrestrict\) \|^-- Dumped'
 }
 
+# The migration versions of this checkout for one scope, comma-separated in order (what <scope>.schema_migrations
+# holds once every migration is applied), and their number
+migrations_of() { # <scope>
+    find "$ROOT/processing/sql/migrations/$1" -name '[0-9]*.sql' -exec basename {} .sql \; | sort | paste -sd, -
+}
+migration_count() { # <scope>
+    find "$ROOT/processing/sql/migrations/$1" -name '[0-9]*.sql' | wc -l | tr -d ' '
+}
+
 # Run a recipe of the justfile of an older commit (e.g. to build a database the way old releases did).
 # Usage: old_just <full commit sha> <recipe> [args...] (a full sha: a shallow clone can only fetch those)
 old_just() {

@@ -18,6 +18,6 @@ just_run db-migrate >/dev/null
 assert_eq "$(sql "SELECT string_agg(entity || '/' || oidn, ',' ORDER BY oidn) FROM grb.building_polygons")" \
     "Gbg/2664,Gba/2665" "the polygons are kept and get their entity"
 assert_eq "$(sql "SELECT count(*) FROM grb.buildings_with_addresses")" "2" "the view is rebuilt with entity"
-assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "3" "every GRB migration is recorded"
+assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "$(migration_count grb)" "every GRB migration is recorded"
 just_run db-migrate >/dev/null
-assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "3" "a second run changes nothing"
+assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "$(migration_count grb)" "a second run changes nothing"
