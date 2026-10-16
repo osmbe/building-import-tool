@@ -133,8 +133,8 @@ working meanwhile. They need free disk for the copy: check `just db-sizes` first
   - "has no building_polygons": a GRB import of selected products (for example only `knw`) never replaces the whole
     GRB schema. Run the full import.
 - The full GRB restore takes about an hour: the dump rebuilds every index and the view inside `grb_next`.
-- A GRB artifact of the previous workflow (a data-only dump, kept 7 days) is restored the old way: GRB tables
-  emptied, migrated, loaded, view refreshed, with no GRB data in tiles and diffs until it finishes.
+- A GRB artifact of the workflow before the publish path (a data-only dump) is refused ("not a dump of grb_next"):
+  run the GRB Import workflow again.
 - **Stale tiles:** Martin caches tiles in memory (512 MB, 1 h). Restores recreate the source's tile server; after an
   update or a change by hand, recreate it to see the new data right away:
   `docker compose up -d --no-deps --force-recreate grb-tiles`.

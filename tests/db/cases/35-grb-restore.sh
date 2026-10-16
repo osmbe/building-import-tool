@@ -1,6 +1,5 @@
 # webhook/restore-grb.sh publishes the dump of a CI GRB import (schema grb_next, like
-# .github/workflows/grb-import.yml): restored next to the live data, checked, swapped in. Data-only dumps of the
-# previous workflow (artifacts are kept 7 days) still restore the old way: empty, migrate, load, refresh.
+# .github/workflows/grb-import.yml): restored next to the live data, checked, swapped in.
 reset_db fresh
 fixtures grb
 just_run grb-import >/dev/null
@@ -60,23 +59,16 @@ out=$(restore 4252) && rc=0 || rc=$?
 assert_eq "$rc" "1" "a dump without building polygons (KNW-only import) is refused"
 assert_eq "$(snapshot)" "$expected" "  and the live data is untouched"
 
-# Data-only dumps of the previous import workflow, onto an old server (schema of 7088df9) with data of its own
-reset_db v7088
-psql_db -c "INSERT INTO grb.building_polygons (oidn, type_label, geom) VALUES
-  (9999, 'hoofdgebouw', ST_GeomFromText('POLYGON((4.40 51.20,4.4001 51.20,4.4001 51.2001,4.40 51.2001,4.40 51.20))', 4326));
-  INSERT INTO grb.kunstwerken (oidn, geom) VALUES (9999, ST_GeomFromText('POLYGON((4.40 51.20,4.4001 51.20,4.4001 51.2001,4.40 51.2001,4.40 51.20))', 4326));" >/dev/null
-
+# Data-only dumps of the import workflow before 9ebb34c can't be loaded any more (they COPY the columns of the old
+# schema): refused with a hint, and the live data stays
 out=$(restore 4242) && rc=0 || rc=$?
-assert_eq "$rc" "0" "the restore succeeds on an old-schema database"
-[ "$rc" = 0 ] || log "$out"
-assert_eq "$(snapshot)" "$expected" "the server has exactly the imported data (old rows and KNW replaced)"
-assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "$(migration_count grb)" "the schema was migrated first"
-
-out=$(restore 4242) && rc=0 || rc=$?
-assert_eq "$rc" "0" "restoring again succeeds"
-assert_eq "$(snapshot)" "$expected" "a second restore gives the same data (no duplicates)"
+assert_eq "$rc" "1" "a data-only dump of the previous workflow is refused"
+grep -q "Run the GRB Import workflow again" <<<"$out" && pass "  and says what to do" || fail "  and says what to do: $out"
+assert_eq "$(snapshot)" "$expected" "  and the live data is untouched"
 
 # A broken dump makes the restore fail instead of reporting success
-echo "INSERT INTO grb.no_such_table VALUES (1);" | gzip | artifact 4343 be2osm-dump be2osm.sql.gz
+printf 'CREATE SCHEMA grb_next;\nINSERT INTO grb_next.no_such_table VALUES (1);\n' | gzip | artifact 4343 be2osm-dump be2osm.sql.gz
 assert_fails "a dump with an error fails the restore" restore 4343
+assert_eq "$(snapshot)" "$expected" "  and the live data is untouched"
+assert_eq "$(sql "SELECT count(*) FROM pg_namespace WHERE nspname = 'grb_next'")" "0" "  and the partial restore is dropped"
 assert_fails "a run without an artifact fails the restore" restore 4444
