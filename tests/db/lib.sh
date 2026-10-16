@@ -64,10 +64,17 @@ schema_of() { # <schema...>
 }
 
 # Run a recipe of the justfile of an older commit (e.g. to build a database the way old releases did).
-# Usage: old_just <commit> <recipe...>
+# Usage: old_just <full commit sha> <recipe> [args...] (a full sha: a shallow clone can only fetch those)
 old_just() {
     local commit="$1"
     shift
+    # CI checks out a shallow clone: fetch the commit when it is missing
+    git -C "$ROOT" cat-file -e "$commit^{commit}" 2>/dev/null ||
+        git -C "$ROOT" fetch --quiet --depth=1 origin "$commit" ||
+        {
+            echo "old_just: cannot fetch commit $commit" >&2
+            return 1
+        }
     git -C "$ROOT" show "$commit:processing/justfile" |
         "${COMPOSE[@]}" run --rm -T --entrypoint bash processing -c \
             'cat > /tmp/old.justfile && JUST_JUSTFILE=/tmp/old.justfile JUST_WORKING_DIRECTORY=/work just "$@"' _ "$@"

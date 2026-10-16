@@ -3,7 +3,7 @@
 # swap the two schemas in one short transaction. Tiles and the API keep reading the live data until the swap,
 # and a failed or rejected restore leaves the live schema untouched.
 #
-#   publish-schema.sh <schema> <dump.sql.gz>        (picc or urbis)
+#   publish-schema.sh <schema> <dump.sql.gz>        (grb, picc or urbis)
 #
 # The dump must be of <schema>_next (the CI workflow renames the schema before pg_dump). Checks before the swap:
 # - the main table has rows, at least 90% of the live count (FORCE=1 skips this);
@@ -22,6 +22,7 @@ RETRIES="${PUBLISH_RETRIES:-30}"
 export PGDATABASE="${PGDATABASE:-be2osm}"
 
 case "$SCHEMA" in
+grb) MAIN_TABLE=building_polygons ;;
 picc) MAIN_TABLE=buildings ;;
 urbis) MAIN_TABLE=buildings ;;
 *)

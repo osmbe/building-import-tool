@@ -1,5 +1,9 @@
 # API snapshots (app/tests/integration/__snapshots__/) whose change in this commit is intentional.
 # tests/db/cases/90-previous-release.sh copies these from the current tree into the previous release before
 # running its API tests: the previous release's code must produce the current expected output for them.
+# A line `skip-test: <name>` skips the previous release's tests whose name contains <name> instead, for an
+# assertion (not a snapshot) this commit changes on purpose.
 # Empty this list in the commit after the one that needed it.
 #
+# grb/000_baseline is a new migration: the previous readiness test expected the exact list
+skip-test: readiness reports the applied migrations

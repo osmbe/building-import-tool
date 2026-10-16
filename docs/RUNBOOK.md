@@ -13,7 +13,8 @@ The moving parts:
 
 Until the bootstrap is done, deploys only update `nuxt-app` (the old `/nuxt-deploy` route). The server checkout,
 the Martin configs, the webhook scripts and the database schema stay as they are. **Don't run the GRB Import
-workflow before the bootstrap:** the old restore script empties the GRB tables and then fails on the new dump.
+workflow before the bootstrap:** the old restore script empties the GRB tables and cannot load the new dump
+(a `grb_next` schema), so GRB would stay empty.
 
 1. Wait until CI is green on main (the bootstrap pulls the images built for the head of main).
 2. Check the token in `.env`: `GH_TOKEN` must be able to read the private repository, its Actions artifacts and its
@@ -118,15 +119,24 @@ working meanwhile. They need free disk for the copy: check `just db-sizes` first
   until a manual run (Actions → GRB Update / PICC Update → Run workflow) has confirmed that the real difference
   files / ArcGIS fields are read correctly: check the job log for the removed/changed/added counts, then add the
   `schedule:` back in the workflow.
-- **PICC and Urbis restores** load the dump as `<schema>_next` next to the live data, check it and swap it in
-  (`processing/scripts/publish-schema.sh`). A refused or failed restore leaves the live data as it was; the job log
-  says why. "built with other migrations": deploy first, then run the import workflow again. "fewer than 90%": if
-  the drop is real, restore by hand with `FORCE=1`:
-  `docker exec -e FORCE=1 be2osm-webhook bash /opt/docker/buildings/webhook/restore-picc.sh <run_id> osmbe/building-import-tool` (when no other job is running).
-- The GRB restore still empties the GRB tables, migrates, loads the dump and refreshes the view. Tiles and the
-  difference API show no GRB data until it finishes (about an hour).
-- **Stale tiles:** Martin caches tiles in memory (512 MB, 1 h). After a restore, recreate the source's tile server
-  to see the new data right away: `docker compose up -d --no-deps --force-recreate grb-tiles`.
+- **GRB, PICC and Urbis restores** load the dump as `<schema>_next` next to the live data, check it and swap it in
+  (`processing/scripts/publish-schema.sh`), then recreate the source's tile server. Tiles and the difference API
+  keep serving the previous data until the swap. A refused or failed restore leaves the live data as it was; the
+  job log says why:
+  - "MB free, about ... MB needed": the restore needs about 1.3× the live schema plus 5× the dump, plus 2 GB. Free
+    disk (`docker builder prune -af`, `docker image prune -f`) and start the restore job again.
+  - "built with other migrations": deploy first, then run the import workflow again.
+  - "fewer than 90%": if the drop is real, restore by hand with `FORCE=1`:
+    `docker exec -e FORCE=1 be2osm-webhook bash /opt/docker/buildings/webhook/restore-<source>.sh <run_id> osmbe/building-import-tool`
+    (when no other job is running).
+  - "has no building_polygons": a GRB import of selected products (for example only `knw`) never replaces the whole
+    GRB schema. Run the full import.
+- The full GRB restore takes about an hour: the dump rebuilds every index and the view inside `grb_next`.
+- A GRB artifact of the previous workflow (a data-only dump, kept 7 days) is restored the old way: GRB tables
+  emptied, migrated, loaded, view refreshed, with no GRB data in tiles and diffs until it finishes.
+- **Stale tiles:** Martin caches tiles in memory (512 MB, 1 h). Restores recreate the source's tile server; after an
+  update or a change by hand, recreate it to see the new data right away:
+  `docker compose up -d --no-deps --force-recreate grb-tiles`.
 
 ## Troubleshooting
 

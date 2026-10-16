@@ -62,10 +62,9 @@ jobs:
 
       - name: Initialize be2osm database
         run: |
-          # Only run scripts needed for GRB import.
-          # 02: sets up grb schema in be2osm database
-          # Skipping 01 (creates osmbe, not needed), 03/04/05: OSM/FDW/PICC not needed here
-          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f postgres/02-setup-be2osm.sql
+          # Only the init script GRB needs: 02 creates the extensions and the grb schema (the tables come
+          # from the migrations, which grb-import runs). 01 (osmbe), 03/04 (OSM/FDW), 05/06 (PICC/Urbis) are skipped.
+          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 -f postgres/02-setup-be2osm.sql
 
       - name: Build processing image
         run: docker build -t processing ./processing
@@ -104,13 +103,15 @@ jobs:
             -e GRB_DOWNLOAD_RETRY_SLEEP_SEC=90 \
             processing bash -lc "$JUST_COMMAND"
 
-      - name: Create GRB dump
+      # The server restores it next to its live data and swaps it in (processing/scripts/publish-schema.sh)
+      - name: Create GRB dump (schema grb_next)
         if: ${{ github.event.inputs.download_only != 'true' }}
         run: |
+          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 \
+            -c "ALTER SCHEMA grb RENAME TO grb_next"
           PGPASSWORD=be2osm pg_dump -h localhost -U be2osm \
-            --data-only --disable-triggers \
             --no-owner --no-acl \
-            -n grb --exclude-table-data=grb.schema_migrations \
+            -n grb_next \
             be2osm | gzip > be2osm.sql.gz
           ls -lh be2osm.sql.gz
 

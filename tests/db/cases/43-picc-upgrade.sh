@@ -2,7 +2,11 @@
 # their view, built with the justfile of b8a1c9c) is migrated: same view contents, on the new tables.
 reset_db fresh
 fixtures picc
-old_just b8a1c9c picc-import >/dev/null 2>&1
+out=$(old_just b8a1c9c3113e6c37c48e34c76529bee0693a9e4f picc-import 2>&1) || {
+    fail "the old recipes ran"
+    printf '%s\n' "$out" | tail -20
+    return
+}
 view() { sql "SELECT string_agg(objectid || ':' || natur_code || ':' || addresses || ':' || postcodes || ':' || address_count || ':' || round(area_m2), ',' ORDER BY objectid) FROM picc.buildings_with_addresses"; }
 before=$(view)
 assert_eq "$before" "11:BAT:Rue de Fer 5:5000:1:51,12:ANX:::0:51" "the old recipes built the old layout"

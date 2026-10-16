@@ -23,7 +23,7 @@ out=$(migrate --deploy) && rc=0 || rc=$?
 assert_eq "$rc" "1" "db-migrate --deploy fails when a heavy migration is pending"
 grep -q "heavy migration" <<<"$out" && pass "the refusal says why" || fail "the refusal says why: $out"
 assert_eq "$(sql "SELECT string_agg(version, ',' ORDER BY version) FROM grb.schema_migrations")" \
-    "001_polygon_entity,002_polygon_entity_unique" "the light migrations before it are applied"
+    "000_baseline,001_polygon_entity,002_polygon_entity_unique" "the light migrations before it are applied"
 assert_true "SELECT NOT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid = 'grb.buildings_with_addresses'::regclass AND attname = 'entity')" \
     "the old view is left in place"
 assert_eq "$(sql "SELECT count(*) FROM grb.buildings_with_addresses")" "1" "the old view keeps its data"
@@ -54,7 +54,7 @@ assert_eq "$(sql "SELECT entity || '/' || oidn FROM grb.buildings_with_addresses
 
 out=$(migrate) && rc=0 || rc=$?
 assert_eq "$rc" "0" "a second run succeeds"
-assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "3" "nothing is applied twice"
+assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "4" "nothing is applied twice"
 
 # Changing an applied migration is refused (simulated by changing its recorded checksum)
 psql_db -c "UPDATE grb.schema_migrations SET checksum = 'x' WHERE version = '001_polygon_entity'" >/dev/null
@@ -73,4 +73,4 @@ out=$(MIGRATE_ENV="-e MIGRATE_LOCK_TIMEOUT=500ms" migrate) && rc=0 || rc=$?
 wait "$reader"
 assert_eq "$rc" "0" "db-migrate succeeds once the long reader is done"
 grep -q "retrying" <<<"$out" && pass "lock timeouts are retried" || fail "lock timeouts are retried: $out"
-assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "3" "every migration is applied"
+assert_eq "$(sql "SELECT count(*) FROM grb.schema_migrations")" "4" "every migration is applied"

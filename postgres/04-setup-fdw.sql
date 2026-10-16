@@ -130,11 +130,6 @@ SELECT
     COUNT(*) as osm_buildings_count
 FROM osm.osm_buildings;
 
-SELECT
-    'GRB buildings available' as status,
-    COUNT(*) as grb_buildings_count
-FROM grb.buildings;
-
 \echo ''
 \echo '======================================'
 \echo 'Foreign Data Wrapper setup complete!'

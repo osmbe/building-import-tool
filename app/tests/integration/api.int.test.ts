@@ -151,11 +151,15 @@ describe.skipIf(!PORT)('API against the fixture database', () => {
     const ready = asHandler(await import('~/server/api/health/ready.get'))
     const result = (await ready(createEvent())) as { ready: boolean; migrations: Record<string, string[]> }
     expect(result.ready).toBe(true)
-    expect(result.migrations.grb).toEqual([
-      '001_polygon_entity',
-      '002_polygon_entity_unique',
-      '003_buildings_with_addresses_entity'
-    ])
+    // Later releases add migrations: only the ones every release since this test was written has
+    expect(result.migrations.grb).toEqual(
+      expect.arrayContaining([
+        '000_baseline',
+        '001_polygon_entity',
+        '002_polygon_entity_unique',
+        '003_buildings_with_addresses_entity'
+      ])
+    )
   })
 
   it('data-dates reports the import time of every source', async () => {

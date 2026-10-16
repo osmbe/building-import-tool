@@ -167,6 +167,9 @@ Digital Vlaanderen API → Shapefiles → ogr2ogr (Lambert 72 → WGS84)
 
 ### be2osm Database (GRB Data)
 
+Every table and view below is created by the migrations in `sql/migrations/grb/` (`just db-migrate`, which the
+import recipes run), not by the postgres init scripts.
+
 - `grb.building_polygons`: Individual GRB building parts (~5M rows)
 - `grb.buildings`: Aggregated buildings (grouped by gebouw_id)
 - `grb.addresses`: Address points (~1.3M rows)

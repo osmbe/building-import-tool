@@ -2,7 +2,11 @@
 # GeoPackage columns, built with the justfile of 09b98f1) is migrated: same view contents, on the new tables.
 reset_db fresh
 fixtures urbis
-old_just 09b98f1 urbis-import >/dev/null 2>&1
+out=$(old_just 09b98f18eef496bd57b303c65e70fad71a2e747d urbis-import 2>&1) || {
+    fail "the old recipes ran"
+    printf '%s\n' "$out" | tail -20
+    return
+}
 view() { sql "SELECT string_agg(building_id || ':' || inspire_id || ':' || block_id || ':' || addresses || ':' || postcodes || ':' || municipalities || ':' || address_count || ':' || round(area_m2), ',' ORDER BY building_id) FROM urbis.buildings_with_addresses"; }
 before=$(view)
 assert_true "SELECT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid = 'urbis.buildings'::regclass AND attname = 'inspire_id')" \

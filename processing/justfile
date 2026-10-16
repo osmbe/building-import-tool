@@ -352,7 +352,6 @@ grb-import:
     @echo "📅 Started at: $(date)"
     @echo ""
     @just _check-be2osm-database
-    @just _check-be2osm-schema
     @just db-migrate
     @echo ""
     @just _grb-import-gbg-gebouw-rel
@@ -1056,26 +1055,10 @@ grb-import-remote:
     # Show artifact size
     ls -lh /tmp/grb-restore/be2osm.sql.gz
 
-    # Clear existing data before restore (data-only dump)
+    # Restore next to the live schema and swap (sql dump of grb_next, see scripts/publish-schema.sh)
     echo ""
-    echo "🧹 Clearing existing GRB data..."
-    {{psql_be2osm}} -c "TRUNCATE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links CASCADE;" || true
-    {{psql_be2osm}} -c "TRUNCATE grb.kunstwerken CASCADE;" 2>/dev/null || true
-
-    # The data-only dump expects the current schema (e.g. building_polygons.entity). Migrating on the
-    # emptied tables is instant.
-    just db-migrate
-
-    # Restore to local database
-    echo ""
-    echo "🔄 Restoring to local database..."
-    gunzip -c /tmp/grb-restore/be2osm.sql.gz | {{psql_be2osm}}
-
-    # Post-restore: update statistics (skip mat view refresh for speed)
-    echo ""
-    echo "📊 Updating database statistics..."
-    {{psql_be2osm}} -c "ANALYZE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links;"
-    {{psql_be2osm}} -c "ANALYZE grb.kunstwerken;" 2>/dev/null || true
+    PGHOST='{{db_host}}' PGPORT='{{db_port}}' PGUSER='{{db_user}}' PGDATABASE='{{be2osm_db}}' \
+        bash scripts/publish-schema.sh grb /tmp/grb-restore/be2osm.sql.gz
 
     # Cleanup
     rm -rf /tmp/grb-restore
@@ -1084,10 +1067,6 @@ grb-import-remote:
     echo "✅ Remote GRB Import Complete!"
     echo ""
     just grb-status
-    echo ""
-    echo "⚠️  Note: Materialized view not refreshed (takes 20-30 min)"
-    echo "   Tiles will work without it, but refresh improves performance."
-    echo "   Run when ready: just grb-refresh-view"
 
 # Refresh GRB materialized view (slow - run separately)
 grb-refresh-view:
@@ -1226,15 +1205,6 @@ _check-be2osm-database:
     #!/usr/bin/env bash
     if ! {{psql_postgres}} -tAc "SELECT 1 FROM pg_database WHERE datname='{{be2osm_db}}';" | grep -q 1; then
         echo "❌ Database {{be2osm_db}} not found. Database may not be initialized."
-        echo "   Delete the postgres volume and restart: docker compose down -v && docker compose up -d"
-        exit 1
-    fi
-
-# Check be2osm schema exists (created by postgres init scripts)
-_check-be2osm-schema:
-    #!/usr/bin/env bash
-    if ! {{psql_be2osm}} -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='grb' AND table_name='buildings';" | grep -q 1; then
-        echo "❌ GRB schema not found. Database may not be initialized."
         echo "   Delete the postgres volume and restart: docker compose down -v && docker compose up -d"
         exit 1
     fi

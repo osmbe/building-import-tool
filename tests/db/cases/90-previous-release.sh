@@ -51,12 +51,24 @@ unset MARTIN_CONFIG_DIR
 # The previous release's API integration tests and snapshots (minus the intentional changes listed in
 # tests/db/previous-release-snapshots.txt, taken from the current tree)
 if [ -d "$PREVIOUS_DIR/app/tests/integration" ]; then
+    skip=()
     while read -r snapshot; do
         case "$snapshot" in "" | "#"*) continue ;; esac
+        if [[ "$snapshot" == "skip-test: "* ]]; then
+            skip+=("${snapshot#skip-test: }")
+            log "intentional change: test \"${snapshot#skip-test: }\" skipped"
+            continue
+        fi
         cp "$ROOT/app/tests/integration/__snapshots__/$snapshot" "$PREVIOUS_DIR/app/tests/integration/__snapshots__/$snapshot"
         log "intentional change: $snapshot"
     done <"$ROOT/tests/db/previous-release-snapshots.txt"
-    if (cd "$PREVIOUS_DIR/app" && TEST_PG_PORT="${TEST_PG_PORT:-55432}" npx vp test run tests/integration >/tmp/previous-api.$$ 2>&1); then
+    filter=()
+    if [ "${#skip[@]}" -gt 0 ]; then
+        # Every test whose name contains none of the skipped names (regular expression characters escaped)
+        pattern=$(printf '%s\n' "${skip[@]}" | sed 's/[][\\.^$*+?(){}|]/\\&/g' | paste -sd'|' -)
+        filter=(-t "^(?!.*(${pattern}))")
+    fi
+    if (cd "$PREVIOUS_DIR/app" && TEST_PG_PORT="${TEST_PG_PORT:-55432}" npx vp test run tests/integration ${filter[@]+"${filter[@]}"} >/tmp/previous-api.$$ 2>&1); then
         pass "the previous release's API integration tests pass"
     else
         fail "the previous release's API integration tests fail"
