@@ -49,7 +49,7 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.10.0 -S warning -s bash \
             webhook/*.sh tests/db/*.sh tests/db/cases/*.sh tests/db/bin/gh tests/db/bin/deploy/* \
-            tests/fixtures/build.sh processing/sql/migrate.sh .github/scripts/*.sh scripts/*.sh
+            tests/fixtures/build.sh processing/sql/migrate.sh processing/scripts/*.sh .github/scripts/*.sh scripts/*.sh
       - name: justfile parses
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq just

@@ -40,11 +40,11 @@ default:
     @echo ""
     @echo "🏛️  PICC Tasks (Wallonia - native shapefiles)"
     @echo "  picc-download          - Download PICC buildings + ICAR addresses"
-    @echo "  picc-import            - Import downloaded data + create matview"
+    @echo "  picc-import            - Import downloaded data + refresh the view"
     @echo "  picc-full              - Complete workflow (download + import)"
     @echo "  picc-update            - Update PICC data (diff since last update)"
     @echo "  picc-status            - Show PICC database statistics"
-    @echo "  clean-picc             - Drop PICC tables from database"
+    @echo "  clean-picc             - Empty the PICC tables"
     @echo "  clean-picc-downloads   - Remove downloaded files"
     @echo ""
     @echo "🏙️  Urbis Tasks (Brussels - GeoPackage)"
@@ -105,7 +105,6 @@ metawal_api := "https://metawal.wallonie.be/geonetwork/srv/api/records"
 picc_buildings_layer := "CONSTR_BATIEMPRISE"
 picc_addresses_layer := "ADRESS_POINT"
 picc_data_dir := "data/picc"
-picc_last_update_file := picc_data_dir / ".last-update"
 
 # Urbis configuration (Brussels-Capital Region — GeoPackage, no API key needed)
 urbis_download_url := "https://urbisdownload.datastore.brussels/LastVersion/UrbISVector_31370_GPKG_04000_lastversion.zip"
@@ -495,18 +494,20 @@ picc-download:
     echo ""
     echo "✅ PICC data downloaded to {{picc_data_dir}}"
 
-# Import downloaded PICC data + create materialized view
+# Import downloaded PICC data. The tables and the view are owned by migrations (sql/migrations/picc): the files
+# are loaded into picc._raw_* tables, then mapped into picc.buildings / picc.addresses by picc.load_raw() in one
+# transaction, and the view is refreshed concurrently, so tiles keep the previous data until the end.
 picc-import:
     @echo "🏛️  PICC (Wallonia) Data Import"
     @echo "=========================================="
     @echo "📅 Started at: $(date)"
     @echo ""
     @just _check-be2osm-database
-    @just _check-picc-schema
+    @just db-migrate
     @echo ""
-    @just _picc-import-buildings
-    @just _picc-import-addresses
-    @just _picc-create-matview
+    @just _picc-load-raw-download
+    @just _picc-load
+    @just _picc-refresh-matview
     @just _picc-save-last-update
     @echo ""
     @just picc-status
@@ -524,13 +525,12 @@ picc-update:
     @echo ""
     @just _check-server
     @just _check-be2osm-database
-    @just _check-picc-schema
+    @just db-migrate
     @just _picc-check-last-update
     @echo ""
     @just _picc-fetch-diff-buildings
     @just _picc-fetch-diff-addresses
-    @just _picc-upsert-buildings
-    @just _picc-upsert-addresses
+    @just _picc-apply-diff
     @just _picc-refresh-matview
     @just _picc-save-last-update
     @just picc-status
@@ -541,14 +541,14 @@ picc-update:
 picc-status:
     @echo ""
     @echo "📊 PICC (Wallonia) Statistics:"
-    @{{psql_be2osm}} -c "SELECT 'Buildings' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('picc.constr_batiemprise')) as size FROM picc.constr_batiemprise UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('picc.icar_adr_pt')) FROM picc.icar_adr_pt UNION ALL SELECT 'Buildings with addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('picc.buildings_with_addresses')) FROM picc.buildings_with_addresses;" 2>/dev/null || echo "   (PICC tables not yet created - run just picc-import first)"
+    @{{psql_be2osm}} -c "SELECT 'Buildings' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('picc.buildings')) as size FROM picc.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('picc.addresses')) FROM picc.addresses UNION ALL SELECT 'Buildings with addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('picc.buildings_with_addresses')) FROM picc.buildings_with_addresses;" 2>/dev/null || echo "   (PICC tables not yet created - run just db-migrate first)"
     @echo ""
 
-# Drop PICC tables from database
+# Empty the PICC tables (the schema stays: it belongs to the migrations)
 clean-picc:
-    @echo "🧹 Dropping PICC tables from database..."
-    @{{psql_be2osm}} -c "DROP MATERIALIZED VIEW IF EXISTS picc.buildings_with_addresses CASCADE; DROP TABLE IF EXISTS picc.constr_batiemprise CASCADE; DROP TABLE IF EXISTS picc.icar_adr_pt CASCADE;" 2>/dev/null || echo "   PICC tables not found"
-    @echo "✅ PICC tables dropped"
+    @echo "🧹 Emptying the PICC tables..."
+    @{{psql_be2osm}} -v ON_ERROR_STOP=1 -c "TRUNCATE picc.buildings, picc.addresses; REFRESH MATERIALIZED VIEW picc.buildings_with_addresses;"
+    @echo "✅ PICC tables emptied"
 
 # Remove downloaded PICC files
 clean-picc-downloads:
@@ -556,161 +556,70 @@ clean-picc-downloads:
     rm -rf {{picc_data_dir}}
     @echo "✅ PICC downloads cleaned"
 
-# Check PICC schema exists
-_check-picc-schema:
+# Load the full download into picc._raw_buildings (CONSTR_BATIEMPRISE of the FileGDB) and picc._raw_addresses
+# (the ICAR shapefile)
+_picc-load-raw-download:
     #!/usr/bin/env bash
-    echo "Checking PICC schema..."
-    if ! {{psql_be2osm}} -tAc "SELECT 1 FROM information_schema.schemata WHERE schema_name = 'picc'" | grep -q 1; then
-        echo "❌ PICC schema not found."
-        echo ""
-        echo "Run this to create the schema:"
-        echo "  {{psql_be2osm}} -f ../postgres/05-setup-picc.sql"
-        exit 1
-    fi
-    echo "✓ PICC schema exists"
-
-# Import PICC buildings from FileGDB
-_picc-import-buildings:
-    #!/usr/bin/env bash
-    set -e
-    echo "📥 Importing PICC buildings from FileGDB..."
-
-    # Find .gdb directory
+    set -euo pipefail
     GDB_DIR=$(find {{picc_data_dir}} -name "*.gdb" -type d 2>/dev/null | head -1)
-
-    if [ -z "$GDB_DIR" ]; then
-        echo "❌ FileGDB (.gdb) directory not found in {{picc_data_dir}}"
-        echo ""
-        echo "Run this first to download:"
-        echo "  just picc-download"
+    ICAR_FILE=$(find {{picc_data_dir}} -maxdepth 2 -name "*.shp" -type f 2>/dev/null | head -1)
+    if [ -z "$GDB_DIR" ] || [ -z "$ICAR_FILE" ]; then
+        echo "❌ FileGDB (.gdb) or ICAR shapefile not found in {{picc_data_dir}}: run just picc-download first"
         exit 1
     fi
+    echo "📥 Loading $GDB_DIR ({{picc_buildings_layer}}) and $ICAR_FILE..."
+    just _picc-ogr "$GDB_DIR" picc._raw_buildings "{{picc_buildings_layer}}"
+    just _picc-ogr "$ICAR_FILE" picc._raw_addresses
+    echo "✅ Raw PICC tables loaded"
 
-    echo "   Source: $GDB_DIR"
-    echo "   Layer:  {{picc_buildings_layer}}"
-    echo ""
-
+# ogr2ogr one PICC source layer into a raw table. Usage: just _picc-ogr <source> <table> [layer]
+_picc-ogr source table layer="":
     ogr2ogr -f PostgreSQL \
         "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-        "$GDB_DIR" "{{picc_buildings_layer}}" \
-        -nln picc.constr_batiemprise \
-        -nlt PROMOTE_TO_MULTI \
-        -overwrite \
-        -lco GEOMETRY_NAME=geom \
-        -lco SPATIAL_INDEX=NONE \
+        "{{source}}" {{layer}} -nln {{table}} -overwrite -nlt PROMOTE_TO_MULTI \
+        -lco GEOMETRY_NAME=geom -lco SPATIAL_INDEX=NONE -lco PRECISION=NO \
         -gt 100000 --config PG_USE_COPY YES
 
-    echo "✅ Buildings imported"
-
-# Import ICAR addresses from shapefile
-_picc-import-addresses:
+# Replace picc.buildings / picc.addresses by the raw tables, in one transaction
+_picc-load:
     #!/usr/bin/env bash
-    set -e
-    echo "📥 Importing ICAR addresses from shapefile..."
+    set -euo pipefail
+    echo "🔄 Loading the raw tables into picc.buildings / picc.addresses..."
+    {{psql_be2osm}} -X -q -v ON_ERROR_STOP=1 <<'SQL'
+    SET client_min_messages = warning;
+    BEGIN;
+    TRUNCATE picc.buildings, picc.addresses;
+    SELECT format('   %s buildings, %s addresses', buildings, addresses) AS loaded
+    FROM picc.load_raw('picc._raw_buildings', to_regclass('picc._raw_addresses')) \gset
+    \echo :loaded
+    DROP TABLE IF EXISTS picc._raw_buildings, picc._raw_addresses;
+    COMMIT;
+    ANALYZE picc.buildings;
+    ANALYZE picc.addresses;
+    SQL
+    echo "✅ PICC data loaded"
 
-    # Find shapefile
-    ICAR_FILE=$(find {{picc_data_dir}} -name "*.shp" -type f 2>/dev/null | head -1)
-
-    if [ -z "$ICAR_FILE" ]; then
-        echo "❌ ICAR shapefile not found in {{picc_data_dir}}"
-        echo ""
-        echo "Run this first to download:"
-        echo "  just picc-download"
-        exit 1
-    fi
-
-    echo "   Source: $ICAR_FILE"
-    echo ""
-
-    ogr2ogr -f PostgreSQL \
-        "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-        "$ICAR_FILE" \
-        -nln picc.icar_adr_pt \
-        -overwrite \
-        -lco GEOMETRY_NAME=geom \
-        -lco SPATIAL_INDEX=NONE \
-        -lco PRECISION=NO \
-        -gt 100000 --config PG_USE_COPY YES
-
-    echo "✅ Addresses imported"
-
-# Create materialized view joining buildings with addresses
-_picc-create-matview:
+# Refresh the view; CONCURRENTLY (readers keep the previous contents) once it has been populated
+_picc-refresh-matview:
     #!/usr/bin/env bash
-    set -e
-    echo "🔄 Creating indexes on base tables..."
-
-    {{psql_be2osm}} -c "
-        CREATE INDEX IF NOT EXISTS idx_picc_buildings_geom ON picc.constr_batiemprise USING GIST(geom);
-        CREATE INDEX IF NOT EXISTS idx_picc_addresses_geom ON picc.icar_adr_pt USING GIST(geom);
-    "
-
-    echo "🔄 Analyzing base tables..."
-    {{psql_be2osm}} -c "ANALYZE picc.constr_batiemprise; ANALYZE picc.icar_adr_pt;"
-
-    echo "🔄 Creating materialized view (spatial join — may take a while)..."
-
-    {{psql_be2osm}} -c "
-        DROP MATERIALIZED VIEW IF EXISTS picc.buildings_with_addresses CASCADE;
-
-        CREATE MATERIALIZED VIEW picc.buildings_with_addresses AS
-        WITH addr_per_building AS (
-            SELECT
-                b.objectid,
-                COUNT(*) AS address_count,
-                array_to_string(ARRAY_AGG(DISTINCT (a.rue_nm || ' ' || a.adr_numero)
-                    ORDER BY (a.rue_nm || ' ' || a.adr_numero))
-                    FILTER (WHERE a.rue_nm IS NOT NULL), '; ') AS addresses,
-                array_to_string(ARRAY_AGG(DISTINCT a.rue_nm ORDER BY a.rue_nm)
-                    FILTER (WHERE a.rue_nm IS NOT NULL), ', ') AS street_names,
-                array_to_string(ARRAY_AGG(DISTINCT a.code_posta ORDER BY a.code_posta)
-                    FILTER (WHERE a.code_posta IS NOT NULL), ', ') AS postcodes,
-                array_to_string(ARRAY_AGG(DISTINCT a.com_nm ORDER BY a.com_nm)
-                    FILTER (WHERE a.com_nm IS NOT NULL), ', ') AS municipalities
-            FROM picc.constr_batiemprise b
-            JOIN picc.icar_adr_pt a ON ST_Contains(ST_Force2D(ST_SetSRID(b.geom, 31370)), a.geom)
-            GROUP BY b.objectid
-        )
-        SELECT
-            b.objectid::BIGINT AS objectid,
-            b.georef_id,
-            b.natur_code,
-            b.natur_desc,
-            b.date_leve,
-            b.date_modif,
-            ST_Area(ST_Force2D(ST_SetSRID(b.geom, 31370)))::REAL AS area_m2,
-            ST_Transform(ST_Force2D(ST_SetSRID(b.geom, 31370)), 3857)::geometry(Geometry, 3857) AS geom,
-            COALESCE(apb.addresses, '') AS addresses,
-            COALESCE(apb.street_names, '') AS street_names,
-            COALESCE(apb.postcodes, '') AS postcodes,
-            COALESCE(apb.municipalities, '') AS municipalities,
-            COALESCE(apb.address_count, 0) AS address_count
-        FROM picc.constr_batiemprise b
-        LEFT JOIN addr_per_building apb ON b.objectid = apb.objectid;
-    "
-
-    echo "🔄 Creating indexes on materialized view..."
-
-    {{psql_be2osm}} -c "
-        CREATE UNIQUE INDEX idx_picc_matview_objectid ON picc.buildings_with_addresses(objectid);
-        CREATE INDEX idx_picc_matview_geom ON picc.buildings_with_addresses USING GIST(geom);
-        CREATE INDEX idx_picc_matview_natur_code ON picc.buildings_with_addresses(natur_code);
-        CREATE INDEX idx_picc_matview_postcodes ON picc.buildings_with_addresses(postcodes);
-    "
-
-    echo "✅ Materialized view created"
+    set -euo pipefail
+    echo "🔄 Refreshing picc.buildings_with_addresses (spatial join, may take a while)..."
+    POPULATED=$({{psql_be2osm}} -tAc "SELECT ispopulated FROM pg_matviews WHERE schemaname = 'picc' AND matviewname = 'buildings_with_addresses'")
+    CONCURRENTLY=""
+    [ "$POPULATED" = "t" ] && CONCURRENTLY="CONCURRENTLY"
+    {{psql_be2osm}} -v ON_ERROR_STOP=1 -c "REFRESH MATERIALIZED VIEW $CONCURRENTLY picc.buildings_with_addresses;"
+    echo "✅ Materialized view refreshed"
 
 # ============================================================================
 # PICC PER-PROVINCE TASKS - Used by GitHub Actions parallel pipeline
 # ============================================================================
 
-# Download and import a single province shapefile (used by CI matrix jobs)
-# Produces a custom-format pg_dump for use by picc-finalize-provinces
-# Usage: just picc-province-import PROVINCE_NAME
+# Download and load a single province (used by CI matrix jobs) into raw tables, and dump them for
+# picc-finalize-provinces. Usage: just picc-province-import PROVINCE_NAME
 #   PROVINCE_NAME: BRABANT_WALLON, HAINAUT, LIEGE, LUXEMBOURG, NAMUR
 picc-province-import province:
     #!/usr/bin/env bash
-    set -e
+    set -euo pipefail
     PROVINCE="{{province}}"
     DATA_DIR="{{picc_data_dir}}/${PROVINCE}"
     mkdir -p "${DATA_DIR}"
@@ -733,178 +642,60 @@ picc-province-import province:
     unzip -o "${DATA_DIR}/province.zip" -d "${DATA_DIR}"
     rm "${DATA_DIR}/province.zip"
 
-    echo ""
-    echo "📥 Importing buildings ({{picc_buildings_layer}})..."
-    ogr2ogr -f PostgreSQL \
-        "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-        "${DATA_DIR}/{{picc_buildings_layer}}.shp" \
-        -nln picc.constr_batiemprise \
-        -nlt PROMOTE_TO_MULTI \
-        -overwrite \
-        -lco GEOMETRY_NAME=geom \
-        -lco SPATIAL_INDEX=NONE \
-        -gt 100000 --config PG_USE_COPY YES
+    just picc-province-load "${PROVINCE}"
 
+# Load an extracted province (data/picc/<PROVINCE>/{CONSTR_BATIEMPRISE,ADRESS_POINT}.shp) into raw tables and
+# dump them to data/picc/picc-<PROVINCE>.dump (custom format, raw tables only)
+picc-province-load province:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    PROVINCE="{{province}}"
+    DATA_DIR="{{picc_data_dir}}/${PROVINCE}"
+    {{psql_be2osm}} -q -c "CREATE SCHEMA IF NOT EXISTS picc"
+    echo "📥 Loading ${PROVINCE} buildings ({{picc_buildings_layer}})..."
+    just _picc-ogr "${DATA_DIR}/{{picc_buildings_layer}}.shp" picc._raw_buildings
+    TABLES=(-t picc._raw_buildings)
     if [ -f "${DATA_DIR}/{{picc_addresses_layer}}.shp" ]; then
-        echo "📥 Importing addresses ({{picc_addresses_layer}})..."
-        ogr2ogr -f PostgreSQL \
-            "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-            "${DATA_DIR}/{{picc_addresses_layer}}.shp" \
-            -nln picc.icar_adr_pt \
-            -overwrite \
-            -lco GEOMETRY_NAME=geom \
-            -lco SPATIAL_INDEX=NONE \
-            -lco PRECISION=NO \
-            -gt 100000 --config PG_USE_COPY YES
+        echo "📥 Loading ${PROVINCE} addresses ({{picc_addresses_layer}})..."
+        just _picc-ogr "${DATA_DIR}/{{picc_addresses_layer}}.shp" picc._raw_addresses
+        TABLES+=(-t picc._raw_addresses)
     else
-        echo "⚠️  ADRESS_POINT.shp not found in province archive, skipping address import"
+        echo "⚠️  {{picc_addresses_layer}}.shp not found in the province archive, no addresses"
     fi
-
-    echo ""
-    echo "📊 Province ${PROVINCE} counts:"
-    {{psql_be2osm}} -c "SELECT 'buildings' as t, COUNT(*) FROM picc.constr_batiemprise;"
-    {{psql_be2osm}} -c "SELECT 'addresses' as t, COUNT(*) FROM picc.icar_adr_pt;" 2>/dev/null || echo "   (no addresses table)"
-
-    echo ""
-    echo "📦 Creating dump for province ${PROVINCE}..."
-    pg_dump -h {{db_host}} -p {{db_port}} -U {{db_user}} \
-        -Fc --no-owner --no-acl -n picc {{be2osm_db}} \
+    {{psql_be2osm}} -c "SELECT 'buildings' AS t, COUNT(*) FROM picc._raw_buildings;"
+    echo "📦 Dumping ${PROVINCE}..."
+    pg_dump -h {{db_host}} -p {{db_port}} -U {{db_user}} -Fc --no-owner --no-acl "${TABLES[@]}" {{be2osm_db}} \
         > "{{picc_data_dir}}/picc-${PROVINCE}.dump"
     ls -lh "{{picc_data_dir}}/picc-${PROVINCE}.dump"
-
-    echo ""
     echo "✅ Province ${PROVINCE} done"
 
-# Restore province dumps and create materialized view (used by CI finalize job)
-# Uses pg_restore custom format: schema from first dump, data from all dumps
-# Usage: just picc-finalize-provinces /path/to/dumps/dir
+# Merge the province dumps into picc.buildings / picc.addresses and refresh the view (used by the CI finalize
+# job). Usage: just picc-finalize-provinces /path/to/dumps/dir
 picc-finalize-provinces dumps_dir:
     #!/usr/bin/env bash
-    set -e
-    DUMPS_DIR="{{dumps_dir}}"
-
-    echo "🏛️  PICC Finalize: Restoring province dumps + creating matview"
-    echo "=========================================="
-
-    # Collect all province dumps
-    DUMPS=("${DUMPS_DIR}"/picc-*.dump)
-    if [ ${#DUMPS[@]} -eq 0 ]; then
-        echo "❌ No province dumps found in ${DUMPS_DIR}"
-        exit 1
-    fi
-    echo "📋 Found ${#DUMPS[@]} province dumps"
-
-    # Restore table schema from first dump (pre-data section only)
-    echo ""
-    echo "🔄 Creating tables from ${DUMPS[0]}..."
-    pg_restore --section=pre-data -d "{{be2osm_db}}" \
-        -h {{db_host}} -p {{db_port}} -U {{db_user}} \
-        --no-owner --no-acl \
-        "${DUMPS[0]}" || true
-
-    # Restore data from ALL province dumps
-    # (ogc_fid values overlap between provinces, but PK constraint is in post-data
-    #  section which we skip, so no conflict)
+    set -euo pipefail
+    DUMPS=("{{dumps_dir}}"/picc-*.dump)
+    [ -e "${DUMPS[0]}" ] || { echo "❌ No province dumps found in {{dumps_dir}}"; exit 1; }
+    echo "🏛️  PICC Finalize: ${#DUMPS[@]} province dumps"
+    just db-migrate
+    {{psql_be2osm}} -q -c "SET client_min_messages = warning; DROP TABLE IF EXISTS picc._raw_buildings, picc._raw_addresses;"
+    # The raw tables come from the dumps' pre-data (every dump: a province may lack addresses). Each table is
+    # created by the first dump that has it; the "already exists" errors of the next ones are expected.
     for DUMP in "${DUMPS[@]}"; do
-        PROV_NAME=$(basename "$DUMP" .dump | sed 's/picc-//')
-        echo "🔄 Restoring data: ${PROV_NAME}..."
-        pg_restore --section=data -d "{{be2osm_db}}" \
-            -h {{db_host}} -p {{db_port}} -U {{db_user}} \
-            --no-owner --no-acl \
-            "$DUMP"
+        pg_restore --section=pre-data -d "{{be2osm_db}}" -h {{db_host}} -p {{db_port}} -U {{db_user}} \
+            --no-owner --no-acl "$DUMP" 2>/dev/null || true
     done
-
-    echo ""
-    echo "📊 Row counts after restore:"
-    {{psql_be2osm}} -c "SELECT 'buildings' as table_name, COUNT(*) FROM picc.constr_batiemprise UNION ALL SELECT 'addresses', COUNT(*) FROM picc.icar_adr_pt;"
-
-    # Skip post-data (ogc_fid PK would conflict). Create our own indexes.
-    echo ""
-    echo "🔄 Creating indexes and materialized view..."
-    just _picc-create-matview-provinces
-
+    # The raw ogc_fid values overlap between provinces; their primary key is in post-data, which is skipped
+    for DUMP in "${DUMPS[@]}"; do
+        echo "🔄 Restoring $(basename "$DUMP" .dump)..."
+        pg_restore --section=data -d "{{be2osm_db}}" -h {{db_host}} -p {{db_port}} -U {{db_user}} \
+            --no-owner --no-acl --exit-on-error "$DUMP"
+    done
+    just _picc-load
+    just _picc-refresh-matview
     just _picc-save-last-update
-
-    echo ""
+    just picc-status
     echo "✅ PICC finalize complete!"
-
-# Create materialized view for per-province imports (ADRESS_POINT column names)
-_picc-create-matview-provinces:
-    #!/usr/bin/env bash
-    set -e
-    echo "🔄 Creating indexes on base tables..."
-
-    {{psql_be2osm}} -c "
-        CREATE INDEX IF NOT EXISTS idx_picc_buildings_geom ON picc.constr_batiemprise USING GIST(geom);
-        CREATE INDEX IF NOT EXISTS idx_picc_addresses_geom ON picc.icar_adr_pt USING GIST(geom);
-    "
-
-    echo "🔄 Analyzing base tables..."
-    {{psql_be2osm}} -c "ANALYZE picc.constr_batiemprise; ANALYZE picc.icar_adr_pt;"
-
-    echo "🔄 Creating materialized view (spatial join — may take a while)..."
-
-    {{psql_be2osm}} -c "
-        DROP MATERIALIZED VIEW IF EXISTS picc.buildings_with_addresses CASCADE;
-
-        CREATE MATERIALIZED VIEW picc.buildings_with_addresses AS
-        WITH addr_per_building AS (
-            SELECT
-                b.objectid,
-                COUNT(*) AS address_count,
-                array_to_string(ARRAY_AGG(DISTINCT (a.rue_nom || ' ' || a.numero)
-                    ORDER BY (a.rue_nom || ' ' || a.numero))
-                    FILTER (WHERE a.rue_nom IS NOT NULL), '; ') AS addresses,
-                array_to_string(ARRAY_AGG(DISTINCT a.rue_nom ORDER BY a.rue_nom)
-                    FILTER (WHERE a.rue_nom IS NOT NULL), ', ') AS street_names,
-                array_to_string(ARRAY_AGG(DISTINCT a.codepostal::int::text ORDER BY a.codepostal::int::text)
-                    FILTER (WHERE a.codepostal IS NOT NULL AND a.codepostal = a.codepostal), ', ') AS postcodes,
-                array_to_string(ARRAY_AGG(DISTINCT a.commu_nom ORDER BY a.commu_nom)
-                    FILTER (WHERE a.commu_nom IS NOT NULL), ', ') AS municipalities
-            FROM picc.constr_batiemprise b
-            JOIN picc.icar_adr_pt a ON ST_Contains(ST_Force2D(ST_SetSRID(b.geom, 31370)), a.geom)
-            GROUP BY b.objectid
-        )
-        SELECT
-            b.objectid::BIGINT AS objectid,
-            b.georef_id,
-            b.natur_code,
-            b.natur_desc,
-            b.date_leve,
-            b.date_modif,
-            ST_Area(ST_Force2D(ST_SetSRID(b.geom, 31370)))::REAL AS area_m2,
-            ST_Transform(ST_Force2D(ST_SetSRID(b.geom, 31370)), 3857)::geometry(Geometry, 3857) AS geom,
-            COALESCE(apb.addresses, '') AS addresses,
-            COALESCE(apb.street_names, '') AS street_names,
-            COALESCE(apb.postcodes, '') AS postcodes,
-            COALESCE(apb.municipalities, '') AS municipalities,
-            COALESCE(apb.address_count, 0) AS address_count
-        FROM picc.constr_batiemprise b
-        LEFT JOIN addr_per_building apb ON b.objectid = apb.objectid;
-    "
-
-    echo "🔄 Checking objectid uniqueness..."
-    DUPES=$({{psql_be2osm}} -tAc "SELECT COUNT(*) FROM (SELECT objectid FROM picc.buildings_with_addresses GROUP BY objectid HAVING COUNT(*) > 1) d;")
-    if [ "$DUPES" -gt 0 ]; then
-        echo "⚠️  Found $DUPES duplicate objectids across provinces — using non-unique index"
-        {{psql_be2osm}} -c "
-            CREATE INDEX idx_picc_matview_objectid ON picc.buildings_with_addresses(objectid);
-        "
-    else
-        echo "   ✓ All objectids are unique"
-        {{psql_be2osm}} -c "
-            CREATE UNIQUE INDEX idx_picc_matview_objectid ON picc.buildings_with_addresses(objectid);
-        "
-    fi
-
-    echo "🔄 Creating remaining indexes on materialized view..."
-    {{psql_be2osm}} -c "
-        CREATE INDEX idx_picc_matview_geom ON picc.buildings_with_addresses USING GIST(geom);
-        CREATE INDEX idx_picc_matview_natur_code ON picc.buildings_with_addresses(natur_code);
-        CREATE INDEX idx_picc_matview_postcodes ON picc.buildings_with_addresses(postcodes);
-    "
-
-    echo "✅ Materialized view created"
 
 # ============================================================================
 # URBIS TASKS - Brussels-Capital Region Data Import (GeoPackage)
@@ -1513,20 +1304,10 @@ picc-import-remote:
     # Show artifact size
     ls -lh /tmp/picc-restore/picc.sql.gz
 
-    # Drop existing tables before restore (full dump recreates them)
+    # Restore next to the live schema and swap (sql dump of picc_next, see scripts/publish-schema.sh)
     echo ""
-    echo "🧹 Dropping existing PICC tables..."
-    {{psql_be2osm}} -c "DROP MATERIALIZED VIEW IF EXISTS picc.buildings_with_addresses CASCADE; DROP TABLE IF EXISTS picc.constr_batiemprise CASCADE; DROP TABLE IF EXISTS picc.icar_adr_pt CASCADE;" || true
-
-    # Restore to local database
-    echo ""
-    echo "🔄 Restoring to local database..."
-    gunzip -c /tmp/picc-restore/picc.sql.gz | {{psql_be2osm}}
-
-    # Post-restore: update statistics
-    echo ""
-    echo "📊 Updating database statistics..."
-    {{psql_be2osm}} -c "ANALYZE picc.constr_batiemprise; ANALYZE picc.icar_adr_pt;"
+    PGHOST='{{db_host}}' PGPORT='{{db_port}}' PGUSER='{{db_user}}' PGDATABASE='{{be2osm_db}}' \
+        bash scripts/publish-schema.sh picc /tmp/picc-restore/picc.sql.gz
 
     # Cleanup
     rm -rf /tmp/picc-restore
@@ -2539,29 +2320,28 @@ _save-import-meta schema:
 
 # PICC: Save last update timestamp
 _picc-save-last-update:
-    #!/usr/bin/env bash
-    mkdir -p {{picc_data_dir}}
-    date -u +%Y-%m-%dT00:00:00Z > {{picc_last_update_file}}
-    echo "📅 Saved PICC update timestamp: $(cat {{picc_last_update_file}})"
-    just _save-import-meta picc
+    @just _save-import-meta picc
 
-# PICC: Check that a previous import exists (last update file)
+# PICC: start of the next ArcGIS update, from picc.import_meta (it travels with CI restores)
+_picc-last-update:
+    @{{psql_be2osm}} -tAq -c "SELECT to_char(max(imported_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"00:00:00\"Z\"') FROM picc.import_meta"
+
+# PICC: Check that a previous import exists
 _picc-check-last-update:
     #!/usr/bin/env bash
-    if [ ! -f "{{picc_last_update_file}}" ]; then
-        echo "❌ No previous PICC import found."
-        echo "   Run 'just picc-full' first to do a full import."
-        echo "   The update task only works after an initial import."
+    LAST_UPDATE=$(just _picc-last-update 2>/dev/null || true)
+    if [ -z "$LAST_UPDATE" ]; then
+        echo "❌ No previous PICC import found (picc.import_meta is empty)."
+        echo "   Run 'just picc-full' or the PICC Import workflow first."
         exit 1
     fi
-    LAST_UPDATE=$(cat "{{picc_last_update_file}}")
     echo "📅 Last PICC update: $LAST_UPDATE"
 
 # PICC: Fetch modified buildings from ArcGIS REST API (paginated)
 _picc-fetch-diff-buildings:
     #!/usr/bin/env bash
     set -e
-    LAST_UPDATE=$(cat "{{picc_last_update_file}}")
+    LAST_UPDATE=$(just _picc-last-update)
     WHERE="DATE_MODIF > timestamp '${LAST_UPDATE}'"
     OUTPUT="{{picc_data_dir}}/diff-buildings.geojson"
     mkdir -p {{picc_data_dir}}
@@ -2620,7 +2400,7 @@ _picc-fetch-diff-buildings:
 _picc-fetch-diff-addresses:
     #!/usr/bin/env bash
     set -e
-    LAST_UPDATE=$(cat "{{picc_last_update_file}}")
+    LAST_UPDATE=$(just _picc-last-update)
     WHERE="DATE_MODIF > timestamp '${LAST_UPDATE}'"
     OUTPUT="{{picc_data_dir}}/diff-addresses.geojson"
     mkdir -p {{picc_data_dir}}
@@ -2673,102 +2453,33 @@ _picc-fetch-diff-addresses:
         echo "✅ ${TOTAL} modified addresses saved to ${OUTPUT}"
     fi
 
-# PICC: Upsert buildings from diff GeoJSON into main table
-_picc-upsert-buildings:
+# PICC: apply the fetched changes: the buildings and addresses with the objectids of the changed ones are
+# replaced (picc.load_raw with replace), in one transaction
+_picc-apply-diff:
     #!/usr/bin/env bash
-    set -e
-    INPUT="{{picc_data_dir}}/diff-buildings.geojson"
-    if [ ! -f "$INPUT" ]; then
-        echo "⚠️  No diff buildings file found, skipping"
-        return 0
-    fi
+    set -euo pipefail
+    B="{{picc_data_dir}}/diff-buildings.geojson"
+    A="{{picc_data_dir}}/diff-addresses.geojson"
+    {{psql_be2osm}} -q -c "SET client_min_messages = warning; DROP TABLE IF EXISTS picc._raw_update_buildings, picc._raw_update_addresses;"
+    for pair in "$B:picc._raw_update_buildings" "$A:picc._raw_update_addresses"; do
+        file="${pair%%:*}"
+        if [ -f "$file" ] && [ "$(jq '.features | length' "$file")" -gt 0 ]; then
+            echo "📊 Loading $(jq '.features | length' "$file") changes from $(basename "$file")..."
+            ogr2ogr -f PostgreSQL \
+                "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+                "$file" -nln "${pair#*:}" -overwrite -nlt PROMOTE_TO_MULTI -dim 2 -t_srs EPSG:31370 \
+                -lco GEOMETRY_NAME=geom -lco SPATIAL_INDEX=NONE -lco PRECISION=NO
+        fi
+    done
+    {{psql_be2osm}} -X -q -v ON_ERROR_STOP=1 <<'SQL'
+    SET client_min_messages = warning;
+    BEGIN;
+    SELECT format('   replaced %s buildings, %s addresses', buildings, addresses) AS applied
+    FROM picc.load_raw(to_regclass('picc._raw_update_buildings'), to_regclass('picc._raw_update_addresses'), true) \gset
+    \echo :applied
+    DROP TABLE IF EXISTS picc._raw_update_buildings, picc._raw_update_addresses;
+    COMMIT;
+    SQL
+    rm -f "$B" "$A"
+    echo "✅ PICC changes applied"
 
-    COUNT=$(jq '.features | length' "$INPUT")
-    if [ "$COUNT" -eq 0 ]; then
-        echo "📊 No building changes to apply"
-        rm -f "$INPUT"
-        return 0
-    fi
-
-    echo "📊 Upserting ${COUNT} modified buildings..."
-
-    # Import to staging table
-    ogr2ogr -f PostgreSQL \
-        "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-        "$INPUT" \
-        -nln picc.staging_buildings \
-        -nlt PROMOTE_TO_MULTI \
-        -overwrite \
-        -lco GEOMETRY_NAME=geom \
-        -lco SPATIAL_INDEX=NONE \
-        -dim 2 \
-        -t_srs EPSG:31370 \
-        -gt 100000 --config PG_USE_COPY YES
-
-    # Delete matching records from main table, then insert from staging
-    {{psql_be2osm}} -c "
-        DELETE FROM picc.constr_batiemprise
-        WHERE objectid IN (SELECT objectid FROM picc.staging_buildings);
-
-        INSERT INTO picc.constr_batiemprise
-        SELECT * FROM picc.staging_buildings;
-
-        DROP TABLE IF EXISTS picc.staging_buildings;
-    "
-
-    rm -f "$INPUT"
-    echo "✅ Buildings upserted"
-
-# PICC: Upsert addresses from diff GeoJSON into main table
-_picc-upsert-addresses:
-    #!/usr/bin/env bash
-    set -e
-    INPUT="{{picc_data_dir}}/diff-addresses.geojson"
-    if [ ! -f "$INPUT" ]; then
-        echo "⚠️  No diff addresses file found, skipping"
-        return 0
-    fi
-
-    COUNT=$(jq '.features | length' "$INPUT")
-    if [ "$COUNT" -eq 0 ]; then
-        echo "📊 No address changes to apply"
-        rm -f "$INPUT"
-        return 0
-    fi
-
-    echo "📊 Upserting ${COUNT} modified addresses..."
-
-    # Import to staging table
-    ogr2ogr -f PostgreSQL \
-        "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-        "$INPUT" \
-        -nln picc.staging_addresses \
-        -overwrite \
-        -lco GEOMETRY_NAME=geom \
-        -lco SPATIAL_INDEX=NONE \
-        -lco PRECISION=NO \
-        -dim 2 \
-        -t_srs EPSG:31370 \
-        -gt 100000 --config PG_USE_COPY YES
-
-    # Delete matching records from main table, then insert from staging
-    {{psql_be2osm}} -c "
-        DELETE FROM picc.icar_adr_pt
-        WHERE objectid IN (SELECT objectid FROM picc.staging_addresses);
-
-        INSERT INTO picc.icar_adr_pt
-        SELECT * FROM picc.staging_addresses;
-
-        DROP TABLE IF EXISTS picc.staging_addresses;
-    "
-
-    rm -f "$INPUT"
-    echo "✅ Addresses upserted"
-
-# PICC: Refresh materialized view after update
-_picc-refresh-matview:
-    #!/usr/bin/env bash
-    set -e
-    echo "🔄 Refreshing PICC materialized view..."
-    {{psql_be2osm}} -c "REFRESH MATERIALIZED VIEW CONCURRENTLY picc.buildings_with_addresses;"
-    echo "✅ Materialized view refreshed"

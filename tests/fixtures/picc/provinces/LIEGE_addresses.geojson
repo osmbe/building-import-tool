@@ -1,0 +1,22 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "OBJECTID": 601,
+    "RUE_NOM": "Rue Leopold",
+    "NUMERO": "1",
+    "CODEPOSTAL": 4000.0,
+    "COMMU_NOM": "Liege"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     5.57005,
+     50.63003
+    ]
+   }
+  }
+ ]
+}

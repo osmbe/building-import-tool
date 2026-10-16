@@ -2,7 +2,7 @@
 # Convert the GeoJSON/CSV fixtures (feature ids are top-level GeoJSON "id" members, kept with -preserve_fid) into the file formats and directory layout the import recipes expect.
 # Runs inside the processing container (ogr2ogr): /fixtures is this directory, /work/data the recipes' data dir.
 #
-#   build.sh grb|grb-diff|picc|urbis
+#   build.sh grb|grb-diff|picc|picc-provinces|picc-diff|urbis
 set -euo pipefail
 
 SRC=/fixtures
@@ -17,7 +17,7 @@ dbf() { # <csv> <out.dbf>: attribute-only DBF, like the GRB relation files
     ogr2ogr -f "ESRI Shapefile" "$2" "$1" -oo AUTODETECT_TYPE=YES
 }
 
-case "${1:?usage: build.sh grb|grb-diff|picc|urbis}" in
+case "${1:?usage: build.sh grb|grb-diff|picc|picc-provinces|picc-diff|urbis}" in
 grb)
     rm -rf "$DATA/grb" && mkdir -p "$DATA/grb"/{gbg,gba,knw,addresses}
     shp "$SRC/grb/gbg.geojson" "$DATA/grb/gbg/Gbg_test.shp"
@@ -39,6 +39,21 @@ picc)
     ogr2ogr -f OpenFileGDB "$DATA/picc/PICC_test.gdb" "$SRC/picc/buildings.geojson" -t_srs "$LAMBERT" \
         -nln CONSTR_BATIEMPRISE -nlt MULTIPOLYGON -preserve_fid -lco FID=OBJECTID
     shp "$SRC/picc/icar.geojson" "$DATA/picc/ICAR_test.shp"
+    ;;
+picc-provinces)
+    # Extracted province downloads: shapefiles with an OBJECTID field and the ADRESS_POINT address format
+    rm -rf "$DATA/picc" && mkdir -p "$DATA/picc"
+    for province in NAMUR LIEGE; do
+        mkdir -p "$DATA/picc/$province"
+        shp "$SRC/picc/provinces/${province}_buildings.geojson" "$DATA/picc/$province/CONSTR_BATIEMPRISE.shp"
+        shp "$SRC/picc/provinces/${province}_addresses.geojson" "$DATA/picc/$province/ADRESS_POINT.shp"
+    done
+    ;;
+picc-diff)
+    # What _picc-fetch-diff-* write from the ArcGIS REST API (GeoJSON in EPSG:4326)
+    mkdir -p "$DATA/picc"
+    cp "$SRC/picc/diff/buildings.geojson" "$DATA/picc/diff-buildings.geojson"
+    cp "$SRC/picc/diff/addresses.geojson" "$DATA/picc/diff-addresses.geojson"
     ;;
 urbis)
     rm -rf "$DATA/urbis" && mkdir -p "$DATA/urbis"

@@ -1,6 +1,6 @@
 -- PICC (Wallonia) Schema Setup
--- Tables are created by ogr2ogr during import (exact shapefile structure)
--- Materialized view is created by justfile task after import
+-- The tables, picc.load_raw() and the materialized view come from the migrations in
+-- processing/sql/migrations/picc/ (`just db-migrate`, also run by every PICC import recipe).
 
 \c be2osm
 
@@ -16,5 +16,5 @@ CREATE TABLE IF NOT EXISTS picc.import_meta (
 \echo '✓ PICC schema created'
 \echo ''
 \echo 'Next steps:'
-\echo '  1. Download PICC data: just picc-download'
-\echo '  2. Import data: just picc-import'
+\echo '  1. Create the tables: just db-migrate'
+\echo '  2. Download and import: just picc-full'

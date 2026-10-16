@@ -208,10 +208,13 @@ if [ -z "${TMUX:-}${STY:-}" ]; then
 fi
 view_gb="$(psql_be2osm -c "SELECT ceil(coalesce(sum(pg_total_relation_size(c.oid)), 0) / 1024.0^3) FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'grb' AND c.relname LIKE 'buildings_with_addresses%'")"
-need=$((view_gb * 2 + MIN_FREE_GB))
+# The PICC data is copied from the old raw tables into the new ones before the old ones are dropped
+picc_gb="$(psql_be2osm -c "SELECT ceil(coalesce(sum(pg_total_relation_size(c.oid)), 0) / 1024.0^3) FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'picc' AND c.relkind IN ('r', 'm')")"
+need=$((view_gb * 2 + picc_gb + MIN_FREE_GB))
 [ "$(free_gb "$DOCKER_ROOT")" -ge "$need" ] ||
-    die "the new GRB view is built next to the old one: ${need} GB free needed, $(free_gb "$DOCKER_ROOT") GB available"
-info "applying every pending migration (the GRB view rebuild takes about 30 minutes; the old view is served meanwhile)"
+    die "the new GRB view and PICC tables are built next to the old ones: ${need} GB free needed, $(free_gb "$DOCKER_ROOT") GB available"
+info "applying every pending migration (the GRB view rebuild takes about 30 minutes, PICC a few; the old views are served meanwhile)"
 "${COMPOSE[@]}" run --rm -T --no-deps processing just db-migrate
 
 # --- 9. services -------------------------------------------------------------------------------------------

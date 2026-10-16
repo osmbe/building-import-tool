@@ -55,6 +55,24 @@ just_run() {
     "${COMPOSE[@]}" run --rm -T processing just "$@"
 }
 
+# Schema-only dump of the be2osm schemas, to check that an import does not change the schema
+schema_of() { # <schema...>
+    local args=()
+    for schema in "$@"; do args+=(-n "$schema"); done
+    "${COMPOSE[@]}" exec -T postgres pg_dump -U be2osm --schema-only --no-owner --no-acl "${args[@]}" be2osm |
+        grep -v '^\\\(restrict\|unrestrict\) \|^-- Dumped'
+}
+
+# Run a recipe of the justfile of an older commit (e.g. to build a database the way old releases did).
+# Usage: old_just <commit> <recipe...>
+old_just() {
+    local commit="$1"
+    shift
+    git -C "$ROOT" show "$commit:processing/justfile" |
+        "${COMPOSE[@]}" run --rm -T --entrypoint bash processing -c \
+            'cat > /tmp/old.justfile && JUST_JUSTFILE=/tmp/old.justfile JUST_WORKING_DIRECTORY=/work just "$@"' _ "$@"
+}
+
 # Run a command in the webhook container (scripts in /repo/webhook, fake gh). Usage: webhook_run [-e K=V] <cmd...>
 webhook_run() {
     "${COMPOSE[@]}" run --rm -T --no-deps --entrypoint "" "$@"

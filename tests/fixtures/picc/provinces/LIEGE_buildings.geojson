@@ -1,0 +1,43 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "OBJECTID": 11,
+    "GEOREF_ID": "G-11-LG",
+    "NATUR_CODE": "BAT",
+    "NATUR_DESC": "Batiment",
+    "DATE_LEVE": "2017-09-01",
+    "DATE_MODIF": "2020-01-01"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       5.57,
+       50.63
+      ],
+      [
+       5.5701,
+       50.63
+      ],
+      [
+       5.5701,
+       50.630065
+      ],
+      [
+       5.57,
+       50.630065
+      ],
+      [
+       5.57,
+       50.63
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}

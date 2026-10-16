@@ -1,0 +1,22 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "OBJECTID": 501,
+    "RUE_NOM": "Rue de Fer",
+    "NUMERO": "5",
+    "CODEPOSTAL": 5000.0,
+    "COMMU_NOM": "Namur"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     4.87005,
+     50.46503
+    ]
+   }
+  }
+ ]
+}

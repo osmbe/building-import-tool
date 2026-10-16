@@ -1,0 +1,81 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "OBJECTID": 11,
+    "GEOREF_ID": "G-11",
+    "NATUR_CODE": "BAT",
+    "NATUR_DESC": "Batiment",
+    "DATE_LEVE": "2019-05-20",
+    "DATE_MODIF": "2020-01-01"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       4.87,
+       50.465
+      ],
+      [
+       4.8701,
+       50.465
+      ],
+      [
+       4.8701,
+       50.465065
+      ],
+      [
+       4.87,
+       50.465065
+      ],
+      [
+       4.87,
+       50.465
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "OBJECTID": 12,
+    "GEOREF_ID": "G-12",
+    "NATUR_CODE": "ANX",
+    "NATUR_DESC": "Annexe",
+    "DATE_LEVE": "2018-02-03",
+    "DATE_MODIF": "2020-01-01"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       4.871,
+       50.465
+      ],
+      [
+       4.8711,
+       50.465
+      ],
+      [
+       4.8711,
+       50.465065
+      ],
+      [
+       4.871,
+       50.465065
+      ],
+      [
+       4.871,
+       50.465
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}

@@ -127,7 +127,7 @@ jobs:
       - name: Build processing image
         run: docker build -t processing ./processing
 
-      - name: Restore provinces and create matview
+      - name: Merge the provinces and refresh the view
         run: |
           docker run --network host \
             -v ${{ github.workspace }}/processing:/work \
@@ -138,11 +138,14 @@ jobs:
             -e POSTGRES_PASSWORD=be2osm \
             processing just picc-finalize-provinces /dumps
 
-      - name: Create final PICC dump
+      # The server restores it next to its live data and swaps it in (processing/scripts/publish-schema.sh)
+      - name: Create final PICC dump (schema picc_next)
         run: |
+          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 \
+            -c "ALTER SCHEMA picc RENAME TO picc_next"
           PGPASSWORD=be2osm pg_dump -h localhost -U be2osm \
             --no-owner --no-acl \
-            -n picc \
+            -n picc_next \
             be2osm | gzip > picc.sql.gz
           ls -lh picc.sql.gz
 

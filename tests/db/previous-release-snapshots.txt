@@ -1,0 +1,8 @@
+# API snapshots (app/tests/integration/__snapshots__/) whose change in this commit is intentional.
+# tests/db/cases/90-previous-release.sh copies these from the current tree into the previous release before
+# running its API tests: the previous release's code must produce the current expected output for them.
+# Empty this list in the commit after the one that needed it.
+#
+# PICC date_leve is a date (picc.buildings, migration picc/001): "2019-05-20" instead of the timestamp the
+# FileGDB fixture path used to give. Production's province import already returned dates.
+difference-picc-geometry.json

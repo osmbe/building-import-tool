@@ -48,8 +48,14 @@ done
 martin_down
 unset MARTIN_CONFIG_DIR
 
-# The previous release's API integration tests and snapshots
+# The previous release's API integration tests and snapshots (minus the intentional changes listed in
+# tests/db/previous-release-snapshots.txt, taken from the current tree)
 if [ -d "$PREVIOUS_DIR/app/tests/integration" ]; then
+    while read -r snapshot; do
+        case "$snapshot" in "" | "#"*) continue ;; esac
+        cp "$ROOT/app/tests/integration/__snapshots__/$snapshot" "$PREVIOUS_DIR/app/tests/integration/__snapshots__/$snapshot"
+        log "intentional change: $snapshot"
+    done <"$ROOT/tests/db/previous-release-snapshots.txt"
     if (cd "$PREVIOUS_DIR/app" && TEST_PG_PORT="${TEST_PG_PORT:-55432}" npx vp test run tests/integration >/tmp/previous-api.$$ 2>&1); then
         pass "the previous release's API integration tests pass"
     else
