@@ -2,8 +2,8 @@ name: Urbis Update
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 5 1 * *'  # Monthly 1st at 5am UTC
+  # Monthly schedule ('0 5 1 * *') paused: the update drops every Urbis table before downloading the new data.
+  # Re-enabled once it builds next to the live data and swaps.
 
 jobs:
   trigger-update:

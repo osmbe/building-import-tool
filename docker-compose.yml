@@ -17,8 +17,6 @@ services:
       - ./postgres/04-setup-fdw.sql:/docker-entrypoint-initdb.d/04-setup-fdw.sql:ro,z
       - ./postgres/05-setup-picc.sql:/docker-entrypoint-initdb.d/05-setup-picc.sql:ro,z
       - ./postgres/06-setup-urbis.sql:/docker-entrypoint-initdb.d/06-setup-urbis.sql:ro,z
-      # Schema migrations (also applied to existing databases by `just db-migrate`)
-      - ./processing/sql/migrations/001-grb-polygon-entity.sql:/docker-entrypoint-initdb.d/07-migration-001-grb-polygon-entity.sql:ro,z
     # ports:
     #   - "5432:5432"
     restart: unless-stopped

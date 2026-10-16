@@ -73,7 +73,7 @@ docker compose up -d        # postgres, nuxt-app, 4× martin, webhook, caddy
 
 The schemas come from `postgres/0*.sql`, which run only on the **first** container init (`docker-entrypoint-initdb.d`). Editing these files does nothing to an existing volume. Schema changes for existing databases go in `processing/sql/migrations/NNN-*.sql`:
 - Every migration must be idempotent. They are applied in order by `just db-migrate` (also called by `grb-import`, `grb-update` and the GRB view refresh) and by `webhook/restore-grb.sh` before a data-only dump is restored, because the dump COPYs columns of the current schema.
-- Mount new migrations in `docker-compose.yml` as `docker-entrypoint-initdb.d/07-...` so fresh volumes get them too.
+- Don't add init-script mounts to the `postgres` service: changing its definition makes `docker compose run processing` recreate postgres on the server. Fresh volumes get the migrations by running `just db-migrate` once after init.
 - `001-grb-polygon-entity.sql` is the single source of truth for `grb.buildings_with_addresses`.
 
 ### Serving
@@ -100,7 +100,7 @@ The frontend fetches tiles from relative `/tiles/...` URLs. Nuxt has no dev prox
 ### Data pipeline and deployment
 
 - **CI imports** (`.github/workflows/*-import.yml`) run the heavy full imports on GitHub runners. Each one starts a throwaway PostGIS service, runs the needed `postgres/*.sql` init script and then the `just` recipe inside the processing image, and uploads a `pg_dump --data-only` artifact. It then POSTs `/<source>-restore` with `run_id` to the server webhook. `webhook/restore-*.sh` downloads the artifact with `gh`, TRUNCATEs the source tables and restores the dump.
-- **Updates** (`*-update.yml`, cron) just POST `/update-<source>` to the webhook. The server then runs `docker compose run --rm processing just <source>-update` locally through the mounted Docker socket.
+- **Updates** (`*-update.yml`) just POST `/update-<source>` to the webhook. The GRB, PICC and Urbis cron schedules are paused (manual dispatch only) until their update paths are fixed; see the data-model plan. The server then runs `docker compose run --rm processing just <source>-update` locally through the mounted Docker socket.
 - **Deploy** (`deploy.yml`, on push to main): builds and pushes `nuxt-app` and `processing` images to GHCR, then POSTs `/nuxt-deploy`, which pulls and recreates `nuxt-app`.
 - Every webhook route requires the `X-Webhook-Secret` header.
 

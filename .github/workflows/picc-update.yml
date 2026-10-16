@@ -2,8 +2,8 @@ name: PICC Update
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 5 1 * *'  # Monthly 1st at 5am UTC
+  # Monthly schedule ('0 5 1 * *') paused: the update inserts by column order and its REFRESH CONCURRENTLY
+  # fails without a unique index. Re-enabled once the update path is fixed and tested.
 
 jobs:
   trigger-update:
