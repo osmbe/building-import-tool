@@ -51,4 +51,4 @@ This works because:
 
 ## Impact on Import Workflow
 
-The `address_building_links` table and `_grb-import-address-links` step are still imported (the data may be useful for future analysis), but the materialized view no longer depends on them for address resolution.
+The address-building links (`RltAdresGebouw*.dbf`, part of the addresses download) are not imported: the materialized view resolves addresses by geometry only. The `grb.address_building_links` table stays empty until a migration drops it.

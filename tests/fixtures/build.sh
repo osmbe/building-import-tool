@@ -25,6 +25,7 @@ grb)
     shp "$SRC/grb/gba.geojson" "$DATA/grb/gba/Gba_test.shp"
     shp "$SRC/grb/knw.geojson" "$DATA/grb/knw/Knw_test.shp"
     shp "$SRC/grb/addresses.geojson" "$DATA/grb/addresses/Adres_test.shp"
+    # Part of the real addresses download, not imported (30-grb-import.sh checks it is ignored)
     dbf "$SRC/grb/rlt_adres_gebouw.csv" "$DATA/grb/addresses/RltAdresGebouw_test.dbf"
     ;;
 grb-diff)

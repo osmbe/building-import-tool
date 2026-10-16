@@ -213,7 +213,7 @@ grb-order-all:
     @echo ""
     @echo "✅ All orders created!"
     @echo ""
-    @echo "Note: RltGbgGebouw*.dbf (polygon-building relationships) and RltAdresGebouw*.dbf (address links) are both included in their respective downloads"
+    @echo "Note: the GBG download includes RltGbgGebouw*.dbf (polygon-building relationships)"
     @echo "Check status with: just grb-status-orders"
 
 # Download all ready GRB orders
@@ -360,7 +360,6 @@ grb-import:
     @just _grb-import-knw
     @just _grb-update-gebouw-ids
     @just _grb-import-addresses
-    @just _grb-import-address-links
     @just _grb-aggregate-buildings
     @just _grb-refresh-materialized-view
     @just _save-import-meta grb
@@ -377,31 +376,6 @@ grb-full:
     @just _grb-wait-for-orders
     @just grb-download-all
     @just grb-import
-
-# Targeted patch: re-download Addresses product and re-import only address-building links.
-# Use when address_building_links needs repopulating without a full re-import.
-grb-patch-address-links:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    mkdir -p {{grb_orders_dir}}
-    echo "📦 Ordering Addresses product (contains RltAdresGebouw link files)..."
-    RESPONSE=$(curl -s -H "x-api-key: {{grb_api_key}}" -H "Content-Type: application/json" \
-        -X POST -d '{"productId": 10445, "format": "Shapefile"}' {{grb_api_base}}/orders)
-    ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
-    echo "✅ Order ID: $ORDER_ID"
-    echo "⏳ Waiting for order to be processed..."
-    while true; do
-        STATUS=$(curl -s --retry 5 --retry-all-errors --retry-delay 10 \
-            -H "x-api-key: {{grb_api_key}}" {{grb_api_base}}/orders/$ORDER_ID | jq -r '.status')
-        echo "$(date +%H:%M:%S) - addresses: $STATUS"
-        if [ "$STATUS" = "Processed" ] || [ "$STATUS" = "Completed" ]; then
-            break
-        fi
-        sleep 60
-    done
-    just _grb-download-if-ready addresses $ORDER_ID
-    just _grb-import-address-links
-    echo "✅ Address-building links patched!"
 
 # Update GRB data with changes since last update (differential)
 grb-update:
@@ -427,7 +401,7 @@ grb-update:
 grb-status:
     @echo "📈 GRB Database Statistics:"
     @echo ""
-    @{{psql_be2osm}} -c "SELECT 'Building polygons' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('grb.building_polygons')) as size FROM grb.building_polygons UNION ALL SELECT '  - with gebouw_id', COUNT(*)::text, '' FROM grb.building_polygons WHERE gebouw_id IS NOT NULL UNION ALL SELECT '  - with survey_date', COUNT(*)::text, '' FROM grb.building_polygons WHERE survey_date IS NOT NULL UNION ALL SELECT 'Kunstwerken (KNW)', COALESCE((SELECT n_live_tup::bigint::text FROM pg_stat_user_tables WHERE schemaname='grb' AND relname='kunstwerken'), '0'), COALESCE(pg_size_pretty(pg_total_relation_size(to_regclass('grb.kunstwerken'))), '') UNION ALL SELECT 'Polygon-building relations', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.polygon_building_rel')) FROM grb.polygon_building_rel UNION ALL SELECT 'Buildings (aggregated)', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.buildings')) FROM grb.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.addresses')) FROM grb.addresses UNION ALL SELECT 'Address-building links', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.address_building_links')) FROM grb.address_building_links;"
+    @{{psql_be2osm}} -c "SELECT 'Building polygons' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('grb.building_polygons')) as size FROM grb.building_polygons UNION ALL SELECT '  - with gebouw_id', COUNT(*)::text, '' FROM grb.building_polygons WHERE gebouw_id IS NOT NULL UNION ALL SELECT '  - with survey_date', COUNT(*)::text, '' FROM grb.building_polygons WHERE survey_date IS NOT NULL UNION ALL SELECT 'Kunstwerken (KNW)', COALESCE((SELECT n_live_tup::bigint::text FROM pg_stat_user_tables WHERE schemaname='grb' AND relname='kunstwerken'), '0'), COALESCE(pg_size_pretty(pg_total_relation_size(to_regclass('grb.kunstwerken'))), '') UNION ALL SELECT 'Polygon-building relations', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.polygon_building_rel')) FROM grb.polygon_building_rel UNION ALL SELECT 'Buildings (aggregated)', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.buildings')) FROM grb.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('grb.addresses')) FROM grb.addresses;"
     @echo ""
 
 # Check status of all GRB orders
@@ -857,7 +831,7 @@ db-optimize:
     @echo "✓ osmbe optimized"
     @echo ""
     @echo "Optimizing be2osm database..."
-    @{{psql_be2osm}} -c "VACUUM ANALYZE grb.building_polygons; VACUUM ANALYZE grb.buildings; VACUUM ANALYZE grb.addresses; VACUUM ANALYZE grb.address_building_links; REFRESH MATERIALIZED VIEW grb.buildings_with_addresses;"
+    @{{psql_be2osm}} -c "VACUUM ANALYZE grb.building_polygons; VACUUM ANALYZE grb.buildings; VACUUM ANALYZE grb.addresses; REFRESH MATERIALIZED VIEW grb.buildings_with_addresses;"
     @echo "✓ be2osm optimized"
     @echo ""
     @echo "======================================"
@@ -898,7 +872,7 @@ clean-grb-orders:
 # Clean GRB downloads
 clean-grb-downloads:
     @echo "🧹 Cleaning GRB downloaded files..."
-    rm -rf {{grb_data_dir}}/gbg {{grb_data_dir}}/gba {{grb_data_dir}}/knw {{grb_data_dir}}/address-links {{grb_data_dir}}/addresses
+    rm -rf {{grb_data_dir}}/gbg {{grb_data_dir}}/gba {{grb_data_dir}}/knw {{grb_data_dir}}/addresses
     @echo "✅ Downloads cleaned"
 
 # Clean all GRB data (orders + downloads)
@@ -910,7 +884,7 @@ clean-grb-all:
 # Clean imported GRB data from database
 clean-grb-db:
     @echo "🧹 Cleaning GRB data from database..."
-    @{{psql_be2osm}} -c "TRUNCATE grb.building_polygons, grb.buildings, grb.addresses, grb.address_building_links CASCADE;"
+    @{{psql_be2osm}} -c "TRUNCATE grb.building_polygons, grb.buildings, grb.addresses CASCADE;"
     @{{psql_be2osm}} -c "TRUNCATE grb.kunstwerken CASCADE;" 2>/dev/null || true
     @echo "✅ GRB database tables truncated"
 
@@ -1280,17 +1254,6 @@ _grb-order-addresses:
     ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
     echo "✅ Order ID: $ORDER_ID"
 
-# GRB: Create order for address links
-_grb-order-address-links:
-    #!/usr/bin/env bash
-    echo "📦 Ordering Address Links..."
-    RESPONSE=$(curl -s -H "x-api-key: {{grb_api_key}}" -H "Content-Type: application/json" \
-        -X POST -d '{"productId": 10144, "fileIds": ["10144/GRAR_Adreskoppelingen.zip"], "geographicalCrop": {"clip": false, "selectionEntityCode": "Geen_Versnijding"}, "mailOnProcessed": false}' \
-        {{grb_api_base}}/orders)
-    echo "$RESPONSE" > {{grb_orders_dir}}/address-links_order.json
-    ORDER_ID=$(echo "$RESPONSE" | jq -r '.member[0].orderId')
-    echo "✅ Order ID: $ORDER_ID"
-
 # GRB: Get order ID from saved file
 _grb-get-order-id product:
     #!/usr/bin/env bash
@@ -1469,27 +1432,20 @@ _grb-import-gbg-gebouw-rel:
     #!/usr/bin/env bash
     echo "📊 Importing RltGbgGebouw (polygon-building relationships)..."
 
-    # Find ALL RltGbgGebouw*.dbf files — GBG product delivers one file per province
-    # Using head -1 would only import one province; loop through all like _grb-import-address-links
+    # Find ALL RltGbgGebouw*.dbf files — GBG product delivers one file per province. The table belongs to the
+    # migrations (grb/000_baseline): it is emptied and appended to, never recreated.
     FOUND=false
-    FIRST=true
+    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
+        "TRUNCATE grb.polygon_building_rel;"
     for file in $(find {{grb_data_dir}} -name "RltGbgGebouw*.dbf" -type f 2>/dev/null | sort); do
         if [ -f "$file" ]; then
             FOUND=true
             LAYER_NAME=$(basename "$file" .dbf)
             echo "   Importing: $file"
-            if [ "$FIRST" = true ]; then
-                ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-                    "$file" -nln grb.polygon_building_rel -overwrite \
-                    -gt 100000 --config PG_USE_COPY YES \
-                    -sql "SELECT OIDN as oidn, GEBOUWID as gebouw_id FROM \"$LAYER_NAME\""
-                FIRST=false
-            else
-                ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-                    "$file" -nln grb.polygon_building_rel -append \
-                    -gt 100000 --config PG_USE_COPY YES \
-                    -sql "SELECT OIDN as oidn, GEBOUWID as gebouw_id FROM \"$LAYER_NAME\""
-            fi
+            ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
+                "$file" -nln grb.polygon_building_rel -append \
+                -gt 100000 --config PG_USE_COPY YES \
+                -sql "SELECT OIDN as oidn, GEBOUWID as gebouw_id FROM \"$LAYER_NAME\""
             rm "$file"
             echo "   🗑️  Deleted $file"
         fi
@@ -1497,9 +1453,6 @@ _grb-import-gbg-gebouw-rel:
 
     if [ "$FOUND" = true ]; then
         echo "✅ Polygon-building relationships imported"
-        echo "   📇 Creating index on polygon_building_rel.oidn..."
-        PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
-            "CREATE INDEX IF NOT EXISTS idx_polygon_building_rel_oidn ON grb.polygon_building_rel(oidn);"
     else
         echo "⚠️  RltGbgGebouw*.dbf not found - gebouw_id will not be populated"
         echo "   Buildings will be aggregated by polygon geometry instead"
@@ -1705,6 +1658,9 @@ _grb-update-gebouw-ids:
     echo "✅ gebouw_id updated"
     PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -c \
         "SELECT 'Polygons with gebouw_id' as metric, COUNT(*)::text as value FROM grb.building_polygons WHERE gebouw_id IS NOT NULL UNION ALL SELECT 'Polygons without gebouw_id', COUNT(*)::text FROM grb.building_polygons WHERE gebouw_id IS NULL;"
+    # The relation is only needed to set gebouw_id: emptied, so it is neither kept nor dumped
+    PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -c \
+        "TRUNCATE grb.polygon_building_rel;"
 
 # GRB: Import addresses
 _grb-import-addresses:
@@ -1766,51 +1722,8 @@ _grb-import-addresses:
         DROP TABLE IF EXISTS grb.addresses_raw;
     "
     echo "✅ Addresses imported"
-
-# GRB: Import address-building links
-_grb-import-address-links:
-    #!/usr/bin/env bash
-    echo "📊 Importing address-building links..."
-
-    # Drop FK constraint temporarily: some adres_ids in link files reference deprecated
-    # addresses no longer present in the GRB address shapefile. Without this, PG_USE_COPY
-    # rolls back entire 100K-row batches on the first FK violation, losing valid rows.
-    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
-        "ALTER TABLE grb.address_building_links DROP CONSTRAINT IF EXISTS fk_address_building_links_adres_id;"
-
-    # Find RltAdresGebouw*.dbf files (exclude Lkt lookup tables)
-    # GRB-Adres product (10445) delivers multiple files: RltAdresGebouw.dbf, RltAdresGebouw_1.dbf, etc.
-    for file in $(find {{grb_data_dir}} -name "RltAdresGebouw*.dbf" -type f 2>/dev/null | grep -v "Lkt" | sort); do
-        if [ -f "$file" ]; then
-            echo "   Importing: $file"
-            LAYER_NAME=$(basename "$file" .dbf)
-            ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-                "$file" -nln grb.address_building_links -append \
-                -gt 100000 --config PG_USE_COPY YES \
-                -sql "SELECT
-                    ADRESID as adres_id,
-                    GEBOUWID as building_object_id,
-                    LBLTYPE as object_type
-                FROM \"$LAYER_NAME\""
-        fi
-    done
-
-    # Remove links whose adres_id has no matching address (deprecated/removed addresses)
-    echo "   Cleaning up orphan links (adres_id not in addresses)..."
-    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
-        "DELETE FROM grb.address_building_links abl
-         WHERE NOT EXISTS (SELECT 1 FROM grb.addresses a WHERE a.adres_id = abl.adres_id);"
-
-    # Re-add FK constraint now that orphan links are removed
-    PGPASSWORD="{{db_password}}" psql -h {{db_host}} -p {{db_port}} -U {{db_user}} -d {{be2osm_db}} -c \
-        "ALTER TABLE grb.address_building_links ADD CONSTRAINT fk_address_building_links_adres_id
-         FOREIGN KEY (adres_id) REFERENCES grb.addresses(adres_id);"
-
-    echo "✅ Address links imported"
-
-    # Clean up data directories to save disk space
-    echo "   🗑️  Cleaning up address-links and addresses data..."
-    rm -rf {{grb_data_dir}}/address-links
+    # The address-building links (RltAdresGebouw) in the same download are not imported: addresses are joined to
+    # polygons by geometry (docs/GRB_ADDRESS_JOIN.md)
     rm -rf {{grb_data_dir}}/addresses
 
 # GRB: Aggregate building polygons into buildings: polygon count, area and type per gebouw_id (batched).

@@ -240,7 +240,7 @@ if grep -q "\"sha\":\"$SHA\"" <<<"$ready"; then info "app ready: $ready"; else
 fi
 for tiles in grb-tiles osm-tiles picc-tiles urbis-tiles; do
     if catalog="$(in_webhook curl -fsS --max-time 10 "http://$tiles:3000/catalog")" && grep -q '"tiles"' <<<"$catalog"; then
-        info "$tiles: $(grep -o '"[a-z_]*buildings[a-z_]*"' <<<"$catalog" | sort -u | tr '\n' ' ')"
+        info "$tiles: $(grep -o '"[a-z_]*candidates"\|"osm_buildings"' <<<"$catalog" | sort -u | tr '\n' ' ')"
     else
         warn "$tiles does not serve its catalog"
         ok=0

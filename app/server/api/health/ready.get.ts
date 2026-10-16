@@ -1,9 +1,11 @@
 import { queryGrb } from '../../utils/db'
+import { CANDIDATE_VIEWS } from '~/utils/candidates'
 
 /**
  * Readiness for deploys (webhook/deploy.sh waits for it): the git SHA the image was built from, whether the
  * be2osm database answers, and the migrations applied per scope (processing/sql/migrate.sh tracks them in
- * <schema>.schema_migrations, and in public.schema_migrations for the "common" scope).
+ * <schema>.schema_migrations, and in public.schema_migrations for the "common" scope). Not ready while a
+ * candidates view the app reads is missing, so a deploy whose migrations did not create it rolls back.
  */
 export default defineEventHandler(async (event) => {
   const sha = String(useRuntimeConfig().gitSha || 'dev')
@@ -19,6 +21,15 @@ export default defineEventHandler(async (event) => {
         `SELECT version FROM "${schema.replaceAll('"', '""')}".schema_migrations ORDER BY version`
       )) as { version: string }[]
       migrations[schema === 'public' ? 'common' : schema] = rows.map((row) => row.version)
+    }
+    const missing = (await queryGrb(
+      `SELECT view FROM unnest($1::text[]) WITH ORDINALITY AS v(view, n) WHERE to_regclass(view) IS NULL ORDER BY n`,
+      [Object.values(CANDIDATE_VIEWS)]
+    )) as { view: string }[]
+    if (missing.length > 0) {
+      setResponseStatus(event, 503)
+      const views = missing.map((row) => row.view).join(', ')
+      return { ready: false, sha, migrations, error: `missing views: ${views} (run the migrations)` }
     }
     return { ready: true, sha, migrations }
   } catch (error) {

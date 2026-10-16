@@ -35,11 +35,7 @@ check_martin() { # <service> <source> <lon> <lat> <required properties...>
     if martin_logs "$svc" | grep -q ' ERROR '; then fail "$svc logged errors"; martin_logs "$svc" | grep ' ERROR ' | head -3 | sed 's/^/      /'; fi
 }
 
-check_martin martin-grb buildings 4.40005 51.20003 polygon_id entity oidn polygon_type_label survey_date addresses address_count
-check_martin martin-grb kunstwerken 4.40505 51.20003 oidn entity type_code type_label
 check_martin martin-osm osm_buildings 4.40005 51.20003 osm_id tags
-check_martin martin-picc buildings 4.87005 50.46503 objectid natur_code date_leve addresses
-check_martin martin-urbis buildings 4.35005 50.84603 building_id addresses address_count
 # The candidates contract: the same properties for every source
 CONTRACT=(fid source entity source_id source_ref type_code type_label survey_date origin_label area_m2 parent_id
     parent_type_label parent_part_count parent_area_m2 addresses street_names postcodes municipalities address_count)
@@ -54,4 +50,11 @@ if curl -fsS "http://127.0.0.1:$(martin_port martin-picc)/candidates/${z}/${x}/$
 else
     fail "martin-picc/candidates tiles carry the details keys"
 fi
+# Only the contract is served: the per-source layouts (buildings, kunstwerken) are gone
+for svc in martin-grb martin-picc martin-urbis; do
+    sources=$(curl -fsS "http://127.0.0.1:$(martin_port "$svc")/catalog" |
+        python3 -c "import json,sys; print(' '.join(sorted(json.load(sys.stdin)['tiles'])))")
+    case "$svc" in martin-grb) expected="candidates knw_candidates" ;; *) expected="candidates" ;; esac
+    assert_eq "$sources" "$expected" "$svc serves only the candidates contract"
+done
 martin_down

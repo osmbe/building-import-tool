@@ -67,6 +67,7 @@ describe('GET /api/health/ready', () => {
       .mockResolvedValueOnce([{ schema: 'grb' }, { schema: 'public' }])
       .mockResolvedValueOnce([{ version: '001_a' }, { version: '002_b' }])
       .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
     const event = createEvent()
     expect(await (await load())(event)).toEqual({
       ready: true,
@@ -75,6 +76,32 @@ describe('GET /api/health/ready', () => {
     })
     expect(event.status).toBeUndefined()
     expect(db.queryGrb).toHaveBeenCalledWith('SELECT version FROM "grb".schema_migrations ORDER BY version')
+  })
+
+  it('checks that every candidates view the app reads exists', async () => {
+    db.queryGrb.mockResolvedValue([])
+    await (
+      await load()
+    )(createEvent())
+    expect(db.queryGrb).toHaveBeenLastCalledWith(expect.stringContaining('to_regclass'), [
+      ['grb.candidates', 'grb.knw_candidates', 'picc.candidates', 'urbis.candidates']
+    ])
+  })
+
+  it('is not ready (503) when a candidates view is missing, so a deploy rolls back', async () => {
+    stubNitro({ gitSha: 'abc123' })
+    db.queryGrb
+      .mockResolvedValueOnce([{ schema: 'grb' }])
+      .mockResolvedValueOnce([{ version: '003_x' }])
+      .mockResolvedValueOnce([{ view: 'grb.candidates' }, { view: 'urbis.candidates' }])
+    const event = createEvent()
+    expect(await (await load())(event)).toEqual({
+      ready: false,
+      sha: 'abc123',
+      migrations: { grb: ['003_x'] },
+      error: 'missing views: grb.candidates, urbis.candidates (run the migrations)'
+    })
+    expect(event.status).toBe(503)
   })
 
   it('reports "dev" when the build has no SHA', async () => {

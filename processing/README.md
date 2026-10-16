@@ -173,8 +173,9 @@ import recipes run), not by the postgres init scripts.
 - `grb.building_polygons`: Individual GRB building parts (~5M rows)
 - `grb.buildings`: Aggregated buildings (grouped by gebouw_id)
 - `grb.addresses`: Address points (~1.3M rows)
-- `grb.address_building_links`: Address-to-building relationships (~3.9M rows)
-- `grb.buildings_with_addresses`: Materialized view (buildings + addresses)
+- `grb.kunstwerken`: KNW structures (bridges, chimneys, silos, ...)
+- `grb.buildings_with_addresses`: Materialized view (one row per polygon, with its addresses and parent building)
+- `grb.candidates`, `grb.knw_candidates`: the candidates contract served to the app and the tiles
 
 ## Configuration
 

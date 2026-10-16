@@ -1,6 +1,9 @@
 # The full GRB import on fixture shapefiles: GBG + GBA polygons sharing an OIDN are both imported, gebouw_id
-# comes from RltGbgGebouw for GBG polygons only, survey dates are converted, addresses join per polygon.
+# comes from RltGbgGebouw for GBG polygons only, survey dates are converted, addresses join per polygon, and the
+# import does not change the schema.
 reset_db fresh
+just_run db-migrate >/dev/null
+before=$(schema_of grb)
 fixtures grb
 just_run grb-import >/dev/null
 
@@ -26,3 +29,12 @@ assert_eq "$(sql "SELECT string_agg(table_name || '.' || column_name, ',' ORDER 
     FROM information_schema.columns WHERE table_schema = 'grb' AND udt_name = 'geometry'
     AND table_name IN ('building_polygons', 'addresses', 'buildings')")" \
     "addresses.geom,building_polygons.geom" "the GRB tables store one geometry per object (none for a building)"
+# Working data is not kept: the RltGbgGebouw relation is emptied once gebouw_id is set, and the address links
+# (RltAdresGebouw) are not imported, since addresses are joined by geometry (docs/GRB_ADDRESS_JOIN.md)
+assert_eq "$(sql "SELECT count(*) FROM grb.polygon_building_rel")" "0" "the polygon-building relation is emptied after use"
+assert_eq "$(sql "SELECT count(*) FROM grb.address_building_links")" "0" "address-building links are not imported"
+after=$(schema_of grb)
+if [ "$before" = "$after" ]; then pass "the import does not change the schema"; else
+    fail "the import changed the schema:"
+    diff <(echo "$before") <(echo "$after") | head -20 | sed 's/^/      /'
+fi

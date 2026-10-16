@@ -24,63 +24,9 @@ postgres:
   max_feature_count: 10000
   default_srid: 3857
 
-  # Table configuration - Building polygons with addresses (materialized view)
   tables:
-    buildings:
-      schema: grb
-      table: buildings_with_addresses
-      srid: 3857
-      geometry_column: geom
-      # OIDNs are only unique per entity (a GBG and a GBA polygon can share one), so the feature id is
-      # the unique polygon row id. Fragments of a polygon split across tiles are merged by this id.
-      id_column: polygon_id
-      clip_geom: true
-      buffer: 64
-      extent: 4096
-      minzoom: 10
-      maxzoom: 22
-      properties:
-        polygon_id: polygon_id
-        entity: entity
-        oidn: oidn
-        gebouw_id: gebouw_id
-        polygon_area_m2: polygon_area_m2
-        polygon_type_label: polygon_type_label
-        survey_date: survey_date
-        origin_label: origin_label
-        polygon_count: polygon_count
-        total_area_m2: total_area_m2
-        building_type_label: building_type_label
-        addresses: addresses
-        street_names: street_names
-        postcodes: postcodes
-        municipalities: municipalities
-        address_count: address_count
-
-    kunstwerken:
-      schema: grb
-      table: kunstwerken
-      srid: 3857
-      geometry_column: geom_mercator
-      id_column: oidn
-      clip_geom: true
-      buffer: 64
-      extent: 4096
-      minzoom: 10
-      maxzoom: 22
-      properties:
-        oidn: oidn
-        uidn: uidn
-        entity: entity
-        type_code: type_code
-        type_label: type_label
-        survey_date: survey_date
-        origin_label: origin_label
-        area_m2: area_m2
-        length_m: length_m
-
     # The candidates contract (processing/sql/migrations/grb/004_candidates.sql): the same properties for
-    # every source. The app reads these; the sources above stay for the previous release until they are removed.
+    # every source, the only layout the app reads.
     candidates:
       schema: grb
       table: candidates

@@ -30,9 +30,5 @@ gunzip -c "${DUMP_FILE}" | ${PSQL}
 
 ${PSQL} -c "ANALYZE osm.osm_buildings; ANALYZE osm.osm_addresses;"
 
-echo "[restore] Refreshing osm_buildings_cache in be2osm database..."
-PSQL_BE2OSM="psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d be2osm"
-${PSQL_BE2OSM} -c "SELECT * FROM refresh_osm_cache();" || echo "[restore] WARNING: cache refresh failed (non-fatal)"
-
 rm -rf "${WORK_DIR}"
 echo "[restore] Done."
