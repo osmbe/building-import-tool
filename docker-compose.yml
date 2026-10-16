@@ -11,12 +11,12 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql
       # The following scripts will be executed in alphabetical order during the first initialization of the database
-      - ./postgres/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro,z
-      - ./postgres/02-setup-be2osm.sql:/docker-entrypoint-initdb.d/02-setup-be2osm.sql:ro,z
-      - ./postgres/03-setup-osmbe.sql:/docker-entrypoint-initdb.d/03-setup-osmbe.sql:ro,z
-      - ./postgres/04-setup-fdw.sql:/docker-entrypoint-initdb.d/04-setup-fdw.sql:ro,z
-      - ./postgres/05-setup-picc.sql:/docker-entrypoint-initdb.d/05-setup-picc.sql:ro,z
-      - ./postgres/06-setup-urbis.sql:/docker-entrypoint-initdb.d/06-setup-urbis.sql:ro,z
+      - /home/debian/building-import-tool-local/postgres/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro,z
+      - /home/debian/building-import-tool-local/postgres/02-setup-be2osm.sql:/docker-entrypoint-initdb.d/02-setup-be2osm.sql:ro,z
+      - /home/debian/building-import-tool-local/postgres/03-setup-osmbe.sql:/docker-entrypoint-initdb.d/03-setup-osmbe.sql:ro,z
+      - /home/debian/building-import-tool-local/postgres/04-setup-fdw.sql:/docker-entrypoint-initdb.d/04-setup-fdw.sql:ro,z
+      - /home/debian/building-import-tool-local/postgres/05-setup-picc.sql:/docker-entrypoint-initdb.d/05-setup-picc.sql:ro,z
+      - /home/debian/building-import-tool-local/postgres/06-setup-urbis.sql:/docker-entrypoint-initdb.d/06-setup-urbis.sql:ro,z
     # ports:
     #   - "5432:5432"
     restart: unless-stopped
@@ -76,7 +76,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - ./config/martin/grb-config.yaml:/config.yaml:ro,Z
+      - /home/debian/building-import-tool-local/config/martin/grb-config.yaml:/config.yaml:ro,Z
     depends_on:
       postgres:
         condition: service_healthy
@@ -100,7 +100,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - ./config/martin/osm-config.yaml:/config.yaml:ro,Z
+      - /home/debian/building-import-tool-local/config/martin/osm-config.yaml:/config.yaml:ro,Z
     depends_on:
       postgres:
         condition: service_healthy
@@ -124,7 +124,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - ./config/martin/picc-config.yaml:/config.yaml:ro,Z
+      - /home/debian/building-import-tool-local/config/martin/picc-config.yaml:/config.yaml:ro,Z
     depends_on:
       postgres:
         condition: service_healthy
@@ -148,7 +148,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - ./config/martin/urbis-config.yaml:/config.yaml:ro,Z
+      - /home/debian/building-import-tool-local/config/martin/urbis-config.yaml:/config.yaml:ro,Z
     depends_on:
       postgres:
         condition: service_healthy
@@ -181,9 +181,9 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
     volumes:
-      - ./processing:/work:z
-      - ./processing/data:/work/data:z
-      - ./processing/logs:/work/logs:z
+      - /home/debian/building-import-tool-local/processing:/work:z
+      - /home/debian/building-import-tool-local/processing/data:/work/data:z
+      - /home/debian/building-import-tool-local/processing/logs:/work/logs:z
       # Mount gh CLI config for remote import authentication
       # Note: Update this path to match your system's gh config location
       # Linux: /home/username/.config/gh
@@ -237,7 +237,7 @@ services:
     image: caddy:2-alpine
     container_name: be2osm-caddy
     volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
+      - /home/debian/building-import-tool-local/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
       - caddy_data:/data
     depends_on:
       nuxt-app:
