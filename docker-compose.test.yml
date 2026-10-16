@@ -64,7 +64,8 @@ services:
       - ./processing/config:/work/config:ro
       - testdata:/work/data
       - testlogs:/work/logs
-      - ./tests/fixtures:/fixtures:ro
+      # FIXTURES_DIR / MARTIN_CONFIG_DIR: the previous release's files in tests/db/cases/90-previous-release.sh
+      - ${FIXTURES_DIR:-./tests/fixtures}:/fixtures:ro
     profiles: ["tools"]
     depends_on:
       postgres:
@@ -94,28 +95,28 @@ services:
   martin-grb:
     <<: *martin
     volumes:
-      - ./config/martin/grb-config.yaml:/config.yaml:ro
+      - ${MARTIN_CONFIG_DIR:-./config/martin}/grb-config.yaml:/config.yaml:ro
     ports:
       - "${TEST_MARTIN_GRB_PORT:-53001}:3000"
 
   martin-osm:
     <<: *martin
     volumes:
-      - ./config/martin/osm-config.yaml:/config.yaml:ro
+      - ${MARTIN_CONFIG_DIR:-./config/martin}/osm-config.yaml:/config.yaml:ro
     ports:
       - "${TEST_MARTIN_OSM_PORT:-53002}:3000"
 
   martin-picc:
     <<: *martin
     volumes:
-      - ./config/martin/picc-config.yaml:/config.yaml:ro
+      - ${MARTIN_CONFIG_DIR:-./config/martin}/picc-config.yaml:/config.yaml:ro
     ports:
       - "${TEST_MARTIN_PICC_PORT:-53003}:3000"
 
   martin-urbis:
     <<: *martin
     volumes:
-      - ./config/martin/urbis-config.yaml:/config.yaml:ro
+      - ${MARTIN_CONFIG_DIR:-./config/martin}/urbis-config.yaml:/config.yaml:ro
     ports:
       - "${TEST_MARTIN_URBIS_PORT:-53004}:3000"
 

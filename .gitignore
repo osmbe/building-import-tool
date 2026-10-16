@@ -26,3 +26,6 @@ docker-compose.override.yml
 
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# Previous release checked out by tests/db/cases/90-previous-release.sh (PREVIOUS_REF)
+tests/.previous-release/

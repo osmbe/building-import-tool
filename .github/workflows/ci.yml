@@ -1,7 +1,8 @@
 name: CI
 
 # Every push and pull request runs the app checks and the database suite (tests/db/run.sh: migrations, imports
-# on fixtures, the four Martin servers with the production configs, API integration tests).
+# on fixtures, the four Martin servers with the production configs, API integration tests, webhook and deploy
+# scripts, and the previous release on the new schema).
 # On main, images are only built and deployed once both pass.
 on:
   push:
@@ -71,6 +72,19 @@ jobs:
       - name: Install app dependencies (API integration tests)
         working-directory: app
         run: npm ci
+      # The previous release (parent commit on main, base of a pull request) must keep working on the schema
+      # this commit migrates to: tests/db/cases/90-previous-release.sh runs its Martin configs and API tests.
+      - name: Check out the previous release
+        env:
+          PREVIOUS_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$PREVIOUS_SHA" ] || [ "$PREVIOUS_SHA" = "0000000000000000000000000000000000000000" ]; then
+            PREVIOUS_SHA=$(git rev-parse HEAD)
+          fi
+          git fetch --quiet --depth=1 origin "$PREVIOUS_SHA"
+          git worktree add --detach "$RUNNER_TEMP/previous" "$PREVIOUS_SHA"
+          (cd "$RUNNER_TEMP/previous/app" && npm ci --silent)
+          echo "PREVIOUS_DIR=$RUNNER_TEMP/previous" >> "$GITHUB_ENV"
       - run: tests/db/run.sh
 
   images:
