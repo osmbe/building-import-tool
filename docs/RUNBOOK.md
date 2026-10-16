@@ -11,6 +11,8 @@ The moving parts:
 
 ## One-time bootstrap
 
+The step-by-step checklist for the server admin is [FIX_CD.md](../FIX_CD.md).
+
 Until the bootstrap is done, CI deploys nothing: the deploy job only warns. (It used to update `nuxt-app` alone
 through the old `/nuxt-deploy` route, but the app now needs the migrations and the Martin `candidates` sources.)
 The server keeps running the release it has. **Don't run the GRB Import

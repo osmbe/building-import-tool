@@ -120,6 +120,7 @@ need a lot of disk and time (GRB: about 5 million polygons), and GRB needs an AP
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): data model, migrations, the import and publish flow, deploys
 - [app/README.md](app/README.md): the web app
 - [processing/README.md](processing/README.md): imports, updates and recipes
+- [FIX_CD.md](FIX_CD.md): the one-time server upgrade that turns automatic deploys back on
 - [INSTALL.md](INSTALL.md): setting up a server
 - [docs/RUNBOOK.md](docs/RUNBOOK.md): operating the server: deploys, bootstrap, heavy migrations, rollbacks
 - [docs/GRB_PROPERTY_MAPPINGS.md](docs/GRB_PROPERTY_MAPPINGS.md): which OSM tags the JOSM export writes
