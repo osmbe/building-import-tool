@@ -32,7 +32,7 @@ assert_eq "$(sql "SELECT string_agg(table_name || '.' || column_name, ',' ORDER 
 # Working data is not kept: the RltGbgGebouw relation is emptied once gebouw_id is set, and the address links
 # (RltAdresGebouw) are not imported, since addresses are joined by geometry (docs/GRB_ADDRESS_JOIN.md)
 assert_eq "$(sql "SELECT count(*) FROM grb.polygon_building_rel")" "0" "the polygon-building relation is emptied after use"
-assert_eq "$(sql "SELECT count(*) FROM grb.address_building_links")" "0" "address-building links are not imported"
+assert_true "SELECT to_regclass('grb.address_building_links') IS NULL" "address-building links are not imported (grb/007 dropped their table)"
 after=$(schema_of grb)
 if [ "$before" = "$after" ]; then pass "the import does not change the schema"; else
     fail "the import changed the schema:"

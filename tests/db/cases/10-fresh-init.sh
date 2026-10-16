@@ -34,11 +34,29 @@ grb_catalog() {
         UNION ALL SELECT format('relation %s %s', relname, relkind) FROM pg_class WHERE relnamespace = 'grb'::regnamespace
     ) catalog"
 }
+# Objects nothing reads, dropped by the cleanup migrations (grb/007, common/001): absent on a fresh database and
+# on an old one once migrated
+unused_objects() {
+    sql "SELECT string_agg(name, ',' ORDER BY name) FROM (
+        SELECT n.nspname || '.' || c.relname AS name FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE (n.nspname, c.relname) IN (('grb', 'address_building_links'), ('grb', 'building_polygons_summary'),
+            ('grb', 'addresses_summary'), ('grb', 'import_statistics'), ('public', 'osm_buildings_cache'))
+        UNION ALL SELECT 'function ' || proname FROM pg_proc
+        WHERE proname IN ('refresh_osm_cache', 'refresh_buildings_with_addresses')
+        UNION ALL SELECT 'server ' || srvname FROM pg_foreign_server
+        UNION ALL SELECT 'extension ' || extname FROM pg_extension WHERE extname = 'postgres_fdw'
+        UNION ALL SELECT 'schema ' || nspname FROM pg_namespace WHERE nspname = 'osm'
+    ) unused"
+}
+assert_eq "$(unused_objects)" "" "a fresh database has none of the unused objects"
 fresh_catalog=$(grb_catalog)
 grep -q '^trigger CREATE TRIGGER building_polygons_before_update' <<<"$fresh_catalog" &&
     pass "the migrations create the GRB triggers" || fail "the migrations create the GRB triggers"
 reset_db v7088
+assert_eq "$(unused_objects)" "extension postgres_fdw,function refresh_buildings_with_addresses,function refresh_osm_cache,grb.address_building_links,grb.addresses_summary,grb.building_polygons_summary,grb.import_statistics,public.osm_buildings_cache,schema osm,server osmbe_server" \
+    "an old database has the unused objects (FDW, cache, links, summaries)"
 just_run db-migrate >/dev/null
+assert_eq "$(unused_objects)" "" "migrating an old database drops the unused objects"
 upgraded_catalog=$(grb_catalog)
 if [ "$fresh_catalog" = "$upgraded_catalog" ]; then
     pass "a fresh and an upgraded database have the same GRB catalog"
