@@ -35,6 +35,11 @@ psql_db -d postgres -c "CREATE DATABASE be2osm_v7088" >/dev/null
 psql_db -d be2osm_v7088 -f - <"$ROOT/tests/db/schemas/be2osm-grb-7088df9.sql" >/dev/null
 sed '/^\\c be2osm/d' "$ROOT/postgres/05-setup-picc.sql" | psql_db -d be2osm_v7088 -f - >/dev/null
 sed '/^\\c be2osm/d' "$ROOT/postgres/06-setup-urbis.sql" | psql_db -d be2osm_v7088 -f - >/dev/null
+# production: the schema snapshot taken by scripts/server-bootstrap.sh, when it has been committed
+if [ -f "$ROOT/tests/db/schemas/be2osm-production.sql" ]; then
+    psql_db -d postgres -c "CREATE DATABASE be2osm_production" >/dev/null
+    sed "s/'REDACTED'/'be2osm'/g" "$ROOT/tests/db/schemas/be2osm-production.sql" | psql_db -d be2osm_production -f - >/dev/null
+fi
 
 FAILED=()
 for case_file in "$ROOT"/tests/db/cases/*.sh; do

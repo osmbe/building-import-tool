@@ -67,6 +67,7 @@ KEEP=1 tests/db/run.sh 70  # leave the test stack running to inspect it
 - Each case (`tests/db/cases/NN-*.sh`, helpers in `tests/db/lib.sh`) starts from a clean `be2osm` cloned from a base database: `fresh` (init scripts only) or `v7088` (the GRB schema before migration 001, `tests/db/schemas/`), for upgrade tests.
 - Fixtures live in `tests/fixtures/{grb,picc,urbis,osm}` as small GeoJSON/CSV/SQL files. `tests/fixtures/build.sh` turns them into the formats the recipes read (shapefiles + DBF relation files, a FileGDB, a GeoPackage). Feature ids are top-level GeoJSON `id` members.
 - The webhook image runs in the suite too, with the scripts mounted from the checkout and a fake `gh` (`tests/db/bin/gh`) that serves artifacts the cases write: `05` runs the `webhook/test_server.py` unit tests, `06` the CI polling script, `35` a GRB restore onto an old-schema database, `80` `webhook/deploy.sh` scenarios (`tests/db/deploy-test.sh`: a local bare git origin, a fake docker CLI and readiness endpoint in `tests/db/bin/deploy/`).
+- `25-upgrade-production.sh` migrates the production schema snapshot (`tests/db/schemas/be2osm-production.sql`, written by the bootstrap); it is skipped until that file is committed. `85-bootstrap.sh` covers the bootstrap's helpers.
 - `15-migrate-runner.sh` covers the migration runner: tracking, checksums, the `--deploy` guard, the advisory lock and lock-timeout retries.
 - `60-martin.sh` starts every Martin config against imported fixtures and checks health, published properties and a tile per source. Martin upgrades have silently broken the configs before (see Serving).
 - `70-api.sh` runs `app/tests/integration/*.int.test.ts` (vitest, skipped unless `TEST_PG_PORT` is set) against the fixtures. Its `__snapshots__/` record the difference API responses and the JOSM export per source; update them only on purpose (`npx vp test run tests/integration -u` with the stack running).
@@ -137,6 +138,7 @@ The frontend fetches tiles from relative `/tiles/...` URLs. Nuxt has no dev prox
 ## Other docs
 
 - `INSTALL.md`: production server setup
+- `docs/RUNBOOK.md`: deploys, the one-time server bootstrap (`scripts/server-bootstrap.sh`), heavy migrations, rollbacks, job logs
 - `processing/README.md`, `processing/DOCKER.md`: processing details
 - `docs/GRB_ADDRESS_JOIN.md`: how GRB addresses are linked to buildings
 - `ISSUES_PLAN.md`, `UX_PLAN.md`: working plans for open GitHub issues (code comments cite issue numbers like `Issue #53`)

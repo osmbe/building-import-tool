@@ -84,6 +84,7 @@ services:
       - ./tests/db/bin/gh:/usr/local/bin/gh:ro
       - ./tests/db:/tests:ro
       - ./.github/scripts:/ci-scripts:ro
+      - ./scripts:/scripts:ro
       - testdata:/artifacts
     profiles: ["tools"]
     depends_on:

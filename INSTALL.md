@@ -79,23 +79,34 @@ Update the following variables:
 | `OSM_REGION` | OSM region to download from Geofabrik | `europe/belgium` |
 | `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data | `your-api-key` |
 | `DIGITAL_VLAANDEREN_API_BASE_URL` | Digital Vlaanderen API URL | `https://download.api.vlaanderen.be/v2` |
-| `NUXT_IMAGE` | Pre-built Nuxt image from GHCR | `ghcr.io/osmbe/building-import-tool/nuxt-app:latest` |
-| `PROCESSING_IMAGE` | Pre-built processing tools from GHCR | `ghcr.io/osmbe/building-import-tool/processing:latest` |
+| `WEBHOOK_SECRET` | Shared with the GitHub secret `WEBHOOK_SECRET` | `your-random-webhook-secret` |
+| `GH_TOKEN` | Classic PAT with `repo` and `read:packages`: deploys fetch the private repo and pull images, restores download artifacts | `ghp_...` |
+
+Don't set `NUXT_IMAGE`, `PROCESSING_IMAGE` or `WEBHOOK_IMAGE`: deploys pin the images through their `:deployed` tags.
+The bootstrap (next step) adds `COMPOSE_PROJECT_NAME` and `COMPOSE_PROJECT_DIR`.
 
 To register an OSM OAuth application, visit: https://www.openstreetmap.org/oauth2/applications
 
 ## Step 6: Start Services
 
+Start the database, then let the bootstrap script pull the images built by CI, apply the migrations and start
+everything else (see docs/RUNBOOK.md):
+
 ```bash
-docker compose up -d
+docker network create nginx-proxy-network 2>/dev/null || true
+docker compose up -d postgres
+bash scripts/server-bootstrap.sh
 ```
 
-This will start all services:
+This starts every service:
 - **postgres**: PostgreSQL database with PostGIS
-- **nuxt-app**: Web application (pulled from GHCR)
-- **grb-tiles**: GRB vector tile server
-- **osm-tiles**: OSM vector tile server
-- **caddy**: Reverse proxy with automatic HTTPS
+- **nuxt-app**: Web application (image from GHCR)
+- **grb-tiles**, **osm-tiles**, **picc-tiles**, **urbis-tiles**: vector tile servers (Martin)
+- **webhook**: runs deploys, restores, imports and updates for GitHub Actions
+- **caddy**: Reverse proxy
+
+Then set the repository variable `DEPLOY_V2=true` (`gh variable set DEPLOY_V2 --body true`): every push to main is
+deployed automatically from then on.
 
 ## Step 7: Verify Installation
 

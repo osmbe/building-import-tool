@@ -7,6 +7,7 @@ COMPOSE=(docker compose --progress quiet -f "$ROOT/docker-compose.test.yml")
 # Base databases created by run.sh, cloned into be2osm by reset_db.
 #   fresh  : production init scripts only (what a new volume gets, before migrations)
 #   v7088  : the GRB schema of commit 7088df9 (before migration 001), plus the current PICC/Urbis schemas
+#   production : tests/db/schemas/be2osm-production.sql (schema snapshot of the server), when committed
 CASE_FAILURES=0
 
 log() { printf '    %s\n' "$*"; }
@@ -44,7 +45,7 @@ sql_file() {
 
 # Recreate be2osm (and osmbe for "fresh") from a base database.
 reset_db() {
-    local base="${1:?reset_db fresh|v7088}"
+    local base="${1:?reset_db fresh|v7088|production}"
     psql_db -d postgres -c "DROP DATABASE IF EXISTS be2osm WITH (FORCE)" >/dev/null
     psql_db -d postgres -c "CREATE DATABASE be2osm TEMPLATE be2osm_${base}" >/dev/null
 }
