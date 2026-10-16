@@ -1,6 +1,6 @@
 -- Urbis (Brussels-Capital Region) Schema Setup
--- Tables are created by ogr2ogr during import (exact GeoPackage structure)
--- Materialized view is created by justfile task after import
+-- The tables, urbis.load_raw() and the materialized view come from the migrations in
+-- processing/sql/migrations/urbis/ (`just db-migrate`, also run by every Urbis import recipe).
 
 \c be2osm
 
@@ -16,5 +16,5 @@ CREATE TABLE IF NOT EXISTS urbis.import_meta (
 \echo '✓ Urbis schema created'
 \echo ''
 \echo 'Next steps:'
-\echo '  1. Download Urbis data: just urbis-download'
-\echo '  2. Import data: just urbis-import'
+\echo '  1. Create the tables: just db-migrate'
+\echo '  2. Download and import: just urbis-full'

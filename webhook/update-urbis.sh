@@ -12,5 +12,6 @@ echo "[update-urbis] $(date)"
 
 # Urbis has no differential API — update = clean + full re-import
 ${COMPOSE} run --rm --no-deps processing just urbis-update
+${COMPOSE} up -d --no-deps --force-recreate urbis-tiles
 
 echo "[update-urbis] Done. $(date)"

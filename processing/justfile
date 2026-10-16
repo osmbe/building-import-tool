@@ -53,7 +53,7 @@ default:
     @echo "  urbis-full             - Complete workflow (download + import)"
     @echo "  urbis-update           - Update Urbis data (full re-download)"
     @echo "  urbis-status           - Show Urbis database statistics"
-    @echo "  clean-urbis            - Drop Urbis tables from database"
+    @echo "  clean-urbis            - Empty the Urbis tables"
     @echo "  clean-urbis-downloads  - Remove downloaded files"
     @echo ""
     @echo "🔧 Database Tasks"
@@ -112,7 +112,6 @@ urbis_buildings_layer := "Buildings"
 urbis_addresses_layer := "Addresses"
 urbis_placenames_layer := "PlaceNames"
 urbis_municipalities_layer := "Municipalities"
-urbis_postalzip_layer := "PostalZip"
 urbis_data_dir := "data/urbis"
 
 # PICC ArcGIS REST API configuration (for differential updates)
@@ -721,19 +720,21 @@ urbis-download:
     echo ""
     echo "✅ Urbis data downloaded to {{urbis_data_dir}}"
 
-# Import downloaded Urbis data + create materialized view
+# Import downloaded Urbis data. The tables and the view are owned by migrations (sql/migrations/urbis): the
+# GeoPackage layers are loaded into urbis._raw_* tables, mapped into urbis.buildings / urbis.addresses by
+# urbis.load_raw() in one transaction, and the view is refreshed concurrently, so tiles keep the previous data
+# until the end.
 urbis-import:
     @echo "🏙️  Urbis (Brussels) Data Import"
     @echo "=========================================="
     @echo "📅 Started at: $(date)"
     @echo ""
     @just _check-be2osm-database
-    @just _check-urbis-schema
+    @just db-migrate
     @echo ""
-    @just _urbis-import-buildings
-    @just _urbis-import-addresses
-    @just _urbis-import-lookups
-    @just _urbis-create-matview
+    @just _urbis-load-raw
+    @just _urbis-load
+    @just _urbis-refresh-matview
     @just _save-import-meta urbis
     @echo ""
     @just urbis-status
@@ -743,21 +744,21 @@ urbis-import:
 # Complete Urbis workflow (download + import)
 urbis-full: urbis-download urbis-import
 
-# Update Urbis data (no differential API — full re-download)
-urbis-update: clean-urbis urbis-full
+# Update Urbis data (no differential API: a full re-download, replacing the data in one transaction)
+urbis-update: urbis-full
 
 # Show Urbis database statistics
 urbis-status:
     @echo ""
     @echo "📊 Urbis (Brussels) Statistics:"
-    @{{psql_be2osm}} -c "SELECT 'Buildings' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('urbis.buildings')) as size FROM urbis.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('urbis.addresses')) FROM urbis.addresses UNION ALL SELECT 'Buildings with addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('urbis.buildings_with_addresses')) FROM urbis.buildings_with_addresses;" 2>/dev/null || echo "   (Urbis tables not yet created - run just urbis-import first)"
+    @{{psql_be2osm}} -c "SELECT 'Buildings' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('urbis.buildings')) as size FROM urbis.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('urbis.addresses')) FROM urbis.addresses UNION ALL SELECT 'Buildings with addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('urbis.buildings_with_addresses')) FROM urbis.buildings_with_addresses;" 2>/dev/null || echo "   (Urbis tables not yet created - run just db-migrate first)"
     @echo ""
 
-# Drop Urbis tables from database
+# Empty the Urbis tables (the schema stays: it belongs to the migrations)
 clean-urbis:
-    @echo "🧹 Dropping Urbis tables from database..."
-    @{{psql_be2osm}} -c "DROP MATERIALIZED VIEW IF EXISTS urbis.buildings_with_addresses CASCADE; DROP TABLE IF EXISTS urbis.buildings CASCADE; DROP TABLE IF EXISTS urbis.addresses CASCADE; DROP TABLE IF EXISTS urbis.placenames CASCADE; DROP TABLE IF EXISTS urbis.municipalities CASCADE; DROP TABLE IF EXISTS urbis.postalzip CASCADE;" 2>/dev/null || echo "   Urbis tables not found"
-    @echo "✅ Urbis tables dropped"
+    @echo "🧹 Emptying the Urbis tables..."
+    @{{psql_be2osm}} -v ON_ERROR_STOP=1 -c "TRUNCATE urbis.buildings, urbis.addresses; REFRESH MATERIALIZED VIEW urbis.buildings_with_addresses;"
+    @echo "✅ Urbis tables emptied"
 
 # Remove downloaded Urbis files
 clean-urbis-downloads:
@@ -765,212 +766,56 @@ clean-urbis-downloads:
     rm -rf {{urbis_data_dir}}
     @echo "✅ Urbis downloads cleaned"
 
-# Check Urbis schema exists
-_check-urbis-schema:
+# Load the GeoPackage layers into urbis._raw_buildings, _raw_addresses, _raw_placenames and _raw_municipalities
+# (FIDs preserved as inspire_id: addresses refer to buildings, streets and municipalities by them)
+_urbis-load-raw:
     #!/usr/bin/env bash
-    echo "Checking Urbis schema..."
-    if ! {{psql_be2osm}} -tAc "SELECT 1 FROM information_schema.schemata WHERE schema_name = 'urbis'" | grep -q 1; then
-        echo "❌ Urbis schema not found."
-        echo ""
-        echo "Run this to create the schema:"
-        echo "  {{psql_be2osm}} -f ../postgres/06-setup-urbis.sql"
-        exit 1
-    fi
-    echo "✓ Urbis schema exists"
-
-# Import Urbis buildings from GeoPackage
-_urbis-import-buildings:
-    #!/usr/bin/env bash
-    set -e
-    echo "📥 Importing Urbis buildings from GeoPackage..."
-
-    # Find .gpkg file
+    set -euo pipefail
     GPKG_FILE=$(find {{urbis_data_dir}} -name "*.gpkg" -type f 2>/dev/null | head -1)
-
     if [ -z "$GPKG_FILE" ]; then
-        echo "❌ GeoPackage (.gpkg) file not found in {{urbis_data_dir}}"
-        echo ""
-        echo "Run this first to download:"
-        echo "  just urbis-download"
+        echo "❌ GeoPackage (.gpkg) file not found in {{urbis_data_dir}}: run just urbis-download first"
         exit 1
     fi
-
-    echo "   Source: $GPKG_FILE"
-    echo "   Layer:  {{urbis_buildings_layer}}"
-    echo ""
-
-    ogr2ogr -f PostgreSQL \
-        "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-        "$GPKG_FILE" "{{urbis_buildings_layer}}" \
-        -nln urbis.buildings \
-        -nlt PROMOTE_TO_MULTI \
-        -overwrite \
-        -lco GEOMETRY_NAME=geom \
-        -lco SPATIAL_INDEX=NONE \
-        -lco FID=inspire_id -preserve_fid \
-        -gt 100000 --config PG_USE_COPY YES
-
-    echo "✅ Buildings imported"
-
-# Import Urbis addresses from GeoPackage
-_urbis-import-addresses:
-    #!/usr/bin/env bash
-    set -e
-    echo "📥 Importing Urbis addresses from GeoPackage..."
-
-    # Find .gpkg file
-    GPKG_FILE=$(find {{urbis_data_dir}} -name "*.gpkg" -type f 2>/dev/null | head -1)
-
-    if [ -z "$GPKG_FILE" ]; then
-        echo "❌ GeoPackage (.gpkg) file not found in {{urbis_data_dir}}"
-        echo ""
-        echo "Run this first to download:"
-        echo "  just urbis-download"
-        exit 1
-    fi
-
-    echo "   Source: $GPKG_FILE"
-    echo "   Layer:  {{urbis_addresses_layer}}"
-    echo ""
-
-    ogr2ogr -f PostgreSQL \
-        "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-        "$GPKG_FILE" "{{urbis_addresses_layer}}" \
-        -nln urbis.addresses \
-        -overwrite \
-        -lco GEOMETRY_NAME=geom \
-        -lco SPATIAL_INDEX=NONE \
-        -lco FID=inspire_id -preserve_fid \
-        -gt 100000 --config PG_USE_COPY YES
-
-    echo "✅ Addresses imported"
-
-# Import Urbis lookup tables (PlaceNames, Municipalities, PostalZip)
-_urbis-import-lookups:
-    #!/usr/bin/env bash
-    set -e
-    echo "📥 Importing Urbis lookup tables..."
-
-    GPKG_FILE=$(find {{urbis_data_dir}} -name "*.gpkg" -type f 2>/dev/null | head -1)
+    echo "📥 Loading $GPKG_FILE..."
     PG_CONN="PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}"
+    for pair in "{{urbis_buildings_layer}}:buildings" "{{urbis_addresses_layer}}:addresses" \
+        "{{urbis_placenames_layer}}:placenames" "{{urbis_municipalities_layer}}:municipalities"; do
+        echo "   ${pair%%:*}"
+        ogr2ogr -f PostgreSQL "$PG_CONN" "$GPKG_FILE" "${pair%%:*}" -nln "urbis._raw_${pair#*:}" -overwrite \
+            -nlt PROMOTE_TO_MULTI -lco GEOMETRY_NAME=geom -lco SPATIAL_INDEX=NONE \
+            -lco FID=inspire_id -preserve_fid -gt 100000 --config PG_USE_COPY YES
+    done
+    echo "✅ Raw Urbis tables loaded"
 
-    echo "   Importing PlaceNames (street names)..."
-    ogr2ogr -f PostgreSQL "$PG_CONN" \
-        "$GPKG_FILE" "{{urbis_placenames_layer}}" \
-        -nln urbis.placenames \
-        -overwrite \
-        -lco SPATIAL_INDEX=NONE \
-        -lco FID=inspire_id -preserve_fid \
-        -gt 100000 --config PG_USE_COPY YES
-
-    echo "   Importing Municipalities..."
-    ogr2ogr -f PostgreSQL "$PG_CONN" \
-        "$GPKG_FILE" "{{urbis_municipalities_layer}}" \
-        -nln urbis.municipalities \
-        -overwrite \
-        -lco GEOMETRY_NAME=geom \
-        -lco SPATIAL_INDEX=NONE \
-        -lco FID=inspire_id -preserve_fid \
-        -gt 100000 --config PG_USE_COPY YES
-
-    echo "   Importing PostalZip..."
-    ogr2ogr -f PostgreSQL "$PG_CONN" \
-        "$GPKG_FILE" "{{urbis_postalzip_layer}}" \
-        -nln urbis.postalzip \
-        -overwrite \
-        -lco SPATIAL_INDEX=NONE \
-        -lco FID=inspire_id -preserve_fid \
-        -gt 100000 --config PG_USE_COPY YES
-
-    echo "✅ Lookup tables imported"
-
-# Create materialized view joining buildings with addresses (ID-based join via lookup tables)
-_urbis-create-matview:
+# Replace urbis.buildings / urbis.addresses by the raw tables, in one transaction
+_urbis-load:
     #!/usr/bin/env bash
-    set -e
-    echo "🔄 Creating indexes on base tables..."
+    set -euo pipefail
+    echo "🔄 Loading the raw tables into urbis.buildings / urbis.addresses..."
+    {{psql_be2osm}} -X -q -v ON_ERROR_STOP=1 <<'SQL'
+    SET client_min_messages = warning;
+    BEGIN;
+    TRUNCATE urbis.buildings, urbis.addresses;
+    SELECT format('   %s buildings, %s addresses', buildings, addresses) AS loaded
+    FROM urbis.load_raw('urbis._raw_buildings', 'urbis._raw_addresses', 'urbis._raw_placenames', 'urbis._raw_municipalities') \gset
+    \echo :loaded
+    DROP TABLE urbis._raw_buildings, urbis._raw_addresses, urbis._raw_placenames, urbis._raw_municipalities;
+    COMMIT;
+    ANALYZE urbis.buildings;
+    ANALYZE urbis.addresses;
+    SQL
+    echo "✅ Urbis data loaded"
 
-    {{psql_be2osm}} -c "
-        CREATE INDEX IF NOT EXISTS idx_urbis_buildings_geom ON urbis.buildings USING GIST(geom);
-        CREATE INDEX IF NOT EXISTS idx_urbis_addresses_bu_id ON urbis.addresses(bu_id);
-        CREATE INDEX IF NOT EXISTS idx_urbis_addresses_street_id ON urbis.addresses(street_id);
-        CREATE INDEX IF NOT EXISTS idx_urbis_addresses_municipality_id ON urbis.addresses(municipality_id);
-        CREATE INDEX IF NOT EXISTS idx_urbis_addresses_zipcode_id ON urbis.addresses(zipcode_id);
-    "
-
-    echo "🔄 Analyzing base tables..."
-    {{psql_be2osm}} -c "
-        ANALYZE urbis.buildings;
-        ANALYZE urbis.addresses;
-        ANALYZE urbis.placenames;
-        ANALYZE urbis.municipalities;
-        ANALYZE urbis.postalzip;
-    "
-
-    echo "🔄 Creating materialized view (ID-based join via lookup tables)..."
-
-    {{psql_be2osm}} -c "
-        DROP MATERIALIZED VIEW IF EXISTS urbis.buildings_with_addresses CASCADE;
-
-        CREATE MATERIALIZED VIEW urbis.buildings_with_addresses AS
-        WITH addr_enriched AS (
-            SELECT
-                a.bu_id,
-                a.policenum,
-                a.boxnumber,
-                COALESCE(pn.namefre, pn.namedut) AS street_name,
-                m.namefre AS municipality_name,
-                a.zipcode_id::text AS postcode
-            FROM urbis.addresses a
-            LEFT JOIN urbis.placenames pn ON a.street_id = pn.inspire_id
-            LEFT JOIN urbis.municipalities m ON a.municipality_id = m.inspire_id
-        ),
-        addr_per_building AS (
-            SELECT
-                ae.bu_id,
-                COUNT(*) AS address_count,
-                array_to_string(ARRAY_AGG(DISTINCT (
-                    ae.street_name || ' ' || ae.policenum ||
-                    CASE WHEN ae.boxnumber IS NOT NULL AND ae.boxnumber != ''
-                         THEN '/' || ae.boxnumber ELSE '' END
-                ) ORDER BY (
-                    ae.street_name || ' ' || ae.policenum ||
-                    CASE WHEN ae.boxnumber IS NOT NULL AND ae.boxnumber != ''
-                         THEN '/' || ae.boxnumber ELSE '' END
-                )) FILTER (WHERE ae.street_name IS NOT NULL), '; ') AS addresses,
-                array_to_string(ARRAY_AGG(DISTINCT ae.street_name ORDER BY ae.street_name)
-                    FILTER (WHERE ae.street_name IS NOT NULL), ', ') AS street_names,
-                array_to_string(ARRAY_AGG(DISTINCT ae.postcode ORDER BY ae.postcode)
-                    FILTER (WHERE ae.postcode IS NOT NULL), ', ') AS postcodes,
-                array_to_string(ARRAY_AGG(DISTINCT ae.municipality_name ORDER BY ae.municipality_name)
-                    FILTER (WHERE ae.municipality_name IS NOT NULL), ', ') AS municipalities
-            FROM addr_enriched ae
-            GROUP BY ae.bu_id
-        )
-        SELECT
-            b.inspire_id::BIGINT AS building_id,
-            b.inspire_id,
-            b.block_id,
-            ST_Area(b.geom)::REAL AS area_m2,
-            ST_Transform(b.geom, 3857)::geometry(Geometry, 3857) AS geom,
-            COALESCE(apb.addresses, '') AS addresses,
-            COALESCE(apb.street_names, '') AS street_names,
-            COALESCE(apb.postcodes, '') AS postcodes,
-            COALESCE(apb.municipalities, '') AS municipalities,
-            COALESCE(apb.address_count, 0) AS address_count
-        FROM urbis.buildings b
-        LEFT JOIN addr_per_building apb ON b.inspire_id = apb.bu_id;
-    "
-
-    echo "🔄 Creating indexes on materialized view..."
-
-    {{psql_be2osm}} -c "
-        CREATE UNIQUE INDEX idx_urbis_matview_building_id ON urbis.buildings_with_addresses(building_id);
-        CREATE INDEX idx_urbis_matview_geom ON urbis.buildings_with_addresses USING GIST(geom);
-        CREATE INDEX idx_urbis_matview_postcodes ON urbis.buildings_with_addresses(postcodes);
-    "
-
-    echo "✅ Materialized view created"
+# Refresh the view; CONCURRENTLY (readers keep the previous contents) once it has been populated
+_urbis-refresh-matview:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔄 Refreshing urbis.buildings_with_addresses..."
+    POPULATED=$({{psql_be2osm}} -tAc "SELECT ispopulated FROM pg_matviews WHERE schemaname = 'urbis' AND matviewname = 'buildings_with_addresses'")
+    CONCURRENTLY=""
+    [ "$POPULATED" = "t" ] && CONCURRENTLY="CONCURRENTLY"
+    {{psql_be2osm}} -v ON_ERROR_STOP=1 -c "REFRESH MATERIALIZED VIEW $CONCURRENTLY urbis.buildings_with_addresses;"
+    echo "✅ Materialized view refreshed"
 
 # ============================================================================
 # DATABASE TASKS - Management and Utilities

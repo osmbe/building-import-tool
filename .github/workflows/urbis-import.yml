@@ -56,11 +56,14 @@ jobs:
             -e POSTGRES_PASSWORD=be2osm \
             processing just urbis-full
 
-      - name: Create Urbis dump
+      # The server restores it next to its live data and swaps it in (processing/scripts/publish-schema.sh)
+      - name: Create Urbis dump (schema urbis_next)
         run: |
+          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 \
+            -c "ALTER SCHEMA urbis RENAME TO urbis_next"
           PGPASSWORD=be2osm pg_dump -h localhost -U be2osm \
             --no-owner --no-acl \
-            -n urbis \
+            -n urbis_next \
             be2osm | gzip > urbis.sql.gz
           ls -lh urbis.sql.gz
 

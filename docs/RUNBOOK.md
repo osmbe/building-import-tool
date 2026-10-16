@@ -114,9 +114,16 @@ working meanwhile. They need free disk for the copy: check `just db-sizes` first
 
 - **CI imports** (`GRB Import`, `PICC Import`, `Urbis Import`, `OSM Import`) end by starting the
   `<source>-restore` job. The workflow waits for it and fails when the restore fails.
-- **Updates:** the OSM update runs daily. The GRB, PICC and Urbis update crons are paused until their update paths
-  are fixed (manual dispatch still works).
-- The GRB restore empties the GRB tables, migrates, loads the dump and refreshes the view. Tiles and the
+- **Updates:** the OSM update runs daily and the Urbis update monthly. The GRB and PICC update crons stay paused
+  until a manual run (Actions → GRB Update / PICC Update → Run workflow) has confirmed that the real difference
+  files / ArcGIS fields are read correctly: check the job log for the removed/changed/added counts, then add the
+  `schedule:` back in the workflow.
+- **PICC and Urbis restores** load the dump as `<schema>_next` next to the live data, check it and swap it in
+  (`processing/scripts/publish-schema.sh`). A refused or failed restore leaves the live data as it was; the job log
+  says why. "built with other migrations": deploy first, then run the import workflow again. "fewer than 90%": if
+  the drop is real, restore by hand with `FORCE=1`:
+  `docker exec -e FORCE=1 be2osm-webhook bash /opt/docker/buildings/webhook/restore-picc.sh <run_id> osmbe/building-import-tool` (when no other job is running).
+- The GRB restore still empties the GRB tables, migrates, loads the dump and refreshes the view. Tiles and the
   difference API show no GRB data until it finishes (about an hour).
 - **Stale tiles:** Martin caches tiles in memory (512 MB, 1 h). After a restore, recreate the source's tile server
   to see the new data right away: `docker compose up -d --no-deps --force-recreate grb-tiles`.

@@ -2,8 +2,9 @@ name: Urbis Update
 
 on:
   workflow_dispatch:
-  # Monthly schedule ('0 5 1 * *') paused: the update drops every Urbis table before downloading the new data.
-  # Re-enabled once it builds next to the live data and swaps.
+  # Monthly: a full re-download, loaded and swapped in one transaction (the map keeps the previous data meanwhile)
+  schedule:
+    - cron: '0 5 1 * *'
 
 jobs:
   trigger-update:
