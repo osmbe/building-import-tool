@@ -7,12 +7,19 @@ listen_addresses: "0.0.0.0:3000"
 # CORS settings for web access
 cors: true
 
-# Performance settings
-cache_size_mb: 512
+# Performance settings. Use this `cache:` section, never the legacy top-level cache size key: Martin >= 1.12 skips
+# environment variable substitution in the whole file when that key name appears anywhere in it, even in a comment.
+# Entries expire so tiles pick up re-imported data.
+cache:
+  size_mb: 512
+  expiry: 1h
 
 # PostgreSQL connection for PICC data
 postgres:
-  connection_string: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/be2osm"
+  # Unquoted on purpose: since Martin 1.12 environment variables are only substituted in plain (unquoted) YAML
+  # scalars. Never write a dollar sign in comments here: older Martin versions also substitute inside comments.
+  # tests/db/cases/60-martin.sh starts every config against a test database to catch such regressions.
+  connection_string: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/be2osm
   pool_size: 20
   max_feature_count: 10000
   default_srid: 3857

@@ -1,0 +1,14 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "id": 41,
+   "properties": {
+    "NAMEFRE": "Rue Neuve",
+    "NAMEDUT": "Nieuwstraat"
+   },
+   "geometry": null
+  }
+ ]
+}

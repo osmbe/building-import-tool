@@ -30,6 +30,8 @@ export default defineConfig({
     }
   },
   fmt: {
+    // Snapshots are written by vitest and compared byte for byte
+    ignorePatterns: ['tests/**/__snapshots__/**'],
     singleQuote: true,
     semi: false,
     trailingComma: 'none',

@@ -1,0 +1,43 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "BU_ID": 21,
+    "POLICENUM": "10",
+    "BOXNUMBER": null,
+    "STREET_ID": 41,
+    "MUNICIPALITY_ID": 51,
+    "ZIPCODE_ID": 1000
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     4.35005,
+     50.84603
+    ]
+   },
+   "id": 31
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "BU_ID": 21,
+    "POLICENUM": "10",
+    "BOXNUMBER": "2",
+    "STREET_ID": 41,
+    "MUNICIPALITY_ID": 51,
+    "ZIPCODE_ID": 1000
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     4.35006,
+     50.84604
+    ]
+   },
+   "id": 32
+  }
+ ]
+}

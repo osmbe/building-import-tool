@@ -1,0 +1,135 @@
+name: CI
+
+# Every push and pull request runs the app checks and the database suite (tests/db/run.sh: migrations, imports
+# on fixtures, the four Martin servers with the production configs, API integration tests).
+# On main, images are only built and deployed once both pass.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  app:
+    name: App (fmt, lint, typecheck, unit tests + coverage, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npx vp fmt --check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:coverage
+      - run: npm run build
+
+  infra:
+    name: Infra (workflows, shell scripts, justfile, compose files)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -no-color
+      - name: shellcheck
+        run: |
+          docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.10.0 -S warning -s bash \
+            webhook/*.sh tests/db/*.sh tests/db/cases/*.sh tests/fixtures/build.sh
+      - name: justfile parses
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq just
+          just --justfile processing/justfile --summary >/dev/null
+      - name: compose files are valid
+        run: |
+          docker compose -f docker-compose.yml config -q
+          docker compose -f docker-compose.test.yml config -q
+
+  db:
+    name: Database, imports, Martin and API integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install app dependencies (API integration tests)
+        working-directory: app
+        run: npm ci
+      - run: tests/db/run.sh
+
+  images:
+    name: Build and push ${{ matrix.image }}
+    needs: [app, infra, db]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - image: nuxt-app
+            context: ./app
+          - image: processing
+            context: ./processing
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}
+          tags: |
+            type=sha,prefix={{branch}}-
+            type=sha,format=long,prefix=sha-
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            OSM_CLIENT_ID=${{ secrets.OSM_CLIENT_ID }}
+            OSM_CLIENT_SECRET=${{ secrets.OSM_CLIENT_SECRET }}
+            OSM_REDIRECT_URI=${{ secrets.OSM_REDIRECT_URI }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  deploy:
+    name: Deploy
+    needs: [images]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.WEBHOOK_URL != ''
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    steps:
+      - name: Notify server to deploy nuxt-app
+        run: |
+          curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/nuxt-deploy" \
+            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"run_id": "${{ github.run_id }}"}'

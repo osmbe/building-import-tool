@@ -1,0 +1,42 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "OIDN": 9001,
+    "ADRESID": 80001,
+    "ID": "https://data.vlaanderen.be/id/adres/80001",
+    "STRAATNMID": 301,
+    "STRAATNM": "Kerkstraat",
+    "HUISNR": "1",
+    "BUSNR": null,
+    "POSTCODE": "2000",
+    "NISCODE": "11002",
+    "GEMEENTE": "Antwerpen",
+    "ADRESNAAM": "Kerkstraat 1",
+    "POSSPEC": 1,
+    "LBLPOSSPEC": "gebouweenheid",
+    "METHODE": 1,
+    "LBLMETHODE": "manueleAanduiding",
+    "STATUS": 1,
+    "LBLSTATUS": "inGebruik",
+    "OFFTOEG": 1,
+    "LBLOFFTOEG": "ja",
+    "BGNINV": 1,
+    "LBLBGNINV": "terreinbezoek",
+    "VERSIEID": "1",
+    "VERSIE": 1,
+    "BEGINDATUM": "2020-01-01",
+    "VERSDATUM": "2020-01-01"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     4.40005,
+     51.20003
+    ]
+   }
+  }
+ ]
+}

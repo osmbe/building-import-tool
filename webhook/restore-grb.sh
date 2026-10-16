@@ -5,7 +5,7 @@ RUN_ID="${1:?Usage: restore-grb.sh <run_id> <repo>}"
 REPO="${2:?Usage: restore-grb.sh <run_id> <repo>}"
 
 WORK_DIR="/tmp/grb-restore"
-trap "rm -rf ${WORK_DIR}" EXIT
+trap 'rm -rf "${WORK_DIR}"' EXIT
 
 echo "[restore-grb] Downloading artifact from run ${RUN_ID} (${REPO})..."
 rm -rf "${WORK_DIR}"

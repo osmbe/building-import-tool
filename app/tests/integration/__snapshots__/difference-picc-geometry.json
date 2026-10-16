@@ -1,0 +1,49 @@
+{
+  "stats": {
+    "total": 1,
+    "totalGrb": 2,
+    "totalOsm": 1,
+    "dataSource": "picc",
+    "matchMode": "geometry"
+  },
+  "features": [
+    {
+      "properties": {
+        "objectid": "11",
+        "natur_code": "BAT",
+        "date_leve": "2019-05-20 00:00:00+00",
+        "addresses": "Rue de Fer 5",
+        "street_names": "Rue de Fer",
+        "postcodes": "5000",
+        "municipalities": "Namur",
+        "address_count": "1"
+      },
+      "coordinates": [
+        [
+          [
+            [
+              4.87,
+              50.465
+            ],
+            [
+              4.87,
+              50.465065
+            ],
+            [
+              4.8701,
+              50.465065
+            ],
+            [
+              4.8701,
+              50.465
+            ],
+            [
+              4.87,
+              50.465
+            ]
+          ]
+        ]
+      ]
+    }
+  ]
+}

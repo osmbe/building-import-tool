@@ -1,0 +1,46 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "OIDN": 7001,
+    "UIDN": 70010,
+    "TYPE": 7,
+    "LBLTYPE": "schoorsteen",
+    "LENGTE": 8.0,
+    "VERSIE": 1,
+    "BGNINV": 1,
+    "LBLBGNINV": "terreinbezoek",
+    "OPNDATUM": "2022-01-10"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       4.405,
+       51.2
+      ],
+      [
+       4.4051,
+       51.2
+      ],
+      [
+       4.4051,
+       51.200065
+      ],
+      [
+       4.405,
+       51.200065
+      ],
+      [
+       4.405,
+       51.2
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}

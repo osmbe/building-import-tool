@@ -1,0 +1,87 @@
+{
+  "stats": {
+    "total": 2,
+    "totalGrb": 3,
+    "totalOsm": 3,
+    "dataSource": "grb",
+    "matchMode": "geometry"
+  },
+  "features": [
+    {
+      "properties": {
+        "entity": "Gba",
+        "oidn": "1001",
+        "gebouw_id": null,
+        "addresses": "",
+        "street_names": "",
+        "postcodes": "",
+        "municipalities": "",
+        "address_count": "0",
+        "opndatum": "2023-03-15",
+        "lbltype": "verdieping"
+      },
+      "coordinates": [
+        [
+          [
+            4.403,
+            51.2
+          ],
+          [
+            4.403,
+            51.200065
+          ],
+          [
+            4.4031,
+            51.200065
+          ],
+          [
+            4.4031,
+            51.2
+          ],
+          [
+            4.403,
+            51.2
+          ]
+        ]
+      ]
+    },
+    {
+      "properties": {
+        "entity": "Gbg",
+        "oidn": "1002",
+        "gebouw_id": "5001",
+        "addresses": "",
+        "street_names": "",
+        "postcodes": "",
+        "municipalities": "",
+        "address_count": "0",
+        "opndatum": "2021-06-30",
+        "lbltype": "bijgebouw"
+      },
+      "coordinates": [
+        [
+          [
+            4.401,
+            51.2
+          ],
+          [
+            4.401,
+            51.200065
+          ],
+          [
+            4.4011,
+            51.200065
+          ],
+          [
+            4.4011,
+            51.2
+          ],
+          [
+            4.401,
+            51.2
+          ]
+        ]
+      ]
+    }
+  ]
+}

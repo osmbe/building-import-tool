@@ -1,0 +1,21 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "RUE_NM": "Rue de Fer",
+    "ADR_NUMERO": "5",
+    "CODE_POSTA": "5000",
+    "COM_NM": "Namur"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     4.87005,
+     50.46503
+    ]
+   }
+  }
+ ]
+}

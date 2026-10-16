@@ -1,0 +1,40 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "NAMEFRE": "Bruxelles",
+    "NAMEDUT": "Brussel"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       4.3,
+       50.8
+      ],
+      [
+       4.3999999999999995,
+       50.8
+      ],
+      [
+       4.3999999999999995,
+       50.864999999999995
+      ],
+      [
+       4.3,
+       50.864999999999995
+      ],
+      [
+       4.3,
+       50.8
+      ]
+     ]
+    ]
+   },
+   "id": 51
+  }
+ ]
+}

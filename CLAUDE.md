@@ -54,6 +54,23 @@ docker compose run --rm processing just db-shell-grb  # psql into be2osm
 
 The `processing` service sits behind a compose profile. Processing tasks read the **root** `.env` file; `processing/` has no `.env` of its own. GRB tasks need `DIGITAL_VLAANDEREN_API_KEY`.
 
+### Database, import, Martin and API integration tests (`tests/db/`)
+
+```bash
+tests/db/run.sh            # every case in tests/db/cases/ (about 2 min; needs Docker, python3, curl, node)
+tests/db/run.sh 30 60      # only cases whose file name starts with 30 or 60
+KEEP=1 tests/db/run.sh 70  # leave the test stack running to inspect it
+```
+
+`docker-compose.test.yml` mirrors production: the same PostGIS image and `postgres/0*.sql` init scripts, the processing image running real `just` recipes (justfile and `sql/` mounted read-only, throwaway data volume), and the four Martin servers with the real `config/martin/*.yaml`. On Apple Silicon PostGIS runs under amd64 emulation.
+
+- Each case (`tests/db/cases/NN-*.sh`, helpers in `tests/db/lib.sh`) starts from a clean `be2osm` cloned from a base database: `fresh` (init scripts only) or `v7088` (the GRB schema before migration 001, `tests/db/schemas/`), for upgrade tests.
+- Fixtures live in `tests/fixtures/{grb,picc,urbis,osm}` as small GeoJSON/CSV/SQL files. `tests/fixtures/build.sh` turns them into the formats the recipes read (shapefiles + DBF relation files, a FileGDB, a GeoPackage). Feature ids are top-level GeoJSON `id` members.
+- `60-martin.sh` starts every Martin config against imported fixtures and checks health, published properties and a tile per source. Martin upgrades have silently broken the configs before (see Serving).
+- `70-api.sh` runs `app/tests/integration/*.int.test.ts` (vitest, skipped unless `TEST_PG_PORT` is set) against the fixtures. Its `__snapshots__/` record the difference API responses and the JOSM export per source; update them only on purpose (`npx vp test run tests/integration -u` with the stack running).
+
+CI (`.github/workflows/ci.yml`) runs the app checks, an infra job (actionlint, shellcheck `-S warning`, justfile parsing, compose validation) and this suite on every push and pull request; on `main`, images are built and the deploy webhook is called only when all of them pass.
+
 ### Full stack
 
 ```bash
@@ -83,6 +100,11 @@ Caddy (`caddy/Caddyfile`) is the single entry point:
 - `/webhook/*` → `webhook/server.py`
 - everything else → Nuxt
 
+Martin config rules (Martin ≥ 1.12 changed its YAML parser; `60-martin.sh` guards these):
+- `connection_string` must stay an **unquoted** YAML scalar, or the `${POSTGRES_*}` variables are not substituted.
+- Use the `cache:` section. If the legacy top-level cache size key name appears anywhere in the file, even in a comment, Martin skips variable substitution for the whole file.
+- No dollar signs in comments: older Martin versions substitute inside comments too.
+
 The frontend fetches tiles from relative `/tiles/...` URLs. Nuxt has no dev proxy configured, so `npm run dev` on its own won't load tiles; they only work behind Caddy.
 
 ### Nuxt app (`app/`)
@@ -101,7 +123,7 @@ The frontend fetches tiles from relative `/tiles/...` URLs. Nuxt has no dev prox
 
 - **CI imports** (`.github/workflows/*-import.yml`) run the heavy full imports on GitHub runners. Each one starts a throwaway PostGIS service, runs the needed `postgres/*.sql` init script and then the `just` recipe inside the processing image, and uploads a `pg_dump --data-only` artifact. It then POSTs `/<source>-restore` with `run_id` to the server webhook. `webhook/restore-*.sh` downloads the artifact with `gh`, TRUNCATEs the source tables and restores the dump.
 - **Updates** (`*-update.yml`) just POST `/update-<source>` to the webhook. The GRB, PICC and Urbis cron schedules are paused (manual dispatch only) until their update paths are fixed; see the data-model plan. The server then runs `docker compose run --rm processing just <source>-update` locally through the mounted Docker socket.
-- **Deploy** (`deploy.yml`, on push to main): builds and pushes `nuxt-app` and `processing` images to GHCR, then POSTs `/nuxt-deploy`, which pulls and recreates `nuxt-app`.
+- **Deploy** (`ci.yml`, on push to main, after every CI job passes): builds and pushes `nuxt-app` and `processing` images to GHCR (tags `latest`, `main-<short sha>`, `sha-<full sha>`), then POSTs `/nuxt-deploy`, which pulls and recreates `nuxt-app`. Nothing else on the server is updated by a deploy yet (checkout, Martin configs, webhook scripts, migrations); see the data-model plan.
 - Every webhook route requires the `X-Webhook-Secret` header.
 
 ## Other docs

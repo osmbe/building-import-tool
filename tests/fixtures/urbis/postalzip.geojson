@@ -1,0 +1,13 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "id": 1000,
+   "properties": {
+    "ZIPCODE": "1000"
+   },
+   "geometry": null
+  }
+ ]
+}

@@ -5,7 +5,7 @@ RUN_ID="${1:?Usage: restore-urbis.sh <run_id> <repo>}"
 REPO="${2:?Usage: restore-urbis.sh <run_id> <repo>}"
 
 WORK_DIR="/tmp/urbis-restore"
-trap "rm -rf ${WORK_DIR}" EXIT
+trap 'rm -rf "${WORK_DIR}"' EXIT
 
 echo "[restore-urbis] Downloading artifact from run ${RUN_ID} (${REPO})..."
 rm -rf "${WORK_DIR}"

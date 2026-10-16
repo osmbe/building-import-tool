@@ -1,0 +1,48 @@
+{
+  "stats": {
+    "total": 1,
+    "totalGrb": 2,
+    "totalOsm": 1,
+    "dataSource": "urbis",
+    "matchMode": "geometry"
+  },
+  "features": [
+    {
+      "properties": {
+        "building_id": "21",
+        "inspire_id": 21,
+        "addresses": "Rue Neuve 10; Rue Neuve 10/2",
+        "street_names": "Rue Neuve",
+        "postcodes": "1000",
+        "municipalities": "Bruxelles",
+        "address_count": "2"
+      },
+      "coordinates": [
+        [
+          [
+            [
+              4.35,
+              50.846
+            ],
+            [
+              4.3501,
+              50.846
+            ],
+            [
+              4.3501,
+              50.846065
+            ],
+            [
+              4.35,
+              50.846065
+            ],
+            [
+              4.35,
+              50.846
+            ]
+          ]
+        ]
+      ]
+    }
+  ]
+}

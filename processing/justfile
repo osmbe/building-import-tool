@@ -1016,7 +1016,7 @@ _urbis-import-buildings:
         -overwrite \
         -lco GEOMETRY_NAME=geom \
         -lco SPATIAL_INDEX=NONE \
-        -lco FID=inspire_id \
+        -lco FID=inspire_id -preserve_fid \
         -gt 100000 --config PG_USE_COPY YES
 
     echo "✅ Buildings imported"
@@ -1049,7 +1049,7 @@ _urbis-import-addresses:
         -overwrite \
         -lco GEOMETRY_NAME=geom \
         -lco SPATIAL_INDEX=NONE \
-        -lco FID=inspire_id \
+        -lco FID=inspire_id -preserve_fid \
         -gt 100000 --config PG_USE_COPY YES
 
     echo "✅ Addresses imported"
@@ -1069,7 +1069,7 @@ _urbis-import-lookups:
         -nln urbis.placenames \
         -overwrite \
         -lco SPATIAL_INDEX=NONE \
-        -lco FID=inspire_id \
+        -lco FID=inspire_id -preserve_fid \
         -gt 100000 --config PG_USE_COPY YES
 
     echo "   Importing Municipalities..."
@@ -1079,7 +1079,7 @@ _urbis-import-lookups:
         -overwrite \
         -lco GEOMETRY_NAME=geom \
         -lco SPATIAL_INDEX=NONE \
-        -lco FID=inspire_id \
+        -lco FID=inspire_id -preserve_fid \
         -gt 100000 --config PG_USE_COPY YES
 
     echo "   Importing PostalZip..."
@@ -1088,7 +1088,7 @@ _urbis-import-lookups:
         -nln urbis.postalzip \
         -overwrite \
         -lco SPATIAL_INDEX=NONE \
-        -lco FID=inspire_id \
+        -lco FID=inspire_id -preserve_fid \
         -gt 100000 --config PG_USE_COPY YES
 
     echo "✅ Lookup tables imported"

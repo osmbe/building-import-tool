@@ -1,0 +1,103 @@
+# Test stack for tests/db/run.sh (database, recipe, Martin and API integration tests).
+# Mirrors production: the same PostGIS image and init scripts, the processing image and the four Martin
+# tile servers with the real config/martin/*.yaml files. Nothing is persisted (tmpfs / throwaway volumes).
+#
+#   tests/db/run.sh            # run every case
+#   tests/db/run.sh 30         # run the cases whose file name starts with 30
+name: be2osm-test
+
+x-db-env: &db-env
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: be2osm
+  POSTGRES_PASSWORD: be2osm
+
+x-martin: &martin
+  image: ghcr.io/maplibre/martin:1.16.1
+  command: ["--config", "/config.yaml"]
+  environment: *db-env
+  profiles: ["martin"]
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgis/postgis:18-3.6
+    # The image is amd64 only; on Apple Silicon this runs under emulation.
+    platform: linux/amd64
+    environment:
+      POSTGRES_USER: be2osm
+      POSTGRES_PASSWORD: be2osm
+      POSTGRES_DB: be2osm
+    volumes:
+      - ./postgres/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
+      - ./postgres/02-setup-be2osm.sql:/docker-entrypoint-initdb.d/02-setup-be2osm.sql:ro
+      - ./postgres/03-setup-osmbe.sql:/docker-entrypoint-initdb.d/03-setup-osmbe.sql:ro
+      - ./postgres/04-setup-fdw.sql:/docker-entrypoint-initdb.d/04-setup-fdw.sql:ro
+      - ./postgres/05-setup-picc.sql:/docker-entrypoint-initdb.d/05-setup-picc.sql:ro
+      - ./postgres/06-setup-urbis.sql:/docker-entrypoint-initdb.d/06-setup-urbis.sql:ro
+      # Older schema versions and fixtures for upgrade tests
+      - ./tests/db/schemas:/schemas:ro
+    tmpfs:
+      - /var/lib/postgresql
+    ports:
+      - "${TEST_PG_PORT:-55432}:5432"
+    healthcheck:
+      # Over TCP: the temporary server that runs the init scripts only listens on the socket, so this passes
+      # once every init script has run and the final server is up.
+      test: ["CMD-SHELL", "PGPASSWORD=be2osm psql -h 127.0.0.1 -U be2osm -d be2osm -tAc \"SELECT 1 FROM information_schema.schemata WHERE schema_name = 'urbis'\" | grep -q 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 100
+
+  # Runs `just` recipes like production (`docker compose run --rm processing just ...`), with the recipes and
+  # SQL mounted read-only and a throwaway data directory.
+  processing:
+    build: ./processing
+    image: be2osm-processing:test
+    working_dir: /work
+    environment: *db-env
+    volumes:
+      - ./processing/justfile:/work/justfile:ro
+      - ./processing/sql:/work/sql:ro
+      - ./processing/config:/work/config:ro
+      - testdata:/work/data
+      - testlogs:/work/logs
+      - ./tests/fixtures:/fixtures:ro
+    profiles: ["tools"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  martin-grb:
+    <<: *martin
+    volumes:
+      - ./config/martin/grb-config.yaml:/config.yaml:ro
+    ports:
+      - "${TEST_MARTIN_GRB_PORT:-53001}:3000"
+
+  martin-osm:
+    <<: *martin
+    volumes:
+      - ./config/martin/osm-config.yaml:/config.yaml:ro
+    ports:
+      - "${TEST_MARTIN_OSM_PORT:-53002}:3000"
+
+  martin-picc:
+    <<: *martin
+    volumes:
+      - ./config/martin/picc-config.yaml:/config.yaml:ro
+    ports:
+      - "${TEST_MARTIN_PICC_PORT:-53003}:3000"
+
+  martin-urbis:
+    <<: *martin
+    volumes:
+      - ./config/martin/urbis-config.yaml:/config.yaml:ro
+    ports:
+      - "${TEST_MARTIN_URBIS_PORT:-53004}:3000"
+
+volumes:
+  testdata:
+  testlogs:

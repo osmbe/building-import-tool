@@ -1,0 +1,49 @@
+{
+  "stats": {
+    "total": 1,
+    "totalGrb": 3,
+    "totalOsm": 2,
+    "dataSource": "grb",
+    "matchMode": "source"
+  },
+  "features": [
+    {
+      "properties": {
+        "entity": "Gbg",
+        "oidn": "1001",
+        "gebouw_id": "5001",
+        "opndatum": "2023-03-15",
+        "lbltype": "hoofdgebouw",
+        "addresses": "Kerkstraat 1",
+        "street_names": "Kerkstraat",
+        "postcodes": "2000",
+        "municipalities": "Antwerpen",
+        "address_count": "1"
+      },
+      "coordinates": [
+        [
+          [
+            4.4,
+            51.2
+          ],
+          [
+            4.4,
+            51.200065
+          ],
+          [
+            4.4001,
+            51.200065
+          ],
+          [
+            4.4001,
+            51.2
+          ],
+          [
+            4.4,
+            51.2
+          ]
+        ]
+      ]
+    }
+  ]
+}

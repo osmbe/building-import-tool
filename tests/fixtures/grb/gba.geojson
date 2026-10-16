@@ -1,0 +1,89 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "OIDN": 1001,
+    "UIDN": 10010,
+    "TYPE": 1,
+    "LBLTYPE": "verdieping",
+    "OPPERVL": 55.5,
+    "LENGTE": 30.0,
+    "VERSIE": 1,
+    "BGNINV": 1,
+    "LBLBGNINV": "terreinbezoek",
+    "OPNDATUM": "15/03/2023"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       4.403,
+       51.2
+      ],
+      [
+       4.403099999999999,
+       51.2
+      ],
+      [
+       4.403099999999999,
+       51.200065
+      ],
+      [
+       4.403,
+       51.200065
+      ],
+      [
+       4.403,
+       51.2
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "OIDN": 2001,
+    "UIDN": 20010,
+    "TYPE": 2,
+    "LBLTYPE": "trap",
+    "OPPERVL": 55.5,
+    "LENGTE": 30.0,
+    "VERSIE": 1,
+    "BGNINV": 1,
+    "LBLBGNINV": "terreinbezoek",
+    "OPNDATUM": "15/03/2023"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       4.404,
+       51.2
+      ],
+      [
+       4.4041,
+       51.2
+      ],
+      [
+       4.4041,
+       51.200065
+      ],
+      [
+       4.404,
+       51.200065
+      ],
+      [
+       4.404,
+       51.2
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}
