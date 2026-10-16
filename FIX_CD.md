@@ -83,14 +83,51 @@ When it ends with **"Everything answers"**, go on. If it ends with **"Some check
 
 ### 4. Turn automatic deploys back on
 
-From any machine with `gh` and admin rights on the repository:
+From any machine with `gh` and admin rights on the repository (or in the GitHub UI: Settings → Secrets and
+variables → Actions).
+
+**a. Check what CI uses to reach the server.** The deploy job calls the server's webhook with these, and fails if
+either is wrong:
+
+```bash
+gh variable list -R osmbe/building-import-tool      # WEBHOOK_URL must be https://new.buildings.osm.be/webhook
+gh secret list -R osmbe/building-import-tool        # WEBHOOK_SECRET must exist
+```
+
+`WEBHOOK_SECRET` must have the same value as `WEBHOOK_SECRET` in the server's `.env`. Secrets can't be read
+back, so if in doubt set it again: `gh secret set WEBHOOK_SECRET -R osmbe/building-import-tool` (paste the value
+from `.env`).
+
+Check that the new webhook answers. The bootstrap recreated it, and it now has a `/health` route; the old one
+answered `501`:
+
+```bash
+curl -s https://new.buildings.osm.be/webhook/health        # → {"status": "ok"}
+```
+
+**b. Turn deploys on:**
 
 ```bash
 gh variable set DEPLOY_V2 --body true -R osmbe/building-import-tool
-gh variable set APP_URL --body https://new.buildings.osm.be -R osmbe/building-import-tool   # optional: public check after each deploy
+gh variable set APP_URL --body https://new.buildings.osm.be -R osmbe/building-import-tool   # optional, recommended
 ```
 
-Or in the GitHub UI: Settings → Secrets and variables → Actions → Variables.
+With `APP_URL` set, every deploy also checks from outside that the site reports the new commit.
+
+**c. Test a first deploy now,** rather than waiting for the next push. Re-run the Deploy job of the latest CI run
+on `main`; it deploys the commit the server already runs, so nothing changes if all is well:
+
+```bash
+RUN=$(gh run list -R osmbe/building-import-tool --workflow CI --branch main --limit 1 --json databaseId --jq '.[0].databaseId')
+gh run rerun "$RUN" --job "$(gh run view "$RUN" -R osmbe/building-import-tool --json jobs --jq '.jobs[] | select(.name == "Deploy") | .databaseId')" -R osmbe/building-import-tool
+gh run watch "$RUN" -R osmbe/building-import-tool
+```
+
+The Deploy job must turn green. Its step "Deploy this commit" shows the server's deploy log, ending with "the app
+is ready on <commit>". If it fails, the log says why (preflight, image pull, migrations, readiness), and the
+server stays on the release it had. See [docs/RUNBOOK.md](docs/RUNBOOK.md#troubleshooting). Don't leave
+`DEPLOY_V2` on with a failing deploy: run `gh variable delete DEPLOY_V2 -R osmbe/building-import-tool` until it's
+fixed.
 
 ### 5. Refresh the GRB data
 
