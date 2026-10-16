@@ -2284,8 +2284,13 @@ _grb-refresh-materialized-view:
 
     START_TIME=$(date +%s)
 
-    PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -c \
-        "REFRESH MATERIALIZED VIEW grb.buildings_with_addresses;"
+    # CONCURRENTLY keeps the view (and the GRB tiles) readable while it refreshes; it needs a populated view
+    POPULATED=$(PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -t -A -c \
+        "SELECT ispopulated FROM pg_matviews WHERE schemaname = 'grb' AND matviewname = 'buildings_with_addresses';")
+    CONCURRENTLY=""
+    [ "$POPULATED" = "t" ] && CONCURRENTLY="CONCURRENTLY"
+    PGPASSWORD="{{db_password}}" psql -h "{{db_host}}" -p "{{db_port}}" -U "{{db_user}}" -d be2osm -v ON_ERROR_STOP=1 -c \
+        "REFRESH MATERIALIZED VIEW $CONCURRENTLY grb.buildings_with_addresses;"
 
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
@@ -2353,24 +2358,20 @@ _osm-init-replication:
 # INTERNAL TASKS - GRB Differential Updates
 # ============================================================================
 
-# GRB: Get last update date (defaults to 7 days ago if not set)
+# GRB: start of the next differential order: the day of the last import or update recorded in grb.import_meta
+# (it travels with CI restores), else 7 days ago. Overlapping a diff already applied is harmless.
 _grb-get-last-update:
     #!/usr/bin/env bash
-    STATE_FILE="{{grb_data_dir}}/last_update.txt"
-    if [ -f "$STATE_FILE" ]; then
-        cat "$STATE_FILE"
+    LAST=$({{psql_be2osm}} -tAq -c "SELECT to_char(max(imported_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"00:00:00\"Z\"') FROM grb.import_meta" 2>/dev/null || true)
+    if [ -n "$LAST" ]; then
+        echo "$LAST"
     else
-        # Default to 7 days ago if no previous update
         date -u -v-7d +%Y-%m-%dT00:00:00Z 2>/dev/null || date -u -d "7 days ago" +%Y-%m-%dT00:00:00Z
     fi
 
-# GRB: Save last update date
+# GRB: record the update in grb.import_meta (the next differential order starts from it)
 _grb-save-last-update:
-    #!/usr/bin/env bash
-    mkdir -p {{grb_data_dir}}
-    date -u +%Y-%m-%dT00:00:00Z > {{grb_data_dir}}/last_update.txt
-    echo "📅 Saved update timestamp: $(cat {{grb_data_dir}}/last_update.txt)"
-    just _save-import-meta grb
+    @just _save-import-meta grb
 
 # GRB: Create differential order for GBG (buildings) with temporalCrop
 _grb-order-diff-gbg:
@@ -2454,26 +2455,70 @@ _grb-order-diff-gbg:
 # GRB: Import differential building polygons (upsert mode)
 _grb-import-diff-building-polygons:
     #!/usr/bin/env bash
-    echo "📊 Importing differential GRB building polygons..."
+    # Applies the GBG/GBA difference files (a delete and an add file per entity) with sql/updates/grb-apply-diff.sql,
+    # in one transaction. Files are recognised by name: Gbg*/Gba* plus "del" or "add" (case-insensitive). A plain
+    # Gbg*.shp (the full dataset, when the product offers no difference files) is applied as adds (upserts).
+    set -euo pipefail
+    echo "📊 Applying the GRB difference files..."
     DIFF_DIR="{{grb_data_dir}}/gbg-diff"
+    PG="PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}"
 
     if [ ! -d "$DIFF_DIR" ]; then
         echo "⚠️  No differential data found in $DIFF_DIR"
         exit 0
     fi
 
-    for file in "$DIFF_DIR"/*.shp; do
-        if [ -f "$file" ]; then
-            echo "   Processing: $(basename "$file")"
-            ogr2ogr -f PostgreSQL "PG:host={{db_host}} port={{db_port}} dbname={{be2osm_db}} user={{db_user}} password={{db_password}}" \
-                "$file" -nln grb.building_polygons -append -t_srs EPSG:4326 \
-                -lco OVERWRITE=YES
+    {{psql_be2osm}} -q -v ON_ERROR_STOP=1 -c "
+        SET client_min_messages = warning;
+        DROP TABLE IF EXISTS grb._diff_add, grb._diff_del, grb._diff_load;
+        CREATE TABLE grb._diff_del (entity VARCHAR(3) NOT NULL, uidn NUMERIC, oidn NUMERIC);"
+    ADD_CREATED=0
+    FOUND=0
+    while IFS= read -r file; do
+        name="$(basename "$file")"
+        lower="${name,,}"
+        case "$lower" in
+        gbg*) entity=Gbg ;;
+        gba*) entity=Gba ;;
+        *)
+            echo "   skipping $name (not GBG/GBA)"
+            continue
+            ;;
+        esac
+        FOUND=1
+        ogr2ogr -f PostgreSQL "$PG" "$file" -nln grb._diff_load -overwrite -t_srs EPSG:4326 \
+            -lco GEOMETRY_NAME=geom -lco SPATIAL_INDEX=NONE -lco FID=ogc_fid
+        if [[ "$lower" == *del* ]]; then
+            echo "   delete file: $name ($entity)"
+            {{psql_be2osm}} -q -v ON_ERROR_STOP=1 -c "INSERT INTO grb._diff_del SELECT '$entity', uidn, oidn FROM grb._diff_load;"
+        else
+            echo "   add file: $name ($entity)"
+            if [ "$ADD_CREATED" = 0 ]; then
+                {{psql_be2osm}} -q -v ON_ERROR_STOP=1 -c "CREATE TABLE grb._diff_add AS SELECT '$entity'::varchar(3) AS entity, * FROM grb._diff_load;"
+                ADD_CREATED=1
+            else
+                {{psql_be2osm}} -q -v ON_ERROR_STOP=1 -c "INSERT INTO grb._diff_add SELECT '$entity', * FROM grb._diff_load;"
+            fi
         fi
-    done
+    done < <(find "$DIFF_DIR" -iname '*.shp' -type f | sort)
+
+    if [ "$FOUND" = 0 ]; then
+        {{psql_be2osm}} -q -c "DROP TABLE IF EXISTS grb._diff_add, grb._diff_del, grb._diff_load;"
+        echo "❌ No Gbg/Gba shapefile in $DIFF_DIR"
+        exit 1
+    fi
+    if [ "$ADD_CREATED" = 0 ]; then
+        # Only deletions: an empty add table with the columns the SQL reads
+        {{psql_be2osm}} -q -v ON_ERROR_STOP=1 -c "CREATE TABLE grb._diff_add (entity VARCHAR(3), oidn NUMERIC, uidn NUMERIC,
+            type NUMERIC, lbltype TEXT, oppervl NUMERIC, lengte NUMERIC, versie NUMERIC, bgninv NUMERIC, lblbgninv TEXT,
+            opndatum TEXT, geom geometry(Polygon, 4326));"
+    fi
+    {{psql_be2osm}} -q -v ON_ERROR_STOP=1 -c "DROP TABLE grb._diff_load;"
+    {{psql_be2osm}} -q -f sql/updates/grb-apply-diff.sql
 
     # Clean up diff download after import
     rm -rf "$DIFF_DIR"
-    echo "✅ Differential building polygons imported"
+    echo "✅ Difference files applied"
 
 # ============================================================================
 # INTERNAL TASKS - PICC Differential Updates

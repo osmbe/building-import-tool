@@ -128,7 +128,7 @@ just grb-import            # Import to PostgreSQL
 just grb-full              # Complete workflow (order → wait → download → import)
 
 # Updates
-just grb-update            # Differential update (changes since last)
+just grb-update            # Differential update since the date in grb.import_meta (delete + add files, one transaction)
 
 # Utilities
 just grb-status            # Database statistics

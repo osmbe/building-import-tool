@@ -2,8 +2,8 @@ name: GRB Update
 
 on:
   workflow_dispatch:
-  # Weekly schedule ('0 5 * * 1') paused: the diff import appends raw shapefile rows into grb.building_polygons
-  # and the plain REFRESH blocks GRB tiles. Re-enabled once the update path is fixed and tested.
+  # Weekly schedule ('0 5 * * 1') paused until a manual run on the server has confirmed the file names of the
+  # real difference download (the diff import is now transactional and tested on fixtures).
 
 jobs:
   trigger-update:

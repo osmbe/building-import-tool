@@ -2,7 +2,7 @@
 # Convert the GeoJSON/CSV fixtures (feature ids are top-level GeoJSON "id" members, kept with -preserve_fid) into the file formats and directory layout the import recipes expect.
 # Runs inside the processing container (ogr2ogr): /fixtures is this directory, /work/data the recipes' data dir.
 #
-#   build.sh grb|picc|urbis
+#   build.sh grb|grb-diff|picc|urbis
 set -euo pipefail
 
 SRC=/fixtures
@@ -17,7 +17,7 @@ dbf() { # <csv> <out.dbf>: attribute-only DBF, like the GRB relation files
     ogr2ogr -f "ESRI Shapefile" "$2" "$1" -oo AUTODETECT_TYPE=YES
 }
 
-case "${1:?usage: build.sh grb|picc|urbis}" in
+case "${1:?usage: build.sh grb|grb-diff|picc|urbis}" in
 grb)
     rm -rf "$DATA/grb" && mkdir -p "$DATA/grb"/{gbg,gba,knw,addresses}
     shp "$SRC/grb/gbg.geojson" "$DATA/grb/gbg/Gbg_test.shp"
@@ -26,6 +26,12 @@ grb)
     shp "$SRC/grb/knw.geojson" "$DATA/grb/knw/Knw_test.shp"
     shp "$SRC/grb/addresses.geojson" "$DATA/grb/addresses/Adres_test.shp"
     dbf "$SRC/grb/rlt_adres_gebouw.csv" "$DATA/grb/addresses/RltAdresGebouw_test.dbf"
+    ;;
+grb-diff)
+    # A GRB difference download: delete and add file of the GBG entity
+    rm -rf "$DATA/grb/gbg-diff" && mkdir -p "$DATA/grb/gbg-diff"
+    shp "$SRC/grb/diff/gbg_del.geojson" "$DATA/grb/gbg-diff/GbgDel_test.shp"
+    shp "$SRC/grb/diff/gbg_add.geojson" "$DATA/grb/gbg-diff/GbgAdd_test.shp"
     ;;
 picc)
     rm -rf "$DATA/picc" && mkdir -p "$DATA/picc"

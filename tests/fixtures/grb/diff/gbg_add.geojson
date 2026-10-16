@@ -1,0 +1,89 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "OIDN": 1001,
+    "UIDN": 10011,
+    "TYPE": 1,
+    "LBLTYPE": "hoofdgebouw",
+    "OPPERVL": 70.0,
+    "LENGTE": 30.0,
+    "VERSIE": 2,
+    "BGNINV": 1,
+    "LBLBGNINV": "terreinbezoek",
+    "OPNDATUM": "2026-05-04"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       4.4,
+       51.2
+      ],
+      [
+       4.40012,
+       51.2
+      ],
+      [
+       4.40012,
+       51.200065
+      ],
+      [
+       4.4,
+       51.200065
+      ],
+      [
+       4.4,
+       51.2
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "OIDN": 1004,
+    "UIDN": 10040,
+    "TYPE": 1,
+    "LBLTYPE": "hoofdgebouw",
+    "OPPERVL": 40.0,
+    "LENGTE": 26.0,
+    "VERSIE": 1,
+    "BGNINV": 1,
+    "LBLBGNINV": "terreinbezoek",
+    "OPNDATUM": "01/09/2026"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       4.403,
+       51.2
+      ],
+      [
+       4.403099999999999,
+       51.2
+      ],
+      [
+       4.403099999999999,
+       51.200065
+      ],
+      [
+       4.403,
+       51.200065
+      ],
+      [
+       4.403,
+       51.2
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}
