@@ -147,6 +147,17 @@ describe.skipIf(!PORT)('API against the fixture database', () => {
     await expect(normalise(response)).toMatchFileSnapshot('__snapshots__/difference-urbis-geometry.json')
   })
 
+  it('readiness reports the applied migrations', async () => {
+    const ready = asHandler(await import('~/server/api/health/ready.get'))
+    const result = (await ready(createEvent())) as { ready: boolean; migrations: Record<string, string[]> }
+    expect(result.ready).toBe(true)
+    expect(result.migrations.grb).toEqual([
+      '001_polygon_entity',
+      '002_polygon_entity_unique',
+      '003_buildings_with_addresses_entity'
+    ])
+  })
+
   it('data-dates reports the import time of every source', async () => {
     const dates = (await dataDates(createEvent())) as Record<string, string | null>
     for (const source of ['grb', 'knw', 'picc', 'urbis']) {

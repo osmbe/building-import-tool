@@ -9,9 +9,11 @@ jobs:
   trigger-update:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
       - name: Trigger GRB update on server
         if: ${{ vars.WEBHOOK_URL != '' }}
-        run: |
-          curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/update-grb" \
-            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}"
-          echo "GRB update triggered on server"
+        timeout-minutes: 300
+        env:
+          WEBHOOK_URL: ${{ vars.WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        run: .github/scripts/webhook-job.sh update-grb

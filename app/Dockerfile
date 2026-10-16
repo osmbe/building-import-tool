@@ -17,10 +17,13 @@ WORKDIR /app
 # Accept build arguments for OSM configuration (public values only, no secrets)
 ARG OSM_CLIENT_ID
 ARG OSM_REDIRECT_URI
+# Git commit of the build, reported by /api/health/ready (deploys wait until it matches)
+ARG GIT_SHA=dev
 
 # Set as environment variables for the build
 ENV OSM_CLIENT_ID=$OSM_CLIENT_ID \
-    OSM_REDIRECT_URI=$OSM_REDIRECT_URI
+    OSM_REDIRECT_URI=$OSM_REDIRECT_URI \
+    GIT_SHA=$GIT_SHA
 
 # Copy dependencies from previous stage
 COPY --from=dependencies /app/node_modules ./node_modules
@@ -53,9 +56,11 @@ USER nuxt
 EXPOSE 3000
 
 # Set environment
+ARG GIT_SHA=dev
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
-    PORT=3000
+    PORT=3000 \
+    NUXT_GIT_SHA=$GIT_SHA
 
 # Start the application
 CMD ["node", ".output/server/index.mjs"]

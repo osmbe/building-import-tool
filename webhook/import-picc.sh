@@ -12,7 +12,7 @@ echo "[import-picc] Starting local PICC import..."
 echo "[import-picc] $(date)"
 
 # Ensure the PICC schema exists
-${COMPOSE} run --rm processing bash -c '
+${COMPOSE} run --rm --no-deps processing bash -c '
     export PGPASSWORD="${POSTGRES_PASSWORD}"
     psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d be2osm -c "
         CREATE EXTENSION IF NOT EXISTS postgis;
@@ -22,7 +22,7 @@ ${COMPOSE} run --rm processing bash -c '
 
 # Drop existing PICC tables (clean slate)
 echo "[import-picc] Dropping existing PICC tables..."
-${COMPOSE} run --rm processing bash -c '
+${COMPOSE} run --rm --no-deps processing bash -c '
     export PGPASSWORD="${POSTGRES_PASSWORD}"
     psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d be2osm -c "
         DROP MATERIALIZED VIEW IF EXISTS picc.buildings_with_addresses CASCADE;
@@ -32,6 +32,6 @@ ${COMPOSE} run --rm processing bash -c '
 '
 
 # Run the full PICC workflow: download FileGDB + addresses, import, create matview
-${COMPOSE} run --rm processing just picc-full
+${COMPOSE} run --rm --no-deps processing just picc-full
 
 echo "[import-picc] Done. $(date)"

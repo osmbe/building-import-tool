@@ -58,6 +58,44 @@ describe('GET /api/health', () => {
   })
 })
 
+describe('GET /api/health/ready', () => {
+  const load = async () => asHandler(await import('~/server/api/health/ready.get'))
+
+  it('reports the build SHA and the applied migrations of every scope', async () => {
+    stubNitro({ gitSha: 'abc123' })
+    db.queryGrb
+      .mockResolvedValueOnce([{ schema: 'grb' }, { schema: 'public' }])
+      .mockResolvedValueOnce([{ version: '001_a' }, { version: '002_b' }])
+      .mockResolvedValueOnce([])
+    const event = createEvent()
+    expect(await (await load())(event)).toEqual({
+      ready: true,
+      sha: 'abc123',
+      migrations: { grb: ['001_a', '002_b'], common: [] }
+    })
+    expect(event.status).toBeUndefined()
+    expect(db.queryGrb).toHaveBeenCalledWith('SELECT version FROM "grb".schema_migrations ORDER BY version')
+  })
+
+  it('reports "dev" when the build has no SHA', async () => {
+    db.queryGrb.mockResolvedValue([])
+    expect(await (await load())(createEvent())).toMatchObject({ ready: true, sha: 'dev', migrations: {} })
+  })
+
+  it('is not ready (503) when the database does not answer', async () => {
+    stubNitro({ gitSha: 'abc123' })
+    db.queryGrb.mockRejectedValue(new Error('connection refused'))
+    const event = createEvent()
+    expect(await (await load())(event)).toEqual({ ready: false, sha: 'abc123', error: 'connection refused' })
+    expect(event.status).toBe(503)
+  })
+
+  it('reports an unknown error for non-Error failures', async () => {
+    db.queryGrb.mockRejectedValue('boom')
+    expect(await (await load())(createEvent())).toMatchObject({ ready: false, error: 'Unknown error' })
+  })
+})
+
 describe('GET /api/meta/data-dates', () => {
   it('reads the import dates through the GRB pool', async () => {
     db.queryGrb.mockResolvedValue([{ imported_at: '2026-01-02T03:04:05Z' }])

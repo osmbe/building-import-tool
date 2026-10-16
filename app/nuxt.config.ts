@@ -39,6 +39,8 @@ export default defineNuxtConfig({
     dbPort: process.env.POSTGRES_PORT,
     dbUser: process.env.POSTGRES_USER,
     dbPassword: process.env.POSTGRES_PASSWORD,
+    // Git commit of the build (Dockerfile GIT_SHA build arg), reported by /api/health/ready
+    gitSha: process.env.GIT_SHA || 'dev',
 
     // Public keys (exposed to client)
     public: {

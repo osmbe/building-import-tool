@@ -1193,15 +1193,12 @@ db-shell-osm:
 db-shell-grb:
     {{psql_be2osm}}
 
-# Apply schema migrations (sql/migrations/*.sql, in order). Init scripts only run on a fresh
-# volume, so changes to an existing database live here. Every migration is idempotent.
-db-migrate:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    for file in $(ls sql/migrations/*.sql 2>/dev/null | sort); do
-        echo "🔧 Applying migration $(basename "$file")..."
-        {{psql_be2osm}} -q -v ON_ERROR_STOP=1 -f "$file"
-    done
+# Apply pending schema migrations (sql/migrations/<scope>/NNN_*.sql, see sql/migrate.sh). Init scripts only
+# run on a fresh volume, so changes to an existing database live here. Options: --deploy (refuse heavy
+# migrations, used by automatic deploys), --status (list applied and pending migrations).
+db-migrate *args:
+    @PGHOST='{{db_host}}' PGPORT='{{db_port}}' PGUSER='{{db_user}}' PGPASSWORD='{{db_password}}' PGDATABASE='{{be2osm_db}}' \
+        bash sql/migrate.sh {{args}}
 
 # Show database table sizes
 db-sizes:

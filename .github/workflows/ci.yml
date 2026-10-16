@@ -47,7 +47,8 @@ jobs:
       - name: shellcheck
         run: |
           docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.10.0 -S warning -s bash \
-            webhook/*.sh tests/db/*.sh tests/db/cases/*.sh tests/fixtures/build.sh
+            webhook/*.sh tests/db/*.sh tests/db/cases/*.sh tests/db/bin/gh tests/db/bin/deploy/* \
+            tests/fixtures/build.sh processing/sql/migrate.sh .github/scripts/*.sh
       - name: justfile parses
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq just
@@ -87,6 +88,8 @@ jobs:
             context: ./app
           - image: processing
             context: ./processing
+          - image: webhook
+            context: ./webhook
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
@@ -115,9 +118,13 @@ jobs:
             OSM_CLIENT_ID=${{ secrets.OSM_CLIENT_ID }}
             OSM_CLIENT_SECRET=${{ secrets.OSM_CLIENT_SECRET }}
             OSM_REDIRECT_URI=${{ secrets.OSM_REDIRECT_URI }}
+            GIT_SHA=${{ github.sha }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 
+  # With vars.DEPLOY_V2 = 'true' (set once the server is bootstrapped, see docs/RUNBOOK.md) the server runs
+  # webhook/deploy.sh for this commit: checkout, images, migrations, Martin, app, readiness check, rollback.
+  # Before that, only nuxt-app is updated through the old /nuxt-deploy route.
   deploy:
     name: Deploy
     needs: [images]
@@ -127,7 +134,29 @@ jobs:
       group: deploy
       cancel-in-progress: false
     steps:
-      - name: Notify server to deploy nuxt-app
+      - uses: actions/checkout@v7
+      - name: Deploy this commit
+        if: vars.DEPLOY_V2 == 'true'
+        timeout-minutes: 75
+        env:
+          WEBHOOK_URL: ${{ vars.WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          JOB_TIMEOUT: "4200"
+        run: |
+          .github/scripts/webhook-job.sh deploy '{"sha": "${{ github.sha }}"}'
+      - name: Check the public readiness endpoint
+        if: vars.DEPLOY_V2 == 'true' && vars.APP_URL != ''
+        run: |
+          for _ in $(seq 1 30); do
+            if curl -fsS "${{ vars.APP_URL }}/api/health/ready" | jq -e '.ready and .sha == "${{ github.sha }}"'; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::${{ vars.APP_URL }} does not report ${{ github.sha }}"
+          exit 1
+      - name: Notify server to deploy nuxt-app (server not bootstrapped yet)
+        if: vars.DEPLOY_V2 != 'true'
         run: |
           curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/nuxt-deploy" \
             -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \

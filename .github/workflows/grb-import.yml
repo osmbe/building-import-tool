@@ -110,7 +110,7 @@ jobs:
           PGPASSWORD=be2osm pg_dump -h localhost -U be2osm \
             --data-only --disable-triggers \
             --no-owner --no-acl \
-            -n grb \
+            -n grb --exclude-table-data=grb.schema_migrations \
             be2osm | gzip > be2osm.sql.gz
           ls -lh be2osm.sql.gz
 
@@ -122,10 +122,11 @@ jobs:
           path: be2osm.sql.gz
           retention-days: 7
 
-      - name: Notify server to restore dump
+      - name: Restore the dump on the server (waits for the job)
         if: ${{ github.event.inputs.download_only != 'true' && vars.WEBHOOK_URL != '' }}
+        timeout-minutes: 300
+        env:
+          WEBHOOK_URL: ${{ vars.WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
         run: |
-          curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/grb-restore" \
-            -H "Content-Type: application/json" \
-            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
-            -d "{\"run_id\": \"${{ github.run_id }}\"}"
+          .github/scripts/webhook-job.sh grb-restore '{"run_id": "${{ github.run_id }}"}'

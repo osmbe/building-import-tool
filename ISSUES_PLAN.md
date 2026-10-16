@@ -18,8 +18,9 @@ All branches merged into `main`. Verified against a seeded PostGIS (difference A
 ### GRB import: GBA polygons sharing a GBG OIDN (fixed)
 
 GBG and GBA polygons share `grb.building_polygons`. Its `oidn` column used to be `UNIQUE` and the GBA import used
-`ON CONFLICT (oidn) DO NOTHING`, so a GBA polygon whose OIDN equalled a GBG OIDN was silently dropped. Fixed by
-`processing/sql/migrations/001-grb-polygon-entity.sql`:
+`ON CONFLICT (oidn) DO NOTHING`, so a GBA polygon whose OIDN equalled a GBG OIDN was silently dropped. Fixed by the
+migrations `processing/sql/migrations/grb/001_polygon_entity.sql`, `002_polygon_entity_unique.sql` and
+`003_buildings_with_addresses_entity.sql` (written to run online on the production table; 003 is heavy):
 
 - `entity` column (`Gbg`/`Gba`, backfilled from the type label) and `UNIQUE (entity, oidn)`. The GBG and GBA imports
   set the entity explicitly. `gebouw_id` (RltGbgGebouw) is only applied to GBG polygons.
@@ -27,8 +28,9 @@ GBG and GBA polygons share `grb.building_polygons`. Its `oidn` column used to be
   is no longer unique, and the map merges tile fragments by feature id).
 - The difference API uses the stored entity and joins addresses on `polygon_id`. Databases that are not migrated yet
   keep working (entity derived from the type label).
-- The migration runs as an init script on fresh volumes, from `just db-migrate` (called by `grb-import`,
-  `grb-update` and the view refresh) and from `webhook/restore-grb.sh` before the data-only dump is restored.
+- The migrations run from `just db-migrate` (called by `grb-import`, `grb-update` and the view refresh, and once
+  by hand on fresh volumes and in the server bootstrap) and from `webhook/restore-grb.sh` before the data-only dump
+  is restored.
   The restore now also refreshes the view, which the data-only dump does not carry.
 
 ---

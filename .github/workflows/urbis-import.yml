@@ -71,10 +71,11 @@ jobs:
           path: urbis.sql.gz
           retention-days: 7
 
-      - name: Notify server to restore dump
+      - name: Restore the dump on the server (waits for the job)
         if: ${{ vars.WEBHOOK_URL != '' }}
+        timeout-minutes: 300
+        env:
+          WEBHOOK_URL: ${{ vars.WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
         run: |
-          curl -fsSL -X POST "${{ vars.WEBHOOK_URL }}/urbis-restore" \
-            -H "Content-Type: application/json" \
-            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
-            -d "{\"run_id\": \"${{ github.run_id }}\"}"
+          .github/scripts/webhook-job.sh urbis-restore '{"run_id": "${{ github.run_id }}"}'

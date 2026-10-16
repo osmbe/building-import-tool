@@ -12,11 +12,11 @@ echo "[update-osm] Starting OSM incremental update..."
 echo "[update-osm] $(date)"
 
 # Run osm-update inside the processing container
-${COMPOSE} run --rm processing just osm-update
+${COMPOSE} run --rm --no-deps processing just osm-update
 
 # Refresh the FDW cache in be2osm
 echo "[update-osm] Refreshing OSM buildings cache in be2osm..."
-${COMPOSE} run --rm processing bash -c '
+${COMPOSE} run --rm --no-deps processing bash -c '
     export PGPASSWORD="${POSTGRES_PASSWORD}"
     psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d be2osm \
         -c "SELECT * FROM refresh_osm_cache();" || echo "[update-osm] WARNING: cache refresh failed (non-fatal)"

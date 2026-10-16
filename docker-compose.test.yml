@@ -70,6 +70,26 @@ services:
       postgres:
         condition: service_healthy
 
+  # The webhook image with its scripts and the processing SQL mounted from the checkout (like production), and
+  # a fake `gh` that serves "artifacts" the test cases write to /artifacts/runs/<run_id>/<name>/.
+  webhook:
+    build: ./webhook
+    image: be2osm-webhook:test
+    environment:
+      <<: *db-env
+      COMPOSE_PROJECT_DIR: /repo
+    volumes:
+      - ./processing:/repo/processing:ro
+      - ./webhook:/repo/webhook:ro
+      - ./tests/db/bin/gh:/usr/local/bin/gh:ro
+      - ./tests/db:/tests:ro
+      - ./.github/scripts:/ci-scripts:ro
+      - testdata:/artifacts
+    profiles: ["tools"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   martin-grb:
     <<: *martin
     volumes:

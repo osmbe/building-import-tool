@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Fake curl for the deploy.sh tests: the readiness answer of the app started by the fake docker.
+# FAKE_READY_FAIL=1 makes the app never become ready.
+set -euo pipefail
+[ "${FAKE_READY_FAIL:-0}" = 1 ] && exit 22
+running="$(cat "${FAKE_STATE:?}/nuxt-running" 2>/dev/null || true)"
+printf '{"ready": true, "sha": "%s"}\n' "${running##*:sha-}"

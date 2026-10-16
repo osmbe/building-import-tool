@@ -23,7 +23,7 @@ trap cleanup EXIT
 echo "▶ Starting the test stack"
 "${COMPOSE[@]}" --profile martin --profile tools down -v --remove-orphans >/dev/null 2>&1 || true
 if [ "${SKIP_BUILD:-0}" != "1" ]; then
-    "${COMPOSE[@]}" build processing >/dev/null
+    "${COMPOSE[@]}" build processing webhook >/dev/null
 fi
 "${COMPOSE[@]}" up -d --wait postgres >/dev/null
 

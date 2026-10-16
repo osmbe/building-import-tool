@@ -12,6 +12,6 @@ echo "[update-grb] Starting GRB differential update..."
 echo "[update-grb] $(date)"
 
 # Run the GRB differential update
-${COMPOSE} run --rm processing just grb-update
+${COMPOSE} run --rm --no-deps processing just grb-update
 
 echo "[update-grb] Done. $(date)"

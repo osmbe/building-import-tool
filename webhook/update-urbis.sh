@@ -11,6 +11,6 @@ echo "[update-urbis] Starting Urbis update (full re-download)..."
 echo "[update-urbis] $(date)"
 
 # Urbis has no differential API — update = clean + full re-import
-${COMPOSE} run --rm processing just urbis-update
+${COMPOSE} run --rm --no-deps processing just urbis-update
 
 echo "[update-urbis] Done. $(date)"

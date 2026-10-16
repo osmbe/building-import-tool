@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Stand-in for the GitHub CLI in the test webhook container: `gh run download <run_id> -R <repo> -n <name> -D <dir>`
+# copies /artifacts/runs/<run_id>/<name>/* (written by the test case) into <dir>.
+set -euo pipefail
+[ "${1:-} ${2:-}" = "run download" ] || { echo "fake gh: unsupported command: $*" >&2; exit 2; }
+run_id="$3"
+shift 3
+name="" dir="."
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+    -n) name="$2"; shift 2 ;;
+    -D) dir="$2"; shift 2 ;;
+    *) shift ;;
+    esac
+done
+src="/artifacts/runs/$run_id/$name"
+[ -d "$src" ] || { echo "fake gh: no artifact $name in run $run_id" >&2; exit 1; }
+mkdir -p "$dir"
+cp -r "$src"/. "$dir"/

@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS grb.building_polygons (
     id BIGSERIAL PRIMARY KEY,
 
     -- GRB identifiers. OIDNs are only unique per entity (Gbg/2664 and Gba/2664 are different polygons),
-    -- so the unique key is (entity, oidn), see processing/sql/migrations/001-grb-polygon-entity.sql.
+    -- so the unique key is (entity, oidn), see processing/sql/migrations/grb/001_polygon_entity.sql and 002.
     entity VARCHAR(3) NOT NULL DEFAULT 'Gbg', -- 'Gbg' (gebouw) or 'Gba' (gebouwaanhorigheid)
     oidn BIGINT NOT NULL,             -- Polygon identifier from GRB (unique per entity)
     uidn BIGINT,                      -- Universal identifier
@@ -415,9 +415,9 @@ ORDER BY municipality, postcode;
 -- MATERIALIZED VIEW: grb.buildings_with_addresses
 -- ============================================================================
 
--- Defined in processing/sql/migrations/001-grb-polygon-entity.sql (single source of truth), which also adds
--- the (entity, oidn) unique key. It runs right after this script as docker-entrypoint-initdb.d/07 and from
--- the processing recipes (`just db-migrate`).
+-- Defined in processing/sql/migrations/grb/003_buildings_with_addresses_entity.sql (single source of truth);
+-- the (entity, oidn) unique key comes from grb/002. Fresh volumes get them by running `just db-migrate`
+-- once after init (the processing recipes run it too).
 
 \echo '✓ Views created (materialized view: see processing/sql/migrations)'
 

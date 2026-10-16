@@ -12,6 +12,6 @@ echo "[import-grb] Starting local GRB import..."
 echo "[import-grb] $(date)"
 
 # Run the full GRB workflow: order → wait → download → import
-${COMPOSE} run --rm processing just grb-full
+${COMPOSE} run --rm --no-deps processing just grb-full
 
 echo "[import-grb] Done. $(date)"

@@ -12,7 +12,7 @@ echo "[import-urbis] Starting local Urbis import..."
 echo "[import-urbis] $(date)"
 
 # Ensure the Urbis schema exists
-${COMPOSE} run --rm processing bash -c '
+${COMPOSE} run --rm --no-deps processing bash -c '
     export PGPASSWORD="${POSTGRES_PASSWORD}"
     psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d be2osm -c "
         CREATE EXTENSION IF NOT EXISTS postgis;
@@ -22,7 +22,7 @@ ${COMPOSE} run --rm processing bash -c '
 
 # Drop existing Urbis tables (clean slate)
 echo "[import-urbis] Dropping existing Urbis tables..."
-${COMPOSE} run --rm processing bash -c '
+${COMPOSE} run --rm --no-deps processing bash -c '
     export PGPASSWORD="${POSTGRES_PASSWORD}"
     psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d be2osm -c "
         DROP MATERIALIZED VIEW IF EXISTS urbis.buildings_with_addresses CASCADE;
@@ -35,6 +35,6 @@ ${COMPOSE} run --rm processing bash -c '
 '
 
 # Run the full Urbis workflow: download GeoPackage, import, create matview
-${COMPOSE} run --rm processing just urbis-full
+${COMPOSE} run --rm --no-deps processing just urbis-full
 
 echo "[import-urbis] Done. $(date)"

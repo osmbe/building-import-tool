@@ -54,6 +54,16 @@ just_run() {
     "${COMPOSE[@]}" run --rm -T processing just "$@"
 }
 
+# Run a command in the webhook container (scripts in /repo/webhook, fake gh). Usage: webhook_run [-e K=V] <cmd...>
+webhook_run() {
+    "${COMPOSE[@]}" run --rm -T --no-deps --entrypoint "" "$@"
+}
+
+# Publish a fake GitHub Actions artifact file for the webhook scripts. Usage: artifact <run_id> <name> <file> < data
+artifact() {
+    webhook_run webhook sh -c "mkdir -p /artifacts/runs/$1/$2 && cat > /artifacts/runs/$1/$2/$3"
+}
+
 # Build the fixture files for one source into the processing data volume.
 fixtures() {
     "${COMPOSE[@]}" run --rm -T --entrypoint bash processing /fixtures/build.sh "$1" >/dev/null

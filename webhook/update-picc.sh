@@ -12,6 +12,6 @@ echo "[update-picc] Starting PICC differential update..."
 echo "[update-picc] $(date)"
 
 # Run the PICC differential update
-${COMPOSE} run --rm processing just picc-update
+${COMPOSE} run --rm --no-deps processing just picc-update
 
 echo "[update-picc] Done. $(date)"

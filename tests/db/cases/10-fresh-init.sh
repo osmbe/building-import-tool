@@ -7,8 +7,10 @@ assert_true "SELECT EXISTS (SELECT 1 FROM pg_matviews WHERE schemaname = 'grb' A
     "db-migrate creates grb.buildings_with_addresses"
 assert_true "SELECT count(*) = 2 FROM pg_attribute WHERE attrelid = 'grb.buildings_with_addresses'::regclass AND attname IN ('entity', 'polygon_id') AND NOT attisdropped" \
     "the view has entity and polygon_id"
-assert_true "SELECT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'building_polygons_entity_oidn_key')" \
+assert_true "SELECT indisunique AND indisvalid FROM pg_index WHERE indexrelid = 'grb.building_polygons_entity_oidn_key'::regclass" \
     "building_polygons is unique on (entity, oidn)"
+assert_eq "$(sql "SELECT string_agg(version, ',' ORDER BY version) FROM grb.schema_migrations")" \
+    "001_polygon_entity,002_polygon_entity_unique,003_buildings_with_addresses_entity" "every GRB migration is recorded"
 assert_true "SELECT NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'building_polygons_oidn_key')" \
     "the old UNIQUE (oidn) is gone"
 

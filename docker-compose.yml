@@ -30,8 +30,10 @@ services:
       - be2osm
 
   # Nuxt 3 Application
+  # Images: deploys (webhook/deploy.sh) pull the sha-<commit> images built by CI and tag them :deployed, so
+  # the running release is pinned. Locally, `docker compose build` builds them instead.
   nuxt-app:
-    image: ${NUXT_IMAGE:-ghcr.io/osmbe/building-import-tool/nuxt-app:latest}
+    image: ${NUXT_IMAGE:-ghcr.io/osmbe/building-import-tool/nuxt-app:deployed}
     platform: linux/amd64
     build:
       context: ./app
@@ -163,7 +165,7 @@ services:
   # Usage:
   #   docker compose run --rm processing just <command>
   processing:
-    image: ${PROCESSING_IMAGE:-}
+    image: ${PROCESSING_IMAGE:-ghcr.io/osmbe/building-import-tool/processing:deployed}
     # Note: No platform specified - builds natively for host architecture
     # imposm3 is built from source on arm64
     build:
@@ -195,8 +197,10 @@ services:
     networks:
       - be2osm
 
-  # Webhook service: receives POST /osm-restore from GitHub Actions and restores the OSM dump
+  # Webhook service: runs deploys, restores of CI artifacts, imports and updates as jobs (webhook/server.py).
+  # Its scripts are read from the checkout; deploy.sh updates the checkout, so it is mounted read-write.
   webhook:
+    image: ${WEBHOOK_IMAGE:-ghcr.io/osmbe/building-import-tool/webhook:deployed}
     build:
       context: ./webhook
     container_name: be2osm-webhook
@@ -219,7 +223,9 @@ services:
       - ${HOME}/.config/gh:/root/.config/gh:ro
       # Docker socket + project dir (mounted at same host path for volume resolution)
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${COMPOSE_PROJECT_DIR:-${PWD}}:${COMPOSE_PROJECT_DIR:-${PWD}}:ro
+      - ${COMPOSE_PROJECT_DIR:-${PWD}}:${COMPOSE_PROJECT_DIR:-${PWD}}
+      # Job records, logs and the global job lock
+      - webhook-state:/state
     depends_on:
       postgres:
         condition: service_healthy
@@ -259,3 +265,4 @@ networks:
 volumes:
   postgres-data:
   caddy_data:
+  webhook-state:
