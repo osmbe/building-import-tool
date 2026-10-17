@@ -12,7 +12,7 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   # Phase 1: Import each province in parallel
   # ──────────────────────────────────────────────────────────────────────────
-  import-province:
+  process-province:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -81,7 +81,7 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   finalize:
     runs-on: ubuntu-latest
-    needs: import-province
+    needs: process-province
     name: Finalize (merge + matview)
 
     services:
@@ -156,6 +156,10 @@ jobs:
           path: picc.sql.gz
           retention-days: 7
 
+  import:
+    runs-on: ubuntu-latest
+    needs: finalize
+    steps:
       - name: Restore the dump on the server (waits for the job)
         if: ${{ vars.WEBHOOK_URL != '' }}
         timeout-minutes: 300
