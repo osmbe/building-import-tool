@@ -43,8 +43,6 @@ KEEP_JOBS = 200
 # route -> (script, whether the body must carry a run_id)
 ROUTES = {
     '/deploy': ('deploy.sh', False),
-    # Old name of /deploy, used by CI until vars.DEPLOY_V2 is set
-    '/nuxt-deploy': ('deploy.sh', False),
     '/osm-restore': ('restore-osm.sh', True),
     '/grb-restore': ('restore-grb.sh', True),
     '/picc-restore': ('restore-picc.sh', True),

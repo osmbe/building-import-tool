@@ -261,8 +261,8 @@ say "Summary"
 info "checkout and images: $SHA; migrations: $(psql_be2osm -c "SELECT string_agg(version, ', ' ORDER BY version) FROM grb.schema_migrations")"
 if [ "$ok" = 1 ]; then
     info "Everything answers. Last steps:"
-    info "  1. enable automatic deploys:  gh variable set DEPLOY_V2 --body true -R $REPO"
-    info "     (optionally APP_URL too, e.g. https://buildings.osm.be, for the public readiness check)"
+    # info "  1. enable automatic deploys:  gh variable set DEPLOY_V2 --body true -R $REPO"
+    # info "     (optionally APP_URL too, e.g. https://buildings.osm.be, for the public readiness check)"
     info "  2. commit $SNAPSHOT as tests/db/schemas/be2osm-production.sql"
     info "  3. run a GRB Import workflow: it restores the GBA polygons that share an OIDN with a GBG polygon"
 else

@@ -22,7 +22,6 @@ And these repository variables:
 | Variable | Description |
 |----------|-------------|
 | `WEBHOOK_URL` | The server's webhook, e.g. `https://buildings.osm.be/webhook` |
-| `DEPLOY_V2` | `true` once the server is bootstrapped (step 6): turns on automatic deploys |
 | `APP_URL` | Optional: public URL checked for readiness after each deploy |
 
 These secrets are used by the CI/CD pipeline to build Docker images and run data imports.
@@ -113,9 +112,6 @@ This starts every service:
 - **grb-tiles**, **osm-tiles**, **picc-tiles**, **urbis-tiles**: vector tile servers (Martin)
 - **webhook**: runs deploys, restores, imports and updates for GitHub Actions
 - **caddy**: Reverse proxy
-
-Then set the repository variable `DEPLOY_V2=true` (`gh variable set DEPLOY_V2 --body true`): every push to main is
-deployed automatically from then on.
 
 ## Step 7: Verify Installation
 

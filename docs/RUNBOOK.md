@@ -47,8 +47,7 @@ workflow before the bootstrap:** the old restore script empties the GRB tables a
    - recreate the Martin servers, Caddy and the app;
    - check readiness, every tile server and one difference request.
 4. When the summary says everything answers:
-   - `gh variable set DEPLOY_V2 --body true -R osmbe/building-import-tool`. Optionally also set `APP_URL`
-     (e.g. `https://buildings.osm.be`) for the public readiness check after each deploy.
+   - Optionally set `APP_URL` (e.g. `https://buildings.osm.be`) for the public readiness check after each deploy.
    - Commit `~/be2osm-bootstrap/be2osm-production-schema.sql` as `tests/db/schemas/be2osm-production.sql`.
      `tests/db/cases/25-upgrade-production.sh` then tests every migration against the real production schema.
    - Run the **GRB Import** workflow. The new import keeps the GBA polygons that share an OIDN with a GBG polygon.

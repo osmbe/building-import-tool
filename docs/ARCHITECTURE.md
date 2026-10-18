@@ -138,6 +138,3 @@ Every push to `main` deploys itself once CI is green:
 The webhook runs jobs one at a time under a lock and keeps their logs (`GET /jobs/<id>`). Workflows wait for the
 job and fail when it fails (`.github/scripts/webhook-job.sh`). The job scripts are read from the server checkout,
 so they always match the deployed commit.
-
-Deploys are gated on the repository variable `DEPLOY_V2`, set once the server has been switched with
-`scripts/server-bootstrap.sh` ([RUNBOOK.md](RUNBOOK.md)).
