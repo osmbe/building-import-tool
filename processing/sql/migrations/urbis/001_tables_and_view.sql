@@ -1,9 +1,9 @@
 -- migrate:no-transaction
 -- migrate:heavy
--- Urbis (Brussels) tables and view, owned by migrations instead of being created by ogr2ogr with the columns of
+-- UrbIS (Brussels) tables and view, owned by migrations instead of being created by ogr2ogr with the columns of
 -- the GeoPackage. Imports load the layers into urbis._raw_* tables and call urbis.load_raw(), which resolves the
 -- street and municipality ids through the PlaceNames / Municipalities layers, so only two tables are kept:
--- - urbis.buildings (building_id = the Urbis inspire_id, block_id, geometry in EPSG:31370);
+-- - urbis.buildings (building_id = the UrbIS inspire_id, block_id, geometry in EPSG:31370);
 -- - urbis.addresses (street, house_number, box, postcode, municipality, the building it belongs to).
 -- urbis.buildings_with_addresses keeps its columns (inspire_id stays an integer, building_id a bigint).
 --
@@ -33,14 +33,14 @@ COMMIT;
 
 -- 2. Tables
 CREATE TABLE IF NOT EXISTS urbis.buildings (
-    building_id BIGINT PRIMARY KEY,  -- Urbis inspire_id
+    building_id BIGINT PRIMARY KEY,  -- UrbIS inspire_id
     block_id BIGINT,
     geom geometry(MultiPolygon, 31370) NOT NULL
 );
 CREATE INDEX IF NOT EXISTS urbis_buildings_geom_idx ON urbis.buildings USING GIST (geom);
 
 CREATE TABLE IF NOT EXISTS urbis.addresses (
-    address_id BIGINT PRIMARY KEY,   -- Urbis inspire_id
+    address_id BIGINT PRIMARY KEY,   -- UrbIS inspire_id
     building_id BIGINT,              -- bu_id
     street TEXT,                     -- French name, else Dutch
     house_number TEXT,               -- policenum

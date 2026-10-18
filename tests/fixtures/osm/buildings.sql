@@ -1,4 +1,4 @@
--- OSM buildings (osmbe) next to the GRB/PICC/Urbis fixtures, each exercising one matching rule.
+-- OSM buildings (osmbe) next to the GRB/PICC/UrbIS fixtures, each exercising one matching rule.
 -- Fixture squares are 0.0001° wide and 0.000065° high (see tests/fixtures/*/*.geojson).
 INSERT INTO osm.osm_buildings (osm_id, building_type, tags, geom) VALUES
   -- Same outline as Gbg/1001: hides it in geometry mode
@@ -13,6 +13,6 @@ INSERT INTO osm.osm_buildings (osm_id, building_type, tags, geom) VALUES
   -- Same outline as PICC objectid 12
   (201, 'yes', '{"building": "yes"}',
    ST_GeomFromText('POLYGON((4.8710 50.4650,4.8711 50.4650,4.8711 50.465065,4.8710 50.465065,4.8710 50.4650))', 4326)),
-  -- Same outline as Urbis building 22
+  -- Same outline as UrbIS building 22
   (301, 'yes', '{"building": "yes"}',
    ST_GeomFromText('POLYGON((4.3510 50.8460,4.3511 50.8460,4.3511 50.846065,4.3510 50.846065,4.3510 50.8460))', 4326));

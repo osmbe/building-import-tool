@@ -52,6 +52,6 @@ assert_eq "$(row grb.knw_candidates "source_id = '7001'")" "knw | Knw | 7001 | K
 assert_eq "$(row picc.candidates "source_id = '11'")" "picc | - | 11 | - | BAT | Batiment | 2019-05-20 | - | Rue de Fer 5 | Rue de Fer | 5000 | Namur | 1" \
     "a PICC building: nature code and label, survey date (date levé), address"
 assert_eq "$(row urbis.candidates "source_id = '21'")" "urbis | - | 21 | - | - | - | - | 901 | Rue Neuve 10; Rue Neuve 10/2 | Rue Neuve | 1000 | Bruxelles | 2" \
-    "an Urbis building: id and addresses"
+    "an UrbIS building: id and addresses"
 assert_eq "$(sql "SELECT details FROM picc.candidates WHERE source_id = '11'")" '{"georef_id": "G-11", "date_modif": "2020-01-01"}' \
     "source-specific extras are in details"

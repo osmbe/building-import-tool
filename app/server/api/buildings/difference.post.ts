@@ -77,7 +77,7 @@ export default defineEventHandler(async (event) => {
         event,
         createError({
           statusCode: 400,
-          statusMessage: 'Source tag matching is only available for GRB data. Use geometry mode for KNW/PICC/Urbis.'
+          statusMessage: 'Source tag matching is only available for GRB data. Use geometry mode for KNW/PICC/UrbIS.'
         })
       )
     }

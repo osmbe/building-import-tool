@@ -1,5 +1,5 @@
-# Martin configuration for Urbis Building Tiles (Brussels-Capital Region)
-# This file configures the Martin tile server to serve Urbis building data as vector tiles
+# Martin configuration for UrbIS Building Tiles (Brussels-Capital Region)
+# This file configures the Martin tile server to serve UrbIS building data as vector tiles
 
 # Listen configuration
 listen_addresses: "0.0.0.0:3000"
@@ -14,7 +14,7 @@ cache:
   size_mb: 512
   expiry: 1h
 
-# PostgreSQL connection for Urbis data
+# PostgreSQL connection for UrbIS data
 postgres:
   # Unquoted on purpose: since Martin 1.12 environment variables are only substituted in plain (unquoted) YAML
   # scalars. Never write a dollar sign in comments here: older Martin versions also substitute inside comments.

@@ -443,7 +443,7 @@
                       : feat._layer_type === 'picc'
                         ? 'PICC'
                         : feat._layer_type === 'urbis'
-                          ? 'Urbis'
+                          ? 'UrbIS'
                           : 'OSM'
                 }}</span>
                 <span class="opacity-50 font-mono">{{
@@ -767,14 +767,14 @@
                 </div>
               </template>
 
-              <!-- Urbis Building -->
+              <!-- UrbIS Building -->
               <template v-else-if="currentFeature._layer_type === 'urbis'">
                 <div class="flex items-start justify-between mb-3">
                   <div>
                     <div
                       class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest layer-badge-urbis border px-1.5 py-0.5 rounded mb-1.5"
                     >
-                      <Building2 class="h-2.5 w-2.5" />Urbis
+                      <Building2 class="h-2.5 w-2.5" />UrbIS
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">Building</h2>
                     <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
@@ -1038,7 +1038,7 @@ const knwStructuresLayerRef = ref<any>(null)
 // PICC Buildings layer state
 const piccBuildingsLayerRef = ref<any>(null)
 
-// Urbis Buildings layer state
+// UrbIS Buildings layer state
 const urbisBuildingsLayerRef = ref<any>(null)
 
 // Candidate Buildings layer state
@@ -1101,7 +1101,7 @@ const originalCandidateFeatures = ref<any[]>([]) // Store original features for 
 const isCalculatingDifference = ref(false) // Loading state for Get Difference button
 
 // Workflow prerequisites (issue: turn gates into visible guidance).
-// At least one source layer (GRB, KNW, PICC, or Urbis) must be loaded and visible.
+// At least one source layer (GRB, KNW, PICC, or UrbIS) must be loaded and visible.
 const hasSourceLayer = computed(() =>
   Boolean(
     (grbBuildingsLayerRef.value && overlayLayers.value.grbBuildings) ||
@@ -1609,7 +1609,7 @@ const handleLoadPICC = () => {
   }
 }
 
-// Handle Load Urbis Buildings using Vector Tiles from Martin
+// Handle Load UrbIS Buildings using Vector Tiles from Martin
 const handleLoadUrbis = () => {
   if (!map.value) {
     console.error('Map not initialized')
@@ -1617,12 +1617,12 @@ const handleLoadUrbis = () => {
   }
 
   try {
-    // Remove existing Urbis buildings layer if present
+    // Remove existing UrbIS buildings layer if present
     if (urbisBuildingsLayerRef.value) {
       map.value.removeLayer(urbisBuildingsLayerRef.value)
     }
 
-    // Create vector tile source for Urbis buildings
+    // Create vector tile source for UrbIS buildings
     const urbisTileSource = new VectorTileSource({
       format: new MVT(),
       url: candidateTileUrl('urbis'),
@@ -1631,7 +1631,7 @@ const handleLoadUrbis = () => {
       attributions: '© UrbIS Brussels'
     })
 
-    // Style function for Urbis buildings
+    // Style function for UrbIS buildings
     const urbisStyleFunction = (feature: any) => {
       const isHovered = feature.get('hovered')
 
@@ -1660,7 +1660,7 @@ const handleLoadUrbis = () => {
       style: urbisStyleFunction,
       zIndex: 12,
       properties: {
-        title: 'Urbis Buildings',
+        title: 'UrbIS Buildings',
         type: 'overlay'
       }
     })
@@ -1670,7 +1670,7 @@ const handleLoadUrbis = () => {
     map.value.addLayer(urbisTileLayer)
     urbisTileLayer.setVisible(false)
   } catch (error) {
-    console.error('Failed to load Urbis buildings:', error)
+    console.error('Failed to load UrbIS buildings:', error)
   }
 }
 
@@ -1705,7 +1705,7 @@ const toggleGrbBuildings = (visible: boolean) => {
     grbBuildingsLayerRef.value.setVisible(shouldShow)
   }
 
-  // GRB, PICC, and Urbis are mutually exclusive
+  // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
     if (overlayLayers.value.piccBuildings) {
       overlayLayers.value.piccBuildings = false
@@ -1754,7 +1754,7 @@ const togglePiccBuildings = (visible: boolean) => {
     piccBuildingsLayerRef.value.setVisible(shouldShow)
   }
 
-  // GRB, PICC, and Urbis are mutually exclusive
+  // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
     if (overlayLayers.value.grbBuildings) {
       overlayLayers.value.grbBuildings = false
@@ -1779,7 +1779,7 @@ const toggleUrbisBuildings = (visible: boolean) => {
     urbisBuildingsLayerRef.value.setVisible(shouldShow)
   }
 
-  // GRB, PICC, and Urbis are mutually exclusive
+  // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
     if (overlayLayers.value.grbBuildings) {
       overlayLayers.value.grbBuildings = false
@@ -1796,7 +1796,7 @@ const toggleUrbisBuildings = (visible: boolean) => {
   }
 }
 
-// Source dataset is single-select (GRB / KNW / PICC / Urbis are mutually exclusive).
+// Source dataset is single-select (GRB / KNW / PICC / UrbIS are mutually exclusive).
 // Reflect the active one and route clicks through the existing toggle handlers, which
 // already disable the others.
 type SourceKind = 'grb' | 'knw' | 'picc' | 'urbis'
@@ -1812,7 +1812,7 @@ const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
   { key: 'grb', label: 'GRB', varName: '--layer-grb' },
   { key: 'knw', label: 'KNW', varName: '--layer-knw' },
   { key: 'picc', label: 'PICC', varName: '--layer-picc' },
-  { key: 'urbis', label: 'Urbis', varName: '--layer-urbis' }
+  { key: 'urbis', label: 'UrbIS', varName: '--layer-urbis' }
 ]
 
 // Import dates of the official datasets, shown as a tooltip on the source buttons (Issue #59)
@@ -2159,7 +2159,7 @@ const apiErrorMessage = (error: any): string =>
 const calculateDifference = async () => {
   if (!map.value) return
 
-  // Determine which data source is active (GRB, PICC, or Urbis)
+  // Determine which data source is active (GRB, PICC, or UrbIS)
   const grbActive = overlayLayers.value.grbBuildings && grbBuildingsLayerRef.value
   const knwActive = overlayLayers.value.knwStructures && knwStructuresLayerRef.value
   const piccActive = overlayLayers.value.piccBuildings && piccBuildingsLayerRef.value
@@ -2168,7 +2168,7 @@ const calculateDifference = async () => {
 
   // Check if OSM layer and at least one source layer are loaded
   if (!osmBuildingsLayerRef.value || (!grbActive && !knwActive && !piccActive && !urbisActive)) {
-    toast.warning('Layers required', 'Please enable OSM Buildings and a source layer (GRB, KNW, PICC, or Urbis) first.')
+    toast.warning('Layers required', 'Please enable OSM Buildings and a source layer (GRB, KNW, PICC, or UrbIS) first.')
     return
   }
 

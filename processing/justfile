@@ -47,13 +47,13 @@ default:
     @echo "  clean-picc             - Empty the PICC tables"
     @echo "  clean-picc-downloads   - Remove downloaded files"
     @echo ""
-    @echo "🏙️  Urbis Tasks (Brussels - GeoPackage)"
-    @echo "  urbis-download         - Download Urbis GeoPackage"
+    @echo "🏙️  UrbIS Tasks (Brussels - GeoPackage)"
+    @echo "  urbis-download         - Download UrbIS GeoPackage"
     @echo "  urbis-import           - Import downloaded data + create matview"
     @echo "  urbis-full             - Complete workflow (download + import)"
-    @echo "  urbis-update           - Update Urbis data (full re-download)"
-    @echo "  urbis-status           - Show Urbis database statistics"
-    @echo "  clean-urbis            - Empty the Urbis tables"
+    @echo "  urbis-update           - Update UrbIS data (full re-download)"
+    @echo "  urbis-status           - Show UrbIS database statistics"
+    @echo "  clean-urbis            - Empty the UrbIS tables"
     @echo "  clean-urbis-downloads  - Remove downloaded files"
     @echo ""
     @echo "🔧 Database Tasks"
@@ -106,7 +106,7 @@ picc_buildings_layer := "CONSTR_BATIEMPRISE"
 picc_addresses_layer := "ADRESS_POINT"
 picc_data_dir := "data/picc"
 
-# Urbis configuration (Brussels-Capital Region — GeoPackage, no API key needed)
+# UrbIS configuration (Brussels-Capital Region — GeoPackage, no API key needed)
 urbis_download_url := "https://urbisdownload.datastore.brussels/LastVersion/UrbISVector_31370_GPKG_04000_lastversion.zip"
 urbis_buildings_layer := "Buildings"
 urbis_addresses_layer := "Addresses"
@@ -673,13 +673,13 @@ picc-finalize-provinces dumps_dir:
 # URBIS TASKS - Brussels-Capital Region Data Import (GeoPackage)
 # ============================================================================
 
-# Download Urbis GeoPackage (~350MB)
+# Download UrbIS GeoPackage (~350MB)
 urbis-download:
     #!/usr/bin/env bash
     set -e
     mkdir -p {{urbis_data_dir}}
 
-    echo "📥 Downloading Urbis GeoPackage..."
+    echo "📥 Downloading UrbIS GeoPackage..."
     echo "   URL: {{urbis_download_url}}"
     wget --tries=5 -O "{{urbis_data_dir}}/urbis.zip" "{{urbis_download_url}}"
 
@@ -691,14 +691,14 @@ urbis-download:
     echo "📋 Files extracted:"
     ls -la {{urbis_data_dir}}/ 2>/dev/null
     echo ""
-    echo "✅ Urbis data downloaded to {{urbis_data_dir}}"
+    echo "✅ UrbIS data downloaded to {{urbis_data_dir}}"
 
-# Import downloaded Urbis data. The tables and the view are owned by migrations (sql/migrations/urbis): the
+# Import downloaded UrbIS data. The tables and the view are owned by migrations (sql/migrations/urbis): the
 # GeoPackage layers are loaded into urbis._raw_* tables, mapped into urbis.buildings / urbis.addresses by
 # urbis.load_raw() in one transaction, and the view is refreshed concurrently, so tiles keep the previous data
 # until the end.
 urbis-import:
-    @echo "🏙️  Urbis (Brussels) Data Import"
+    @echo "🏙️  UrbIS (Brussels) Data Import"
     @echo "=========================================="
     @echo "📅 Started at: $(date)"
     @echo ""
@@ -712,32 +712,32 @@ urbis-import:
     @echo ""
     @just urbis-status
     @echo ""
-    @echo "✅ Urbis import complete!"
+    @echo "✅ UrbIS import complete!"
 
-# Complete Urbis workflow (download + import)
+# Complete UrbIS workflow (download + import)
 urbis-full: urbis-download urbis-import
 
-# Update Urbis data (no differential API: a full re-download, replacing the data in one transaction)
+# Update UrbIS data (no differential API: a full re-download, replacing the data in one transaction)
 urbis-update: urbis-full
 
-# Show Urbis database statistics
+# Show UrbIS database statistics
 urbis-status:
     @echo ""
-    @echo "📊 Urbis (Brussels) Statistics:"
-    @{{psql_be2osm}} -c "SELECT 'Buildings' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('urbis.buildings')) as size FROM urbis.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('urbis.addresses')) FROM urbis.addresses UNION ALL SELECT 'Buildings with addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('urbis.buildings_with_addresses')) FROM urbis.buildings_with_addresses;" 2>/dev/null || echo "   (Urbis tables not yet created - run just db-migrate first)"
+    @echo "📊 UrbIS (Brussels) Statistics:"
+    @{{psql_be2osm}} -c "SELECT 'Buildings' as metric, COUNT(*)::text as value, pg_size_pretty(pg_total_relation_size('urbis.buildings')) as size FROM urbis.buildings UNION ALL SELECT 'Addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('urbis.addresses')) FROM urbis.addresses UNION ALL SELECT 'Buildings with addresses', COUNT(*)::text, pg_size_pretty(pg_total_relation_size('urbis.buildings_with_addresses')) FROM urbis.buildings_with_addresses;" 2>/dev/null || echo "   (UrbIS tables not yet created - run just db-migrate first)"
     @echo ""
 
-# Empty the Urbis tables (the schema stays: it belongs to the migrations)
+# Empty the UrbIS tables (the schema stays: it belongs to the migrations)
 clean-urbis:
-    @echo "🧹 Emptying the Urbis tables..."
+    @echo "🧹 Emptying the UrbIS tables..."
     @{{psql_be2osm}} -v ON_ERROR_STOP=1 -c "TRUNCATE urbis.buildings, urbis.addresses; REFRESH MATERIALIZED VIEW urbis.buildings_with_addresses;"
-    @echo "✅ Urbis tables emptied"
+    @echo "✅ UrbIS tables emptied"
 
-# Remove downloaded Urbis files
+# Remove downloaded UrbIS files
 clean-urbis-downloads:
-    @echo "🧹 Cleaning Urbis downloads..."
+    @echo "🧹 Cleaning UrbIS downloads..."
     rm -rf {{urbis_data_dir}}
-    @echo "✅ Urbis downloads cleaned"
+    @echo "✅ UrbIS downloads cleaned"
 
 # Load the GeoPackage layers into urbis._raw_buildings, _raw_addresses, _raw_placenames and _raw_municipalities
 # (FIDs preserved as inspire_id: addresses refer to buildings, streets and municipalities by them)
@@ -758,7 +758,7 @@ _urbis-load-raw:
             -nlt PROMOTE_TO_MULTI -lco GEOMETRY_NAME=geom -lco SPATIAL_INDEX=NONE \
             -lco FID=inspire_id -preserve_fid -gt 100000 --config PG_USE_COPY YES
     done
-    echo "✅ Raw Urbis tables loaded"
+    echo "✅ Raw UrbIS tables loaded"
 
 # Replace urbis.buildings / urbis.addresses by the raw tables, in one transaction
 _urbis-load:
@@ -777,7 +777,7 @@ _urbis-load:
     ANALYZE urbis.buildings;
     ANALYZE urbis.addresses;
     SQL
-    echo "✅ Urbis data loaded"
+    echo "✅ UrbIS data loaded"
 
 # Refresh the view; CONCURRENTLY (readers keep the previous contents) once it has been populated
 _urbis-refresh-matview:

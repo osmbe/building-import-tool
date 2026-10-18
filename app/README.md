@@ -55,7 +55,7 @@ by readiness).
 | `/api/auth/*`                                    | OSM OAuth 2.0 login; the session is a JWT cookie                                                                                                                                                                          |
 | `GET /api/meta/data-dates`                       | when each source was last imported                                                                                                                                                                                        |
 | `GET /api/health`, `GET /api/health/ready`       | liveness; readiness for deploys (commit, migrations, candidates views)                                                                                                                                                    |
-| `GET /api/proxy/brussels-wms`                    | proxy for the Urbis WMS (tile size and projection fixes)                                                                                                                                                                  |
+| `GET /api/proxy/brussels-wms`                    | proxy for the UrbIS WMS (tile size and projection fixes)                                                                                                                                                                  |
 
 `server/utils/db.ts` has two pools: `queryGrb` (database `be2osm`) and `queryOsm` (`osmbe`).
 `server/utils/overpass.ts` is the Overpass client; keep its descriptive `User-Agent`, because public instances

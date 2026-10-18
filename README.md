@@ -66,7 +66,7 @@ OSM buildings come from the `osmbe` mirror (updated daily), or live from Overpas
 |---|---|---|
 | GRB + KNW | GitHub Actions (`grb-import.yml`), published on the server | difference downloads (`grb-update`, manual for now) |
 | PICC | GitHub Actions, one job per province | ArcGIS REST changes since the last import (`picc-update`, manual for now) |
-| Urbis | GitHub Actions or on the server | monthly full re-download (cron) |
+| UrbIS | GitHub Actions or on the server | monthly full re-download (cron) |
 | OSM | GitHub Actions or on the server (imposm3) | daily Geofabrik diffs (cron) |
 
 Full imports run on GitHub runners, not on the server. A workflow builds the source's schema in a throwaway

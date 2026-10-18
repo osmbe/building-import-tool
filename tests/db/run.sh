@@ -30,7 +30,7 @@ fi
 echo "▶ Preparing base databases"
 # fresh: exactly what the production init scripts create
 psql_db -d postgres -c "CREATE DATABASE be2osm_fresh TEMPLATE be2osm" >/dev/null
-# v7088: the GRB schema before migration 001 (commit 7088df9) and its FDW to osmbe, current PICC/Urbis schemas
+# v7088: the GRB schema before migration 001 (commit 7088df9) and its FDW to osmbe, current PICC/UrbIS schemas
 psql_db -d postgres -c "CREATE DATABASE be2osm_v7088" >/dev/null
 psql_db -d be2osm_v7088 -f - <"$ROOT/tests/db/schemas/be2osm-grb-7088df9.sql" >/dev/null
 psql_db -d be2osm_v7088 -f - <"$ROOT/tests/db/schemas/be2osm-fdw-7088df9.sql" >/dev/null

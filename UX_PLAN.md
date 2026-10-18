@@ -7,7 +7,7 @@ redesign. Everything below is grounded in the current code; file references incl
 ## The core job (what a mapper actually does)
 
 1. Navigate to an area they want to improve.
-2. Turn on a source layer (GRB / KNW / PICC / Urbis) and OSM Buildings.
+2. Turn on a source layer (GRB / KNW / PICC / UrbIS) and OSM Buildings.
 3. Zoom to >= 16.
 4. Run "Get Difference" to find candidates missing from OSM.
 5. Review candidates, optionally simplify geometry.
@@ -38,7 +38,7 @@ the app feel less trustworthy than it is.
 **1. A persistent "Workflow status" strip instead of gating toasts.**
 Replace the three validation toasts in `calculateDifference` (`InteractiveMap.vue:1606,1615,1621`)
 with an always-visible compact checklist near the "Get Difference" button:
-- ☐ Source layer on (GRB/KNW/PICC/Urbis) → click to open the Layers panel
+- ☐ Source layer on (GRB/KNW/PICC/UrbIS) → click to open the Layers panel
 - ☐ OSM Buildings on
 - ☐ Zoom >= 16 (shows current zoom, with a "Zoom to 16" action)
 Each item flips to ☑ as satisfied; the button enables only when all are met. The user
@@ -94,8 +94,8 @@ but reflects edits made in the last 24h." Show a subtle "live" badge on results 
 Effort: S. Impact: Medium.
 
 **8. Make the mutually-exclusive layer behavior legible.** Toggling GRB silently disables
-PICC/Urbis/KNW (`InteractiveMap.vue:1160-1257`). Group these four as a single-select control
-("Source dataset: GRB | KNW | PICC | Urbis") so exclusivity is visually built in, rather than
+PICC/UrbIS/KNW (`InteractiveMap.vue:1160-1257`). Group these four as a single-select control
+("Source dataset: GRB | KNW | PICC | UrbIS") so exclusivity is visually built in, rather than
 four independent toggles that mysteriously turn each other off.
 Effort: M. Impact: Medium.
 

@@ -1,7 +1,7 @@
 # Processing: imports, updates and migrations
 
 Everything that downloads, imports or changes data is a [`just`](https://github.com/casey/just) recipe in
-`justfile`. The recipes call standard tools: ogr2ogr (GDAL) for GRB, PICC and Urbis, imposm3 for OSM, and psql
+`justfile`. The recipes call standard tools: ogr2ogr (GDAL) for GRB, PICC and UrbIS, imposm3 for OSM, and psql
 for SQL. There is no custom processing code. The tools come in this folder's Docker image, which CI builds and
 publishes as `ghcr.io/osmbe/building-import-tool/processing`.
 
@@ -29,7 +29,7 @@ To build the image yourself: `docker compose build processing`. imposm3 is built
 |---|---|---|---|
 | GRB + KNW | `grb-full` (order, wait, download, import) or `grb-import` on downloaded files; `grb-import-remote` runs it on GitHub Actions | `grb-update` | `grb-status`, `grb-status-orders` |
 | PICC | `picc-full` (download, import); `picc-province-import <PROVINCE>` for one province; `picc-import-remote` | `picc-update` | `picc-status` |
-| Urbis | `urbis-full` (download, import) | `urbis-update` | `urbis-status` |
+| UrbIS | `urbis-full` (download, import) | `urbis-update` | `urbis-status` |
 | OSM | `osm-download` then `osm-import`; `osm-import-remote` | `osm-update` | `osm-status` |
 | all | | | `db-sizes`, `db-migrate --status` |
 
@@ -71,7 +71,7 @@ The CI import (`picc-import.yml`) runs one job per province (`picc-province-load
 `picc-finalize-provinces`. `picc-update` fetches the objects changed since the last import from the ArcGIS REST
 service (filtered on `DATE_MODIF`) and replaces them.
 
-### Urbis (Brussels)
+### UrbIS (Brussels)
 
 `urbis-download` fetches the UrbIS vector GeoPackage (about 350 MB, Lambert 72). `urbis.load_raw()` resolves
 street and municipality names through its lookup layers. There is no differential API: `urbis-update` downloads

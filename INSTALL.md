@@ -151,11 +151,11 @@ data, so the site keeps working during an import. Start them from **Actions** on
 gh workflow run "OSM Import" -R osmbe/building-import-tool       # 30-60 minutes
 gh workflow run "GRB Import" -R osmbe/building-import-tool       # 1-2 hours, needs DIGITAL_VLAANDEREN_API_KEY
 gh workflow run "PICC Import" -R osmbe/building-import-tool
-gh workflow run "Urbis Import" -R osmbe/building-import-tool
+gh workflow run "UrbIS Import" -R osmbe/building-import-tool
 ```
 
 The workflow fails if the restore job fails; the job log is in the workflow output (see docs/RUNBOOK.md). Updates
-run on their own afterwards: OSM daily and Urbis monthly. GRB and PICC updates are started by hand for now.
+run on their own afterwards: OSM daily and UrbIS monthly. GRB and PICC updates are started by hand for now.
 
 Check the result:
 

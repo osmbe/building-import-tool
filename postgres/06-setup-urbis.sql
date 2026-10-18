@@ -1,6 +1,6 @@
--- Urbis (Brussels-Capital Region) Schema Setup
+-- UrbIS (Brussels-Capital Region) Schema Setup
 -- The tables, urbis.load_raw() and the materialized view come from the migrations in
--- processing/sql/migrations/urbis/ (`just db-migrate`, also run by every Urbis import recipe).
+-- processing/sql/migrations/urbis/ (`just db-migrate`, also run by every UrbIS import recipe).
 
 \c be2osm
 
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS urbis.import_meta (
     imported_at TIMESTAMPTZ NOT NULL
 );
 
-\echo '✓ Urbis schema created'
+\echo '✓ UrbIS schema created'
 \echo ''
 \echo 'Next steps:'
 \echo '  1. Create the tables: just db-migrate'

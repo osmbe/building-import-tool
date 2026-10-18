@@ -116,13 +116,13 @@ working meanwhile. They need free disk for the copy: check `just db-sizes` first
 
 ## Restores, imports and updates
 
-- **CI imports** (`GRB Import`, `PICC Import`, `Urbis Import`, `OSM Import`) end by starting the
+- **CI imports** (`GRB Import`, `PICC Import`, `UrbIS Import`, `OSM Import`) end by starting the
   `<source>-restore` job. The workflow waits for it and fails when the restore fails.
-- **Updates:** the OSM update runs daily and the Urbis update monthly. The GRB and PICC update crons stay paused
+- **Updates:** the OSM update runs daily and the UrbIS update monthly. The GRB and PICC update crons stay paused
   until a manual run (Actions → GRB Update / PICC Update → Run workflow) has confirmed that the real difference
   files / ArcGIS fields are read correctly: check the job log for the removed/changed/added counts, then add the
   `schedule:` back in the workflow.
-- **GRB, PICC and Urbis restores** load the dump as `<schema>_next` next to the live data, check it and swap it in
+- **GRB, PICC and UrbIS restores** load the dump as `<schema>_next` next to the live data, check it and swap it in
   (`processing/scripts/publish-schema.sh`), then recreate the source's tile server. Tiles and the difference API
   keep serving the previous data until the swap. A refused or failed restore leaves the live data as it was; the
   job log says why:

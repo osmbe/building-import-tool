@@ -55,7 +55,7 @@
         </button>
       </div>
       <p class="text-[9px] text-muted-foreground mt-2 leading-relaxed">
-        <template v-if="matchMode === 'geometry'">Spatial: unmatched buildings in view (GRB, PICC, or Urbis)</template>
+        <template v-if="matchMode === 'geometry'">Spatial: unmatched buildings in view (GRB, PICC, or UrbIS)</template>
         <template v-else-if="matchMode === 'source'">Missing source:geometry:oidn tag (GRB only)</template>
         <template v-else>Spatially unmatched AND missing source tag (GRB only)</template>
       </p>
@@ -114,7 +114,7 @@ import { useMatchMode } from '~/composables/useMatchMode'
 
 withDefaults(defineProps<{ sourceSupportsTags?: boolean }>(), { sourceSupportsTags: true })
 
-const tagsUnavailableMessage = 'Source and Both modes need GRB data (PICC, Urbis and KNW have no source tags in OSM).'
+const tagsUnavailableMessage = 'Source and Both modes need GRB data (PICC, UrbIS and KNW have no source tags in OSM).'
 
 const { matchMode, geometryThreshold, useOverpass, setMatchMode, setGeometryThreshold, setUseOverpass } = useMatchMode()
 const collapsed = ref(false)

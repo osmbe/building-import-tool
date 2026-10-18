@@ -115,7 +115,7 @@ const knwTags = (props: CandidateProperties): Record<string, string> => {
  * The OSM tags of a candidate, per source (docs/GRB_PROPERTY_MAPPINGS.md, issues #22, #49 and #53):
  * - GRB: building=yes for the building types only (gbg-1, gbg-2, gba-1); a verdieping (gba-1) gets a fixme;
  * - KNW: the default tags of its type, no building tag;
- * - PICC and Urbis: building=yes;
+ * - PICC and UrbIS: building=yes;
  * - source:geometry:date (survey date) and source:geometry:ref (GRB and KNW reference) when known;
  * - addr:* when the candidate has exactly one address (not for KNW).
  */

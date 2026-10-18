@@ -25,15 +25,15 @@ The app reads both through two connection pools (`app/server/utils/db.ts`); the 
 | `grb.buildings_with_addresses` | materialized view: one row per polygon, its addresses (joined by geometry, see [GRB_ADDRESS_JOIN.md](GRB_ADDRESS_JOIN.md)), its parent building, geometry in EPSG:3857 |
 | `grb.candidates`, `grb.knw_candidates` | the candidates contract (below) |
 
-### PICC (Wallonia) and Urbis (Brussels)
+### PICC (Wallonia) and UrbIS (Brussels)
 
 `picc.buildings` (EPSG:31370, `fid`: the objectid, made unique when a province download repeats it) and
-`picc.addresses`, then `picc.buildings_with_addresses` and `picc.candidates`. Urbis has the same layout:
-`urbis.buildings` (`building_id` = the Urbis inspire_id), `urbis.addresses`, the view and `urbis.candidates`.
+`picc.addresses`, then `picc.buildings_with_addresses` and `picc.candidates`. UrbIS has the same layout:
+`urbis.buildings` (`building_id` = the UrbIS inspire_id), `urbis.addresses`, the view and `urbis.candidates`.
 
 Every load goes through raw tables: ogr2ogr writes the downloaded files into `<schema>._raw_*`, and one SQL function
 (`picc.load_raw()`, `urbis.load_raw()`) maps them into the tables. That function is the only place that knows the
-source formats (ICAR and ADRESS_POINT addresses for PICC; street and municipality lookups for Urbis).
+source formats (ICAR and ADRESS_POINT addresses for PICC; street and municipality lookups for UrbIS).
 
 ### The candidates contract
 
@@ -48,7 +48,7 @@ same columns, types and order:
 | `type_code`, `type_label` | the source's classification (GRB LBLTYPE, KNW type, PICC nature) |
 | `survey_date`, `origin_label` | when and how the object was surveyed (`YYYY-MM-DD`) |
 | `area_m2` | area in m² |
-| `parent_id`, `parent_type_label`, `parent_part_count`, `parent_area_m2` | the GRB building or the Urbis block it belongs to |
+| `parent_id`, `parent_type_label`, `parent_part_count`, `parent_area_m2` | the GRB building or the UrbIS block it belongs to |
 | `addresses`, `street_names`, `postcodes`, `municipalities`, `address_count` | the addresses inside it |
 | `details` | jsonb, source-specific extras; tiles carry each key as a property |
 | `geom` | EPSG:3857 |
@@ -82,7 +82,7 @@ The rules for writing migrations are in [CONTRIBUTING.md](../CONTRIBUTING.md#cha
 
 ## Imports: build next to the live data, then swap
 
-A full import never empties live tables. The GRB, PICC and Urbis import workflows (`.github/workflows/*-import.yml`):
+A full import never empties live tables. The GRB, PICC and UrbIS import workflows (`.github/workflows/*-import.yml`):
 
 1. start a throwaway PostGIS on the GitHub runner and run the `just` recipe in the processing image;
 2. rename the schema to `<schema>_next` and `pg_dump` it;
@@ -112,7 +112,7 @@ The materialized views are then refreshed `CONCURRENTLY`, so readers keep the ol
 Caddy (`caddy/Caddyfile`) is the only entry point. TLS terminates upstream, in Nginx Proxy Manager.
 
 - `/tiles/<source>/*` goes to that source's Martin server. Each server's config (`config/martin/*.yaml`) fixes the
-  view, the properties and the zoom range (10–22); GRB, PICC and Urbis serve only their `candidates` source(s).
+  view, the properties and the zoom range (10–22); GRB, PICC and UrbIS serve only their `candidates` source(s).
 - `/webhook/*` goes to the job server.
 - Everything else goes to Nuxt.
 

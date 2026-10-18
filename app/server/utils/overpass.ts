@@ -169,7 +169,7 @@ export interface OverpassFeature {
 export interface OverpassBuildings {
   /** GeoJSON GeometryCollection (EPSG:4326) of building footprints, or null if none. */
   geomCollection: string | null
-  /** Same collection in Web Mercator (EPSG:3857), for the PICC / Urbis queries. */
+  /** Same collection in Web Mercator (EPSG:3857), for the PICC / UrbIS queries. */
   geomCollection3857: string | null
   /** Number of building footprints returned. */
   totalOsm: number

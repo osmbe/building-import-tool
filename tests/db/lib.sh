@@ -6,7 +6,7 @@ COMPOSE=(docker compose --progress quiet -f "$ROOT/docker-compose.test.yml")
 
 # Base databases created by run.sh, cloned into be2osm by reset_db.
 #   fresh  : production init scripts only (what a new volume gets, before migrations)
-#   v7088  : the GRB schema of commit 7088df9 (before migration 001) and its FDW, plus the current PICC/Urbis schemas
+#   v7088  : the GRB schema of commit 7088df9 (before migration 001) and its FDW, plus the current PICC/UrbIS schemas
 #   production : tests/db/schemas/be2osm-production.sql (schema snapshot of the server), when committed
 CASE_FAILURES=0
 

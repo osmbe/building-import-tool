@@ -214,7 +214,7 @@ describe.skipIf(!PORT)('API against the fixture database', () => {
     await expect(normalise(response)).toMatchFileSnapshot('__snapshots__/difference-picc-geometry.json')
   })
 
-  it('Urbis geometry mode hides the building matched by OSM', async () => {
+  it('UrbIS geometry mode hides the building matched by OSM', async () => {
     const response = await post({ bounds: AREAS.urbis, dataSource: 'urbis', matchMode: 'geometry' })
     expect(response.features.map((f) => f.properties?.source_id)).toEqual(['21'])
     expect(response.features[0]?.properties).toMatchObject({ address_count: 2 })

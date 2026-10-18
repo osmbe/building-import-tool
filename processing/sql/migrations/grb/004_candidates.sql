@@ -6,14 +6,14 @@
 --   fid             unique, stable feature id (tile feature id)
 --   source          grb | knw | picc | urbis
 --   entity          GRB entity (Gbg, Gba, Knw); NULL elsewhere
---   source_id       the object's id in the source (OIDN, PICC objectid, Urbis id)
+--   source_id       the object's id in the source (OIDN, PICC objectid, UrbIS id)
 --   source_ref      reference written to OSM as source:geometry:ref (Entity/OIDN); NULL when the source has none
 --   type_code       source type code (KNW type, PICC nature code)
 --   type_label      source type label (GRB LBLTYPE, KNW type, PICC nature)
 --   survey_date     YYYY-MM-DD (source:geometry:date)
 --   origin_label    how the geometry was measured (GRB, KNW)
 --   area_m2         area of the polygon
---   parent_*        the object this polygon belongs to: the GRB building (gebouw_id) or the Urbis building block
+--   parent_*        the object this polygon belongs to: the GRB building (gebouw_id) or the UrbIS building block
 --   addresses ...   addresses inside the polygon (text lists) and their count; NULL / 0 for KNW
 --   details         remaining source-specific fields (in tiles, ST_AsMVT writes each key as a property: keys
 --                   must not clash with the columns above)

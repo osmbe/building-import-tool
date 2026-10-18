@@ -7,7 +7,7 @@ set -euo pipefail
 
 SRC=/fixtures
 DATA=/work/data
-LAMBERT=EPSG:31370 # native CRS of GRB, PICC and Urbis downloads
+LAMBERT=EPSG:31370 # native CRS of GRB, PICC and UrbIS downloads
 
 shp() { # <geojson> <out.shp>
     ogr2ogr -f "ESRI Shapefile" "$2" "$1" -t_srs "$LAMBERT" -lco ENCODING=UTF-8

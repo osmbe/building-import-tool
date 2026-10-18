@@ -109,7 +109,7 @@ describe('candidateTags: buildings (#53)', () => {
     expect(candidateTags(candidate({ type_label: 'VERDIEPING' })).fixme).toBe(VERDIEPING_FIXME)
   })
 
-  it('tags PICC and Urbis buildings whatever their type label (the GRB allow-list is GRB only)', () => {
+  it('tags PICC and UrbIS buildings whatever their type label (the GRB allow-list is GRB only)', () => {
     expect(candidateTags(picc({ type_label: 'Batiment' })).building).toBe('yes')
     expect(candidateTags(picc({ type_label: 'verdieping' })).fixme).toBeUndefined()
     expect(candidateTags(urbis()).building).toBe('yes')
@@ -210,7 +210,7 @@ describe('candidateTags: addresses (#49)', () => {
     })
   })
 
-  it('writes the address of PICC and Urbis buildings too', () => {
+  it('writes the address of PICC and UrbIS buildings too', () => {
     expect(
       candidateTags(picc({ address_count: 1, addresses: 'Rue de Fer 5', street_names: 'Rue de Fer' }))
     ).toMatchObject({ 'addr:street': 'Rue de Fer', 'addr:housenumber': '5' })

@@ -300,7 +300,7 @@
   background: hsl(var(--layer-picc));
   box-shadow: 0 0 4px hsl(var(--layer-picc) / 0.6);
 }
-/* Urbis variant — teal-cyan */
+/* UrbIS variant — teal-cyan */
 .feature-pill--urbis {
   color: hsl(var(--layer-urbis));
   background: hsl(var(--layer-urbis) / 0.06);

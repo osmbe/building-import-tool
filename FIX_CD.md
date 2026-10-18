@@ -22,7 +22,7 @@ webhook. It checks the result and rolls back automatically if the new app doesn'
 - [ ] **CI is green on the latest commit of `main`**
   (<https://github.com/osmbe/building-import-tool/actions/workflows/ci.yml>). The script pulls the images CI built
   for that commit.
-- [ ] **No import workflow is running** (Actions → GRB/PICC/Urbis/OSM Import). And don't start the GRB Import
+- [ ] **No import workflow is running** (Actions → GRB/PICC/UrbIS/OSM Import). And don't start the GRB Import
   before the upgrade: the old restore script on the server empties the GRB tables and can't load the new dump
   format.
 - [ ] **You can run `docker` on the server** (root, or a user in the `docker` group) and you are the owner of the

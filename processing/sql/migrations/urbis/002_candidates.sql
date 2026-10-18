@@ -1,5 +1,5 @@
--- Urbis side of the candidates contract: see processing/sql/migrations/grb/004_candidates.sql for the columns.
--- The parent is the Urbis building block.
+-- UrbIS side of the candidates contract: see processing/sql/migrations/grb/004_candidates.sql for the columns.
+-- The parent is the UrbIS building block.
 CREATE OR REPLACE VIEW urbis.candidates AS
 SELECT
     b.building_id::bigint AS fid,

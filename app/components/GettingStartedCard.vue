@@ -55,7 +55,7 @@ const dismissed = ref(false)
 const visible = computed(() => !dismissed.value && !hasCandidates)
 
 const steps = [
-  'Pan to an area, then turn on a source dataset (GRB, KNW, PICC or Urbis) plus OSM Buildings.',
+  'Pan to an area, then turn on a source dataset (GRB, KNW, PICC or UrbIS) plus OSM Buildings.',
   'Zoom in to street level so the building layers load.',
   'Run "Get Difference" to list buildings present in the source but missing from OSM.',
   'Review the candidates, then open them in JOSM to check and upload.'

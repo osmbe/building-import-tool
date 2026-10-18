@@ -46,7 +46,7 @@ jobs:
       - name: Build processing image
         run: docker build -t processing ./processing
 
-      - name: Import Urbis data
+      - name: Import UrbIS data
         run: |
           docker run --network host \
             -v ${{ github.workspace }}/processing:/work \
@@ -57,7 +57,7 @@ jobs:
             processing just urbis-full
 
       # The server restores it next to its live data and swaps it in (processing/scripts/publish-schema.sh)
-      - name: Create Urbis dump (schema urbis_next)
+      - name: Create UrbIS dump (schema urbis_next)
         run: |
           PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 \
             -c "ALTER SCHEMA urbis RENAME TO urbis_next"
@@ -67,7 +67,7 @@ jobs:
             be2osm | gzip > urbis.sql.gz
           ls -lh urbis.sql.gz
 
-      - name: Upload Urbis dump
+      - name: Upload UrbIS dump
         uses: actions/upload-artifact@v7
         with:
           name: urbis-dump

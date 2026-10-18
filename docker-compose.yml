@@ -137,7 +137,7 @@ services:
     networks:
       - be2osm
 
-  # Martin Tile Server - Urbis Data (Brussels)
+  # Martin Tile Server - UrbIS Data (Brussels)
   urbis-tiles:
     image: ghcr.io/maplibre/martin:1.16.1
     container_name: be2osm-urbis-tiles

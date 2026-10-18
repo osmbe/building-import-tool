@@ -1,4 +1,4 @@
-name: Urbis Update
+name: UrbIS Update
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Trigger Urbis update on server
+      - name: Trigger UrbIS update on server
         if: ${{ vars.WEBHOOK_URL != '' }}
         timeout-minutes: 300
         env:

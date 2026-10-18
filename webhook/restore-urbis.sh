@@ -1,6 +1,6 @@
 #!/bin/bash
-# Restore the Urbis dump of a CI import (Urbis Import workflow): it is restored as urbis_next next to the live
-# schema, checked and swapped in (processing/scripts/publish-schema.sh), then the Urbis tile server is
+# Restore the UrbIS dump of a CI import (UrbIS Import workflow): it is restored as urbis_next next to the live
+# schema, checked and swapped in (processing/scripts/publish-schema.sh), then the UrbIS tile server is
 # recreated so its tile cache does not serve the previous data.
 set -euo pipefail
 

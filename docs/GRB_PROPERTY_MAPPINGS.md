@@ -1,6 +1,6 @@
 # Property mappings for the JOSM export
 
-How the candidates of every source (GRB, KNW, PICC, Urbis) become OpenStreetMap tags when they are exported to
+How the candidates of every source (GRB, KNW, PICC, UrbIS) become OpenStreetMap tags when they are exported to
 JOSM.
 
 ## 1. How the export works
@@ -25,7 +25,7 @@ tests compare the export of every source with a recorded snapshot (`app/tests/in
 
 GBG and GBA OIDNs are only unique per entity, so the reference always carries the entity:
 `<entity>/<oidn>`. The entity is stored per polygon (`grb.building_polygons.entity`, set by the GBG/GBA import).
-Source-tag matching (issue #52) compares these `Entity/oidn` keys, not bare numbers. PICC and Urbis have no
+Source-tag matching (issue #52) compares these `Entity/oidn` keys, not bare numbers. PICC and UrbIS have no
 reference in OSM, so they get no `source:geometry:ref`.
 
 ## 2. Buildings
@@ -43,7 +43,7 @@ never tags them as buildings:
 | every other GBA type (`trap`, `afdak`, `luifel`, `loopbrug`, garage entrances, ...) | GBA | not exported |
 | no label | GBG | `building=yes` |
 
-PICC and Urbis buildings always get `building=yes`: the allow-list is GRB only (a PICC nature such as `Batiment`
+PICC and UrbIS buildings always get `building=yes`: the allow-list is GRB only (a PICC nature such as `Batiment`
 is not a GRB type). Refine the generic `building=yes` in JOSM where the actual use is known.
 
 ## 3. KNW (kunstwerken)
