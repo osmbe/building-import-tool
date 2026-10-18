@@ -16,7 +16,7 @@ jobs:
       fail-fast: true
       matrix:
         province: [BRABANT_WALLON, HAINAUT, LIEGE, LUXEMBOURG, NAMUR]
-    name: Process ${{ matrix.province }}
+    name: Process PICC ${{ matrix.province }}
 
     services:
       postgres:
@@ -82,7 +82,7 @@ jobs:
   finalize:
     runs-on: ubuntu-latest
     needs: process-province
-    name: Finalize (merge + matview)
+    name: Finalize PICC (merge + matview)
 
     services:
       postgres:
@@ -159,7 +159,7 @@ jobs:
   import:
     runs-on: ubuntu-latest
     needs: finalize
-    name: Import
+    name: Import PICC
     steps:
       - uses: actions/checkout@v7
       - name: Restore the dump on the server (waits for the job)

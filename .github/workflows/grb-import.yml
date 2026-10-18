@@ -14,7 +14,7 @@ permissions:
 jobs:
   process:
     runs-on: ubuntu-latest
-    name: Process
+    name: Process GRB & KNW
     services:
       postgres:
         image: postgis/postgis:18-3.6
@@ -108,7 +108,7 @@ jobs:
   import:
     runs-on: ubuntu-latest
     needs: process
-    name: Import
+    name: Import GRB & KNW
     steps:
       - uses: actions/checkout@v7
       - name: Restore the dump on the server (waits for the job)
