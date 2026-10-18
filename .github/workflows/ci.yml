@@ -18,8 +18,8 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  app:
-    name: App (fmt, lint, typecheck, unit tests + coverage, build)
+  test-app:
+    name: Test App (fmt, lint, typecheck, unit tests + coverage, build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -38,8 +38,8 @@ jobs:
       - run: npm run test:coverage
       - run: npm run build
 
-  infra:
-    name: Infra (workflows, shell scripts, justfile, compose files)
+  test-infra:
+    name: Test Infra (workflows, shell scripts, justfile, compose files)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -59,8 +59,8 @@ jobs:
           docker compose -f docker-compose.yml config -q
           docker compose -f docker-compose.test.yml config -q
 
-  db:
-    name: Database, imports, Martin and API integration
+  test-db:
+    name: Test Database, imports, Martin and API integration
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -87,9 +87,9 @@ jobs:
           echo "PREVIOUS_DIR=$RUNNER_TEMP/previous" >> "$GITHUB_ENV"
       - run: tests/db/run.sh
 
-  images:
+  build:
     name: Build and push ${{ matrix.image }}
-    needs: [app, infra, db]
+    needs: [test-app, test-infra, test-db]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
