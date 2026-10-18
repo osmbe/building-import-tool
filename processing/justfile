@@ -1024,15 +1024,15 @@ grb-import-remote:
     echo "📥 Downloading GRB dump artifact..."
     rm -rf /tmp/grb-restore
     mkdir -p /tmp/grb-restore
-    gh run download "$RUN_ID" -R "{{gh_repo}}" -n be2osm-dump -D /tmp/grb-restore
+    gh run download "$RUN_ID" -R "{{gh_repo}}" -n grb-dump -D /tmp/grb-restore
 
     # Show artifact size
-    ls -lh /tmp/grb-restore/be2osm.sql.gz
+    ls -lh /tmp/grb-restore/grb.sql.gz
 
     # Restore next to the live schema and swap (sql dump of grb_next, see scripts/publish-schema.sh)
     echo ""
     PGHOST='{{db_host}}' PGPORT='{{db_port}}' PGUSER='{{db_user}}' PGDATABASE='{{be2osm_db}}' \
-        bash scripts/publish-schema.sh grb /tmp/grb-restore/be2osm.sql.gz
+        bash scripts/publish-schema.sh grb /tmp/grb-restore/grb.sql.gz
 
     # Cleanup
     rm -rf /tmp/grb-restore

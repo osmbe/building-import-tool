@@ -1,16 +1,15 @@
-name: OSM Import
+name: OSM (Belgium) Initial import
 
 on:
   workflow_dispatch:
 
-env:
-  POSTGRES_USER: be2osm
-  POSTGRES_PASSWORD: be2osm
-  POSTGRES_DB: be2osm
+permissions:
+  contents: read
 
 jobs:
   process:
     runs-on: ubuntu-latest
+    name: Process
     services:
       postgres:
         image: postgis/postgis:18-3.6
@@ -19,7 +18,7 @@ jobs:
           POSTGRES_PASSWORD: be2osm
           POSTGRES_DB: be2osm
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U be2osm -d be2osm"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -82,6 +81,7 @@ jobs:
   import:
     runs-on: ubuntu-latest
     needs: process
+    name: Import
     steps:
       - uses: actions/checkout@v7
       - name: Restore the dump on the server (waits for the job)

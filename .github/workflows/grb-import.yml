@@ -1,4 +1,4 @@
-name: GRB Import
+name: GRB & KNW (Flanders) Initial import
 
 on:
   workflow_dispatch:
@@ -7,20 +7,14 @@ on:
         description: "Products to download/import (comma-separated: gbg,gba,knw,addresses or all)"
         required: false
         default: "all"
-      download_only:
-        description: "Only validate download step (skip DB import/dump/upload)"
-        required: false
-        type: boolean
-        default: false
 
-env:
-  POSTGRES_USER: be2osm
-  POSTGRES_PASSWORD: be2osm
-  POSTGRES_DB: be2osm
+permissions:
+  contents: read
 
 jobs:
   process:
     runs-on: ubuntu-latest
+    name: Process
     services:
       postgres:
         image: postgis/postgis:18-3.6
@@ -71,21 +65,12 @@ jobs:
       - name: Import GRB data
         run: |
           PRODUCTS="${{ github.event.inputs.products || 'all' }}"
-          DOWNLOAD_ONLY="${{ github.event.inputs.download_only || 'false' }}"
           if [ "$PRODUCTS" = "all" ] || [ -z "$PRODUCTS" ]; then
-            if [ "$DOWNLOAD_ONLY" = "true" ]; then
-              JUST_COMMAND="just grb-order-all && just _grb-wait-for-orders && just grb-download-all"
-            else
-              JUST_COMMAND="just grb-full"
-            fi
+            JUST_COMMAND="just grb-full"
           else
             # Reuse/create orders only for selected products to avoid full reruns
             # Example: products=knw or products=gbg,knw
-            if [ "$DOWNLOAD_ONLY" = "true" ]; then
-              JUST_COMMAND="just grb-download-selected \"$PRODUCTS\""
-            else
-              JUST_COMMAND="just grb-download-selected \"$PRODUCTS\" && just grb-import"
-            fi
+            JUST_COMMAND="just grb-download-selected \"$PRODUCTS\" && just grb-import"
           fi
 
           docker run --network host \
@@ -104,31 +89,30 @@ jobs:
 
       # The server restores it next to its live data and swaps it in (processing/scripts/publish-schema.sh)
       - name: Create GRB dump (schema grb_next)
-        if: ${{ github.event.inputs.download_only != 'true' }}
         run: |
           PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 \
             -c "ALTER SCHEMA grb RENAME TO grb_next"
           PGPASSWORD=be2osm pg_dump -h localhost -U be2osm \
             --no-owner --no-acl \
             -n grb_next \
-            be2osm | gzip > be2osm.sql.gz
-          ls -lh be2osm.sql.gz
+            be2osm | gzip > grb.sql.gz
+          ls -lh grb.sql.gz
 
       - name: Upload GRB dump
-        if: ${{ github.event.inputs.download_only != 'true' }}
         uses: actions/upload-artifact@v7
         with:
-          name: be2osm-dump
-          path: be2osm.sql.gz
+          name: grb-dump
+          path: grb.sql.gz
           retention-days: 7
 
   import:
     runs-on: ubuntu-latest
     needs: process
+    name: Import
     steps:
       - uses: actions/checkout@v7
       - name: Restore the dump on the server (waits for the job)
-        if: ${{ github.event.inputs.download_only != 'true' && vars.WEBHOOK_URL != '' }}
+        if: ${{ vars.WEBHOOK_URL != '' }}
         timeout-minutes: 300
         env:
           WEBHOOK_URL: ${{ vars.WEBHOOK_URL }}

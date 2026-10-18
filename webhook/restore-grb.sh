@@ -16,8 +16,8 @@ rm -rf "${WORK_DIR}"
 mkdir -p "${WORK_DIR}"
 
 echo "[restore-grb] Downloading artifact from run ${RUN_ID} (${REPO})..."
-gh run download "${RUN_ID}" -R "${REPO}" -n be2osm-dump -D "${WORK_DIR}"
-DUMP_FILE="${WORK_DIR}/be2osm.sql.gz"
+gh run download "${RUN_ID}" -R "${REPO}" -n grb-dump -D "${WORK_DIR}"
+DUMP_FILE="${WORK_DIR}/grb.sql.gz"
 [ -f "${DUMP_FILE}" ] || {
     echo "[restore-grb] ERROR: dump file not found at ${DUMP_FILE}" >&2
     exit 1

@@ -12,18 +12,18 @@ snapshot() {
 expected=$(snapshot)
 
 "${COMPOSE[@]}" exec -T postgres pg_dump -U be2osm --data-only --disable-triggers --no-owner --no-acl \
-    -n grb --exclude-table-data=grb.schema_migrations be2osm | gzip | artifact 4242 be2osm-dump be2osm.sql.gz
+    -n grb --exclude-table-data=grb.schema_migrations be2osm | gzip | artifact 4242 grb-dump grb.sql.gz
 
 # Full dumps of grb_next, as the import workflow makes them
 psql_db -c "ALTER SCHEMA grb RENAME TO grb_next" >/dev/null
-"${COMPOSE[@]}" exec -T postgres pg_dump -U be2osm --no-owner --no-acl -n grb_next be2osm | gzip | artifact 4250 be2osm-dump be2osm.sql.gz
+"${COMPOSE[@]}" exec -T postgres pg_dump -U be2osm --no-owner --no-acl -n grb_next be2osm | gzip | artifact 4250 grb-dump grb.sql.gz
 checksum=$(sql "SELECT checksum FROM grb_next.schema_migrations WHERE version = '000_baseline'")
 psql_db -c "UPDATE grb_next.schema_migrations SET checksum = 'other' WHERE version = '000_baseline'" >/dev/null
-"${COMPOSE[@]}" exec -T postgres pg_dump -U be2osm --no-owner --no-acl -n grb_next be2osm | gzip | artifact 4251 be2osm-dump be2osm.sql.gz
+"${COMPOSE[@]}" exec -T postgres pg_dump -U be2osm --no-owner --no-acl -n grb_next be2osm | gzip | artifact 4251 grb-dump grb.sql.gz
 # A KNW-only import (products=knw) has no building polygons
 psql_db -c "UPDATE grb_next.schema_migrations SET checksum = '$checksum' WHERE version = '000_baseline';
   DELETE FROM grb_next.building_polygons" >/dev/null
-"${COMPOSE[@]}" exec -T postgres pg_dump -U be2osm --no-owner --no-acl -n grb_next be2osm | gzip | artifact 4252 be2osm-dump be2osm.sql.gz
+"${COMPOSE[@]}" exec -T postgres pg_dump -U be2osm --no-owner --no-acl -n grb_next be2osm | gzip | artifact 4252 grb-dump grb.sql.gz
 
 restore() { webhook_run -e RESTART_TILES=0 webhook bash /repo/webhook/restore-grb.sh "$1" osmbe/building-import-tool 2>&1; }
 
@@ -67,7 +67,7 @@ grep -q "Run the GRB Import workflow again" <<<"$out" && pass "  and says what t
 assert_eq "$(snapshot)" "$expected" "  and the live data is untouched"
 
 # A broken dump makes the restore fail instead of reporting success
-printf 'CREATE SCHEMA grb_next;\nINSERT INTO grb_next.no_such_table VALUES (1);\n' | gzip | artifact 4343 be2osm-dump be2osm.sql.gz
+printf 'CREATE SCHEMA grb_next;\nINSERT INTO grb_next.no_such_table VALUES (1);\n' | gzip | artifact 4343 grb-dump grb.sql.gz
 assert_fails "a dump with an error fails the restore" restore 4343
 assert_eq "$(snapshot)" "$expected" "  and the live data is untouched"
 assert_eq "$(sql "SELECT count(*) FROM pg_namespace WHERE nspname = 'grb_next'")" "0" "  and the partial restore is dropped"
