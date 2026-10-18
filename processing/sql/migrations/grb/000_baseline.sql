@@ -9,10 +9,6 @@
 
 SELECT to_regclass('grb.building_polygons') IS NULL AS grb_fresh \gset
 
-CREATE TABLE IF NOT EXISTS grb.import_meta (
-    imported_at TIMESTAMPTZ NOT NULL
-);
-
 -- Building polygons (GBG gebouwen + GBA gebouwaanhorigheden), 5M+ rows
 CREATE TABLE IF NOT EXISTS grb.building_polygons (
     id BIGSERIAL PRIMARY KEY,

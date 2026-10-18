@@ -40,8 +40,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client-18
 
-      - name: Initialize database
-        run: PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f postgres/06-setup-urbis.sql
+      - name: Initialize be2osm database
+        run: |
+          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 -f postgres/02-setup-be2osm.sql
+          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 -f postgres/06-setup-urbis.sql
 
       - name: Build processing image
         run: docker build -t processing ./processing

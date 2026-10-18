@@ -34,7 +34,7 @@ services:
       - ./postgres/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
       - ./postgres/02-setup-be2osm.sql:/docker-entrypoint-initdb.d/02-setup-be2osm.sql:ro
       - ./postgres/03-setup-osmbe.sql:/docker-entrypoint-initdb.d/03-setup-osmbe.sql:ro
-      - ./postgres/04-setup-fdw.sql:/docker-entrypoint-initdb.d/04-setup-fdw.sql:ro
+      - ./postgres/04-setup-grb.sql:/docker-entrypoint-initdb.d/04-setup-grb.sql:ro
       - ./postgres/05-setup-picc.sql:/docker-entrypoint-initdb.d/05-setup-picc.sql:ro
       - ./postgres/06-setup-urbis.sql:/docker-entrypoint-initdb.d/06-setup-urbis.sql:ro
       # Older schema versions and fixtures for upgrade tests

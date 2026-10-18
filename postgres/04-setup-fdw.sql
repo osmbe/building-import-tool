@@ -1,4 +1,0 @@
--- Older releases created a foreign data wrapper from be2osm to osmbe here (osm.* foreign tables and a cache).
--- Nothing used it: the API queries osmbe through its own pool. Migration common/001_drop_osm_fdw.sql drops it from
--- existing databases. The file stays, empty, because docker-compose.yml mounts it: changing the postgres service
--- definition would recreate postgres on the server.

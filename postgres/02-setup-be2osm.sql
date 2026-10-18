@@ -11,6 +11,4 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS btree_gin;
 
-CREATE SCHEMA IF NOT EXISTS grb;
-
-\echo '✓ be2osm: extensions and schema grb (tables: just db-migrate)'
+\echo '✓ be2osm: extensions'

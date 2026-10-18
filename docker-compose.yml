@@ -14,7 +14,7 @@ services:
       - /home/debian/building-import-tool-local/postgres/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro,z
       - /home/debian/building-import-tool-local/postgres/02-setup-be2osm.sql:/docker-entrypoint-initdb.d/02-setup-be2osm.sql:ro,z
       - /home/debian/building-import-tool-local/postgres/03-setup-osmbe.sql:/docker-entrypoint-initdb.d/03-setup-osmbe.sql:ro,z
-      - /home/debian/building-import-tool-local/postgres/04-setup-fdw.sql:/docker-entrypoint-initdb.d/04-setup-fdw.sql:ro,z
+      - /home/debian/building-import-tool-local/postgres/04-setup-grb.sql:/docker-entrypoint-initdb.d/04-setup-grb.sql:ro,z
       - /home/debian/building-import-tool-local/postgres/05-setup-picc.sql:/docker-entrypoint-initdb.d/05-setup-picc.sql:ro,z
       - /home/debian/building-import-tool-local/postgres/06-setup-urbis.sql:/docker-entrypoint-initdb.d/06-setup-urbis.sql:ro,z
     # ports:

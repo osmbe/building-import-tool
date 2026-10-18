@@ -62,9 +62,8 @@ jobs:
 
       - name: Initialize be2osm database
         run: |
-          # Only the init script GRB needs: 02 creates the extensions and the grb schema (the tables come
-          # from the migrations, which grb-import runs). 01 (osmbe), 03/04 (OSM/FDW), 05/06 (PICC/Urbis) are skipped.
           PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 -f postgres/02-setup-be2osm.sql
+          PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 -f postgres/04-setup-grb.sql
 
       - name: Build processing image
         run: docker build -t processing ./processing

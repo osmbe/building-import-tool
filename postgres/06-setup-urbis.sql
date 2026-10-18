@@ -4,7 +4,6 @@
 
 \c be2osm
 
-CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE SCHEMA IF NOT EXISTS urbis;
 
 -- When this schema's data was last imported (shown in the app, Issue #59).
