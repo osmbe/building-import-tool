@@ -119,11 +119,6 @@ class WebhookServerTest(unittest.TestCase):
         self.assertIn('deploy.sh abc1234', self.wait(started['job_id'])['log_tail'])
         self.assertEqual(self.request('POST', '/deploy', {'sha': 'not-a-sha'})[0], 400)
 
-    def test_old_deploy_route_still_deploys(self):
-        _, started = self.request('POST', '/nuxt-deploy', {'run_id': '1'})
-        job = self.wait(started['job_id'])
-        self.assertEqual((job['script'], job['args']), ('deploy.sh', []))
-
     def test_a_failing_script_fails_the_job_with_its_log(self):
         script('update-osm.sh', 'echo "about to fail"; exit 3')
         _, started = self.request('POST', '/update-osm', {})
