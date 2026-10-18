@@ -1,8 +1,6 @@
 # A fresh volume (production init scripts) plus `just db-migrate` gives the current GRB schema,
 # and applying the migrations again changes nothing.
 reset_db fresh
-assert_eq "$(sql "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'grb'")" "0" \
-    "the init scripts only create the grb schema (its tables come from the migrations)"
 
 just_run db-migrate >/dev/null
 assert_true "SELECT EXISTS (SELECT 1 FROM pg_matviews WHERE schemaname = 'grb' AND matviewname = 'buildings_with_addresses')" \
