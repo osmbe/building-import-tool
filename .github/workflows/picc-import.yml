@@ -162,6 +162,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: finalize
     steps:
+      - uses: actions/checkout@v7
       - name: Restore the dump on the server (waits for the job)
         if: ${{ vars.WEBHOOK_URL != '' }}
         timeout-minutes: 300
