@@ -1,4 +1,4 @@
-name: PICC (Wallonia) Initial import
+name: PICC (Wallonia) Full import
 
 on:
   workflow_dispatch:

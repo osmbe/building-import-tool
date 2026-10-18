@@ -1,4 +1,4 @@
-name: UrbIS (Brussels) Initial import
+name: UrbIS (Brussels) Full import
 
 on:
   workflow_dispatch:

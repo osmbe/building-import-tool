@@ -1,4 +1,4 @@
-name: OpenStreetMap (Belgium) Initial import
+name: OpenStreetMap (Belgium) Full import
 
 on:
   workflow_dispatch:
