@@ -72,7 +72,10 @@ gunzip -c "$DUMP" | psql -X -q -v ON_ERROR_STOP=1 --single-transaction >/dev/nul
 
 # 2. Checks
 rows=$(psql_q -c "SELECT count(*) FROM ${NEXT}.${MAIN_TABLE}")
-live=$(psql_q -c "SELECT CASE WHEN to_regclass('${SCHEMA}.${MAIN_TABLE}') IS NULL THEN 0 ELSE (SELECT count(*) FROM ${SCHEMA}.${MAIN_TABLE}) END")
+live=0
+if [ "$(psql_q -c "SELECT to_regclass('${SCHEMA}.${MAIN_TABLE}') IS NOT NULL")" = true ]; then
+    live=$(psql_q -c "SELECT count(*) FROM ${SCHEMA}.${MAIN_TABLE}")
+fi
 log "${NEXT}.${MAIN_TABLE}: ${rows} rows (live: ${live})"
 if [ "$rows" -eq 0 ]; then
     drop_next
