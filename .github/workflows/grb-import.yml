@@ -75,6 +75,7 @@ jobs:
 
           docker run --network host \
             -v ${{ github.workspace }}/processing:/work \
+            -e CI=1 \
             -e POSTGRES_HOST=localhost \
             -e POSTGRES_PORT=5432 \
             -e POSTGRES_USER=be2osm \

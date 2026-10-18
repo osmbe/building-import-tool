@@ -134,7 +134,7 @@ psql_postgres := "psql -h " + db_host + " -p " + db_port + " -U " + db_user + " 
 osm-download:
     @echo "📥 Downloading OSM data for {{osm_region}}..."
     @mkdir -p data/osm
-    curl -L -o "{{osm_file}}" "https://download.geofabrik.de/{{osm_region}}-latest.osm.pbf"
+    curl --no-progress-meter -L -o "{{osm_file}}" "https://download.geofabrik.de/{{osm_region}}-latest.osm.pbf"
     @echo "✅ Downloaded to {{osm_file}}"
 
 # Import OSM buildings using imposm3 and transform to schema
@@ -448,14 +448,14 @@ picc-download:
 
     echo ""
     echo "📥 Downloading PICC buildings (FileGDB ~3.6GB)..."
-    wget --tries=5 -O "{{picc_data_dir}}/picc_buildings.zip" "$BUILDINGS_URL"
+    wget --no-verbose --tries=5 -O "{{picc_data_dir}}/picc_buildings.zip" "$BUILDINGS_URL"
     echo "   Extracting..."
     unzip -o "{{picc_data_dir}}/picc_buildings.zip" -d "{{picc_data_dir}}"
     rm "{{picc_data_dir}}/picc_buildings.zip"
 
     echo ""
     echo "📥 Downloading ICAR addresses (shapefile ~98MB)..."
-    wget --tries=5 -O "{{picc_data_dir}}/icar_addresses.zip" "$ADDRESSES_URL"
+    wget --no-verbose --tries=5 -O "{{picc_data_dir}}/icar_addresses.zip" "$ADDRESSES_URL"
     echo "   Extracting..."
     unzip -o "{{picc_data_dir}}/icar_addresses.zip" -d "{{picc_data_dir}}"
     rm "{{picc_data_dir}}/icar_addresses.zip"
@@ -609,7 +609,7 @@ picc-province-import province:
 
     echo ""
     echo "📥 Downloading ${PROVINCE}..."
-    wget --tries=5 -O "${DATA_DIR}/province.zip" "$PROVINCE_URL"
+    wget --no-verbose --tries=5 -O "${DATA_DIR}/province.zip" "$PROVINCE_URL"
     echo "   Extracting..."
     unzip -o "${DATA_DIR}/province.zip" -d "${DATA_DIR}"
     rm "${DATA_DIR}/province.zip"
@@ -681,7 +681,7 @@ urbis-download:
 
     echo "📥 Downloading UrbIS GeoPackage..."
     echo "   URL: {{urbis_download_url}}"
-    wget --tries=5 -O "{{urbis_data_dir}}/urbis.zip" "{{urbis_download_url}}"
+    wget --no-verbose --tries=5 -O "{{urbis_data_dir}}/urbis.zip" "{{urbis_download_url}}"
 
     echo "   Extracting..."
     unzip -o "{{urbis_data_dir}}/urbis.zip" -d "{{urbis_data_dir}}"
