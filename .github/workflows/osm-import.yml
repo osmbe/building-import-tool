@@ -5,6 +5,10 @@ on:
 
 permissions:
   contents: read
+  packages: read
+
+env:
+  PROCESSING_IMAGE: ghcr.io/${{ github.repository }}/processing:sha-${{ github.sha }}
 
 jobs:
   process:
@@ -47,8 +51,13 @@ jobs:
           PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f postgres/01-init-db.sql
           PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -f postgres/03-setup-osmbe.sql
 
-      - name: Build processing image
-        run: docker build -t processing ./processing
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull processing image
+        run: docker pull "$PROCESSING_IMAGE"
 
       - name: Download and import OSM
         run: |
@@ -58,7 +67,7 @@ jobs:
             -e POSTGRES_PORT=5432 \
             -e POSTGRES_USER=be2osm \
             -e POSTGRES_PASSWORD=be2osm \
-            processing just osm-download osm-import
+            "$PROCESSING_IMAGE" just osm-download osm-import
 
       - name: Create OSM dump
         run: |

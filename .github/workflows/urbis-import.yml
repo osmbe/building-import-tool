@@ -5,6 +5,10 @@ on:
 
 permissions:
   contents: read
+  packages: read
+
+env:
+  PROCESSING_IMAGE: ghcr.io/${{ github.repository }}/processing:sha-${{ github.sha }}
 
 jobs:
   process:
@@ -43,8 +47,13 @@ jobs:
           PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 -f postgres/02-setup-be2osm.sql
           PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 -f postgres/06-setup-urbis.sql
 
-      - name: Build processing image
-        run: docker build -t processing ./processing
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull processing image
+        run: docker pull "$PROCESSING_IMAGE"
 
       - name: Import UrbIS data
         run: |
@@ -54,7 +63,7 @@ jobs:
             -e POSTGRES_PORT=5432 \
             -e POSTGRES_USER=be2osm \
             -e POSTGRES_PASSWORD=be2osm \
-            processing just urbis-full
+            "$PROCESSING_IMAGE" just urbis-full
 
       # The server restores it next to its live data and swaps it in (processing/scripts/publish-schema.sh)
       - name: Create UrbIS dump (schema urbis_next)

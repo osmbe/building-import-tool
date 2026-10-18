@@ -5,6 +5,10 @@ on:
 
 permissions:
   contents: read
+  packages: read
+
+env:
+  PROCESSING_IMAGE: ghcr.io/${{ github.repository }}/processing:sha-${{ github.sha }}
 
 jobs:
   # ──────────────────────────────────────────────────────────────────────────
@@ -56,8 +60,13 @@ jobs:
           PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 -f postgres/02-setup-be2osm.sql
           PGPASSWORD=be2osm psql -h localhost -U be2osm -d be2osm -v ON_ERROR_STOP=1 -f postgres/05-setup-picc.sql
 
-      - name: Build processing image
-        run: docker build -t processing ./processing
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull processing image
+        run: docker pull "$PROCESSING_IMAGE"
 
       - name: Import province ${{ matrix.province }}
         run: |
@@ -67,7 +76,7 @@ jobs:
             -e POSTGRES_PORT=5432 \
             -e POSTGRES_USER=be2osm \
             -e POSTGRES_PASSWORD=be2osm \
-            processing just picc-province-import ${{ matrix.province }}
+            "$PROCESSING_IMAGE" just picc-province-import ${{ matrix.province }}
 
       - name: Upload province dump
         uses: actions/upload-artifact@v7
@@ -126,8 +135,13 @@ jobs:
       - name: List province dumps
         run: ls -lh dumps/
 
-      - name: Build processing image
-        run: docker build -t processing ./processing
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull processing image
+        run: docker pull "$PROCESSING_IMAGE"
 
       - name: Merge the provinces and refresh the view
         run: |
@@ -138,7 +152,7 @@ jobs:
             -e POSTGRES_PORT=5432 \
             -e POSTGRES_USER=be2osm \
             -e POSTGRES_PASSWORD=be2osm \
-            processing just picc-finalize-provinces /dumps
+            "$PROCESSING_IMAGE" just picc-finalize-provinces /dumps
 
       # The server restores it next to its live data and swaps it in (processing/scripts/publish-schema.sh)
       - name: Create final PICC dump (schema picc_next)
