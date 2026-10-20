@@ -186,7 +186,7 @@ END $$;
 
 -- Triggers: updated_at, and the Web Mercator geometry when it is missing. The functions are in public, so the
 -- triggers of a schema restored as grb_next (CI dump) find them too.
-CREATE OR REPLACE FUNCTION public.update_building_polygon()
+CREATE OR REPLACE FUNCTION grb.update_building_polygon()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -197,7 +197,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.update_kunstwerk_polygon()
+CREATE OR REPLACE FUNCTION grb.update_kunstwerk_polygon()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -211,7 +211,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.update_address()
+CREATE OR REPLACE FUNCTION grb.update_address()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -222,7 +222,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.update_building()
+CREATE OR REPLACE FUNCTION grb.update_building()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -238,10 +238,10 @@ DECLARE
     t RECORD;
 BEGIN
     FOR t IN SELECT * FROM (VALUES
-        ('building_polygons_before_update', 'grb.building_polygons', 'public.update_building_polygon'),
-        ('kunstwerken_before_update', 'grb.kunstwerken', 'public.update_kunstwerk_polygon'),
-        ('addresses_before_update', 'grb.addresses', 'public.update_address'),
-        ('buildings_before_update', 'grb.buildings', 'public.update_building')
+        ('building_polygons_before_update', 'grb.building_polygons', 'grb.update_building_polygon'),
+        ('kunstwerken_before_update', 'grb.kunstwerken', 'grb.update_kunstwerk_polygon'),
+        ('addresses_before_update', 'grb.addresses', 'grb.update_address'),
+        ('buildings_before_update', 'grb.buildings', 'grb.update_building')
     ) AS v(name, tbl, fn) LOOP
         IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = t.name AND tgrelid = t.tbl::regclass) THEN
             EXECUTE format('CREATE TRIGGER %I BEFORE INSERT OR UPDATE ON %s FOR EACH ROW EXECUTE FUNCTION %s()',

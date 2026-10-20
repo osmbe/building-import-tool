@@ -61,22 +61,22 @@ BEGIN
         bp.gebouw_id,
         bp.area_m2::REAL AS polygon_area_m2,
         bp.type_label AS polygon_type_label,
-    
+
         -- Survey date for source:geometry:date OSM tag (format: YYYY-MM-DD)
         TO_CHAR(bp.survey_date, 'YYYY-MM-DD') AS survey_date,
-    
+
         -- Origin/inventory label (e.g. "terreinbezoek", "as-built plan")
         bp.origin_label,
-    
+
         -- Transform to Web Mercator for tile serving (transform once at view creation, not per tile)
         -- Explicit cast so PostGIS registers SRID=3857 in geometry_columns (required by Martin)
         ST_Transform(bp.geom, 3857)::geometry(Geometry, 3857) AS geom,
-    
+
         -- Parent building aggregated stats (for context)
         b.polygon_count,
         b.total_area_m2,
         b.type_label AS building_type_label,
-    
+
         -- Address data (pre-aggregated per polygon via spatial join)
         COALESCE(app.addresses, '')     AS addresses,
         COALESCE(app.street_names, '')  AS street_names,
@@ -122,7 +122,7 @@ END $$;
 COMMIT;
 
 -- Refresh without blocking readers (needs the unique index on polygon_id)
-CREATE OR REPLACE FUNCTION refresh_buildings_with_addresses()
+CREATE OR REPLACE FUNCTION grb.refresh_buildings_with_addresses()
 RETURNS void AS $$
 BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY grb.buildings_with_addresses;

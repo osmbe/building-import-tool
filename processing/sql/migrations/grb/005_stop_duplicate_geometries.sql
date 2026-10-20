@@ -7,7 +7,7 @@
 -- the copies; step 2 (006) drops the columns. Existing values stay until then (no rewrite of the live tables).
 -- grb.kunstwerken keeps its geom_mercator: grb.knw_candidates and the KNW tile sources read it.
 
-CREATE OR REPLACE FUNCTION public.update_building_polygon()
+CREATE OR REPLACE FUNCTION grb.update_building_polygon()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -15,7 +15,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.update_address()
+CREATE OR REPLACE FUNCTION grb.update_address()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -23,7 +23,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.update_building()
+CREATE OR REPLACE FUNCTION grb.update_building()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();

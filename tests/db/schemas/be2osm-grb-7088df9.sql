@@ -298,7 +298,7 @@ ALTER TABLE grb.address_building_links
 -- ============================================================================
 
 -- Building Polygons trigger (auto-generate Web Mercator)
-CREATE OR REPLACE FUNCTION update_building_polygon()
+CREATE OR REPLACE FUNCTION grb.update_building_polygon()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -315,10 +315,10 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER building_polygons_before_update
     BEFORE INSERT OR UPDATE ON grb.building_polygons
     FOR EACH ROW
-    EXECUTE FUNCTION update_building_polygon();
+    EXECUTE FUNCTION grb.update_building_polygon();
 
 -- Kunstwerken trigger (auto-generate Web Mercator)
-CREATE OR REPLACE FUNCTION update_kunstwerk_polygon()
+CREATE OR REPLACE FUNCTION grb.update_kunstwerk_polygon()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -338,10 +338,10 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER kunstwerken_before_update
     BEFORE INSERT OR UPDATE ON grb.kunstwerken
     FOR EACH ROW
-    EXECUTE FUNCTION update_kunstwerk_polygon();
+    EXECUTE FUNCTION grb.update_kunstwerk_polygon();
 
 -- Addresses trigger (auto-generate Web Mercator)
-CREATE OR REPLACE FUNCTION update_address()
+CREATE OR REPLACE FUNCTION grb.update_address()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -358,10 +358,10 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER addresses_before_update
     BEFORE INSERT OR UPDATE ON grb.addresses
     FOR EACH ROW
-    EXECUTE FUNCTION update_address();
+    EXECUTE FUNCTION grb.update_address();
 
 -- Buildings (aggregated) trigger
-CREATE OR REPLACE FUNCTION update_building()
+CREATE OR REPLACE FUNCTION grb.update_building()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -378,7 +378,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER buildings_before_update
     BEFORE INSERT OR UPDATE ON grb.buildings
     FOR EACH ROW
-    EXECUTE FUNCTION update_building();
+    EXECUTE FUNCTION grb.update_building();
 
 \echo '✓ Triggers created'
 
@@ -486,7 +486,7 @@ CREATE INDEX idx_mv_buildings_with_addresses_geom ON grb.buildings_with_addresse
 CREATE INDEX idx_mv_buildings_with_addresses_postcodes ON grb.buildings_with_addresses USING GIN(postcodes);
 
 -- Function to refresh materialized view
-CREATE OR REPLACE FUNCTION refresh_buildings_with_addresses()
+CREATE OR REPLACE FUNCTION grb.refresh_buildings_with_addresses()
 RETURNS void AS $$
 BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY grb.buildings_with_addresses;
@@ -571,7 +571,7 @@ COMMENT ON COLUMN grb.address_building_links.building_object_id IS 'Building ID 
 \echo '    - Polygon-level: oidn, polygon_area_m2, polygon_type_label'
 \echo '    - Building-level: polygon_count, building_total_area_m2, building_type_label'
 \echo '    - Addresses: arrays of full_address, street_names, postcodes, municipalities'
-\echo '    Refresh with: SELECT refresh_buildings_with_addresses();'
+\echo '    Refresh with: SELECT grb.refresh_buildings_with_addresses();'
 \echo ''
 \echo 'Data Model:'
 \echo '  building_polygons.gebouw_id → buildings.gebouw_id (FK)'
