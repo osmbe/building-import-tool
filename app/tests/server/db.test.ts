@@ -5,7 +5,10 @@ const pg = vi.hoisted(() => {
   const client = { query: vi.fn(), release: vi.fn() }
   const pool = { connect: vi.fn(async () => client), end: vi.fn(async () => {}) }
   // A regular function so it can be called with `new`
-  const Pool = vi.fn((_config: unknown) => pool)
+  function createPool(_config: unknown) {
+    return pool
+  }
+  const Pool = vi.fn(createPool)
   return { Pool, client, pool }
 })
 
