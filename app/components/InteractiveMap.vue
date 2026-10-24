@@ -43,47 +43,6 @@
                 <RotateCcw class="h-3.5 w-3.5" />
               </button>
             </div>
-
-            <!-- Actions -->
-            <div class="p-2 space-y-1">
-              <button
-                class="action-btn w-full"
-                :disabled="!canExportToJOSM"
-                title="Open in JOSM (J)"
-                aria-label="Open candidates in JOSM"
-                @click="exportToJOSM"
-              >
-                <ExternalLink class="h-3 w-3 shrink-0" />
-                <span>Open in JOSM</span>
-              </button>
-
-              <!-- JOSM connection status -->
-              <div class="flex items-center justify-between px-0.5 pt-1">
-                <div class="flex items-center gap-1.5">
-                  <span
-                    class="h-1.5 w-1.5 rounded-full shrink-0"
-                    :class="
-                      josmConnected === true
-                        ? 'bg-emerald-400'
-                        : josmConnected === false
-                          ? 'bg-red-400'
-                          : 'bg-muted-foreground/40'
-                    "
-                  ></span>
-                  <span class="text-[9px] text-muted-foreground">
-                    {{
-                      josmConnected === true ? 'JOSM ready' : josmConnected === false ? 'JOSM offline' : 'JOSM unknown'
-                    }}
-                  </span>
-                </div>
-                <button
-                  class="text-[9px] text-primary/80 hover:text-primary transition-colors"
-                  @click="josmHelpOpen = true"
-                >
-                  Set up
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -350,6 +309,46 @@
             <p class="text-[9px] text-muted-foreground/70 pt-1.5 leading-relaxed">
               {{ matchSummary }}. Open in JOSM to review before upload.
             </p>
+
+            <div class="p-2 space-y-1">
+              <button
+                class="action-btn w-full"
+                :disabled="!canExportToJOSM"
+                title="Open in JOSM (J)"
+                aria-label="Open candidates in JOSM"
+                @click="exportToJOSM"
+              >
+                <ExternalLink class="h-3 w-3 shrink-0" />
+                <span>Open in JOSM</span>
+              </button>
+
+              <!-- JOSM connection status -->
+              <div class="flex items-center justify-between px-0.5 pt-1">
+                <div class="flex items-center gap-1.5">
+                  <span
+                    class="h-1.5 w-1.5 rounded-full shrink-0"
+                    :class="
+                      josmConnected === true
+                        ? 'bg-emerald-400'
+                        : josmConnected === false
+                          ? 'bg-red-400'
+                          : 'bg-muted-foreground/40'
+                    "
+                  ></span>
+                  <span class="text-[9px] text-muted-foreground">
+                    {{
+                      josmConnected === true ? 'JOSM ready' : josmConnected === false ? 'JOSM offline' : 'JOSM unknown'
+                    }}
+                  </span>
+                </div>
+                <button
+                  class="text-[9px] text-primary/80 hover:text-primary transition-colors"
+                  @click="josmHelpOpen = true"
+                >
+                  Set up
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
