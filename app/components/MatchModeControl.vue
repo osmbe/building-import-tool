@@ -23,7 +23,9 @@
           <span class="check-mark" :class="sourceLayerEnabled ? 'check-done' : ''">
             <Check v-if="sourceLayerEnabled" class="h-2 w-2" />
           </span>
-          <span class="flex-1 text-left" :class="sourceLayerEnabled ? 'text-emerald-400/80' : ''">Source dataset on</span>
+          <span class="flex-1 text-left" :class="sourceLayerEnabled ? 'text-emerald-400/80' : ''">
+            Source dataset on
+          </span>
           <span v-if="!sourceLayerEnabled" class="check-action">Layers</span>
         </button>
         <button class="check-row" @click="emit('revealLayers')">
