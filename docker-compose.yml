@@ -33,7 +33,7 @@ services:
   # Images: deploys (webhook/deploy.sh) pull the sha-<commit> images built by CI and tag them :deployed, so
   # the running release is pinned. Locally, `docker compose build` builds them instead.
   nuxt-app:
-    image: ${NUXT_IMAGE:-ghcr.io/osmbe/building-import-tool/nuxt-app:deployed}
+    image: ghcr.io/osmbe/building-import-tool/nuxt-app:main
     platform: linux/amd64
     build:
       context: ./app
@@ -165,7 +165,7 @@ services:
   # Usage:
   #   docker compose run --rm processing just <command>
   processing:
-    image: ${PROCESSING_IMAGE:-ghcr.io/osmbe/building-import-tool/processing:deployed}
+    image: ghcr.io/osmbe/building-import-tool/processing:main
     # Note: No platform specified - builds natively for host architecture
     # imposm3 is built from source on arm64
     build:
@@ -200,7 +200,7 @@ services:
   # Webhook service: runs deploys, restores of CI artifacts, imports and updates as jobs (webhook/server.py).
   # Its scripts are read from the checkout; deploy.sh updates the checkout, so it is mounted read-write.
   webhook:
-    image: ${WEBHOOK_IMAGE:-ghcr.io/osmbe/building-import-tool/webhook:deployed}
+    image: ghcr.io/osmbe/building-import-tool/webhook:main
     build:
       context: ./webhook
     container_name: be2osm-webhook
