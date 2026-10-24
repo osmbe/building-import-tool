@@ -44,61 +44,6 @@
               </button>
             </div>
 
-            <!-- Base layer selection -->
-            <div class="p-2 border-b border-white/[0.05]">
-              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Basemap</div>
-              <div class="flex flex-wrap gap-1">
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'blank' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('blank')"
-                  title="No background"
-                >
-                  Blank
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'osm' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('osm')"
-                  title="OpenStreetMap Belgium (tile.openstreetmap.be)"
-                >
-                  OSM
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'esri' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('esri')"
-                  title="Esri World Imagery (Maxar/Earthstar) — mosaic, dates vary by area — Belgium only"
-                >
-                  Esri
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'flanders' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('flanders')"
-                  title="Orthophoto Vlaanderen — Digitaal Vlaanderen (OFW, always latest)"
-                >
-                  Flanders <span class="opacity-60">latest</span>
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'brussels' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('brussels')"
-                  title="Ortho UrbIS 2024 (nadir) — geoservices-urbis.irisnet.be"
-                >
-                  Brussels <span class="opacity-60">'24</span>
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'wallonia' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('wallonia')"
-                  title="Orthophoto Wallonie 2024 — geoservices.wallonie.be"
-                >
-                  Wallonia <span class="opacity-60">'24</span>
-                </button>
-              </div>
-            </div>
-
             <!-- Actions -->
             <div class="p-2 space-y-1">
               <button
@@ -220,6 +165,62 @@
                 One dataset at a time, compared against OSM Buildings.
               </p>
             </div>
+
+            <!-- Base layer selection -->
+            <div class="mt-3 pt-3 border-t border-white/[0.05]">
+              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Basemap</div>
+              <div class="grid grid-cols-2 gap-1">
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'blank' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('blank')"
+                  title="No background"
+                >
+                  Blank
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'osm' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('osm')"
+                  title="OpenStreetMap Belgium (tile.openstreetmap.be)"
+                >
+                  OSM
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'esri' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('esri')"
+                  title="Esri World Imagery (Maxar/Earthstar) — mosaic, dates vary by area — Belgium only"
+                >
+                  Esri
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'flanders' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('flanders')"
+                  title="Orthophoto Vlaanderen — Digitaal Vlaanderen (OFW, always latest)"
+                >
+                  Flanders <span class="opacity-60">latest</span>
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'brussels' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('brussels')"
+                  title="Ortho UrbIS 2024 (nadir) — geoservices-urbis.irisnet.be"
+                >
+                  Brussels <span class="opacity-60">'24</span>
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'wallonia' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('wallonia')"
+                  title="Orthophoto Wallonie 2024 — geoservices.wallonie.be"
+                >
+                  Wallonia <span class="opacity-60">'24</span>
+                </button>
+              </div>
+            </div>
+
             <div class="mt-3 pt-3 border-t border-white/[0.05] space-y-1">
               <div class="flex items-center justify-between text-[10px]">
                 <span class="text-muted-foreground">Zoom</span>
