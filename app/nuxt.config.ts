@@ -41,7 +41,7 @@ export default defineNuxtConfig({
     // Public keys (exposed to client)
     public: {
       osmClientId: process.env.OSM_CLIENT_ID,
-      osmRedirectUri: process.env.OSM_REDIRECT_URI ?? 'http://127.0.0.1:3000/api/auth/osm-callback'
+      osmRedirectUri: process.env.OSM_REDIRECT_URI
     }
   },
   ssr: false,
