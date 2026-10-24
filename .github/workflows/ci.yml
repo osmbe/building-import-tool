@@ -8,7 +8,7 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch:
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -18,8 +18,7 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  test-app:
-    name: Test App (fmt, lint, typecheck, unit tests + coverage, build)
+  app-build:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -32,11 +31,53 @@ jobs:
           cache: npm
           cache-dependency-path: app/package-lock.json
       - run: npm ci
-      - run: npx vp fmt --check
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test:coverage
       - run: npm run build
+
+  app-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run fmt
+      - run: npm run lint
+
+  app-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run test:coverage
+
+  app-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
 
   test-infra:
     name: Test Infra (workflows, shell scripts, justfile, compose files)
@@ -89,8 +130,7 @@ jobs:
 
   build:
     name: Build and push ${{ matrix.image }}
-    needs: [test-app, test-infra, test-db]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [app-build, test-infra, test-db]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -125,7 +165,7 @@ jobs:
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.context }}/Dockerfile
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
