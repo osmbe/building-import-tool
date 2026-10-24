@@ -28,9 +28,8 @@ describe('isCandidate', () => {
 
 describe('resolveMatchMode', () => {
   it('keeps every mode for GRB', () => {
-    for (const mode of ['geometry', 'source', 'both'] as const) 
+    for (const mode of ['geometry', 'source', 'both'] as const)
       expect(resolveMatchMode(mode, 'grb')).toEqual({ downgraded: false, mode })
-    
   })
 
   it('falls back to geometry for sources without source tags', () => {

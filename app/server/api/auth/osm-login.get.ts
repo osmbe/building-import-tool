@@ -1,4 +1,4 @@
-export default defineEventHandler( async (event) => {
+export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
 
   // OSM OAuth 2.0 endpoints

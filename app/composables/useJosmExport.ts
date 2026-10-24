@@ -18,9 +18,7 @@ export const useJosmExport = () => {
         method: 'GET'
       })
 
-      if (!response.ok) 
-        return false
-      
+      if (!response.ok) return false
 
       const data = await response.json()
       const version = data.protocolversion
@@ -43,9 +41,7 @@ export const useJosmExport = () => {
   const convertToOsmXml = (geojson: FeatureCollection): string => {
     const osmXml = geojsonToOsm(geojson)
 
-    if (!osmXml || osmXml.length === 0) 
-      throw new Error('geojsonToOsm generated empty output')
-    
+    if (!osmXml || osmXml.length === 0) throw new Error('geojsonToOsm generated empty output')
 
     return osmXml
   }
@@ -74,14 +70,10 @@ export const useJosmExport = () => {
 
     // Check JOSM connection
     const isConnected = await testJosmConnection()
-    if (!isConnected) 
-      throw new Error('JOSM is not running or not accessible')
-    
+    if (!isConnected) throw new Error('JOSM is not running or not accessible')
 
     // Validate features
-    if (!features || features.length === 0) 
-      throw new Error('No features to export')
-    
+    if (!features || features.length === 0) throw new Error('No features to export')
 
     // Create GeoJSON FeatureCollection
     let geojson: FeatureCollection = {
@@ -90,7 +82,7 @@ export const useJosmExport = () => {
     }
 
     // Optional: Simplify geometry using mapshaper
-    if (simplify && simplifyPercent < 100) 
+    if (simplify && simplifyPercent < 100)
       try {
         const mapshaper = await import('mapshaper')
         const dataset = mapshaper.internal.importGeoJSON(geojson, {})
@@ -110,7 +102,6 @@ export const useJosmExport = () => {
       } catch (err) {
         console.warn('Mapshaper simplification failed, exporting without simplification:', err)
       }
-    
 
     // Convert to OSM-XML
     const osmXml = convertToOsmXml(geojson)
@@ -129,7 +120,7 @@ export const useJosmExport = () => {
     let fileUrl: string | null = null
 
     // Use backend upload for large exports, then fetch and send via load_data
-    if (useFallback || uploadToBackend) 
+    if (useFallback || uploadToBackend)
       try {
         const response = await $fetch<any>(backendUrl, {
           body: osmXml,
@@ -147,9 +138,8 @@ export const useJosmExport = () => {
 
         // Fetch the file content ourselves
         const fileResponse = await fetch(fileUrl)
-        if (!fileResponse.ok) 
-          throw new Error(`Failed to fetch uploaded file: ${fileResponse.status}`)
-        
+        if (!fileResponse.ok) throw new Error(`Failed to fetch uploaded file: ${fileResponse.status}`)
+
         const fileContent = await fileResponse.text()
 
         // Send the actual data to JOSM via /load_data endpoint
@@ -167,9 +157,7 @@ export const useJosmExport = () => {
 
         const responseText = await importResponse.text()
 
-        if (!importResponse.ok) 
-          throw new Error(`JOSM import failed (${importResponse.status}): ${responseText}`)
-        
+        if (!importResponse.ok) throw new Error(`JOSM import failed (${importResponse.status}): ${responseText}`)
 
         return {
           featureCount: features.length,
@@ -181,7 +169,6 @@ export const useJosmExport = () => {
         console.error('Failed to upload to backend:', error)
         throw new Error(`Backend upload failed: ${error.message}`, { cause: error })
       }
-    
 
     // Direct transfer for small exports
     try {
@@ -219,9 +206,7 @@ export const useJosmExport = () => {
    */
   const openAreaInJosm = async (bbox: [number, number, number, number]) => {
     const isConnected = await testJosmConnection()
-    if (!isConnected) 
-      throw new Error('JOSM is not running')
-    
+    if (!isConnected) throw new Error('JOSM is not running')
 
     const [minLon, minLat, maxLon, maxLat] = bbox
     const josmUrl = `${getJosmUrl()}/load_and_zoom`
@@ -236,9 +221,7 @@ export const useJosmExport = () => {
       method: 'GET'
     })
 
-    if (!response.ok) 
-      throw new Error(`JOSM returned status ${response.status}`)
-    
+    if (!response.ok) throw new Error(`JOSM returned status ${response.status}`)
   }
 
   /**

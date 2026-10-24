@@ -17,9 +17,7 @@ export function useAuth() {
     // Check if user is authenticated via cookie
     try {
       const response = await $fetch<{ user: OSMUser | null }>('/api/auth/me')
-      if (response.user) 
-        user.value = response.user
-      
+      if (response.user) user.value = response.user
     } catch (error) {
       console.error('Failed to fetch user:', error)
     } finally {
@@ -32,9 +30,7 @@ export function useAuth() {
       // Reload user data after successful auth
       try {
         const response = await $fetch<{ user: OSMUser | null }>('/api/auth/me')
-        if (response.user) 
-          user.value = response.user
-        
+        if (response.user) user.value = response.user
       } catch (error) {
         console.error('Failed to fetch user after auth:', error)
       }

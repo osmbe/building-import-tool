@@ -26,61 +26,67 @@ export default defineEventHandler(async (event) => {
     } = body
 
     // Pages loaded before the contract (properties named per source) must not export these features
-    if (contract !== CANDIDATES_CONTRACT) 
-      {  sendError(
+    if (contract !== CANDIDATES_CONTRACT) {
+      sendError(
         event,
         createError({ statusCode: 409, statusMessage: 'BE2OSM was updated: reload the page to use the new version' })
-      ); return; }
-    
+      )
+      return
+    }
 
-    if (!Array.isArray(bounds) || bounds.length !== 4 || !bounds.every((v) => Number.isFinite(Number(v)))) 
-      {  sendError(
+    if (!Array.isArray(bounds) || bounds.length !== 4 || !bounds.every((v) => Number.isFinite(Number(v)))) {
+      sendError(
         event,
         createError({ statusCode: 400, statusMessage: 'Invalid bounds. Expected [minX, minY, maxX, maxY]' })
-      ); return; }
-    
+      )
+      return
+    }
 
-    if (matchMode !== 'geometry' && matchMode !== 'source' && matchMode !== 'both') 
-      {  sendError(
+    if (matchMode !== 'geometry' && matchMode !== 'source' && matchMode !== 'both') {
+      sendError(
         event,
         createError({
           statusCode: 400,
           statusMessage: 'Invalid matchMode. Expected "geometry", "source", or "both"'
         })
-      ); return; }
-    
+      )
+      return
+    }
 
-    if (!isCandidateSource(dataSource)) 
-      {  sendError(
+    if (!isCandidateSource(dataSource)) {
+      sendError(
         event,
         createError({
           statusCode: 400,
           statusMessage: 'Invalid dataSource. Expected "grb", "knw", "picc", or "urbis"'
         })
-      ); return; }
-    
+      )
+      return
+    }
 
     const threshold = Number(geometryThreshold)
-    if (Number.isNaN(threshold) || threshold < 0.3 || threshold > 0.95) 
-      {  sendError(
+    if (Number.isNaN(threshold) || threshold < 0.3 || threshold > 0.95) {
+      sendError(
         event,
         createError({
           statusCode: 400,
           statusMessage: 'Invalid geometryThreshold. Expected a number between 0.3 and 0.95'
         })
-      ); return; }
-    
+      )
+      return
+    }
 
     // Only GRB objects are referenced from OSM (source:geometry:ref)
-    if ((matchMode === 'source' || matchMode === 'both') && dataSource !== 'grb') 
-      {  sendError(
+    if ((matchMode === 'source' || matchMode === 'both') && dataSource !== 'grb') {
+      sendError(
         event,
         createError({
           statusCode: 400,
           statusMessage: 'Source tag matching is only available for GRB data. Use geometry mode for KNW/PICC/UrbIS.'
         })
-      ); return; }
-    
+      )
+      return
+    }
 
     const [minX, minY, maxX, maxY] = (bounds as unknown[]).map(Number) as [number, number, number, number]
     const useGeometry = matchMode !== 'source'
@@ -95,7 +101,7 @@ export default defineEventHandler(async (event) => {
     // (no FDW) and passed to the be2osm query as GeoJSON.
     let osmGeometries: string | null = null
     let totalOsm = 0
-    if (useGeometry) 
+    if (useGeometry)
       if (overpass) {
         osmGeometries = overpass.geomCollection3857
         totalOsm = overpass.totalOsm
@@ -113,15 +119,13 @@ export default defineEventHandler(async (event) => {
         osmGeometries = osm[0]?.geom_collection ?? null
         totalOsm = Number(osm[0]?.total_osm ?? 0)
       }
-    
 
     // The GRB references ("Gbg/123") of the OSM buildings in view. Parsing (";"-separated refs, leading zeros,
     // The older source:geometry:oidn + entity tags) is in collectOsmSourceRefs, unit-tested (issue #52).
     let sourceRefs: string[] = []
     if (useRefs) {
-      if (overpass) 
-        sourceRefs = overpass.sourceRefs
-       else {
+      if (overpass) sourceRefs = overpass.sourceRefs
+      else {
         const osm = await queryOsm(
           `
           SELECT DISTINCT
@@ -157,10 +161,10 @@ export default defineEventHandler(async (event) => {
     const inView = `c.geom && ST_MakeEnvelope($1, $2, $3, $4, 3857) AND ST_Intersects(c.geom, ST_MakeEnvelope($1, $2, $3, $4, 3857))`
 
     const conditions = [inView, inScope]
-    if (useRefs) 
+    if (useRefs)
       // Candidates without a reference (NULL) are never matched by one
       conditions.push(`coalesce(c.source_ref <> ALL(${param(sourceRefs)}::text[]), TRUE)`)
-    
+
     let osmCte = ''
     if (useGeometry && osmGeometries) {
       osmCte = `WITH osm AS (SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON(${param(osmGeometries)}), 3857))).geom AS geom)`
@@ -211,7 +215,7 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     console.error('Error in buildings/difference endpoint:', error)
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
-     sendError(
+    sendError(
       event,
       createError({
         statusCode: error instanceof OverpassError ? error.statusCode : 500,
@@ -220,6 +224,7 @@ export default defineEventHandler(async (event) => {
             ? error.message
             : `Error calculating difference: ${error instanceof Error ? error.message : JSON.stringify(error)}`
       })
-    ); return;
+    )
+    return
   }
 })

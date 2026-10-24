@@ -4,12 +4,11 @@ import { readFile } from 'fs/promises'
 export default defineEventHandler(async (event) => {
   const filename = getRouterParam(event, 'filename')
 
-  if (!filename || !/^[a-f0-9]+\.osm$/.test(filename)) 
+  if (!filename || !/^[a-f0-9]+\.osm$/.test(filename))
     throw createError({
       message: 'Invalid filename',
       statusCode: 400
     })
-  
 
   try {
     // In production, files are in .output/public/exports
@@ -29,12 +28,12 @@ export default defineEventHandler(async (event) => {
 
     return content
   } catch (error: any) {
-    if (error.code === 'ENOENT') 
+    if (error.code === 'ENOENT')
       throw createError({
         message: 'File not found',
         statusCode: 404
       })
-    
+
     throw createError({
       message: 'Failed to read file',
       statusCode: 500

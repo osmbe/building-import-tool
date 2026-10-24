@@ -25,11 +25,19 @@ function removeToast(id: number) {
 
 export function useToast() {
   return {
-    error: (title: string, message?: string, duration?: number) =>{  addToast('error', title, message, duration ?? 8000); },
-    info: (title: string, message?: string, duration?: number) =>{  addToast('info', title, message, duration); },
+    error: (title: string, message?: string, duration?: number) => {
+      addToast('error', title, message, duration ?? 8000)
+    },
+    info: (title: string, message?: string, duration?: number) => {
+      addToast('info', title, message, duration)
+    },
     removeToast,
-    success: (title: string, message?: string, duration?: number) =>{  addToast('success', title, message, duration); },
+    success: (title: string, message?: string, duration?: number) => {
+      addToast('success', title, message, duration)
+    },
     toasts,
-    warning: (title: string, message?: string, duration?: number) =>{  addToast('warning', title, message, duration); }
+    warning: (title: string, message?: string, duration?: number) => {
+      addToast('warning', title, message, duration)
+    }
   }
 }

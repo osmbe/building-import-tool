@@ -18,12 +18,11 @@ export default defineEventHandler(async (event) => {
   // Clear the state cookie
   deleteCookie(event, 'oauth_state')
 
-  if (!code) 
+  if (!code)
     throw createError({
       message: 'No authorization code received',
       statusCode: 400
     })
-  
 
   try {
     // Exchange authorization code for access token

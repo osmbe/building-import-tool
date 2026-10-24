@@ -21,7 +21,7 @@ vi.mock('~/server/utils/overpass', async (importOriginal) => ({
   fetchOverpassBuildings: overpass.fetchOverpassBuildings
 }))
 
-const flushPromises =  async () => new Promise((resolve) => setTimeout(resolve, 0))
+const flushPromises = async () => new Promise((resolve) => setTimeout(resolve, 0))
 
 beforeEach(() => {
   stubNitro()

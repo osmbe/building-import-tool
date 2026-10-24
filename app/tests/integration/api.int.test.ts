@@ -105,7 +105,9 @@ function expectSameCandidates(response: DifferenceResponse, file: string, source
   current.candidates.forEach((candidate, i) => {
     const expected = legacy.candidates[i]?.coordinates ?? []
     expect(candidate.coordinates).toHaveLength(expected.length)
-    candidate.coordinates.forEach((value, j) =>{  expect(Math.abs(value - (expected[j] ?? NaN))).toBeLessThan(2e-6); })
+    candidate.coordinates.forEach((value, j) => {
+      expect(Math.abs(value - (expected[j] ?? NaN))).toBeLessThan(2e-6)
+    })
   })
 }
 
@@ -115,8 +117,9 @@ function exportXml(response: DifferenceResponse): string {
     features: response.features.map(candidateToOsmFeature),
     type: 'FeatureCollection'
   })
-  return osm.replace(/(lat|lon)="(-?\d+\.\d+)"/g, (_m, axis: string, value: string) =>
-    `${axis}="${Number(value).toFixed(6)}"`
+  return osm.replace(
+    /(lat|lon)="(-?\d+\.\d+)"/g,
+    (_m, axis: string, value: string) => `${axis}="${Number(value).toFixed(6)}"`
   )
 }
 
@@ -255,8 +258,6 @@ describe.skipIf(!PORT)('API against the fixture database', () => {
 
   it('data-dates reports the import time of every source', async () => {
     const dates = (await dataDates(createEvent())) as Record<string, string | null>
-    for (const source of ['grb', 'knw', 'picc', 'urbis'])
-      expect(dates[source], source).toMatch(/^\d{4}-\d{2}-\d{2}T/)
-
+    for (const source of ['grb', 'knw', 'picc', 'urbis']) expect(dates[source], source).toMatch(/^\d{4}-\d{2}-\d{2}T/)
   })
 })

@@ -42,7 +42,12 @@ const square = (x: number): Feature => ({
   type: 'Feature'
 })
 
-interface FetchResponse { ok: boolean; status?: number; json?: () => Promise<unknown>; text?: () => Promise<string> }
+interface FetchResponse {
+  ok: boolean
+  status?: number
+  json?: () => Promise<unknown>
+  text?: () => Promise<string>
+}
 const res = (ok: boolean, body: unknown = '', status = ok ? 200 : 500): FetchResponse => ({
   json: async () => body,
   ok,

@@ -14,7 +14,7 @@ export function geojsonToOsm(geojson: FeatureCollection): string {
 
   for (const feature of features) {
     const properties = feature.properties || {}
-    const {geometry} = feature
+    const { geometry } = feature
     if (!geometry) continue
 
     switch (geometry.type) {
@@ -51,16 +51,13 @@ export function geojsonToOsm(geojson: FeatureCollection): string {
       lines.push(`  <node id="${node.id}" lat="${node.lat}" lon="${node.lon}">`)
       lines.push(tags)
       lines.push('  </node>')
-    } else 
-      lines.push(`  <node id="${node.id}" lat="${node.lat}" lon="${node.lon}"/>`)
-    
+    } else lines.push(`  <node id="${node.id}" lat="${node.lat}" lon="${node.lon}"/>`)
   }
 
   for (const way of ways) {
     lines.push(`  <way id="${way.id}">`)
-    for (const nd of way.nodes) 
-      lines.push(`    <nd ref="${nd.id}"/>`)
-    
+    for (const nd of way.nodes) lines.push(`    <nd ref="${nd.id}"/>`)
+
     const wayTags = tagsXml(way.tags)
     if (wayTags) lines.push(wayTags)
     lines.push('  </way>')
@@ -68,9 +65,9 @@ export function geojsonToOsm(geojson: FeatureCollection): string {
 
   for (const rel of relations) {
     lines.push(`  <relation id="${rel.id}">`)
-    for (const member of rel.members) 
+    for (const member of rel.members)
       lines.push(`    <member type="${member.type}" ref="${member.elem.id}" role="${member.role}"/>`)
-    
+
     const relTags = tagsXml(rel.tags)
     if (relTags) lines.push(relTags)
     lines.push('  </relation>')
@@ -122,9 +119,8 @@ function coordHash(coords: Position): string {
 
 function getOrCreateNode(coords: Position, nodes: Node[], nodesIndex: Map<string, Node>): Node {
   const [lon, lat] = coords
-  if (lon === undefined || lat === undefined) 
-    throw new Error(`Invalid GeoJSON position: [${coords.join(', ')}]`)
-  
+  if (lon === undefined || lat === undefined) throw new Error(`Invalid GeoJSON position: [${coords.join(', ')}]`)
+
   const hash = coordHash(coords)
   let node = nodesIndex.get(hash)
   if (!node) {
@@ -154,9 +150,7 @@ function processLineString(
 ): void {
   const way: Way = { id: 0, nodes: [], tags: { ...properties } }
   ways.push(way)
-  for (const point of coords) 
-    way.nodes.push(getOrCreateNode(point, nodes, nodesIndex))
-  
+  for (const point of coords) way.nodes.push(getOrCreateNode(point, nodes, nodesIndex))
 }
 
 function processMultiPolygon(
@@ -169,9 +163,10 @@ function processMultiPolygon(
 ): void {
   // Simple polygon with single outer ring → closed way
   const outerRing = coordinates[0]?.[0]
-  if (coordinates.length === 1 && coordinates[0]?.length === 1 && outerRing) 
-    {  processLineString(outerRing, properties, ways, nodes, nodesIndex); return; }
-  
+  if (coordinates.length === 1 && coordinates[0]?.length === 1 && outerRing) {
+    processLineString(outerRing, properties, ways, nodes, nodesIndex)
+    return
+  }
 
   // Multipolygon relation
   const relation: Relation = {
@@ -181,7 +176,7 @@ function processMultiPolygon(
   }
   relations.push(relation)
 
-  for (const polygon of coordinates) 
+  for (const polygon of coordinates)
     for (const [i, ring] of polygon.entries()) {
       const way: Way = { id: 0, nodes: [], tags: {} }
       ways.push(way)
@@ -190,9 +185,6 @@ function processMultiPolygon(
         role: i === 0 ? 'outer' : 'inner',
         type: 'way'
       })
-      for (const point of ring) 
-        way.nodes.push(getOrCreateNode(point, nodes, nodesIndex))
-      
+      for (const point of ring) way.nodes.push(getOrCreateNode(point, nodes, nodesIndex))
     }
-  
 }

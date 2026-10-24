@@ -132,9 +132,8 @@ function pointInRing(point: [number, number], ring: Ring): boolean {
     const a = ring[i]
     const b = ring[j]
     if (!a || !b) continue
-    if (a[1] > point[1] !== b[1] > point[1] && point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0]) 
+    if (a[1] > point[1] !== b[1] > point[1] && point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0])
       inside = !inside
-    
   }
   return inside
 }
@@ -193,9 +192,8 @@ export function parseOverpassElements(elements: any[]): OverpassBuildings {
     if (el.type === 'way' && Array.isArray(el.geometry)) {
       const ring = closeRing(toRing(el.geometry))
       if (ring) coords = [[ring]]
-    } else if (el.type === 'relation' && Array.isArray(el.members)) 
-      coords = relationToPolygons(el.members)
-    
+    } else if (el.type === 'relation' && Array.isArray(el.members)) coords = relationToPolygons(el.members)
+
     if (coords.length === 0) continue
 
     for (const poly of coords) polygons.push({ coords: poly, id: `${el.type}/${el.id ?? ''}`, tags })
@@ -205,9 +203,8 @@ export function parseOverpassElements(elements: any[]): OverpassBuildings {
       entity: tags['source:geometry:entity'],
       oidn: tags['source:geometry:oidn'],
       ref: tags['source:geometry:ref']
-    })) 
+    }))
       sourceRefSet.add(id)
-    
   }
 
   const toMercator = (poly: Ring[]): Ring[] => poly.map((r) => r.map(([lon, lat]) => lonLatToMercator(lon, lat)))
@@ -237,16 +234,16 @@ export function parseOverpassElements(elements: any[]): OverpassBuildings {
   }
 }
 
-const sleep =  async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 /** Map an Overpass HTTP failure to a user-facing error with the status we answer with. */
 export function overpassHttpError(status: number, text: string): OverpassError {
-  if (status === 429) 
+  if (status === 429)
     return new OverpassError('Overpass is rate limiting requests. Wait a few seconds and try again.', 429)
-  
-  if (status === 504 || status === 408) 
+
+  if (status === 504 || status === 408)
     return new OverpassError('Overpass timed out (server busy). Try a smaller area or retry shortly.', 504)
-  
+
   if (text) console.warn(`[overpass] HTTP ${status}:`, text.slice(0, 500))
   // The body is usually an HTML or Markdown error page: log it, but keep it out of the user-facing message.
   return new OverpassError(`Overpass request failed (${status}). Try again shortly.`, 502)
@@ -278,14 +275,13 @@ async function requestOverpass(query: string): Promise<{ elements?: any[] }> {
       )
     }
 
-    if (response.ok) 
+    if (response.ok)
       try {
         return (await response.json()) as { elements?: any[] }
       } catch {
         // Overpass answers 200 with an HTML/XML error body when it runs out of time or memory.
         throw new OverpassError('Overpass returned an invalid response (query probably too heavy).', 504)
       }
-    
 
     lastError = overpassHttpError(response.status, await response.text().catch(() => ''))
     if (attempt === 0 && [429, 502, 503, 504].includes(response.status)) {
@@ -310,12 +306,11 @@ export function clearOverpassCache() {
  */
 export async function fetchOverpassBuildings(bounds3857: Bounds3857): Promise<OverpassBuildings> {
   const area = bboxAreaKm2(bounds3857)
-  if (area > MAX_BBOX_KM2) 
+  if (area > MAX_BBOX_KM2)
     throw new OverpassError(
       `Live OSM data needs a smaller view (${area.toFixed(1)} km2, max ${MAX_BBOX_KM2} km2). Zoom in.`,
       400
     )
-  
 
   const query = buildOverpassQuery(bounds3857)
   const now = Date.now()

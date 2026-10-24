@@ -124,11 +124,9 @@ export const candidateTags = (props: CandidateProperties): Record<string, string
   const typeLabel = String(props.type_label ?? '')
     .toLowerCase()
     .trim()
-  if (props.source === 'knw') 
-    Object.assign(tags, knwTags(props))
-   else if (props.source !== 'grb' || isBuildingTypeLabel(typeLabel)) 
-    tags.building = 'yes'
-  
+  if (props.source === 'knw') Object.assign(tags, knwTags(props))
+  else if (props.source !== 'grb' || isBuildingTypeLabel(typeLabel)) tags.building = 'yes'
+
   if (props.source === 'grb' && typeLabel === 'verdieping') tags.fixme = VERDIEPING_FIXME
   const surveyDate = String(props.survey_date ?? '').slice(0, 10)
   if (/^\d{4}-\d{2}-\d{2}$/.test(surveyDate)) tags['source:geometry:date'] = surveyDate
@@ -152,7 +150,7 @@ export const candidateDisplayId = (props: Pick<CandidateProperties, 'source' | '
  * difference API, a property of its own in vector tiles (ST_AsMVT writes each jsonb key as a property).
  */
 export const candidateDetail = (props: Record<string, unknown>, key: string): unknown => {
-  const {details} = props
+  const { details } = props
   const value = details !== null && typeof details === 'object' ? (details as Record<string, unknown>)[key] : props[key]
   return value ?? null
 }

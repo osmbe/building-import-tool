@@ -11,9 +11,7 @@ export const extractFeaturesFromLayer = (
   targetProjection = 'EPSG:4326'
 ): Feature[] => {
   const source = layer.getSource()
-  if (!source) 
-    return []
-  
+  if (!source) return []
 
   const features = source.getFeatures()
   const geoJsonFormat = new GeoJSON()

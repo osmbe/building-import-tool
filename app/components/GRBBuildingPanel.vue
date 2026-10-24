@@ -135,28 +135,24 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
     let current = ''
     let inQuotes = false
 
-    for (const char of inner) 
-      if (char === '"') 
-        inQuotes = !inQuotes
-       else if (char === ',' && !inQuotes) {
+    for (const char of inner)
+      if (char === '"') inQuotes = !inQuotes
+      else if (char === ',' && !inQuotes) {
         items.push(current.trim())
         current = ''
-      } else 
-        current += char
-      
-    
+      } else current += char
+
     if (current) items.push(current.trim())
 
     return items.map((item) => item.replace(/^"|"$/g, ''))
   }
 
   // Handle '; '-separated strings (STRING_AGG with '; ' separator, e.g. addresses column)
-  if (str.includes('; ')) 
+  if (str.includes('; '))
     return str
       .split('; ')
       .map((s) => s.trim())
       .filter(Boolean)
-  
 
   return [str]
 }
@@ -185,12 +181,10 @@ const groupAddresses = (addrs: string[]): GroupedAddress[] => {
         order.push(base)
       }
       groups.get(base)!.push(box)
-    } else 
-      if (!groups.has(addr)) {
-        groups.set(addr, [])
-        order.push(addr)
-      }
-    
+    } else if (!groups.has(addr)) {
+      groups.set(addr, [])
+      order.push(addr)
+    }
   }
 
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })

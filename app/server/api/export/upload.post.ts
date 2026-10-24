@@ -13,9 +13,7 @@ async function cleanupOldExports(exportsDir: string): Promise<void> {
       if (!/^[a-f0-9]+\.osm$/.test(file)) continue
       const filePath = join(exportsDir, file)
       const stat = await fs.stat(filePath)
-      if (now - stat.mtimeMs > MAX_FILE_AGE_MS) 
-        await fs.unlink(filePath).catch(() => {})
-      
+      if (now - stat.mtimeMs > MAX_FILE_AGE_MS) await fs.unlink(filePath).catch(() => {})
     }
   } catch {
     // Directory may not exist yet — ignore
@@ -26,28 +24,25 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
   // Validate that we have OSM-XML data
-  if (!body || typeof body !== 'string') 
+  if (!body || typeof body !== 'string')
     throw createError({
       message: 'Invalid request body. Expected OSM-XML string.',
       statusCode: 400
     })
-  
 
   // Reject oversized payloads
-  if (body.length > MAX_BODY_SIZE) 
+  if (body.length > MAX_BODY_SIZE)
     throw createError({
       message: 'Payload too large. Maximum size is 10 MB.',
       statusCode: 413
     })
-  
 
   // Basic validation that it looks like OSM-XML
-  if (!body.includes('<osm') && !body.includes('<?xml')) 
+  if (!body.includes('<osm') && !body.includes('<?xml'))
     throw createError({
       message: 'Invalid OSM-XML format. Must contain OSM XML data.',
       statusCode: 400
     })
-  
 
   // Generate random token for filename
   const token = crypto.randomBytes(16).toString('hex')

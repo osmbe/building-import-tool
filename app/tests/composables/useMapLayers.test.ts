@@ -52,7 +52,7 @@ describe('useMapLayers', () => {
     expect(map.value).toBe(instance)
     expect(instance.options.target).toBe(target)
     expect(instance.options.controls).toEqual([])
-    const {view} = instance.options
+    const { view } = instance.options
     const [lon = 0, lat = 0] = toLonLat(view.getCenter())
     expect(lon).toBeCloseTo(4.3047, 4)
     expect(lat).toBeCloseTo(50.9087, 4)
@@ -95,7 +95,7 @@ describe('useMapLayers', () => {
 
   it('applies a custom view config', () => {
     const instance = useMapLayers().initializeMap(target, { center: [5, 51], minZoom: 6, zoom: 8 }) as any
-    const {view} = instance.options
+    const { view } = instance.options
     const [lon = 0, lat = 0] = toLonLat(view.getCenter())
     expect(lon).toBeCloseTo(5, 6)
     expect(lat).toBeCloseTo(51, 6)
@@ -165,6 +165,8 @@ describe('useMapLayers', () => {
     // Layers survive, but there is no map to switch on anymore
     switchBaseLayer('esri')
     expect(console.warn).toHaveBeenCalledWith('Layers or map not initialized')
-    expect(() =>{  destroy(); }).not.toThrow()
+    expect(() => {
+      destroy()
+    }).not.toThrow()
   })
 })

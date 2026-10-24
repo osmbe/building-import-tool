@@ -64,13 +64,9 @@ function determineResultType(osmType: string, osmClass: string): SearchResult['t
  */
 export async function searchLocations(query: string, provider: Provider): Promise<SearchResult[]> {
   // Only support OSM provider (Nominatim)
-  if (provider !== 'osm') 
-    console.warn(`Provider "${provider}" not supported, using OSM Nominatim`)
-  
+  if (provider !== 'osm') console.warn(`Provider "${provider}" not supported, using OSM Nominatim`)
 
-  if (!query || query.trim().length < 3) 
-    return []
-  
+  if (!query || query.trim().length < 3) return []
 
   try {
     const params = new URLSearchParams({
@@ -88,9 +84,7 @@ export async function searchLocations(query: string, provider: Provider): Promis
       }
     })
 
-    if (!response.ok) 
-      throw new Error(`Nominatim API error: ${response.status}`)
-    
+    if (!response.ok) throw new Error(`Nominatim API error: ${response.status}`)
 
     const data: NominatimResult[] = await response.json()
 

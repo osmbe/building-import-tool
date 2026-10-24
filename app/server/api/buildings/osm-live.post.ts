@@ -5,23 +5,25 @@ import { OverpassError, fetchOverpassBuildings } from '~/server/utils/overpass'
 export default defineEventHandler(async (event) => {
   const { bounds } = await readBody(event)
 
-  if (!Array.isArray(bounds) || bounds.length !== 4 || bounds.some((b) => typeof b !== 'number')) 
-    {  sendError(
+  if (!Array.isArray(bounds) || bounds.length !== 4 || bounds.some((b) => typeof b !== 'number')) {
+    sendError(
       event,
       createError({ statusCode: 400, statusMessage: 'Invalid bounds. Expected [minX, minY, maxX, maxY]' })
-    ); return; }
-  
+    )
+    return
+  }
 
   try {
     const data = await fetchOverpassBuildings(bounds as [number, number, number, number])
     return { features: data.features, stats: { totalOsm: data.totalOsm }, type: 'FeatureCollection' }
   } catch (error) {
-     sendError(
+    sendError(
       event,
       createError({
         statusCode: error instanceof OverpassError ? error.statusCode : 500,
         statusMessage: error instanceof Error ? error.message : 'Live OSM request failed'
       })
-    ); return;
+    )
+    return
   }
 })

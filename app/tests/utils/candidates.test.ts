@@ -91,9 +91,8 @@ describe('the candidates contract', () => {
 
 describe('candidateTags: buildings (#53)', () => {
   it('tags GRB building types as building=yes', () => {
-    for (const type_label of ['hoofdgebouw', 'Bijgebouw', 'verdieping', null]) 
+    for (const type_label of ['hoofdgebouw', 'Bijgebouw', 'verdieping', null])
       expect(candidateTags(candidate({ type_label })).building).toBe('yes')
-    
   })
 
   it.each(['gebouw afgezoomd met virtuele gevels', 'trap', 'afdak', 'loopbrug', 'luifel', 'verheven garagetoegang'])(

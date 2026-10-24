@@ -1189,23 +1189,19 @@ watch(
 
 // Watch for match mode changes and refetch candidate buildings if they're already loaded
 watch(matchMode, () => {
-  if (candidateBuildingsLayerRef.value) 
+  if (candidateBuildingsLayerRef.value)
     // Refetch candidate buildings with the new match mode
     calculateDifference()
-  
 })
 
 watch(geometryThreshold, () => {
-  if ((matchMode.value === 'geometry' || matchMode.value === 'both') && candidateBuildingsLayerRef.value) 
+  if ((matchMode.value === 'geometry' || matchMode.value === 'both') && candidateBuildingsLayerRef.value)
     calculateDifference()
-  
 })
 
 watch(useOverpass, (live) => {
   if (!live) clearLiveOsmLayer()
-  if (candidateBuildingsLayerRef.value) 
-    calculateDifference()
-  
+  if (candidateBuildingsLayerRef.value) calculateDifference()
 })
 
 const setupMap = () => {
@@ -1268,26 +1264,24 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
   const shouldShowBuildings = zoom >= 16
 
   // Only show/hide existing layers, don't auto-load
-  if (osmBuildingsLayerRef.value) 
+  if (osmBuildingsLayerRef.value)
     osmBuildingsLayerRef.value.setVisible(
       shouldShowBuildings && overlayLayers.value.osmBuildings && !liveOsmLayerRef.value
     )
-  
-  if (liveOsmLayerRef.value) 
-    liveOsmLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.osmBuildings)
-  
-  if (grbBuildingsLayerRef.value) 
+
+  if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.osmBuildings)
+
+  if (grbBuildingsLayerRef.value)
     grbBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.grbBuildings)
-  
-  if (knwStructuresLayerRef.value) 
+
+  if (knwStructuresLayerRef.value)
     knwStructuresLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.knwStructures)
-  
-  if (piccBuildingsLayerRef.value) 
+
+  if (piccBuildingsLayerRef.value)
     piccBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.piccBuildings)
-  
-  if (urbisBuildingsLayerRef.value) 
+
+  if (urbisBuildingsLayerRef.value)
     urbisBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.urbisBuildings)
-  
 }
 
 // Handle Load GRB KNW structures using Vector Tiles
@@ -1298,9 +1292,7 @@ const handleLoadKNW = () => {
   }
 
   try {
-    if (knwStructuresLayerRef.value) 
-      map.value.removeLayer(knwStructuresLayerRef.value)
-    
+    if (knwStructuresLayerRef.value) map.value.removeLayer(knwStructuresLayerRef.value)
 
     const knwTileSource = new VectorTileSource({
       attributions: '© GRB Kunstwerken',
@@ -1363,9 +1355,7 @@ const handleLoadOSM = () => {
 
   try {
     // Remove existing OSM buildings layer if present
-    if (osmBuildingsLayerRef.value) 
-      map.value.removeLayer(osmBuildingsLayerRef.value)
-    
+    if (osmBuildingsLayerRef.value) map.value.removeLayer(osmBuildingsLayerRef.value)
 
     // Create vector tile source for OSM buildings
     const osmTileSource = new VectorTileSource({
@@ -1443,9 +1433,7 @@ const handleLoadGRB = () => {
     isLoadingGRB.value = true
 
     // Remove existing GRB buildings layer if present
-    if (grbBuildingsLayerRef.value) 
-      map.value.removeLayer(grbBuildingsLayerRef.value)
-    
+    if (grbBuildingsLayerRef.value) map.value.removeLayer(grbBuildingsLayerRef.value)
 
     // Create vector tile source for GRB buildings
     const grbTileSource = new VectorTileSource({
@@ -1462,9 +1450,7 @@ const handleLoadGRB = () => {
       const buildingType = feature.get('building_type')
 
       let fillColor = hslVar('--layer-grb', 0.15)
-      if (buildingType === 'shed') 
-        fillColor = hslVar('--layer-grb-dark', 0.15)
-      
+      if (buildingType === 'shed') fillColor = hslVar('--layer-grb-dark', 0.15)
 
       let strokeColor = hslVar('--layer-grb', 1)
 
@@ -1515,9 +1501,7 @@ const handleLoadPICC = () => {
 
   try {
     // Remove existing PICC buildings layer if present
-    if (piccBuildingsLayerRef.value) 
-      map.value.removeLayer(piccBuildingsLayerRef.value)
-    
+    if (piccBuildingsLayerRef.value) map.value.removeLayer(piccBuildingsLayerRef.value)
 
     // Create vector tile source for PICC buildings
     const piccTileSource = new VectorTileSource({
@@ -1580,9 +1564,7 @@ const handleLoadUrbis = () => {
 
   try {
     // Remove existing UrbIS buildings layer if present
-    if (urbisBuildingsLayerRef.value) 
-      map.value.removeLayer(urbisBuildingsLayerRef.value)
-    
+    if (urbisBuildingsLayerRef.value) map.value.removeLayer(urbisBuildingsLayerRef.value)
 
     // Create vector tile source for UrbIS buildings
     const urbisTileSource = new VectorTileSource({
@@ -1642,30 +1624,23 @@ const toggleCandidateBuildings = (visible: boolean) => {
   overlayLayers.value.candidateBuildings = visible
 
   // Toggle visibility of candidate buildings layer
-  if (candidateBuildingsLayerRef.value) 
-    candidateBuildingsLayerRef.value.setVisible(visible)
-  
+  if (candidateBuildingsLayerRef.value) candidateBuildingsLayerRef.value.setVisible(visible)
 }
 
 const toggleOsmBuildings = (visible: boolean) => {
   overlayLayers.value.osmBuildings = visible
 
   // Toggle visibility of OSM buildings layer
-  if (osmBuildingsLayerRef.value) 
-    osmBuildingsLayerRef.value.setVisible(visible && !liveOsmLayerRef.value)
-  
-  if (liveOsmLayerRef.value) 
-    liveOsmLayerRef.value.setVisible(visible)
-  
+  if (osmBuildingsLayerRef.value) osmBuildingsLayerRef.value.setVisible(visible && !liveOsmLayerRef.value)
+
+  if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(visible)
 }
 
 const toggleGrbBuildings = (visible: boolean) => {
   overlayLayers.value.grbBuildings = visible
   const shouldShow = visible && currentZoom.value >= 16
 
-  if (grbBuildingsLayerRef.value) 
-    grbBuildingsLayerRef.value.setVisible(shouldShow)
-  
+  if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(shouldShow)
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
@@ -1688,9 +1663,7 @@ const toggleKnwStructures = (visible: boolean) => {
   overlayLayers.value.knwStructures = visible
   const shouldShow = visible && currentZoom.value >= 16
 
-  if (knwStructuresLayerRef.value) 
-    knwStructuresLayerRef.value.setVisible(shouldShow)
-  
+  if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(shouldShow)
 
   if (visible) {
     if (overlayLayers.value.piccBuildings) {
@@ -1712,9 +1685,7 @@ const togglePiccBuildings = (visible: boolean) => {
   overlayLayers.value.piccBuildings = visible
   const shouldShow = visible && currentZoom.value >= 16
 
-  if (piccBuildingsLayerRef.value) 
-    piccBuildingsLayerRef.value.setVisible(shouldShow)
-  
+  if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(shouldShow)
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
@@ -1737,9 +1708,7 @@ const toggleUrbisBuildings = (visible: boolean) => {
   overlayLayers.value.urbisBuildings = visible
   const shouldShow = visible && currentZoom.value >= 16
 
-  if (urbisBuildingsLayerRef.value) 
-    urbisBuildingsLayerRef.value.setVisible(shouldShow)
-  
+  if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(shouldShow)
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
@@ -1837,18 +1806,10 @@ const pointInPolygon = (point: [number, number], polygon: [number, number][]): b
 // Helper function to check if two polygons overlap significantly
 const polygonsOverlap = (grbCoords: [number, number][], osmCoords: [number, number][]): boolean => {
   // Check if any GRB vertex is inside OSM polygon
-  for (const coord of grbCoords) 
-    if (pointInPolygon(coord, osmCoords)) 
-      return true
-    
-  
+  for (const coord of grbCoords) if (pointInPolygon(coord, osmCoords)) return true
 
   // Check if any OSM vertex is inside GRB polygon
-  for (const coord of osmCoords) 
-    if (pointInPolygon(coord, grbCoords)) 
-      return true
-    
-  
+  for (const coord of osmCoords) if (pointInPolygon(coord, grbCoords)) return true
 
   return false
 }
@@ -1865,9 +1826,7 @@ const hasMatchingOSMFeature = (grbFeature: any, osmFeatures: any[]): boolean => 
     const osmSource = osmFeature.properties?.source || ''
 
     // Skip OSM features that already have GRB as source
-    if (osmSource.includes('Gbg')) 
-      continue
-    
+    if (osmSource.includes('Gbg')) continue
 
     // Check OSM geometry
     const osmGeom = osmFeature.geometry
@@ -1876,9 +1835,7 @@ const hasMatchingOSMFeature = (grbFeature: any, osmFeatures: any[]): boolean => 
     const [osmCoords] = osmGeom.coordinates // Exterior ring
 
     // Check if polygons overlap
-    if (polygonsOverlap(grbCoords, osmCoords)) 
-      return true
-    
+    if (polygonsOverlap(grbCoords, osmCoords)) return true
   }
 
   return false
@@ -1926,9 +1883,7 @@ const mergePolygonFragments = (polygons: [number, number][][]): [number, number]
   // So combining all points gives us the complete building outline
   const allCoords: [number, number][] = []
 
-  for (const polygon of polygons) 
-    allCoords.push(...polygon)
-  
+  for (const polygon of polygons) allCoords.push(...polygon)
 
   // Remove duplicate/very close coordinates (within 0.01 units)
   const uniqueCoords: [number, number][] = []
@@ -1936,9 +1891,7 @@ const mergePolygonFragments = (polygons: [number, number][][]): [number, number]
     const isDuplicate = uniqueCoords.some(
       (existing) => Math.abs(existing[0] - coord[0]) < 0.01 && Math.abs(existing[1] - coord[1]) < 0.01
     )
-    if (!isDuplicate) 
-      uniqueCoords.push(coord)
-    
+    if (!isDuplicate) uniqueCoords.push(coord)
   }
 
   if (uniqueCoords.length < 3) return firstPolygon
@@ -1957,12 +1910,11 @@ const concaveHull = (points: [number, number][]): [number, number][] => {
   // Find the leftmost point
   let leftmostIdx = 0
   let leftmostX = Infinity
-  for (const [i, [x]] of points.entries()) 
+  for (const [i, [x]] of points.entries())
     if (x < leftmostX) {
       leftmostX = x
       leftmostIdx = i
     }
-  
 
   // Gift wrapping (Jarvis march) algorithm adapted for concave hulls
   const hull: [number, number][] = []
@@ -1983,13 +1935,10 @@ const concaveHull = (points: [number, number][]): [number, number][] => {
 
       const nxt = points[next]
 
-      if (next === previous || !nxt) 
-        next = i
-       else {
+      if (next === previous || !nxt) next = i
+      else {
         const crossProduct = cross(curr, nxt, candidate)
-        if (crossProduct > 0) 
-          next = i
-        
+        if (crossProduct > 0) next = i
       }
     }
 
@@ -2064,9 +2013,7 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
         properties: feature.properties || {},
         type: 'Feature'
       })
-    } else 
-      merged.push(feature)
-    
+    } else merged.push(feature)
   }
 
   return merged
@@ -2077,11 +2024,10 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
 const clearLiveOsmLayer = () => {
   if (liveOsmLayerRef.value && map.value) map.value.removeLayer(liveOsmLayerRef.value)
   liveOsmLayerRef.value = null
-  if (osmBuildingsLayerRef.value) 
+  if (osmBuildingsLayerRef.value)
     osmBuildingsLayerRef.value.setVisible(
       overlayLayers.value.osmBuildings && Math.round(map.value?.getView().getZoom() || 0) >= 16
     )
-  
 }
 
 // Issue #9: draw the fresh Overpass buildings for the view so the map matches the difference results.
@@ -2162,11 +2108,8 @@ const calculateDifference = async () => {
     const bounds = [mapExtent[0], mapExtent[1], mapExtent[2], mapExtent[3]]
 
     // Live mode: refresh the OSM layer from Overpass too (non-fatal; the difference call reports errors)
-    if (useOverpass.value) 
-      await refreshLiveOsmLayer(bounds).catch((e) => console.warn('Live OSM layer failed:', e))
-     else 
-      clearLiveOsmLayer()
-    
+    if (useOverpass.value) await refreshLiveOsmLayer(bounds).catch((e) => console.warn('Live OSM layer failed:', e))
+    else clearLiveOsmLayer()
 
     // Call backend API to calculate difference
     const response = await $fetch('/api/buildings/difference', {
@@ -2207,9 +2150,7 @@ const calculateDifference = async () => {
     const totalCandidates = candidateGeoJSON.features.length
     candidateTotalInView.value = totalCandidates
     candidateCapped.value = totalCandidates > CANDIDATE_RENDER_CAP
-    if (candidateCapped.value) 
-      candidateGeoJSON.features = candidateGeoJSON.features.slice(0, CANDIDATE_RENDER_CAP)
-    
+    if (candidateCapped.value) candidateGeoJSON.features = candidateGeoJSON.features.slice(0, CANDIDATE_RENDER_CAP)
 
     // Stamp the source kind on each candidate so the review tooltip and JOSM export
     // Know what they are looking at (the candidate layer is a single OL layer).
@@ -2236,9 +2177,7 @@ const calculateDifference = async () => {
     originalCandidateFeatures.value = candidateGeoJSON.features
 
     // Remove existing candidate buildings layer if present
-    if (candidateBuildingsLayerRef.value) 
-      map.value.removeLayer(candidateBuildingsLayerRef.value)
-    
+    if (candidateBuildingsLayerRef.value) map.value.removeLayer(candidateBuildingsLayerRef.value)
 
     // Import OpenLayers modules
     const { default: VectorLayer } = await import('ol/layer/Vector')
@@ -2363,9 +2302,7 @@ const removeFeature = (index: number) => {
   clickedFeatures.value.splice(index, 1)
 
   // If no features left, close the panel
-  if (clickedFeatures.value.length === 0) 
-    closeTooltip()
-  
+  if (clickedFeatures.value.length === 0) closeTooltip()
 }
 
 // Close tooltip function
@@ -2392,28 +2329,24 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
     let current = ''
     let inQuotes = false
 
-    for (const char of inner) 
-      if (char === '"') 
-        inQuotes = !inQuotes
-       else if (char === ',' && !inQuotes) {
+    for (const char of inner)
+      if (char === '"') inQuotes = !inQuotes
+      else if (char === ',' && !inQuotes) {
         items.push(current.trim())
         current = ''
-      } else 
-        current += char
-      
-    
+      } else current += char
+
     if (current) items.push(current.trim())
 
     return items.map((item) => item.replace(/^"|"$/g, ''))
   }
 
   // Handle '; '-separated strings (STRING_AGG with '; ' separator, e.g. addresses column)
-  if (str.includes('; ')) 
+  if (str.includes('; '))
     return str
       .split('; ')
       .map((s) => s.trim())
       .filter(Boolean)
-  
 
   return [str]
 }
@@ -2440,13 +2373,11 @@ const groupAddresses = (addresses: string[]): GroupedAddress[] => {
         order.push(base)
       }
       groups.get(base)!.push(box)
-    } else 
-      // No bus number — standalone address
-      if (!groups.has(addr)) {
-        groups.set(addr, [])
-        order.push(addr)
-      }
-    
+    } else // No bus number — standalone address
+    if (!groups.has(addr)) {
+      groups.set(addr, [])
+      order.push(addr)
+    }
   }
 
   // Sort box numbers naturally (1, 2, 3, ... 10, 11 instead of 1, 10, 11, 2)
@@ -2482,9 +2413,8 @@ const formatPiccDate = (value: string | undefined): string => {
 // Helper function to format area
 const formatArea = (area: number): string => {
   if (!area) return '—'
-  if (area >= 10000) 
-    return `${(area / 10000).toFixed(2)} ha`
-  
+  if (area >= 10000) return `${(area / 10000).toFixed(2)} ha`
+
   return `${area.toFixed(2)} m²`
 }
 
@@ -2536,15 +2466,10 @@ const getGroupedOsmProperties = (
   const source: [string, any][] = []
   const other: [string, any][] = []
 
-  for (const [key, value] of all) 
-    if (key.startsWith('addr:') || key.startsWith('addr_')) 
-      address.push([key, value])
-     else if (key.startsWith('source:geometry:') || key === 'source:geometry') 
-      source.push([key, value])
-     else 
-      other.push([key, value])
-    
-  
+  for (const [key, value] of all)
+    if (key.startsWith('addr:') || key.startsWith('addr_')) address.push([key, value])
+    else if (key.startsWith('source:geometry:') || key === 'source:geometry') source.push([key, value])
+    else other.push([key, value])
 
   return { address, other, source }
 }
@@ -2669,27 +2594,24 @@ const getDisplayableProperties = (feature: any) => {
       // Apply GRB mapping if it's a GRB feature
       if (isGrb && Object.hasOwn(grbPropertyMapping, key)) {
         const mappedKey = grbPropertyMapping[key]
-        if (typeof mappedKey === 'string') 
-          properties.push([mappedKey, value])
-        
+        if (typeof mappedKey === 'string') properties.push([mappedKey, value])
+
         // If mapped to null, skip this property
-      } else if (!isGrb || !Object.keys(grbPropertyMapping).some((k) => k.toLowerCase() === key.toLowerCase())) 
+      } else if (!isGrb || !Object.keys(grbPropertyMapping).some((k) => k.toLowerCase() === key.toLowerCase()))
         // For OSM features or unmapped GRB properties, include them
         properties.push([key, value])
-      
     })
 
   // Parse and add tags if they exist (PostgreSQL hstore format or JSONB object)
   if (feature.tags) {
     let parsedTags: any = {}
 
-    if (typeof feature.tags === 'string') 
+    if (typeof feature.tags === 'string')
       // Parse hstore string format
       parsedTags = parseHstoreTags(feature.tags)
-     else if (typeof feature.tags === 'object' && feature.tags !== null) 
+    else if (typeof feature.tags === 'object' && feature.tags !== null)
       // Already an object (JSONB from vector tiles)
       parsedTags = feature.tags
-    
 
     // For OSM features, show all tags
     Object.entries(parsedTags)
@@ -2723,9 +2645,7 @@ const getDisplayableProperties = (feature: any) => {
 
 const formatPropertyKey = (key: string) => {
   // Check if we have a custom display name
-  if (propertyDisplayNames[key]) 
-    return propertyDisplayNames[key]
-  
+  if (propertyDisplayNames[key]) return propertyDisplayNames[key]
 
   // Convert underscores to spaces and handle special cases
   return key
@@ -2738,7 +2658,7 @@ const formatPropertyKey = (key: string) => {
 
 // Helper to format a valid Date as a localized string
 const formatDateValue = (date: Date, includeTime: boolean): string => {
-  if (includeTime) 
+  if (includeTime)
     return new Intl.DateTimeFormat('nl-BE', {
       day: '2-digit',
       hour: '2-digit',
@@ -2747,7 +2667,7 @@ const formatDateValue = (date: Date, includeTime: boolean): string => {
       second: '2-digit',
       year: 'numeric'
     }).format(date)
-  
+
   return new Intl.DateTimeFormat('nl-BE', {
     day: '2-digit',
     month: '2-digit',
@@ -2756,15 +2676,13 @@ const formatDateValue = (date: Date, includeTime: boolean): string => {
 }
 
 const formatPropertyValue = (value: any): string => {
-  if (value === null || value === undefined) 
-    return ''
-  
+  if (value === null || value === undefined) return ''
 
   // Try to parse as date/datetime
   if (typeof value === 'string') {
     // Check if it looks like a date (YYYY-MM-DD or ISO datetime)
     const dateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
-    if (dateMatch) 
+    if (dateMatch)
       try {
         const date = new Date(value)
 
@@ -2776,7 +2694,6 @@ const formatPropertyValue = (value: any): string => {
       } catch {
         // If parsing fails, return original value
       }
-    
   }
 
   return String(value)
@@ -2819,13 +2736,9 @@ const setupHoverInteraction = () => {
 
           // Extract feature ID and add it to properties
           const featureId = feature.getId() ?? null
-          if (featureId) 
-            if (layer === osmBuildingsLayerRef.value) 
-              properties.osm_id = featureId
-             else 
-              properties.id = featureId
-            
-          
+          if (featureId)
+            if (layer === osmBuildingsLayerRef.value) properties.osm_id = featureId
+            else properties.id = featureId
 
           // Add layer type to distinguish OSM from GRB/PICC features
           properties._layer_type =
@@ -2854,21 +2767,16 @@ const setupHoverInteraction = () => {
       // Make tooltip sticky with all found features
       clickedFeatures.value = foundFeatures
       isTooltipSticky.value = true
-    } else 
+    } else
       // Clicked outside features, close sticky tooltip
       closeTooltip()
-    
   })
 
   map.value.on('pointermove', (evt) => {
-    if (!map.value) 
-      return
-    
+    if (!map.value) return
 
     // Debounce to reduce canvas read operations
-    if (debounceTimeout) 
-      clearTimeout(debounceTimeout)
-    
+    if (debounceTimeout) clearTimeout(debounceTimeout)
 
     debounceTimeout = setTimeout(() => {
       if (!map.value) return
@@ -2883,9 +2791,7 @@ const setupHoverInteraction = () => {
       // Clear previous hover state (only if not sticky)
       if (currentHoveredFeatureObj && !isTooltipSticky.value) {
         try {
-          if (currentHoveredFeatureObj instanceof Feature) 
-            currentHoveredFeatureObj.set('hovered', false)
-          
+          if (currentHoveredFeatureObj instanceof Feature) currentHoveredFeatureObj.set('hovered', false)
         } catch (error) {
           // Ignore errors when clearing hover state
         }
@@ -2909,9 +2815,7 @@ const setupHoverInteraction = () => {
             layer === urbisBuildingsLayerRef.value ||
             layer === candidateBuildingsLayerRef.value
           ) {
-            if (!firstFeature) 
-              firstFeature = feature
-            
+            if (!firstFeature) firstFeature = feature
 
             // Get properties - handle both regular features and vector tile features
             let properties: any
@@ -2925,13 +2829,9 @@ const setupHoverInteraction = () => {
 
             // Extract feature ID and add it to properties
             const featureId = feature.getId() ?? null
-            if (featureId) 
-              if (layer === osmBuildingsLayerRef.value) 
-                properties.osm_id = featureId
-               else 
-                properties.id = featureId
-              
-            
+            if (featureId)
+              if (layer === osmBuildingsLayerRef.value) properties.osm_id = featureId
+              else properties.id = featureId
 
             // Add layer type to distinguish OSM from GRB/PICC features
             properties._layer_type =
@@ -2958,19 +2858,14 @@ const setupHoverInteraction = () => {
 
       if (foundFeatures.length > 0 && !isTooltipSticky.value) {
         // Clear previous hover state
-        if (currentHoveredFeatureObj && currentHoveredFeatureObj !== firstFeature) 
-          if (currentHoveredFeatureObj instanceof Feature) 
-            currentHoveredFeatureObj.set('hovered', false)
-          
-        
+        if (currentHoveredFeatureObj && currentHoveredFeatureObj !== firstFeature)
+          if (currentHoveredFeatureObj instanceof Feature) currentHoveredFeatureObj.set('hovered', false)
 
         // Set new hover state on first feature
         if (currentHoveredFeatureObj !== firstFeature) {
           // Only set hover state for regular features, not vector tile features
           try {
-            if (firstFeature instanceof Feature && firstFeature.set) 
-              firstFeature.set('hovered', true)
-            
+            if (firstFeature instanceof Feature && firstFeature.set) firstFeature.set('hovered', true)
           } catch (error) {
             // Vector tile features don't support set method
           }
@@ -2981,13 +2876,12 @@ const setupHoverInteraction = () => {
           // Change cursor to pointer
           setMapCursor('pointer')
         }
-      } else if (!isTooltipSticky.value) 
+      } else if (!isTooltipSticky.value)
         // Clear hover state
         if (currentHoveredFeatureObj) {
           try {
-            if (currentHoveredFeatureObj instanceof Feature && currentHoveredFeatureObj.set) 
+            if (currentHoveredFeatureObj instanceof Feature && currentHoveredFeatureObj.set)
               currentHoveredFeatureObj.set('hovered', false)
-            
           } catch (error) {
             // Vector tile features don't support set method
           }
@@ -2997,7 +2891,6 @@ const setupHoverInteraction = () => {
           // Reset cursor
           setMapCursor('')
         }
-      
     }, 16) // ~60fps, reduces canvas reads significantly
   })
 }

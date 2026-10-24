@@ -184,9 +184,7 @@ export const useMapLayers = () => {
       const viewport = mapInstance.getViewport()
       if (viewport) {
         const canvases = viewport.querySelectorAll('canvas')
-        for (const canvas of canvases) 
-          canvas.getContext('2d', { willReadFrequently: true })
-        
+        for (const canvas of canvases) canvas.getContext('2d', { willReadFrequently: true })
       }
     }
     mapInstance.once('postrender', patchCanvasContexts)
@@ -228,17 +226,12 @@ export const useMapLayers = () => {
     esriLayer.value.setVisible(false)
 
     // Show selected layer (or keep all hidden for blank)
-    if (layerName === 'osm') 
-      osmLayer.value.setVisible(true)
-     else if (layerName === 'flanders') 
-      flandersLayer.value.setVisible(true)
-     else if (layerName === 'wallonia') 
-      walloniaLayer.value.setVisible(true)
-     else if (layerName === 'brussels') 
-      brusselsLayer.value.setVisible(true)
-     else if (layerName === 'esri') 
-      esriLayer.value.setVisible(true)
-    
+    if (layerName === 'osm') osmLayer.value.setVisible(true)
+    else if (layerName === 'flanders') flandersLayer.value.setVisible(true)
+    else if (layerName === 'wallonia') walloniaLayer.value.setVisible(true)
+    else if (layerName === 'brussels') brusselsLayer.value.setVisible(true)
+    else if (layerName === 'esri') esriLayer.value.setVisible(true)
+
     // For 'blank', all layers stay hidden
 
     // Update current state
