@@ -48,17 +48,6 @@
             <div class="p-2 space-y-1">
               <button
                 class="action-btn w-full"
-                :disabled="!canCalculateDifference || isCalculatingDifference"
-                title="Get Difference (G)"
-                aria-label="Get Difference"
-                @click="calculateDifference"
-              >
-                <Loader2 v-if="isCalculatingDifference" class="h-3 w-3 animate-spin shrink-0" />
-                <GitCompareArrows v-else class="h-3 w-3 shrink-0" />
-                <span>{{ isCalculatingDifference ? 'Calculating…' : 'Get Difference' }}</span>
-              </button>
-              <button
-                class="action-btn w-full"
                 :disabled="!canExportToJOSM"
                 title="Open in JOSM (J)"
                 aria-label="Open candidates in JOSM"
@@ -371,7 +360,9 @@
           :source-layer-enabled="hasSourceLayer"
           :osm-layer-enabled="hasOsmLayer"
           :zoom="currentZoom"
+          :calculating="isCalculatingDifference"
           @readiness-change="canCalculateDifference = $event"
+          @calculate-difference="calculateDifference"
           @reveal-layers="revealLayersPanel"
           @zoom-to-working-level="zoomToWorkingLevel"
         />
@@ -958,7 +949,6 @@ import {
   ChevronDown,
   CircleAlert,
   ExternalLink,
-  GitCompareArrows,
   Landmark,
   Loader2,
   RotateCcw,

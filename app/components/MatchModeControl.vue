@@ -130,12 +130,24 @@
           Slower, and limited to a small view (about a city block to a town centre).
         </p>
       </div>
+
+      <button
+        class="action-btn mt-3 w-full"
+        :disabled="!canCalculateDifference || calculating"
+        title="Get Difference (G)"
+        aria-label="Get Difference"
+        @click="emit('calculateDifference')"
+      >
+        <Loader2 v-if="calculating" class="h-3 w-3 animate-spin shrink-0" />
+        <GitCompareArrows v-else class="h-3 w-3 shrink-0" />
+        <span>{{ calculating ? 'Calculating…' : 'Get Difference' }}</span>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Check, ChevronDown, Radio } from 'lucide-vue-next'
+import { Check, ChevronDown, GitCompareArrows, Loader2, Radio } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import { useMatchMode } from '~/composables/useMatchMode'
 
@@ -146,11 +158,13 @@ const props = withDefaults(
     sourceLayerEnabled: boolean
     osmLayerEnabled: boolean
     zoom: number
+    calculating?: boolean
   }>(),
-  { sourceSupportsTags: true }
+  { sourceSupportsTags: true, calculating: false }
 )
 const emit = defineEmits<{
   readinessChange: [ready: boolean]
+  calculateDifference: []
   revealLayers: []
   zoomToWorkingLevel: []
 }>()
