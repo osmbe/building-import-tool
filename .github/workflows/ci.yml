@@ -47,7 +47,11 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - run: npm ci
       - run: npm run fmt
-      - run: npm run lint
+      - run: npm run lint -- --format=sarif --output app-lint-results.sarif
+      - name: Upload SARIF for GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: app-lint-results.sarif
 
   app-test:
     runs-on: ubuntu-latest
