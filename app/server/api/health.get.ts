@@ -4,21 +4,21 @@ export default defineEventHandler((event) => {
 
   try {
     // Optional: Check database connection
-    // const db = useDatabase()
-    // await db.sql`SELECT 1`
+    // Const db = useDatabase()
+    // Await db.sql`SELECT 1`
 
     return {
+      service: 'be2osm-nuxt',
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      service: 'be2osm-nuxt'
+      uptime: process.uptime()
     }
   } catch (error) {
     setResponseStatus(event, 503)
     return {
+      error: error instanceof Error ? error.message : 'Unknown error',
       status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Unknown error'
+      timestamp: new Date().toISOString()
     }
   }
 })

@@ -3,7 +3,7 @@ import type { Feature } from 'geojson'
 import { ref } from 'vue'
 
 const mapshaper = vi.hoisted(() => ({
-  internal: { importGeoJSON: vi.fn(), exportFileContent: vi.fn() },
+  internal: { exportFileContent: vi.fn(), importGeoJSON: vi.fn() },
   simplify: vi.fn()
 }))
 vi.mock('mapshaper', () => mapshaper)
@@ -18,18 +18,7 @@ const { geojsonToOsm } = await import('~/utils/geojsonToOsm')
 const { useJosmExport } = await import('~/composables/useJosmExport')
 
 const square = (x: number): Feature => ({
-  type: 'Feature',
-  properties: {
-    source: 'grb',
-    entity: 'Gbg',
-    source_id: String(2664 + x),
-    source_ref: `Gbg/${2664 + x}`,
-    type_label: 'hoofdgebouw',
-    survey_date: '2023-03-15',
-    parent_id: '9'
-  },
   geometry: {
-    type: 'Polygon',
     coordinates: [
       [
         [4.4 + x / 1000, 51.2],
@@ -38,19 +27,35 @@ const square = (x: number): Feature => ({
         [4.4 + x / 1000, 51.2001],
         [4.4 + x / 1000, 51.2]
       ]
-    ]
-  }
+    ],
+    type: 'Polygon'
+  },
+  properties: {
+    entity: 'Gbg',
+    parent_id: '9',
+    source: 'grb',
+    source_id: String(2664 + x),
+    source_ref: `Gbg/${2664 + x}`,
+    survey_date: '2023-03-15',
+    type_label: 'hoofdgebouw'
+  },
+  type: 'Feature'
 })
 
-type FetchResponse = { ok: boolean; status?: number; json?: () => Promise<unknown>; text?: () => Promise<string> }
+interface FetchResponse {
+  ok: boolean
+  status?: number
+  json?: () => Promise<unknown>
+  text?: () => Promise<string>
+}
 const res = (ok: boolean, body: unknown = '', status = ok ? 200 : 500): FetchResponse => ({
+  json: async () => body,
   ok,
   status,
-  json: async () => body,
   text: async () => (typeof body === 'string' ? body : JSON.stringify(body))
 })
 
-/** fetch stub routing JOSM /version, /load_data, /load_and_zoom and uploaded /exports/ files. */
+/** Fetch stub routing JOSM /version, /load_data, /load_and_zoom and uploaded /exports/ files. */
 const stubFetch = (routes: {
   version?: FetchResponse
   loadData?: FetchResponse
@@ -79,7 +84,7 @@ describe('useJosmExport', () => {
     // Nuxt auto-imports
     vi.stubGlobal('ref', ref)
     vi.stubGlobal('$fetch', vi.fn())
-    vi.stubGlobal('window', { location: { protocol: 'https:', host: 'be2osm.example' } })
+    vi.stubGlobal('window', { location: { host: 'be2osm.example', protocol: 'https:' } })
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     vi.spyOn(console, 'error').mockImplementation(() => {})
     mapshaper.internal.importGeoJSON.mockReset()
@@ -136,7 +141,7 @@ describe('useJosmExport', () => {
       const fetchMock = stubFetch({})
       const result = await useJosmExport().exportLayerToJosm([square(0)], 'GRB buildings')
 
-      expect(result).toEqual({ success: true, fileUrl: null, featureCount: 1, method: 'direct' })
+      expect(result).toEqual({ featureCount: 1, fileUrl: null, method: 'direct', success: true })
       const params = loadDataParams(fetchMock)
       expect(params.get('layer_name')).toBe('GRB buildings')
       expect(params.get('upload_policy')).toBe('never')
@@ -174,14 +179,14 @@ describe('useJosmExport', () => {
       const result = await useJosmExport().exportLayerToJosm([square(0)], 'layer', { uploadToBackend: true })
 
       expect(result).toEqual({
-        success: true,
-        fileUrl: 'https://be2osm.example/exports/export-1.osm',
         featureCount: 1,
-        method: 'backend-upload'
+        fileUrl: 'https://be2osm.example/exports/export-1.osm',
+        method: 'backend-upload',
+        success: true
       })
       const [url, init] = fetchApi.mock.calls[0] ?? []
       expect(url).toBe('/api/export/upload')
-      expect(init).toMatchObject({ method: 'POST', headers: { 'Content-Type': 'application/xml' } })
+      expect(init).toMatchObject({ headers: { 'Content-Type': 'application/xml' }, method: 'POST' })
       expect(String(init.body)).toContain('<osm version="0.6"')
       expect(fetchMock).toHaveBeenCalledWith('https://be2osm.example/exports/export-1.osm')
       expect(loadDataParams(fetchMock).get('data')).toBe('<osm>uploaded</osm>')
@@ -233,16 +238,16 @@ describe('useJosmExport', () => {
   describe('simplification', () => {
     it('simplifies with mapshaper (Douglas-Peucker, keeping shapes) before converting', async () => {
       const fetchMock = stubFetch({})
-      const simplified = { type: 'FeatureCollection', features: [square(7)] }
+      const simplified = { features: [square(7)], type: 'FeatureCollection' }
       mapshaper.internal.importGeoJSON.mockReturnValue('dataset')
       mapshaper.simplify.mockReturnValue('simplified')
       mapshaper.internal.exportFileContent.mockReturnValue([{ content: JSON.stringify(simplified) }])
 
       await useJosmExport().exportLayerToJosm([square(0)], 'l', { simplify: true, simplifyPercent: 50 })
 
-      expect(mapshaper.simplify).toHaveBeenCalledWith('dataset', { percentage: 0.5, method: 'dp', keep_shapes: true })
+      expect(mapshaper.simplify).toHaveBeenCalledWith('dataset', { keep_shapes: true, method: 'dp', percentage: 0.5 })
       expect(mapshaper.internal.exportFileContent).toHaveBeenCalledWith('simplified', { format: 'geojson' })
-      // mapshaper's output is what gets exported (tags were mapped before simplification)
+      // Mapshaper's output is what gets exported (tags were mapped before simplification)
       expect(mapshaper.internal.importGeoJSON.mock.calls[0]?.[0].features[0].properties['source:geometry:ref']).toBe(
         'Gbg/2664'
       )
@@ -280,7 +285,7 @@ describe('useJosmExport', () => {
       await useJosmExport().openAreaInJosm([4.3, 50.8, 4.4, 50.9])
       const call = fetchMock.mock.calls.find(([url]) => String(url).includes('/load_and_zoom'))
       const params = new URL(String(call?.[0])).searchParams
-      expect(Object.fromEntries(params)).toEqual({ left: '4.3', bottom: '50.8', right: '4.4', top: '50.9' })
+      expect(Object.fromEntries(params)).toEqual({ bottom: '50.8', left: '4.3', right: '4.4', top: '50.9' })
     })
 
     it('fails when JOSM is not running or rejects the request', async () => {

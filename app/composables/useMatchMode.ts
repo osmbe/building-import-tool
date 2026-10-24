@@ -32,12 +32,12 @@ export function useMatchMode() {
   }
 
   return {
-    matchMode,
     geometryThreshold,
-    useOverpass,
-    setMatchMode,
+    matchMode,
     setGeometryThreshold,
+    setMatchMode,
     setUseOverpass,
-    toggleMatchMode
+    toggleMatchMode,
+    useOverpass
   }
 }

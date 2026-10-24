@@ -15,7 +15,7 @@ let nextId = 0
 
 function addToast(type: ToastType, title: string, message?: string, duration = 5000) {
   const id = nextId++
-  toasts.value.push({ id, type, title, message, duration })
+  toasts.value.push({ duration, id, message, title, type })
 }
 
 function removeToast(id: number) {
@@ -25,11 +25,19 @@ function removeToast(id: number) {
 
 export function useToast() {
   return {
-    toasts,
+    error: (title: string, message?: string, duration?: number) => {
+      addToast('error', title, message, duration ?? 8000)
+    },
+    info: (title: string, message?: string, duration?: number) => {
+      addToast('info', title, message, duration)
+    },
     removeToast,
-    info: (title: string, message?: string, duration?: number) => addToast('info', title, message, duration),
-    success: (title: string, message?: string, duration?: number) => addToast('success', title, message, duration),
-    warning: (title: string, message?: string, duration?: number) => addToast('warning', title, message, duration),
-    error: (title: string, message?: string, duration?: number) => addToast('error', title, message, duration ?? 8000)
+    success: (title: string, message?: string, duration?: number) => {
+      addToast('success', title, message, duration)
+    },
+    toasts,
+    warning: (title: string, message?: string, duration?: number) => {
+      addToast('warning', title, message, duration)
+    }
   }
 }

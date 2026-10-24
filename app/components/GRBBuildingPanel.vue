@@ -135,7 +135,7 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
     let current = ''
     let inQuotes = false
 
-    for (const char of inner) {
+    for (const char of inner)
       if (char === '"') {
         inQuotes = !inQuotes
       } else if (char === ',' && !inQuotes) {
@@ -144,19 +144,18 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
       } else {
         current += char
       }
-    }
+
     if (current) items.push(current.trim())
 
     return items.map((item) => item.replace(/^"|"$/g, ''))
   }
 
   // Handle '; '-separated strings (STRING_AGG with '; ' separator, e.g. addresses column)
-  if (str.includes('; ')) {
+  if (str.includes('; '))
     return str
       .split('; ')
       .map((s) => s.trim())
       .filter(Boolean)
-  }
 
   return [str]
 }
@@ -185,11 +184,9 @@ const groupAddresses = (addrs: string[]): GroupedAddress[] => {
         order.push(base)
       }
       groups.get(base)!.push(box)
-    } else {
-      if (!groups.has(addr)) {
-        groups.set(addr, [])
-        order.push(addr)
-      }
+    } else if (!groups.has(addr)) {
+      groups.set(addr, [])
+      order.push(addr)
     }
   }
 
@@ -209,19 +206,19 @@ const buildingTypeLabel = computed(() => {
   const type = building?.type_label
   if (!type) return 'Building'
   const translations: Record<string, string> = {
-    hoofdgebouw: 'Main Building',
-    bijgebouw: 'Outbuilding',
     afdak: 'Shelter',
-    garage: 'Garage',
     berging: 'Storage',
-    serre: 'Conservatory',
-    'ingezonken garagetoegang': 'Sunken Garage Entrance',
-    verdieping: 'Upper Floor',
-    trap: 'Staircase',
-    'zichtbare onderkeldering': 'Visible Basement',
+    bijgebouw: 'Outbuilding',
+    garage: 'Garage',
     'gebouw afgezoomd met virtuele gevels': 'Building with Virtual Facades',
+    hoofdgebouw: 'Main Building',
+    'ingezonken garagetoegang': 'Sunken Garage Entrance',
+    loopbrug: 'Walkway',
+    serre: 'Conservatory',
+    trap: 'Staircase',
+    verdieping: 'Upper Floor',
     'verheven garagetoegang': 'Elevated Garage Entrance',
-    loopbrug: 'Walkway'
+    'zichtbare onderkeldering': 'Visible Basement'
   }
   return translations[type.toLowerCase()] || type
 })
@@ -229,14 +226,14 @@ const buildingTypeLabel = computed(() => {
 const formatOriginLabel = (label: string | undefined): string => {
   if (!label) return ''
   const translations: Record<string, string> = {
-    terreinbezoek: 'Field Survey',
+    andere: 'Other',
     'as-built plan': 'As-Built Plan',
-    'gemeentelijk as-built plan': 'Municipal As-Built Plan',
     fotogrammetrisch: 'Photogrammetry',
-    luchtfoto: 'Aerial Photo',
     gedigitaliseerd: 'Digitized',
+    'gemeentelijk as-built plan': 'Municipal As-Built Plan',
+    luchtfoto: 'Aerial Photo',
     'niet gekend': 'Unknown',
-    andere: 'Other'
+    terreinbezoek: 'Field Survey'
   }
   return translations[label.toLowerCase()] || label
 }

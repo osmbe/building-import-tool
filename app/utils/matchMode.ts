@@ -17,8 +17,8 @@ export const resolveMatchMode = (
   dataSource: DifferenceDataSource
 ): { mode: MatchMode; downgraded: boolean } =>
   mode !== 'geometry' && !supportsSourceTags(dataSource)
-    ? { mode: 'geometry', downgraded: true }
-    : { mode, downgraded: false }
+    ? { downgraded: true, mode: 'geometry' }
+    : { downgraded: false, mode }
 
 /**
  * Whether a source building stays a candidate (is missing from OSM).

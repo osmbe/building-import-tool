@@ -2,9 +2,9 @@
 // The main behaviour is covered in tests/overpass.test.ts.
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
+  OverpassError,
   clearOverpassCache,
   fetchOverpassBuildings,
-  OverpassError,
   overpassHttpError,
   parseOverpassElements,
   relationToPolygons,
@@ -21,10 +21,10 @@ const SQUARE: Ring = [
   [10, 0],
   [0, 0]
 ]
-const nodes = (ring: Ring) => ring.map(([lon, lat]) => ({ lon, lat }))
+const nodes = (ring: Ring) => ring.map(([lon, lat]) => ({ lat, lon }))
 
 const jsonResponse = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
+  new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' }, status })
 
 afterEach(() => {
   clearOverpassCache()
@@ -150,10 +150,10 @@ describe('relationToPolygons', () => {
   it('ignores non-way members, unknown roles and members without geometry', () => {
     const polygons = relationToPolygons([
       null,
-      { type: 'node', role: 'outer' },
-      { type: 'way', role: 'label', geometry: nodes(SQUARE) },
-      { type: 'way', role: 'outer', geometry: 'not-an-array' },
-      { type: 'way', role: '', geometry: nodes(SQUARE) }
+      { role: 'outer', type: 'node' },
+      { geometry: nodes(SQUARE), role: 'label', type: 'way' },
+      { geometry: 'not-an-array', role: 'outer', type: 'way' },
+      { geometry: nodes(SQUARE), role: '', type: 'way' }
     ])
     expect(polygons).toEqual([[SQUARE]])
   })
@@ -166,8 +166,8 @@ describe('relationToPolygons', () => {
       [100, 100]
     ]
     const polygons = relationToPolygons([
-      { type: 'way', role: 'outer', geometry: nodes(SQUARE) },
-      { type: 'way', role: 'inner', geometry: nodes(farAway) }
+      { geometry: nodes(SQUARE), role: 'outer', type: 'way' },
+      { geometry: nodes(farAway), role: 'inner', type: 'way' }
     ])
     expect(polygons).toEqual([[SQUARE]])
   })
@@ -177,25 +177,25 @@ describe('parseOverpassElements', () => {
   it('skips null elements, elements without geometry and degenerate closed ways', () => {
     const result = parseOverpassElements([
       null,
-      { type: 'node', id: 1, lat: 0, lon: 0 },
+      { id: 1, lat: 0, lon: 0, type: 'node' },
       {
-        type: 'way',
-        id: 2,
         geometry: nodes([
           [0, 0],
           [1, 1],
           [0, 0]
-        ])
+        ]),
+        id: 2,
+        type: 'way'
       },
-      { type: 'way', id: 3, geometry: nodes(SQUARE) }
+      { geometry: nodes(SQUARE), id: 3, type: 'way' }
     ])
     expect(result.totalOsm).toBe(1)
     // A way without tags still becomes a building=yes feature
-    expect(result.features[0]?.properties).toEqual({ osm_id: 'way/3', building: 'yes' })
+    expect(result.features[0]?.properties).toEqual({ building: 'yes', osm_id: 'way/3' })
   })
 
   it('keeps an already closed way as is', () => {
-    const result = parseOverpassElements([{ type: 'way', id: 4, tags: { building: 'house' }, geometry: nodes(SQUARE) }])
+    const result = parseOverpassElements([{ geometry: nodes(SQUARE), id: 4, tags: { building: 'house' }, type: 'way' }])
     expect(result.features[0]?.geometry.coordinates).toEqual([SQUARE])
     expect(result.features[0]?.properties.building).toBe('house')
   })
@@ -209,7 +209,7 @@ describe('overpassHttpError', () => {
   it('keeps the error body out of the message and only logs it when present', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const error = overpassHttpError(500, '<html>boom</html>')
-    expect(error).toMatchObject({ statusCode: 502, message: 'Overpass request failed (500). Try again shortly.' })
+    expect(error).toMatchObject({ message: 'Overpass request failed (500). Try again shortly.', statusCode: 502 })
     expect(warn).toHaveBeenCalledTimes(1)
     overpassHttpError(500, '')
     expect(warn).toHaveBeenCalledTimes(1)
@@ -240,7 +240,7 @@ describe('fetchOverpassBuildings failures', () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(new Response('busy', { status: 503 }))
-      .mockResolvedValueOnce(jsonResponse({ elements: [{ type: 'way', id: 1, geometry: nodes(SQUARE) }] }))
+      .mockResolvedValueOnce(jsonResponse({ elements: [{ geometry: nodes(SQUARE), id: 1, type: 'way' }] }))
     vi.stubGlobal('fetch', fetchMock)
 
     const pending = fetchOverpassBuildings(BBOX)
@@ -273,7 +273,7 @@ describe('fetchOverpassBuildings failures', () => {
 describe('fetchOverpassBuildings answers and cache', () => {
   it('treats a body without elements as no buildings', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ remark: 'runtime error' })))
-    expect(await fetchOverpassBuildings(BBOX)).toMatchObject({ totalOsm: 0, geomCollection: null })
+    expect(await fetchOverpassBuildings(BBOX)).toMatchObject({ geomCollection: null, totalOsm: 0 })
   })
 
   it('does not cache failures', async () => {

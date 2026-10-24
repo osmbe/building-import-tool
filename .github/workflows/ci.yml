@@ -8,7 +8,10 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch:
+    branches: [main]
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -18,8 +21,7 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  test-app:
-    name: Test App (fmt, lint, typecheck, unit tests + coverage, build)
+  app-build:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -32,11 +34,56 @@ jobs:
           cache: npm
           cache-dependency-path: app/package-lock.json
       - run: npm ci
-      - run: npx vp fmt --check
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test:coverage
       - run: npm run build
+
+  app-lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run fmt
+      - run: npm run lint -- --format=github
+
+  app-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run test:coverage
+
+  app-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
 
   test-infra:
     name: Test Infra (workflows, shell scripts, justfile, compose files)
@@ -89,8 +136,7 @@ jobs:
 
   build:
     name: Build and push ${{ matrix.image }}
-    needs: [test-app, test-infra, test-db]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [app-build, test-infra, test-db]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -112,20 +158,15 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - id: meta
-        uses: docker/metadata-action@v6
+      - uses: docker/metadata-action@v6
+        id: meta
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}
-          tags: |
-            type=sha,prefix={{branch}}-
-            type=sha,format=long,prefix=sha-
-            type=ref,event=branch
-            type=raw,value=latest,enable={{is_default_branch}}
       - uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.context }}/Dockerfile
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |

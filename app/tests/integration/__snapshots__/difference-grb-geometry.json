@@ -1,13 +1,30 @@
 {
-  "stats": {
-    "total": 2,
-    "totalGrb": 3,
-    "totalOsm": 3,
-    "dataSource": "grb",
-    "matchMode": "geometry"
-  },
   "features": [
     {
+      "coordinates": [
+        [
+          [
+            4.401,
+            51.2
+          ],
+          [
+            4.401,
+            51.200065
+          ],
+          [
+            4.4011,
+            51.200065
+          ],
+          [
+            4.4011,
+            51.2
+          ],
+          [
+            4.401,
+            51.2
+          ]
+        ]
+      ],
       "properties": {
         "fid": "2",
         "source": "grb",
@@ -29,33 +46,33 @@
         "municipalities": "",
         "address_count": 0,
         "details": {}
-      },
+      }
+    },
+    {
       "coordinates": [
         [
           [
-            4.401,
+            4.403,
             51.2
           ],
           [
-            4.401,
+            4.403,
             51.200065
           ],
           [
-            4.4011,
+            4.4031,
             51.200065
           ],
           [
-            4.4011,
+            4.4031,
             51.2
           ],
           [
-            4.401,
+            4.403,
             51.2
           ]
         ]
-      ]
-    },
-    {
+      ],
       "properties": {
         "fid": "4",
         "source": "grb",
@@ -77,31 +94,14 @@
         "municipalities": "",
         "address_count": 0,
         "details": {}
-      },
-      "coordinates": [
-        [
-          [
-            4.403,
-            51.2
-          ],
-          [
-            4.403,
-            51.200065
-          ],
-          [
-            4.4031,
-            51.200065
-          ],
-          [
-            4.4031,
-            51.2
-          ],
-          [
-            4.403,
-            51.2
-          ]
-        ]
-      ]
+      }
     }
-  ]
+  ],
+  "stats": {
+    "dataSource": "grb",
+    "matchMode": "geometry",
+    "total": 2,
+    "totalGrb": 3,
+    "totalOsm": 3
+  }
 }

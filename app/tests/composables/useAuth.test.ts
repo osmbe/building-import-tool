@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import type { OSMUser } from '~/composables/useAuth'
 
-// useAuth runs its session check in onMounted. Outside a component, capture the hook and run it by hand.
+// UseAuth runs its session check in onMounted. Outside a component, capture the hook and run it by hand.
 const mounted = vi.hoisted(() => ({ hooks: [] as (() => Promise<void> | void)[] }))
 vi.mock('vue', async (importOriginal) => ({
   ...(await importOriginal<typeof import('vue')>()),
@@ -12,12 +12,12 @@ vi.mock('vue', async (importOriginal) => ({
 
 const { useAuth } = await import('~/composables/useAuth')
 
-const alice: OSMUser = { id: 1, username: 'alice', displayName: 'Alice', changesets: 3, joinDate: '2020-01-01' }
+const alice: OSMUser = { changesets: 3, displayName: 'Alice', id: 1, joinDate: '2020-01-01', username: 'alice' }
 
 const stubWindow = (search = '') => {
   const win = {
-    location: { search, pathname: '/map', href: '' },
-    history: { replaceState: vi.fn() }
+    history: { replaceState: vi.fn() },
+    location: { href: '', pathname: '/map', search }
   }
   vi.stubGlobal('window', win)
   return win

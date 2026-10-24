@@ -29,7 +29,7 @@ export interface MapConfig {
 // Main composable
 export const useMapLayers = () => {
   // OpenLayers objects are held in shallow refs: a deep ref would wrap them in reactive proxies, which is slow
-  // and breaks identity checks (map.value !== the real map).
+  // And breaks identity checks (map.value !== the real map).
   const map = shallowRef<OLMap | null>(null)
   const currentBaseLayer = ref<'osm' | 'flanders' | 'wallonia' | 'brussels' | 'esri' | 'blank'>('osm')
   const osmLayer = shallowRef<TileLayer<XYZ>>()
@@ -42,15 +42,15 @@ export const useMapLayers = () => {
   const initializeLayers = () => {
     // OSM Belgium layer - visible by default
     osmLayer.value = new TileLayer({
-      source: new XYZ({
-        url: 'https://tile.openstreetmap.be/osmbe/{z}/{x}/{y}.png',
-        attributions: '© OpenStreetMap contributors, tiles courtesy of GEO-6'
-      }),
-      visible: true,
       properties: {
         title: 'OpenStreetMap Belgium',
         type: 'base'
-      }
+      },
+      source: new XYZ({
+        attributions: '© OpenStreetMap contributors, tiles courtesy of GEO-6',
+        url: 'https://tile.openstreetmap.be/osmbe/{z}/{x}/{y}.png'
+      }),
+      visible: true
     })
 
     // Flanders WMTS layer - hidden by default
@@ -66,81 +66,81 @@ export const useMapLayers = () => {
     }
 
     flandersLayer.value = new TileLayer({
-      source: new WMTS({
-        url: 'https://geo.api.vlaanderen.be/OFW/wmts',
-        layer: 'ofw',
-        matrixSet: 'GoogleMapsVL',
-        format: 'image/png',
-        projection: projection,
-        tileGrid: new WMTSTileGrid({
-          origin: getTopLeft(projectionExtent),
-          resolutions: resolutions,
-          matrixIds: matrixIds
-        }),
-        style: 'default',
-        wrapX: true
-      }),
-      visible: false,
       properties: {
         title: 'Flanders Orthophoto',
         type: 'base'
-      }
+      },
+      source: new WMTS({
+        format: 'image/png',
+        layer: 'ofw',
+        matrixSet: 'GoogleMapsVL',
+        projection,
+        style: 'default',
+        tileGrid: new WMTSTileGrid({
+          matrixIds,
+          origin: getTopLeft(projectionExtent),
+          resolutions
+        }),
+        url: 'https://geo.api.vlaanderen.be/OFW/wmts',
+        wrapX: true
+      }),
+      visible: false
     })
 
     // Wallonia WMS layer - hidden by default (2024 version)
     walloniaLayer.value = new TileLayer({
-      source: new TileWMS({
-        url: 'https://geoservices.wallonie.be/arcgis/services/IMAGERIE/ORTHO_2024/MapServer/WMSServer',
-        params: {
-          LAYERS: '0',
-          TILED: true,
-          VERSION: '1.3.0',
-          FORMAT: 'image/png'
-        },
-        serverType: 'mapserver',
-        crossOrigin: 'anonymous'
-      }),
-      visible: false,
       properties: {
         title: 'Wallonia Orthophoto 2024',
         type: 'base'
-      }
+      },
+      source: new TileWMS({
+        crossOrigin: 'anonymous',
+        params: {
+          FORMAT: 'image/png',
+          LAYERS: '0',
+          TILED: true,
+          VERSION: '1.3.0'
+        },
+        serverType: 'mapserver',
+        url: 'https://geoservices.wallonie.be/arcgis/services/IMAGERIE/ORTHO_2024/MapServer/WMSServer'
+      }),
+      visible: false
     })
 
     // Esri World Imagery - hidden by default, restricted to Belgium extent
     const belgiumExtent = transformExtent([2.54, 49.49, 6.41, 51.51], 'EPSG:4326', 'EPSG:3857')
     esriLayer.value = new TileLayer({
-      source: new XYZ({
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        attributions: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
-        maxZoom: 19
-      }),
       extent: belgiumExtent,
-      visible: false,
       properties: {
         title: 'Esri World Imagery',
         type: 'base'
-      }
+      },
+      source: new XYZ({
+        attributions: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+        maxZoom: 19,
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+      }),
+      visible: false
     })
 
     // Brussels WMS layer - hidden by default (2024 version, nadir/vertical)
     brusselsLayer.value = new TileLayer({
-      source: new TileWMS({
-        url: '/api/proxy/brussels-wms',
-        params: {
-          LAYERS: 'Ortho2024Ns',
-          TILED: true,
-          VERSION: '1.1.1',
-          FORMAT: 'image/jpeg'
-        },
-        serverType: 'geoserver',
-        crossOrigin: 'anonymous'
-      }),
-      visible: false,
       properties: {
         title: 'Brussels Orthophoto 2024',
         type: 'base'
-      }
+      },
+      source: new TileWMS({
+        crossOrigin: 'anonymous',
+        params: {
+          FORMAT: 'image/jpeg',
+          LAYERS: 'Ortho2024Ns',
+          TILED: true,
+          VERSION: '1.1.1'
+        },
+        serverType: 'geoserver',
+        url: '/api/proxy/brussels-wms'
+      }),
+      visible: false
     })
   }
 
@@ -148,30 +148,30 @@ export const useMapLayers = () => {
   const initializeMap = (target: HTMLElement, config: MapConfig = {}): OLMap => {
     if (map.value) {
       console.warn('Map already initialized')
-      return map.value as OLMap
+      return map.value
     }
 
     // Default config
     const defaultConfig: MapConfig = {
       center: [4.3047, 50.9087], // Belgium center
-      zoom: 13,
       maxZoom: 19,
       minZoom: 3,
-      projection: 'EPSG:3857'
+      projection: 'EPSG:3857',
+      zoom: 13
     }
 
     const finalConfig = { ...defaultConfig, ...config }
 
     // Create map first (empty)
     const mapInstance = new OLMap({
-      target: target,
+      target,
       layers: [],
       view: new View({
         center: fromLonLat(finalConfig.center!),
-        zoom: finalConfig.zoom,
         maxZoom: finalConfig.maxZoom,
         minZoom: finalConfig.minZoom,
-        projection: finalConfig.projection
+        projection: finalConfig.projection,
+        zoom: finalConfig.zoom
       }),
       // Add context options to reduce Canvas2D warnings
       // This tells the browser we'll be reading from canvas frequently (for hit detection)
@@ -184,9 +184,7 @@ export const useMapLayers = () => {
       const viewport = mapInstance.getViewport()
       if (viewport) {
         const canvases = viewport.querySelectorAll('canvas')
-        for (const canvas of canvases) {
-          canvas.getContext('2d', { willReadFrequently: true })
-        }
+        for (const canvas of canvases) canvas.getContext('2d', { willReadFrequently: true })
       }
     }
     mapInstance.once('postrender', patchCanvasContexts)
@@ -228,17 +226,12 @@ export const useMapLayers = () => {
     esriLayer.value.setVisible(false)
 
     // Show selected layer (or keep all hidden for blank)
-    if (layerName === 'osm') {
-      osmLayer.value.setVisible(true)
-    } else if (layerName === 'flanders') {
-      flandersLayer.value.setVisible(true)
-    } else if (layerName === 'wallonia') {
-      walloniaLayer.value.setVisible(true)
-    } else if (layerName === 'brussels') {
-      brusselsLayer.value.setVisible(true)
-    } else if (layerName === 'esri') {
-      esriLayer.value.setVisible(true)
-    }
+    if (layerName === 'osm') osmLayer.value.setVisible(true)
+    else if (layerName === 'flanders') flandersLayer.value.setVisible(true)
+    else if (layerName === 'wallonia') walloniaLayer.value.setVisible(true)
+    else if (layerName === 'brussels') brusselsLayer.value.setVisible(true)
+    else if (layerName === 'esri') esriLayer.value.setVisible(true)
+
     // For 'blank', all layers stay hidden
 
     // Update current state

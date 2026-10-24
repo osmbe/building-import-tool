@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount } from 'vue'
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-vue-next'
-import { useToast, type ToastType } from '~/composables/useToast'
+import { type ToastType, useToast } from '~/composables/useToast'
 
 const { toasts, removeToast } = useToast()
 
@@ -33,17 +33,17 @@ onBeforeUnmount(() => {
 })
 
 const icons: Record<ToastType, typeof Info> = {
+  error: XCircle,
   info: Info,
   success: CheckCircle2,
-  warning: AlertTriangle,
-  error: XCircle
+  warning: AlertTriangle
 }
 
 const accentColor: Record<ToastType, string> = {
+  error: 'hsl(0 68% 56%)',
   info: 'hsl(192 90% 46%)',
   success: 'hsl(152 68% 56%)',
-  warning: 'hsl(38 92% 55%)',
-  error: 'hsl(0 68% 56%)'
+  warning: 'hsl(38 92% 55%)'
 }
 </script>
 

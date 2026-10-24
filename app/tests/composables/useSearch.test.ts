@@ -1,24 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
-import { addToSearchHistory, getSearchHistory, searchLocations, type SearchResult } from '~/composables/useSearch'
+import { type SearchResult, addToSearchHistory, getSearchHistory, searchLocations } from '~/composables/useSearch'
 
 const nominatim = (overrides: Record<string, any> = {}) => ({
-  place_id: 1,
-  licence: '',
-  osm_type: 'way',
-  osm_id: 10,
-  lat: '50.85',
-  lon: '4.35',
-  display_name: 'Brussels, Belgium',
-  address: { country: 'Belgium', state: 'Brussels-Capital', postcode: '1000' },
+  address: { country: 'Belgium', postcode: '1000', state: 'Brussels-Capital' },
   boundingbox: ['50.8', '50.9', '4.3', '4.4'],
-  type: 'city',
   class: 'place',
+  display_name: 'Brussels, Belgium',
   importance: 1,
+  lat: '50.85',
+  licence: '',
+  lon: '4.35',
+  osm_id: 10,
+  osm_type: 'way',
+  place_id: 1,
+  type: 'city',
   ...overrides
 })
 
 const mockFetch = (body: unknown, ok = true, status = 200) => {
-  const fn = vi.fn().mockResolvedValue({ ok, status, json: async () => body })
+  const fn = vi.fn().mockResolvedValue({ json: async () => body, ok, status })
   vi.stubGlobal('fetch', fn)
   return fn
 }
@@ -66,7 +66,7 @@ describe('searchLocations', () => {
         // Nominatim [minLat, maxLat, minLon, maxLon] -> [minLng, minLat, maxLng, maxLat]
         boundingBox: [4.3, 50.8, 4.4, 50.9],
         provider: 'osm',
-        details: { country: 'Belgium', region: 'Brussels-Capital', postcode: '1000', category: 'place' }
+        details: { category: 'place', country: 'Belgium', postcode: '1000', region: 'Brussels-Capital' }
       }
     ])
   })
@@ -78,7 +78,7 @@ describe('searchLocations', () => {
       nominatim({ class: 'highway', type: 'residential' }),
       nominatim({ class: 'place', type: 'village' }),
       nominatim({ class: 'boundary', type: 'administrative' }),
-      nominatim({ class: 'amenity', type: 'cafe', address: { region: 'Flanders' } }),
+      nominatim({ address: { region: 'Flanders' }, class: 'amenity', type: 'cafe' }),
       nominatim({ class: 'place', type: 'hamlet' })
     ])
     const results = await searchLocations('somewhere', 'osm')
@@ -102,11 +102,11 @@ describe('searchLocations', () => {
 
 describe('search history', () => {
   const item = (id: string): SearchResult => ({
-    id,
-    displayName: id,
-    type: 'city',
     coordinates: [4, 50],
-    provider: 'osm'
+    displayName: id,
+    id,
+    provider: 'osm',
+    type: 'city'
   })
 
   it('is empty when nothing is stored or the stored value is invalid', () => {

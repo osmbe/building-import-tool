@@ -1,13 +1,30 @@
 {
-  "stats": {
-    "total": 1,
-    "totalGrb": 1,
-    "totalOsm": 3,
-    "dataSource": "knw",
-    "matchMode": "geometry"
-  },
   "features": [
     {
+      "coordinates": [
+        [
+          [
+            4.405,
+            51.2
+          ],
+          [
+            4.405,
+            51.200065
+          ],
+          [
+            4.4051,
+            51.200065
+          ],
+          [
+            4.4051,
+            51.2
+          ],
+          [
+            4.405,
+            51.2
+          ]
+        ]
+      ],
       "properties": {
         "fid": "7001",
         "source": "knw",
@@ -32,31 +49,14 @@
           "uidn": 70010,
           "length_m": 8
         }
-      },
-      "coordinates": [
-        [
-          [
-            4.405,
-            51.2
-          ],
-          [
-            4.405,
-            51.200065
-          ],
-          [
-            4.4051,
-            51.200065
-          ],
-          [
-            4.4051,
-            51.2
-          ],
-          [
-            4.405,
-            51.2
-          ]
-        ]
-      ]
+      }
     }
-  ]
+  ],
+  "stats": {
+    "dataSource": "knw",
+    "matchMode": "geometry",
+    "total": 1,
+    "totalGrb": 1,
+    "totalOsm": 3
+  }
 }

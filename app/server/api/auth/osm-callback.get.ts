@@ -10,36 +10,35 @@ export default defineEventHandler(async (event) => {
   if (!state || state !== storedState) {
     console.error('State mismatch - CSRF protection failed')
     throw createError({
-      statusCode: 400,
-      message: 'Invalid state parameter - please try signing in again'
+      message: 'Invalid state parameter - please try signing in again',
+      statusCode: 400
     })
   }
 
   // Clear the state cookie
   deleteCookie(event, 'oauth_state')
 
-  if (!code) {
+  if (!code)
     throw createError({
-      statusCode: 400,
-      message: 'No authorization code received'
+      message: 'No authorization code received',
+      statusCode: 400
     })
-  }
 
   try {
     // Exchange authorization code for access token
     const tokenUrl = 'https://www.openstreetmap.org/oauth2/token'
     const tokenResponse = await $fetch(tokenUrl, {
-      method: 'POST',
+      body: new URLSearchParams({
+        client_id: config.public.osmClientId,
+        client_secret: config.osmClientSecret,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: config.public.osmRedirectUri
+      }).toString(),
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code: code,
-        client_id: config.public.osmClientId,
-        client_secret: config.osmClientSecret,
-        redirect_uri: config.public.osmRedirectUri
-      }).toString()
+      method: 'POST'
     })
 
     const { access_token } = tokenResponse as { access_token: string }
@@ -56,12 +55,12 @@ export default defineEventHandler(async (event) => {
 
     // Create user object
     const user = {
-      id: osmUser.id,
-      username: osmUser.display_name,
-      displayName: osmUser.display_name,
       avatar: osmUser.img?.href || null,
       changesets: osmUser.changesets?.count || 0,
-      joinDate: osmUser.account_created
+      displayName: osmUser.display_name,
+      id: osmUser.id,
+      joinDate: osmUser.account_created,
+      username: osmUser.display_name
     }
 
     // Store access token in secure HTTP-only cookie
@@ -85,8 +84,8 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     console.error('OSM OAuth error:', error)
     throw createError({
-      statusCode: 500,
-      message: 'Authentication failed'
+      message: 'Authentication failed',
+      statusCode: 500
     })
   }
 })

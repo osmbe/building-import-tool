@@ -5,10 +5,10 @@
 // - source:geometry:ref  = "Gbg/1422118;Gbg/1422195"  (merged building: several refs, ';'-separated)
 // - source:geometry:ref  = "Gba/2664;Gbg/58610"       (mixed GBA/GBG entities)
 // - source:geometry:oidn = "1371282" (rare; may also hold "Gbg/123" or "1;2"), with the entity in
-//   source:geometry:entity when the older tagging scheme was used
+//   Source:geometry:entity when the older tagging scheme was used
 //
 // OIDNs are only unique per entity (Gbg/2664 and Gba/2664 are different objects), so references are
-// returned as normalised "Entity/oidn" keys, e.g. "Gbg/1371282".
+// Returned as normalised "Entity/oidn" keys, e.g. "Gbg/1371282".
 
 export type GrbEntity = 'Gbg' | 'Gba' | 'Knw'
 
@@ -21,7 +21,7 @@ export interface OsmSourceOidnInput {
   entity?: string | null
 }
 
-const ENTITIES: Record<string, GrbEntity> = { gbg: 'Gbg', gba: 'Gba', knw: 'Knw' }
+const ENTITIES: Record<string, GrbEntity> = { gba: 'Gba', gbg: 'Gbg', knw: 'Knw' }
 
 /** Canonical entity name ("GBG", " gbg " -> "Gbg"), or null when it is not a GRB entity. */
 function normalizeEntity(raw: string | null | undefined): GrbEntity | null {
