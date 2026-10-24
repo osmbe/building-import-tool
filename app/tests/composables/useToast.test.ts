@@ -15,13 +15,13 @@ describe('useToast', () => {
     toast.error('Failed')
 
     expect(
-      toast.toasts.value.map(({ type, title, message, duration }) => ({ type, title, message, duration }))
+      toast.toasts.value.map(({ type, title, message, duration }) => ({ duration, message, title, type }))
     ).toEqual([
-      { type: 'info', title: 'Info', message: 'details', duration: 5000 },
-      { type: 'success', title: 'Done', message: undefined, duration: 5000 },
-      { type: 'warning', title: 'Careful', message: undefined, duration: 1000 },
+      { duration: 5000, message: 'details', title: 'Info', type: 'info' },
+      { duration: 5000, message: undefined, title: 'Done', type: 'success' },
+      { duration: 1000, message: undefined, title: 'Careful', type: 'warning' },
       // Errors stay longer by default
-      { type: 'error', title: 'Failed', message: undefined, duration: 8000 }
+      { duration: 8000, message: undefined, title: 'Failed', type: 'error' }
     ])
   })
 

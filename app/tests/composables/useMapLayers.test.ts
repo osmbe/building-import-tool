@@ -5,7 +5,7 @@ import TileWMS from 'ol/source/TileWMS'
 import WMTS from 'ol/source/WMTS'
 import XYZ from 'ol/source/XYZ'
 
-// ol/Map needs a DOM; layers, sources and views work in node, so only the map is faked.
+// Ol/Map needs a DOM; layers, sources and views work in node, so only the map is faked.
 const maps = vi.hoisted(() => ({ instances: [] as any[] }))
 vi.mock('ol/Map', () => ({
   default: class FakeMap {
@@ -48,11 +48,11 @@ describe('useMapLayers', () => {
     const { initializeMap, map, currentBaseLayer } = useMapLayers()
     const instance = initializeMap(target) as any
 
-    // map is a deep ref, so map.value is a reactive proxy of the OL map
+    // Map is a deep ref, so map.value is a reactive proxy of the OL map
     expect(map.value).toBe(instance)
     expect(instance.options.target).toBe(target)
     expect(instance.options.controls).toEqual([])
-    const view = instance.options.view
+    const { view } = instance.options
     const [lon = 0, lat = 0] = toLonLat(view.getCenter())
     expect(lon).toBeCloseTo(4.3047, 4)
     expect(lat).toBeCloseTo(50.9087, 4)
@@ -94,8 +94,8 @@ describe('useMapLayers', () => {
   })
 
   it('applies a custom view config', () => {
-    const instance = useMapLayers().initializeMap(target, { center: [5, 51], zoom: 8, minZoom: 6 }) as any
-    const view = instance.options.view
+    const instance = useMapLayers().initializeMap(target, { center: [5, 51], minZoom: 6, zoom: 8 }) as any
+    const { view } = instance.options
     const [lon = 0, lat = 0] = toLonLat(view.getCenter())
     expect(lon).toBeCloseTo(5, 6)
     expect(lat).toBeCloseTo(51, 6)
@@ -165,6 +165,8 @@ describe('useMapLayers', () => {
     // Layers survive, but there is no map to switch on anymore
     switchBaseLayer('esri')
     expect(console.warn).toHaveBeenCalledWith('Layers or map not initialized')
-    expect(() => destroy()).not.toThrow()
+    expect(() => {
+      destroy()
+    }).not.toThrow()
   })
 })

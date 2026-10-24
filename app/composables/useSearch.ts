@@ -64,22 +64,18 @@ function determineResultType(osmType: string, osmClass: string): SearchResult['t
  */
 export async function searchLocations(query: string, provider: Provider): Promise<SearchResult[]> {
   // Only support OSM provider (Nominatim)
-  if (provider !== 'osm') {
-    console.warn(`Provider "${provider}" not supported, using OSM Nominatim`)
-  }
+  if (provider !== 'osm') console.warn(`Provider "${provider}" not supported, using OSM Nominatim`)
 
-  if (!query || query.trim().length < 3) {
-    return []
-  }
+  if (!query || query.trim().length < 3) return []
 
   try {
     const params = new URLSearchParams({
-      q: query.trim(),
-      format: 'json',
+      'accept-language': 'en',
       addressdetails: '1',
-      limit: '10',
       countrycodes: 'be', // Limit to Belgium
-      'accept-language': 'en'
+      format: 'json',
+      limit: '10',
+      q: query.trim()
     })
 
     const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
@@ -88,9 +84,7 @@ export async function searchLocations(query: string, provider: Provider): Promis
       }
     })
 
-    if (!response.ok) {
-      throw new Error(`Nominatim API error: ${response.status}`)
-    }
+    if (!response.ok) throw new Error(`Nominatim API error: ${response.status}`)
 
     const data: NominatimResult[] = await response.json()
 
@@ -100,25 +94,25 @@ export async function searchLocations(query: string, provider: Provider): Promis
 
       // Parse bounding box [minLat, maxLat, minLon, maxLon] -> [minLng, minLat, maxLng, maxLat]
       const boundingBox: [number, number, number, number] = [
-        parseFloat(result.boundingbox[2]), // minLon
-        parseFloat(result.boundingbox[0]), // minLat
-        parseFloat(result.boundingbox[3]), // maxLon
-        parseFloat(result.boundingbox[1]) // maxLat
+        parseFloat(result.boundingbox[2]), // MinLon
+        parseFloat(result.boundingbox[0]), // MinLat
+        parseFloat(result.boundingbox[3]), // MaxLon
+        parseFloat(result.boundingbox[1]) // MaxLat
       ]
 
       return {
-        id: `osm-${result.place_id}`,
-        displayName: result.display_name,
-        type: determineResultType(result.type, result.class),
-        coordinates,
         boundingBox,
-        provider: 'osm',
+        coordinates,
         details: {
+          category: result.class,
           country: result.address.country,
-          region: result.address.state || result.address.region,
           postcode: result.address.postcode,
-          category: result.class
-        }
+          region: result.address.state || result.address.region
+        },
+        displayName: result.display_name,
+        id: `osm-${result.place_id}`,
+        provider: 'osm',
+        type: determineResultType(result.type, result.class)
       }
     })
   } catch (error) {

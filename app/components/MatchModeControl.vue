@@ -162,7 +162,7 @@ const props = withDefaults(
     zoom: number
     calculating?: boolean
   }>(),
-  { sourceSupportsTags: true, calculating: false }
+  { calculating: false, sourceSupportsTags: true }
 )
 const emit = defineEmits<{
   readinessChange: [ready: boolean]

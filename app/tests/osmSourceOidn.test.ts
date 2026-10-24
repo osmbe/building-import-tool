@@ -7,9 +7,9 @@ describe('parseOsmSourceRefs', () => {
   })
 
   it('uses source:geometry:entity for an unprefixed oidn', () => {
-    expect(parseOsmSourceRefs({ oidn: '2664', entity: 'Gba' })).toEqual(['Gba/2664'])
-    expect(parseOsmSourceRefs({ oidn: '2664', entity: ' gba ' })).toEqual(['Gba/2664'])
-    expect(parseOsmSourceRefs({ oidn: '2664', entity: 'unknown' })).toEqual(['Gbg/2664'])
+    expect(parseOsmSourceRefs({ entity: 'Gba', oidn: '2664' })).toEqual(['Gba/2664'])
+    expect(parseOsmSourceRefs({ entity: ' gba ', oidn: '2664' })).toEqual(['Gba/2664'])
+    expect(parseOsmSourceRefs({ entity: 'unknown', oidn: '2664' })).toEqual(['Gbg/2664'])
   })
 
   it('parses a single Entity/OIDN ref', () => {

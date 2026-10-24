@@ -29,11 +29,11 @@ export default defineEventHandler(async (event) => {
     if (missing.length > 0) {
       setResponseStatus(event, 503)
       const views = missing.map((row) => row.view).join(', ')
-      return { ready: false, sha, migrations, error: `missing views: ${views} (run the migrations)` }
+      return { error: `missing views: ${views} (run the migrations)`, migrations, ready: false, sha }
     }
-    return { ready: true, sha, migrations }
+    return { migrations, ready: true, sha }
   } catch (error) {
     setResponseStatus(event, 503)
-    return { ready: false, sha, error: error instanceof Error ? error.message : 'Unknown error' }
+    return { error: error instanceof Error ? error.message : 'Unknown error', ready: false, sha }
   }
 })

@@ -5,10 +5,8 @@ const pg = vi.hoisted(() => {
   const client = { query: vi.fn(), release: vi.fn() }
   const pool = { connect: vi.fn(async () => client), end: vi.fn(async () => {}) }
   // A regular function so it can be called with `new`
-  const Pool = vi.fn(function Pool(_config: unknown) {
-    return pool
-  })
-  return { client, pool, Pool }
+  const Pool = vi.fn((_config: unknown) => pool)
+  return { Pool, client, pool }
 })
 
 vi.mock('pg', () => ({ Pool: pg.Pool, default: { Pool: pg.Pool } }))
@@ -17,7 +15,7 @@ const ENV_KEYS = ['POSTGRES_HOST', 'POSTGRES_PORT', 'POSTGRES_USER', 'POSTGRES_P
 let config: Record<string, string>
 
 beforeEach(() => {
-  config = { dbHost: '', dbPort: '', dbUser: '', dbPassword: '' }
+  config = { dbHost: '', dbPassword: '', dbPort: '', dbUser: '' }
   vi.stubGlobal('useRuntimeConfig', () => config)
   for (const key of ENV_KEYS) vi.stubEnv(key, '')
   pg.Pool.mockClear()
@@ -38,11 +36,11 @@ describe('database pools', () => {
     getGrbPool()
     getOsmPool()
     expect(poolConfig(0)).toEqual({
+      database: 'be2osm',
       host: 'localhost',
-      port: 5432,
-      user: 'postgres',
       password: undefined,
-      database: 'be2osm'
+      port: 5432,
+      user: 'postgres'
     })
     expect(poolConfig(1)).toMatchObject({ database: 'osmbe' })
   })
@@ -50,14 +48,14 @@ describe('database pools', () => {
   it('prefers the runtime config over the POSTGRES_* environment', () => {
     vi.stubEnv('POSTGRES_HOST', 'env-host')
     vi.stubEnv('POSTGRES_PORT', '6543')
-    config = { dbHost: 'cfg-host', dbPort: '15432', dbUser: 'cfg-user', dbPassword: 'cfg-pw' }
+    config = { dbHost: 'cfg-host', dbPassword: 'cfg-pw', dbPort: '15432', dbUser: 'cfg-user' }
     getOsmPool()
     expect(poolConfig()).toEqual({
+      database: 'osmbe',
       host: 'cfg-host',
-      port: 15432,
-      user: 'cfg-user',
       password: 'cfg-pw',
-      database: 'osmbe'
+      port: 15432,
+      user: 'cfg-user'
     })
   })
 
@@ -67,7 +65,7 @@ describe('database pools', () => {
     vi.stubEnv('POSTGRES_USER', 'be2osm')
     vi.stubEnv('POSTGRES_PASSWORD', 'pw')
     getGrbPool()
-    expect(poolConfig()).toEqual({ host: 'db', port: 6543, user: 'be2osm', password: 'pw', database: 'be2osm' })
+    expect(poolConfig()).toEqual({ database: 'be2osm', host: 'db', password: 'pw', port: 6543, user: 'be2osm' })
   })
 
   it('reuses one pool per database until the connections are closed', async () => {

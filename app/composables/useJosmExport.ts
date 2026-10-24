@@ -18,9 +18,7 @@ export const useJosmExport = () => {
         method: 'GET'
       })
 
-      if (!response.ok) {
-        return false
-      }
+      if (!response.ok) return false
 
       const data = await response.json()
       const version = data.protocolversion
@@ -43,9 +41,7 @@ export const useJosmExport = () => {
   const convertToOsmXml = (geojson: FeatureCollection): string => {
     const osmXml = geojsonToOsm(geojson)
 
-    if (!osmXml || osmXml.length === 0) {
-      throw new Error('geojsonToOsm generated empty output')
-    }
+    if (!osmXml || osmXml.length === 0) throw new Error('geojsonToOsm generated empty output')
 
     return osmXml
   }
@@ -74,30 +70,26 @@ export const useJosmExport = () => {
 
     // Check JOSM connection
     const isConnected = await testJosmConnection()
-    if (!isConnected) {
-      throw new Error('JOSM is not running or not accessible')
-    }
+    if (!isConnected) throw new Error('JOSM is not running or not accessible')
 
     // Validate features
-    if (!features || features.length === 0) {
-      throw new Error('No features to export')
-    }
+    if (!features || features.length === 0) throw new Error('No features to export')
 
     // Create GeoJSON FeatureCollection
     let geojson: FeatureCollection = {
-      type: 'FeatureCollection',
-      features: includeMeta ? features : features.map(candidateToOsmFeature)
+      features: includeMeta ? features : features.map(candidateToOsmFeature),
+      type: 'FeatureCollection'
     }
 
     // Optional: Simplify geometry using mapshaper
-    if (simplify && simplifyPercent < 100) {
+    if (simplify && simplifyPercent < 100)
       try {
         const mapshaper = await import('mapshaper')
         const dataset = mapshaper.internal.importGeoJSON(geojson, {})
         const simplified = mapshaper.simplify(dataset, {
-          percentage: simplifyPercent / 100,
+          keep_shapes: true,
           method: 'dp',
-          keep_shapes: true
+          percentage: simplifyPercent / 100
         })
 
         const output = mapshaper.internal.exportFileContent(simplified, {
@@ -110,17 +102,16 @@ export const useJosmExport = () => {
       } catch (err) {
         console.warn('Mapshaper simplification failed, exporting without simplification:', err)
       }
-    }
 
     // Convert to OSM-XML
     const osmXml = convertToOsmXml(geojson)
 
     // Check if data is too large for direct transfer
     const testParams = new URLSearchParams({
-      upload_policy: 'never',
-      new_layer: 'true',
+      data: osmXml,
       layer_name: layerName,
-      data: osmXml
+      new_layer: 'true',
+      upload_policy: 'never'
     })
     const testUrl = `${getJosmUrl()}/load_data?${testParams.toString()}`
     // Use a higher threshold - most browsers and JOSM support URLs up to 32KB
@@ -129,14 +120,14 @@ export const useJosmExport = () => {
     let fileUrl: string | null = null
 
     // Use backend upload for large exports, then fetch and send via load_data
-    if (useFallback || uploadToBackend) {
+    if (useFallback || uploadToBackend)
       try {
         const response = await $fetch<any>(backendUrl, {
-          method: 'POST',
           body: osmXml,
           headers: {
             'Content-Type': 'application/xml'
-          }
+          },
+          method: 'POST'
         })
 
         // Build URL using browser's protocol to avoid mixed content issues
@@ -147,18 +138,17 @@ export const useJosmExport = () => {
 
         // Fetch the file content ourselves
         const fileResponse = await fetch(fileUrl)
-        if (!fileResponse.ok) {
-          throw new Error(`Failed to fetch uploaded file: ${fileResponse.status}`)
-        }
+        if (!fileResponse.ok) throw new Error(`Failed to fetch uploaded file: ${fileResponse.status}`)
+
         const fileContent = await fileResponse.text()
 
         // Send the actual data to JOSM via /load_data endpoint
         const josmUrl = `${getJosmUrl()}/load_data`
         const params = new URLSearchParams({
-          upload_policy: 'never',
-          new_layer: 'true',
+          data: fileContent,
           layer_name: layerName,
-          data: fileContent
+          new_layer: 'true',
+          upload_policy: 'never'
         })
 
         const importResponse = await fetch(`${josmUrl}?${params.toString()}`, {
@@ -167,30 +157,27 @@ export const useJosmExport = () => {
 
         const responseText = await importResponse.text()
 
-        if (!importResponse.ok) {
-          throw new Error(`JOSM import failed (${importResponse.status}): ${responseText}`)
-        }
+        if (!importResponse.ok) throw new Error(`JOSM import failed (${importResponse.status}): ${responseText}`)
 
         return {
-          success: true,
-          fileUrl,
           featureCount: features.length,
-          method: 'backend-upload'
+          fileUrl,
+          method: 'backend-upload',
+          success: true
         }
       } catch (error: any) {
         console.error('Failed to upload to backend:', error)
         throw new Error(`Backend upload failed: ${error.message}`, { cause: error })
       }
-    }
 
     // Direct transfer for small exports
     try {
       const josmUrl = `${getJosmUrl()}/load_data`
       const params = new URLSearchParams({
-        upload_policy: 'never',
-        new_layer: 'true',
+        data: osmXml,
         layer_name: layerName,
-        data: osmXml
+        new_layer: 'true',
+        upload_policy: 'never'
       })
 
       const response = await fetch(`${josmUrl}?${params.toString()}`, {
@@ -203,10 +190,10 @@ export const useJosmExport = () => {
       }
 
       return {
-        success: true,
-        fileUrl: null,
         featureCount: features.length,
-        method: 'direct'
+        fileUrl: null,
+        method: 'direct',
+        success: true
       }
     } catch (error) {
       console.error('Failed to send data to JOSM:', error)
@@ -219,15 +206,13 @@ export const useJosmExport = () => {
    */
   const openAreaInJosm = async (bbox: [number, number, number, number]) => {
     const isConnected = await testJosmConnection()
-    if (!isConnected) {
-      throw new Error('JOSM is not running')
-    }
+    if (!isConnected) throw new Error('JOSM is not running')
 
     const [minLon, minLat, maxLon, maxLat] = bbox
     const josmUrl = `${getJosmUrl()}/load_and_zoom`
     const params = new URLSearchParams({
-      left: minLon.toString(),
       bottom: minLat.toString(),
+      left: minLon.toString(),
       right: maxLon.toString(),
       top: maxLat.toString()
     })
@@ -236,9 +221,7 @@ export const useJosmExport = () => {
       method: 'GET'
     })
 
-    if (!response.ok) {
-      throw new Error(`JOSM returned status ${response.status}`)
-    }
+    if (!response.ok) throw new Error(`JOSM returned status ${response.status}`)
   }
 
   /**
@@ -256,11 +239,11 @@ export const useJosmExport = () => {
   ]
 
   return {
-    josmBaseUrl,
-    useSSL,
-    testJosmConnection,
     exportLayerToJosm,
+    getJosmInstructions,
+    josmBaseUrl,
     openAreaInJosm,
-    getJosmInstructions
+    testJosmConnection,
+    useSSL
   }
 }

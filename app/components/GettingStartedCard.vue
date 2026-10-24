@@ -49,7 +49,7 @@ import { computed, ref } from 'vue'
 const { hasCandidates = false } = defineProps<{ hasCandidates?: boolean }>()
 
 // Dismissal is intentionally session-only: the card returns on every refresh so the
-// workflow reminder is always one glance away. We don't persist "Got it".
+// Workflow reminder is always one glance away. We don't persist "Got it".
 const dismissed = ref(false)
 
 const visible = computed(() => !dismissed.value && !hasCandidates)
