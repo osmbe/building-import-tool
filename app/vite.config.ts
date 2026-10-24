@@ -63,6 +63,7 @@ export default defineConfig({
     rules: {
       curly: ['error', 'multi', 'consistent'],
       eqeqeq: 'error',
+      'no-magic-numbers': 'allow',
       'no-var': 'error',
       'one-var': 'allow',
       'prefer-const': 'error'
