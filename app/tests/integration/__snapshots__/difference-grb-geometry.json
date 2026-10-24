@@ -98,10 +98,10 @@
     }
   ],
   "stats": {
+    "dataSource": "grb",
+    "matchMode": "geometry",
     "total": 2,
     "totalGrb": 3,
-    "totalOsm": 3,
-    "dataSource": "grb",
-    "matchMode": "geometry"
+    "totalOsm": 3
   }
 }

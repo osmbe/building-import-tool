@@ -50,10 +50,10 @@
     }
   ],
   "stats": {
+    "dataSource": "grb",
+    "matchMode": "source",
     "total": 1,
     "totalGrb": 3,
-    "totalOsm": 2,
-    "dataSource": "grb",
-    "matchMode": "source"
+    "totalOsm": 2
   }
 }

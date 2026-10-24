@@ -53,10 +53,10 @@
     }
   ],
   "stats": {
+    "dataSource": "knw",
+    "matchMode": "geometry",
     "total": 1,
     "totalGrb": 1,
-    "totalOsm": 3,
-    "dataSource": "knw",
-    "matchMode": "geometry"
+    "totalOsm": 3
   }
 }

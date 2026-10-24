@@ -52,10 +52,10 @@
     }
   ],
   "stats": {
+    "dataSource": "urbis",
+    "matchMode": "geometry",
     "total": 1,
     "totalGrb": 2,
-    "totalOsm": 1,
-    "dataSource": "urbis",
-    "matchMode": "geometry"
+    "totalOsm": 1
   }
 }
