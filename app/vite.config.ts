@@ -61,7 +61,7 @@ export default defineConfig({
     },
     plugins: ['eslint', 'oxc', 'typescript', 'vue'],
     rules: {
-      curly: ['error', 'multi'],
+      curly: ['error', 'multi', 'consistent'],
       eqeqeq: 'error',
       'no-var': 'error',
       'one-var': 'allow',

@@ -124,8 +124,9 @@ export default defineEventHandler(async (event) => {
     // The older source:geometry:oidn + entity tags) is in collectOsmSourceRefs, unit-tested (issue #52).
     let sourceRefs: string[] = []
     if (useRefs) {
-      if (overpass) sourceRefs = overpass.sourceRefs
-      else {
+      if (overpass) {
+        sourceRefs = overpass.sourceRefs
+      } else {
         const osm = await queryOsm(
           `
           SELECT DISTINCT

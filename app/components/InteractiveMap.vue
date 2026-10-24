@@ -1935,8 +1935,9 @@ const concaveHull = (points: [number, number][]): [number, number][] => {
 
       const nxt = points[next]
 
-      if (next === previous || !nxt) next = i
-      else {
+      if (next === previous || !nxt) {
+        next = i
+      } else {
         const crossProduct = cross(curr, nxt, candidate)
         if (crossProduct > 0) next = i
       }
@@ -2013,7 +2014,9 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
         properties: feature.properties || {},
         type: 'Feature'
       })
-    } else merged.push(feature)
+    } else {
+      merged.push(feature)
+    }
   }
 
   return merged
@@ -2330,11 +2333,14 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
     let inQuotes = false
 
     for (const char of inner)
-      if (char === '"') inQuotes = !inQuotes
-      else if (char === ',' && !inQuotes) {
+      if (char === '"') {
+        inQuotes = !inQuotes
+      } else if (char === ',' && !inQuotes) {
         items.push(current.trim())
         current = ''
-      } else current += char
+      } else {
+        current += char
+      }
 
     if (current) items.push(current.trim())
 
@@ -2598,8 +2604,10 @@ const getDisplayableProperties = (feature: any) => {
 
         // If mapped to null, skip this property
       } else if (!isGrb || !Object.keys(grbPropertyMapping).some((k) => k.toLowerCase() === key.toLowerCase()))
-        // For OSM features or unmapped GRB properties, include them
+      // For OSM features or unmapped GRB properties, include them
+      {
         properties.push([key, value])
+      }
     })
 
   // Parse and add tags if they exist (PostgreSQL hstore format or JSONB object)
@@ -2768,8 +2776,10 @@ const setupHoverInteraction = () => {
       clickedFeatures.value = foundFeatures
       isTooltipSticky.value = true
     } else
-      // Clicked outside features, close sticky tooltip
+    // Clicked outside features, close sticky tooltip
+    {
       closeTooltip()
+    }
   })
 
   map.value.on('pointermove', (evt) => {
@@ -2877,7 +2887,8 @@ const setupHoverInteraction = () => {
           setMapCursor('pointer')
         }
       } else if (!isTooltipSticky.value)
-        // Clear hover state
+      // Clear hover state
+      {
         if (currentHoveredFeatureObj) {
           try {
             if (currentHoveredFeatureObj instanceof Feature && currentHoveredFeatureObj.set)
@@ -2891,6 +2902,7 @@ const setupHoverInteraction = () => {
           // Reset cursor
           setMapCursor('')
         }
+      }
     }, 16) // ~60fps, reduces canvas reads significantly
   })
 }

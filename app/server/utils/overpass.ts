@@ -192,7 +192,9 @@ export function parseOverpassElements(elements: any[]): OverpassBuildings {
     if (el.type === 'way' && Array.isArray(el.geometry)) {
       const ring = closeRing(toRing(el.geometry))
       if (ring) coords = [[ring]]
-    } else if (el.type === 'relation' && Array.isArray(el.members)) coords = relationToPolygons(el.members)
+    } else if (el.type === 'relation' && Array.isArray(el.members)) {
+      coords = relationToPolygons(el.members)
+    }
 
     if (coords.length === 0) continue
 

@@ -51,7 +51,9 @@ export function geojsonToOsm(geojson: FeatureCollection): string {
       lines.push(`  <node id="${node.id}" lat="${node.lat}" lon="${node.lon}">`)
       lines.push(tags)
       lines.push('  </node>')
-    } else lines.push(`  <node id="${node.id}" lat="${node.lat}" lon="${node.lon}"/>`)
+    } else {
+      lines.push(`  <node id="${node.id}" lat="${node.lat}" lon="${node.lon}"/>`)
+    }
   }
 
   for (const way of ways) {

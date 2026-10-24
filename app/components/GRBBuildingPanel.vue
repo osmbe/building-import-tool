@@ -136,11 +136,14 @@ const parsePostgresArray = (value: string[] | string | undefined): string[] => {
     let inQuotes = false
 
     for (const char of inner)
-      if (char === '"') inQuotes = !inQuotes
-      else if (char === ',' && !inQuotes) {
+      if (char === '"') {
+        inQuotes = !inQuotes
+      } else if (char === ',' && !inQuotes) {
         items.push(current.trim())
         current = ''
-      } else current += char
+      } else {
+        current += char
+      }
 
     if (current) items.push(current.trim())
 
