@@ -30,10 +30,8 @@ services:
       - be2osm
 
   # Nuxt 3 Application
-  # Images: deploys (webhook/deploy.sh) pull the sha-<commit> images built by CI and tag them :deployed, so
-  # the running release is pinned. Locally, `docker compose build` builds them instead.
   nuxt-app:
-    image: ghcr.io/osmbe/building-import-tool/nuxt-app:main
+    # image: ghcr.io/osmbe/building-import-tool/nuxt-app:main
     platform: linux/amd64
     build:
       context: ./app
@@ -166,11 +164,6 @@ services:
   #   docker compose run --rm processing just <command>
   processing:
     image: ghcr.io/osmbe/building-import-tool/processing:main
-    # Note: No platform specified - builds natively for host architecture
-    # imposm3 is built from source on arm64
-    build:
-      context: ./processing
-      dockerfile: Dockerfile
     container_name: be2osm-processing
     profiles:
       - processing
@@ -185,10 +178,7 @@ services:
       - /home/debian/building-import-tool-local/processing/data:/work/data:z
       - /home/debian/building-import-tool-local/processing/logs:/work/logs:z
       # Mount gh CLI config for remote import authentication
-      # Note: Update this path to match your system's gh config location
-      # Linux: /home/username/.config/gh
-      # macOS: /Users/username/.config/gh
-      - ${HOME}/.config/gh:/root/.config/gh:ro
+      - /home/debian/.config/gh:/root/.config/gh:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -201,8 +191,6 @@ services:
   # Its scripts are read from the checkout; deploy.sh updates the checkout, so it is mounted read-write.
   webhook:
     image: ghcr.io/osmbe/building-import-tool/webhook:main
-    build:
-      context: ./webhook
     container_name: be2osm-webhook
     environment:
       WEBHOOK_SECRET: ${WEBHOOK_SECRET}
@@ -216,14 +204,13 @@ services:
       COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-building-import-tool-local}
       # Project dir inside container mirrors the host path so docker compose
       # volume paths resolve identically for both the CLI and the Docker daemon
-      COMPOSE_PROJECT_DIR: ${COMPOSE_PROJECT_DIR:-${PWD}}
+      COMPOSE_PROJECT_DIR: /home/debian/building-import-tool-local
     volumes:
       # gh CLI config for artifact download authentication
-      # Linux: /home/username/.config/gh  |  macOS: /Users/username/.config/gh
-      - ${HOME}/.config/gh:/root/.config/gh:ro
+      - /home/debian/.config/gh:/root/.config/gh:ro
       # Docker socket + project dir (mounted at same host path for volume resolution)
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${COMPOSE_PROJECT_DIR:-${PWD}}:${COMPOSE_PROJECT_DIR:-${PWD}}
+      - /home/debian/building-import-tool-local:/home/debian/building-import-tool-local
       # Job records, logs and the global job lock
       - webhook-state:/state
     depends_on:
