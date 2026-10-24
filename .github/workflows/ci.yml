@@ -55,9 +55,10 @@ jobs:
       - run: npm run fmt
       - run: npm run lint -- --format=sarif > app-lint-results.sarif
       - name: Upload SARIF for GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: app-lint-results.sarif
+          wait-for-processing: true
 
   app-test:
     runs-on: ubuntu-latest
