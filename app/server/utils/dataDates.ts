@@ -24,7 +24,7 @@ async function readImportedAt(query: QueryFn, schema: (typeof SCHEMAS)[number]):
 
 export async function fetchDataDates(query: QueryFn): Promise<DataDates> {
   const [grb = null, picc = null, urbis = null] = await Promise.all(
-    SCHEMAS.map((schema) => readImportedAt(query, schema))
+    SCHEMAS.map( async (schema) => readImportedAt(query, schema))
   )
   // KNW (kunstwerken) is imported from the GRB products, so it shares the GRB date.
   return { grb, knw: grb, picc, urbis }

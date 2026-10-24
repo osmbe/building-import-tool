@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
-import { OverpassError, type OverpassBuildings } from '~/server/utils/overpass'
+import { type OverpassBuildings, OverpassError } from '~/server/utils/overpass'
 import { CANDIDATES_CONTRACT } from '~/utils/candidates'
 import { asHandler, createEvent, stubNitro } from './nitro'
 
@@ -22,14 +22,14 @@ const BOUNDS = [484000, 6594000, 484200, 6594200]
 const GEOMETRY = '{"type":"Polygon","coordinates":[[[0,0],[0,1],[1,1],[0,0]]]}'
 
 interface Data {
-  /** source:geometry:* tag rows of OSM buildings in the extent */
+  /** Source:geometry:* tag rows of OSM buildings in the extent */
   osmTagRows?: Row[]
   /** ST_Collect of OSM geometries in the extent (null: no OSM buildings) */
   osmCollection?: string | null
   osmTotal?: string | null
-  /** candidate rows returned by the main query */
+  /** Candidate rows returned by the main query */
   candidates?: Row[]
-  /** rows of the source count query */
+  /** Rows of the source count query */
   count?: Row[]
 }
 
@@ -37,7 +37,7 @@ interface Data {
 function fakeDatabases(data: Data = {}) {
   const grb: Query = async (sql) => {
     if (sql.includes('COUNT(*) AS n')) return data.count ?? [{ n: '7' }]
-    return data.candidates ?? [{ geometry: GEOMETRY, fid: '1', source: 'grb', source_ref: 'Gbg/1' }]
+    return data.candidates ?? [{ fid: '1', geometry: GEOMETRY, source: 'grb', source_ref: 'Gbg/1' }]
   }
   const osm: Query = async (sql) => {
     if (sql.includes("tags->>'source:geometry:ref'")) return data.osmTagRows ?? []
@@ -55,20 +55,20 @@ function fakeDatabases(data: Data = {}) {
 const candidateCall = (): { sql: string; params: unknown[] } => {
   const call = db.queryGrb.mock.calls.find(([sql]) => !sql.includes('COUNT(*) AS n'))
   if (!call) throw new Error('no candidate query')
-  return { sql: call[0], params: call[1] ?? [] }
+  return { params: call[1] ?? [], sql: call[0] }
 }
 const countCall = (): { sql: string; params: unknown[] } => {
   const call = db.queryGrb.mock.calls.find(([sql]) => sql.includes('COUNT(*) AS n'))
   if (!call) throw new Error('no count query')
-  return { sql: call[0], params: call[1] ?? [] }
+  return { params: call[1] ?? [], sql: call[0] }
 }
 
 const overpassData = (over: Partial<OverpassBuildings> = {}): OverpassBuildings => ({
+  features: [],
   geomCollection: 'LIVE_GC',
   geomCollection3857: 'LIVE_GC_3857',
-  totalOsm: 4,
   sourceRefs: ['Gbg/9'],
-  features: [],
+  totalOsm: 4,
   ...over
 })
 
@@ -134,14 +134,14 @@ describe('POST /api/buildings/difference: one query for every source', () => {
 
   it('returns the contract properties of every candidate, geometry apart', async () => {
     fakeDatabases({
-      candidates: [{ geometry: GEOMETRY, fid: '11', source: 'picc', source_id: '11', details: { georef_id: 'G' } }]
+      candidates: [{ details: { georef_id: 'G' }, fid: '11', geometry: GEOMETRY, source: 'picc', source_id: '11' }]
     })
     const { result } = await post({ dataSource: 'picc' })
     expect(result.features).toEqual([
       {
-        type: 'Feature',
         geometry: JSON.parse(GEOMETRY),
-        properties: { fid: '11', source: 'picc', source_id: '11', details: { georef_id: 'G' } }
+        properties: { details: { georef_id: 'G' }, fid: '11', source: 'picc', source_id: '11' },
+        type: 'Feature'
       }
     ])
     expect(candidateCall().sql).toMatch(
@@ -153,17 +153,17 @@ describe('POST /api/buildings/difference: one query for every source', () => {
     fakeDatabases({ count: [{ n: '12' }], osmTotal: '5' })
     const { result } = await post({ dataSource: 'grb' })
     expect(result.stats).toEqual({
-      total: 1,
-      totalGrb: 12,
-      totalOsm: 5,
+      bounds: BOUNDS,
       dataSource: 'grb',
       matchMode: 'geometry',
-      bounds: BOUNDS
+      total: 1,
+      totalGrb: 12,
+      totalOsm: 5
     })
   })
 
   it('counts 0 when the count or the OSM query return nothing', async () => {
-    fakeDatabases({ count: [], osmTotal: null, osmCollection: null })
+    fakeDatabases({ count: [], osmCollection: null, osmTotal: null })
     const { result } = await post({ dataSource: 'urbis' })
     expect(result.stats).toMatchObject({ totalGrb: 0, totalOsm: 0 })
   })
@@ -224,8 +224,8 @@ describe('POST /api/buildings/difference: GRB source references', () => {
   it('drops candidates whose Entity/oidn reference is on an OSM building in view (source mode)', async () => {
     fakeDatabases({
       osmTagRows: [
-        { ref: 'Gbg/1;Gba/2', oidn: null, entity: null },
-        { ref: null, oidn: '0003', entity: 'Gba' }
+        { entity: null, oidn: null, ref: 'Gbg/1;Gba/2' },
+        { entity: 'Gba', oidn: '0003', ref: null }
       ]
     })
     const { result } = await post({ dataSource: 'grb', matchMode: 'source' })
@@ -245,8 +245,8 @@ describe('POST /api/buildings/difference: GRB source references', () => {
   })
 
   it('requires both an unmatched geometry and an unreferenced object (both mode)', async () => {
-    fakeDatabases({ osmTagRows: [{ ref: 'Gbg/1', oidn: null, entity: null }] })
-    const { result } = await post({ dataSource: 'grb', matchMode: 'both', geometryThreshold: 0.5 })
+    fakeDatabases({ osmTagRows: [{ entity: null, oidn: null, ref: 'Gbg/1' }] })
+    const { result } = await post({ dataSource: 'grb', geometryThreshold: 0.5, matchMode: 'both' })
     const { sql, params } = candidateCall()
     expect(sql).toContain('c.source_ref <> ALL($6::text[])')
     expect(sql).toContain('ST_GeomFromGeoJSON($7)')

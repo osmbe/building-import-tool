@@ -28,16 +28,16 @@ describe('isCandidate', () => {
 
 describe('resolveMatchMode', () => {
   it('keeps every mode for GRB', () => {
-    for (const mode of ['geometry', 'source', 'both'] as const) {
-      expect(resolveMatchMode(mode, 'grb')).toEqual({ mode, downgraded: false })
-    }
+    for (const mode of ['geometry', 'source', 'both'] as const) 
+      expect(resolveMatchMode(mode, 'grb')).toEqual({ downgraded: false, mode })
+    
   })
 
   it('falls back to geometry for sources without source tags', () => {
     for (const src of ['knw', 'picc', 'urbis'] as const) {
-      expect(resolveMatchMode('both', src)).toEqual({ mode: 'geometry', downgraded: true })
-      expect(resolveMatchMode('source', src)).toEqual({ mode: 'geometry', downgraded: true })
-      expect(resolveMatchMode('geometry', src)).toEqual({ mode: 'geometry', downgraded: false })
+      expect(resolveMatchMode('both', src)).toEqual({ downgraded: true, mode: 'geometry' })
+      expect(resolveMatchMode('source', src)).toEqual({ downgraded: true, mode: 'geometry' })
+      expect(resolveMatchMode('geometry', src)).toEqual({ downgraded: false, mode: 'geometry' })
     }
   })
 

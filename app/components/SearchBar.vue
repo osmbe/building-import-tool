@@ -61,9 +61,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (debounceTimer) {
+  if (debounceTimer) 
     clearTimeout(debounceTimer)
-  }
+  
 })
 
 function clear() {
@@ -72,9 +72,9 @@ function clear() {
 }
 
 watch([query, provider], ([q, p]) => {
-  if (debounceTimer) {
+  if (debounceTimer) 
     clearTimeout(debounceTimer)
-  }
+  
 
   if (!q || q.trim().length < 3) {
     results.value = []

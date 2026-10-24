@@ -1,6 +1,6 @@
 // Overpass API helper (issue #9): source OSM buildings live for the current bbox,
-// as an opt-in alternative to the daily-refreshed Postgres mirror. This lets the
-// difference tool reflect very recent OSM edits without waiting for the next import.
+// As an opt-in alternative to the daily-refreshed Postgres mirror. This lets the
+// Difference tool reflect very recent OSM edits without waiting for the next import.
 
 import { parseOsmSourceRefs } from '../../utils/osmSourceOidn'
 
@@ -132,9 +132,9 @@ function pointInRing(point: [number, number], ring: Ring): boolean {
     const a = ring[i]
     const b = ring[j]
     if (!a || !b) continue
-    if (a[1] > point[1] !== b[1] > point[1] && point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0]) {
+    if (a[1] > point[1] !== b[1] > point[1] && point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0]) 
       inside = !inside
-    }
+    
   }
   return inside
 }
@@ -193,60 +193,60 @@ export function parseOverpassElements(elements: any[]): OverpassBuildings {
     if (el.type === 'way' && Array.isArray(el.geometry)) {
       const ring = closeRing(toRing(el.geometry))
       if (ring) coords = [[ring]]
-    } else if (el.type === 'relation' && Array.isArray(el.members)) {
+    } else if (el.type === 'relation' && Array.isArray(el.members)) 
       coords = relationToPolygons(el.members)
-    }
+    
     if (coords.length === 0) continue
 
-    for (const poly of coords) polygons.push({ coords: poly, tags, id: `${el.type}/${el.id ?? ''}` })
+    for (const poly of coords) polygons.push({ coords: poly, id: `${el.type}/${el.id ?? ''}`, tags })
 
     // Collect GRB references for source-tag matching
     for (const id of parseOsmSourceRefs({
+      entity: tags['source:geometry:entity'],
       oidn: tags['source:geometry:oidn'],
-      ref: tags['source:geometry:ref'],
-      entity: tags['source:geometry:entity']
-    })) {
+      ref: tags['source:geometry:ref']
+    })) 
       sourceRefSet.add(id)
-    }
+    
   }
 
   const toMercator = (poly: Ring[]): Ring[] => poly.map((r) => r.map(([lon, lat]) => lonLatToMercator(lon, lat)))
   const collection = (project: (p: Ring[]) => Ring[]) =>
     polygons.length > 0
       ? JSON.stringify({
-          type: 'GeometryCollection',
-          geometries: polygons.map((p) => ({ type: 'Polygon', coordinates: project(p.coords) }))
+          geometries: polygons.map((p) => ({ coordinates: project(p.coords), type: 'Polygon' })),
+          type: 'GeometryCollection'
         })
       : null
 
   return {
-    geomCollection: collection((p) => p),
-    geomCollection3857: collection(toMercator),
-    totalOsm: polygons.length,
-    sourceRefs: Array.from(sourceRefSet),
     features: polygons.map((p) => ({
-      type: 'Feature',
-      geometry: { type: 'Polygon', coordinates: p.coords },
+      geometry: { coordinates: p.coords, type: 'Polygon' },
       properties: {
-        osm_id: p.id,
         building: p.tags.building || 'yes',
+        osm_id: p.id,
         ...(p.tags['source:geometry:oidn'] ? { 'source:geometry:oidn': p.tags['source:geometry:oidn'] } : {}),
         ...(p.tags['source:geometry:ref'] ? { 'source:geometry:ref': p.tags['source:geometry:ref'] } : {})
-      }
-    }))
+      },
+      type: 'Feature'
+    })),
+    geomCollection: collection((p) => p),
+    geomCollection3857: collection(toMercator),
+    sourceRefs: Array.from(sourceRefSet),
+    totalOsm: polygons.length
   }
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep =  async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 /** Map an Overpass HTTP failure to a user-facing error with the status we answer with. */
 export function overpassHttpError(status: number, text: string): OverpassError {
-  if (status === 429) {
+  if (status === 429) 
     return new OverpassError('Overpass is rate limiting requests. Wait a few seconds and try again.', 429)
-  }
-  if (status === 504 || status === 408) {
+  
+  if (status === 504 || status === 408) 
     return new OverpassError('Overpass timed out (server busy). Try a smaller area or retry shortly.', 504)
-  }
+  
   if (text) console.warn(`[overpass] HTTP ${status}:`, text.slice(0, 500))
   // The body is usually an HTML or Markdown error page: log it, but keep it out of the user-facing message.
   return new OverpassError(`Overpass request failed (${status}). Try again shortly.`, 502)
@@ -259,13 +259,13 @@ async function requestOverpass(query: string): Promise<{ elements?: any[] }> {
     let response: Response
     try {
       response = await fetch(OVERPASS_ENDPOINT, {
-        method: 'POST',
+        body: `data=${encodeURIComponent(query)}`,
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
           Accept: 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
           'User-Agent': USER_AGENT
         },
-        body: `data=${encodeURIComponent(query)}`,
+        method: 'POST',
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
       })
     } catch (error) {
@@ -278,14 +278,14 @@ async function requestOverpass(query: string): Promise<{ elements?: any[] }> {
       )
     }
 
-    if (response.ok) {
+    if (response.ok) 
       try {
         return (await response.json()) as { elements?: any[] }
       } catch {
         // Overpass answers 200 with an HTML/XML error body when it runs out of time or memory.
         throw new OverpassError('Overpass returned an invalid response (query probably too heavy).', 504)
       }
-    }
+    
 
     lastError = overpassHttpError(response.status, await response.text().catch(() => ''))
     if (attempt === 0 && [429, 502, 503, 504].includes(response.status)) {
@@ -310,12 +310,12 @@ export function clearOverpassCache() {
  */
 export async function fetchOverpassBuildings(bounds3857: Bounds3857): Promise<OverpassBuildings> {
   const area = bboxAreaKm2(bounds3857)
-  if (area > MAX_BBOX_KM2) {
+  if (area > MAX_BBOX_KM2) 
     throw new OverpassError(
       `Live OSM data needs a smaller view (${area.toFixed(1)} km2, max ${MAX_BBOX_KM2} km2). Zoom in.`,
       400
     )
-  }
+  
 
   const query = buildOverpassQuery(bounds3857)
   const now = Date.now()

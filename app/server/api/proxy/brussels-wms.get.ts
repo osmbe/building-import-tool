@@ -20,9 +20,9 @@ export default defineEventHandler(async (event) => {
 
   const response = await fetch(targetUrl.toString())
 
-  if (!response.ok) {
+  if (!response.ok) 
     throw createError({ statusCode: response.status, statusMessage: response.statusText })
-  }
+  
 
   const data = await response.arrayBuffer()
   setResponseHeader(event, 'Content-Type', response.headers.get('content-type') || 'image/jpeg')

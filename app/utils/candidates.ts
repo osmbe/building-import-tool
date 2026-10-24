@@ -1,10 +1,10 @@
 import type { Feature } from 'geojson'
-import { isBuildingTypeLabel, KNW_TAG_MAP_BY_CODE, VERDIEPING_FIXME } from '~/utils/grbExportTags'
+import { KNW_TAG_MAP_BY_CODE, VERDIEPING_FIXME, isBuildingTypeLabel } from '~/utils/grbExportTags'
 
 // The candidates contract: every source exposes its buildings with the same properties, in the database views
-// grb.candidates, grb.knw_candidates, picc.candidates and urbis.candidates (processing/sql/migrations/grb/
+// Grb.candidates, grb.knw_candidates, picc.candidates and urbis.candidates (processing/sql/migrations/grb/
 // 004_candidates.sql), the Martin "candidates" tile sources and the difference API. The app reads every
-// source through these properties only.
+// Source through these properties only.
 
 /**
  * Version of the contract, sent by the app with every difference request. The API refuses other values, so a page
@@ -91,7 +91,7 @@ const addressTags = (props: CandidateProperties): Record<string, string> => {
   // A letter suffix must be a single letter, not the start of the next word ("12 Main Street").
   let remainder = addresses
   if (street && remainder.toLowerCase().startsWith(street.toLowerCase())) remainder = remainder.slice(street.length)
-  const houseNumber = remainder.trim().match(/^\d+(?:\s*[A-Za-z](?![A-Za-z]))?(?:\s*\/\s*\w+)?/)
+  const houseNumber = /^\d+(?:\s*[A-Za-z](?![A-Za-z]))?(?:\s*\/\s*\w+)?/.exec(remainder.trim())
   if (street) tags['addr:street'] = street
   if (houseNumber) tags['addr:housenumber'] = houseNumber[0].replace(/\s+/g, '')
   const postcode = firstListItem(props.postcodes)
@@ -124,11 +124,11 @@ export const candidateTags = (props: CandidateProperties): Record<string, string
   const typeLabel = String(props.type_label ?? '')
     .toLowerCase()
     .trim()
-  if (props.source === 'knw') {
+  if (props.source === 'knw') 
     Object.assign(tags, knwTags(props))
-  } else if (props.source !== 'grb' || isBuildingTypeLabel(typeLabel)) {
+   else if (props.source !== 'grb' || isBuildingTypeLabel(typeLabel)) 
     tags.building = 'yes'
-  }
+  
   if (props.source === 'grb' && typeLabel === 'verdieping') tags.fixme = VERDIEPING_FIXME
   const surveyDate = String(props.survey_date ?? '').slice(0, 10)
   if (/^\d{4}-\d{2}-\d{2}$/.test(surveyDate)) tags['source:geometry:date'] = surveyDate
@@ -152,7 +152,7 @@ export const candidateDisplayId = (props: Pick<CandidateProperties, 'source' | '
  * difference API, a property of its own in vector tiles (ST_AsMVT writes each jsonb key as a property).
  */
 export const candidateDetail = (props: Record<string, unknown>, key: string): unknown => {
-  const details = props.details
+  const {details} = props
   const value = details !== null && typeof details === 'object' ? (details as Record<string, unknown>)[key] : props[key]
   return value ?? null
 }

@@ -26,9 +26,9 @@ export const KNW_TAG_MAP_BY_CODE: Record<string, Record<string, string>> = {
   '8': { man_made: 'cooling_tower' },
   '11': { man_made: 'water_tower' },
   '14': {
-    power: 'generator',
+    'generator:method': 'wind_turbine',
     'generator:source': 'wind',
-    'generator:method': 'wind_turbine'
+    power: 'generator'
   },
   '22': { man_made: 'breakwater' },
   '23': { man_made: 'breakwater' },

@@ -4,12 +4,12 @@ import { readFile } from 'fs/promises'
 export default defineEventHandler(async (event) => {
   const filename = getRouterParam(event, 'filename')
 
-  if (!filename || !/^[a-f0-9]+\.osm$/.test(filename)) {
+  if (!filename || !/^[a-f0-9]+\.osm$/.test(filename)) 
     throw createError({
-      statusCode: 400,
-      message: 'Invalid filename'
+      message: 'Invalid filename',
+      statusCode: 400
     })
-  }
+  
 
   try {
     // In production, files are in .output/public/exports
@@ -23,21 +23,21 @@ export default defineEventHandler(async (event) => {
 
     // Set appropriate headers for OSM XML
     setResponseHeaders(event, {
-      'Content-Type': 'application/xml',
-      'Content-Disposition': `inline; filename="${filename}"`
+      'Content-Disposition': `inline; filename="${filename}"`,
+      'Content-Type': 'application/xml'
     })
 
     return content
   } catch (error: any) {
-    if (error.code === 'ENOENT') {
+    if (error.code === 'ENOENT') 
       throw createError({
-        statusCode: 404,
-        message: 'File not found'
+        message: 'File not found',
+        statusCode: 404
       })
-    }
+    
     throw createError({
-      statusCode: 500,
-      message: 'Failed to read file'
+      message: 'Failed to read file',
+      statusCode: 500
     })
   }
 })

@@ -1,5 +1,5 @@
 // Test doubles for the Nitro/h3 auto-imports used by the server handlers. Handlers run without the Nuxt
-// runtime: `defineEventHandler` returns the handler itself and the h3 helpers read/write a FakeEvent.
+// Runtime: `defineEventHandler` returns the handler itself and the h3 helpers read/write a FakeEvent.
 import { vi } from 'vite-plus/test'
 
 export class HttpError extends Error {
@@ -29,23 +29,23 @@ export interface FakeEvent {
 
 export function createEvent(init: Partial<FakeEvent> = {}): FakeEvent {
   return {
-    query: {},
     cookies: {},
+    deletedCookies: [],
     headers: {},
     params: {},
-    setCookies: {},
-    deletedCookies: [],
+    query: {},
     responseHeaders: {},
+    setCookies: {},
     ...init
   }
 }
 
 export const runtimeConfig = {
-  osmClientSecret: 'secret',
   dbHost: '',
+  dbPassword: '',
   dbPort: '',
   dbUser: '',
-  dbPassword: '',
+  osmClientSecret: 'secret',
   public: { osmClientId: 'client-id', osmRedirectUri: 'https://be2osm.test/api/auth/osm-callback' }
 }
 
@@ -56,7 +56,7 @@ export function stubNitro(config: unknown = runtimeConfig) {
   vi.stubGlobal('getQuery', (event: FakeEvent) => event.query)
   vi.stubGlobal('getCookie', (event: FakeEvent, name: string) => event.cookies[name])
   vi.stubGlobal('setCookie', (event: FakeEvent, name: string, value: string, opts: Record<string, unknown>) => {
-    event.setCookies[name] = { value, opts }
+    event.setCookies[name] = { opts, value }
   })
   vi.stubGlobal('deleteCookie', (event: FakeEvent, name: string) => {
     event.deletedCookies.push(name)

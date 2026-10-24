@@ -2,49 +2,49 @@ import { readFileSync } from 'node:fs'
 import type { Feature } from 'geojson'
 import { describe, expect, it } from 'vite-plus/test'
 import {
+  CANDIDATES_CONTRACT,
   CANDIDATE_COLUMNS,
   CANDIDATE_VIEWS,
-  CANDIDATES_CONTRACT,
+  type CandidateProperties,
   candidateDetail,
   candidateDisplayId,
   candidateTags,
   candidateTileUrl,
   candidateToOsmFeature,
-  isCandidateSource,
-  type CandidateProperties
+  isCandidateSource
 } from '~/utils/candidates'
 import { VERDIEPING_FIXME } from '~/utils/grbExportTags'
 
 const candidate = (props: Partial<CandidateProperties>): CandidateProperties => ({
-  fid: 1,
-  source: 'grb',
+  address_count: 0,
+  addresses: '',
+  area_m2: 10,
+  details: {},
   entity: 'Gbg',
+  fid: 1,
+  municipalities: '',
+  origin_label: null,
+  parent_area_m2: null,
+  parent_id: null,
+  parent_part_count: null,
+  parent_type_label: null,
+  postcodes: '',
+  source: 'grb',
   source_id: '1',
   source_ref: 'Gbg/1',
+  street_names: '',
+  survey_date: null,
   type_code: null,
   type_label: 'hoofdgebouw',
-  survey_date: null,
-  origin_label: null,
-  area_m2: 10,
-  parent_id: null,
-  parent_type_label: null,
-  parent_part_count: null,
-  parent_area_m2: null,
-  addresses: '',
-  street_names: '',
-  postcodes: '',
-  municipalities: '',
-  address_count: 0,
-  details: {},
   ...props
 })
 
 const knw = (props: Partial<CandidateProperties>) =>
-  candidate({ source: 'knw', entity: 'Knw', source_id: '1', source_ref: 'Knw/1', type_label: null, ...props })
+  candidate({ entity: 'Knw', source: 'knw', source_id: '1', source_ref: 'Knw/1', type_label: null, ...props })
 const picc = (props: Partial<CandidateProperties> = {}) =>
-  candidate({ source: 'picc', entity: null, source_id: '11', source_ref: null, type_code: 'BAT', ...props })
+  candidate({ entity: null, source: 'picc', source_id: '11', source_ref: null, type_code: 'BAT', ...props })
 const urbis = (props: Partial<CandidateProperties> = {}) =>
-  candidate({ source: 'urbis', entity: null, source_id: '21', source_ref: null, type_label: null, ...props })
+  candidate({ entity: null, source: 'urbis', source_id: '21', source_ref: null, type_label: null, ...props })
 
 describe('the candidates contract', () => {
   it('names the view and the tile source of every source', () => {
@@ -91,9 +91,9 @@ describe('the candidates contract', () => {
 
 describe('candidateTags: buildings (#53)', () => {
   it('tags GRB building types as building=yes', () => {
-    for (const type_label of ['hoofdgebouw', 'Bijgebouw', 'verdieping', null]) {
+    for (const type_label of ['hoofdgebouw', 'Bijgebouw', 'verdieping', null]) 
       expect(candidateTags(candidate({ type_label })).building).toBe('yes')
-    }
+    
   })
 
   it.each(['gebouw afgezoomd met virtuele gevels', 'trap', 'afdak', 'loopbrug', 'luifel', 'verheven garagetoegang'])(
@@ -138,13 +138,13 @@ describe('candidateTags: references and dates', () => {
       Object.keys(
         candidateTags(
           candidate({
-            type_label: 'verdieping',
-            survey_date: '2023-03-15',
             address_count: 1,
             addresses: 'Kerkstraat 1',
-            street_names: 'Kerkstraat',
+            municipalities: 'Antwerpen',
             postcodes: '2000',
-            municipalities: 'Antwerpen'
+            street_names: 'Kerkstraat',
+            survey_date: '2023-03-15',
+            type_label: 'verdieping'
           })
         )
       )
@@ -168,7 +168,7 @@ describe('candidateTags: KNW default tags (#22)', () => {
     ['7', { man_made: 'chimney' }],
     ['8', { man_made: 'cooling_tower' }],
     ['11', { man_made: 'water_tower' }],
-    ['14', { power: 'generator', 'generator:source': 'wind', 'generator:method': 'wind_turbine' }],
+    ['14', { 'generator:method': 'wind_turbine', 'generator:source': 'wind', power: 'generator' }],
     ['22', { man_made: 'breakwater' }],
     ['23', { man_made: 'breakwater' }],
     ['24', { man_made: 'pier' }]
@@ -201,19 +201,19 @@ describe('candidateTags: addresses (#49)', () => {
 
   it('writes the address of a single-address candidate', () => {
     expect(
-      single({ addresses: 'Kerkstraat 12', street_names: 'Kerkstraat', postcodes: '9000', municipalities: 'Gent' })
+      single({ addresses: 'Kerkstraat 12', municipalities: 'Gent', postcodes: '9000', street_names: 'Kerkstraat' })
     ).toMatchObject({
-      'addr:street': 'Kerkstraat',
+      'addr:city': 'Gent',
       'addr:housenumber': '12',
       'addr:postcode': '9000',
-      'addr:city': 'Gent'
+      'addr:street': 'Kerkstraat'
     })
   })
 
   it('writes the address of PICC and UrbIS buildings too', () => {
     expect(
       candidateTags(picc({ address_count: 1, addresses: 'Rue de Fer 5', street_names: 'Rue de Fer' }))
-    ).toMatchObject({ 'addr:street': 'Rue de Fer', 'addr:housenumber': '5' })
+    ).toMatchObject({ 'addr:housenumber': '5', 'addr:street': 'Rue de Fer' })
   })
 
   it('writes no address for several addresses or an empty one', () => {
@@ -233,7 +233,7 @@ describe('candidateTags: addresses (#49)', () => {
   })
 
   it('writes no house number when the address does not start with one after the street', () => {
-    const tags = single({ addresses: 'Dorpsplein 12', street_names: 'Kerkstraat', postcodes: '9000' })
+    const tags = single({ addresses: 'Dorpsplein 12', postcodes: '9000', street_names: 'Kerkstraat' })
     expect(tags['addr:street']).toBe('Kerkstraat')
     expect(tags['addr:housenumber']).toBeUndefined()
     expect(single({ addresses: 'Kerkstraat zn', street_names: 'Kerkstraat' })['addr:housenumber']).toBeUndefined()
@@ -241,13 +241,13 @@ describe('candidateTags: addresses (#49)', () => {
 
   it('takes the first entry of the lists and tolerates missing ones', () => {
     expect(
-      single({ addresses: '7', street_names: null, postcodes: '9000, 9050', municipalities: 'Gent, Gentbrugge' })
+      single({ addresses: '7', municipalities: 'Gent, Gentbrugge', postcodes: '9000, 9050', street_names: null })
     ).toEqual({
-      building: 'yes',
-      'source:geometry:ref': 'Gbg/1',
+      'addr:city': 'Gent',
       'addr:housenumber': '7',
       'addr:postcode': '9000',
-      'addr:city': 'Gent'
+      building: 'yes',
+      'source:geometry:ref': 'Gbg/1'
     })
   })
 })
@@ -255,9 +255,9 @@ describe('candidateTags: addresses (#49)', () => {
 describe('candidateToOsmFeature', () => {
   it('replaces the properties with the tags and keeps the geometry', () => {
     const input: Feature = {
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [4, 51] },
-      properties: candidate({ source_ref: 'Gbg/7' })
+      geometry: { coordinates: [4, 51], type: 'Point' },
+      properties: candidate({ source_ref: 'Gbg/7' }),
+      type: 'Feature'
     }
     const out = candidateToOsmFeature(input)
     expect(out.geometry).toBe(input.geometry)

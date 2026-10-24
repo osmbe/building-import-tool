@@ -1,4 +1,4 @@
-export default defineEventHandler((event) => {
+export default defineEventHandler( async (event) => {
   const config = useRuntimeConfig()
 
   // OSM OAuth 2.0 endpoints
@@ -22,7 +22,7 @@ export default defineEventHandler((event) => {
     redirect_uri: config.public.osmRedirectUri,
     response_type: 'code',
     scope: 'read_prefs',
-    state: state
+    state
   })
 
   const redirectUrl = `${authUrl}?${params.toString()}`

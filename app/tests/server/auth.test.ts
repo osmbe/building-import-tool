@@ -37,7 +37,7 @@ describe('GET /api/auth/osm-login', () => {
 
     const state = event.setCookies.oauth_state
     expect(state?.value).toMatch(/^[a-z0-9]+$/)
-    expect(state?.opts).toMatchObject({ httpOnly: true, secure: false, sameSite: 'lax', path: '/', maxAge: 600 })
+    expect(state?.opts).toMatchObject({ httpOnly: true, maxAge: 600, path: '/', sameSite: 'lax', secure: false })
 
     const url = new URL(event.redirect ?? '')
     expect(url.origin + url.pathname).toBe('https://www.openstreetmap.org/oauth2/authorize')
@@ -72,7 +72,7 @@ describe('POST /api/auth/osm-logout', () => {
 describe('GET /api/auth/osm-callback', () => {
   const load = async () => asHandler(await import('~/server/api/auth/osm-callback.get'))
   const callbackEvent = (query: Record<string, string>, storedState = 'abc') =>
-    createEvent({ query, cookies: { oauth_state: storedState } })
+    createEvent({ cookies: { oauth_state: storedState }, query })
 
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -102,11 +102,11 @@ describe('GET /api/auth/osm-callback', () => {
       .mockResolvedValueOnce({ access_token: 'tok' })
       .mockResolvedValueOnce({
         user: {
-          id: 42,
-          display_name: 'mapper',
-          img: { href: 'https://img/avatar.png' },
+          account_created: '2020-01-01T00:00:00Z',
           changesets: { count: 12 },
-          account_created: '2020-01-01T00:00:00Z'
+          display_name: 'mapper',
+          id: 42,
+          img: { href: 'https://img/avatar.png' }
         }
       })
     vi.stubGlobal('$fetch', fetchMock)
@@ -118,10 +118,10 @@ describe('GET /api/auth/osm-callback', () => {
     expect(tokenUrl).toBe('https://www.openstreetmap.org/oauth2/token')
     expect(tokenInit.method).toBe('POST')
     expect(Object.fromEntries(new URLSearchParams(tokenInit.body))).toEqual({
-      grant_type: 'authorization_code',
-      code: 'the-code',
       client_id: 'client-id',
       client_secret: 'secret',
+      code: 'the-code',
+      grant_type: 'authorization_code',
       redirect_uri: 'https://be2osm.test/api/auth/osm-callback'
     })
     const [, userInit] = fetchMock.mock.calls[1] as [string, { headers: Record<string, string> }]
@@ -130,12 +130,12 @@ describe('GET /api/auth/osm-callback', () => {
     expect(event.setCookies.osm_token?.value).toBe('tok')
     expect(event.setCookies.osm_token?.opts.httpOnly).toBe(true)
     expect(JSON.parse(event.setCookies.osm_user?.value ?? '')).toEqual({
-      id: 42,
-      username: 'mapper',
-      displayName: 'mapper',
       avatar: 'https://img/avatar.png',
       changesets: 12,
-      joinDate: '2020-01-01T00:00:00Z'
+      displayName: 'mapper',
+      id: 42,
+      joinDate: '2020-01-01T00:00:00Z',
+      username: 'mapper'
     })
     expect(event.setCookies.osm_user?.opts.httpOnly).toBe(false)
   })
@@ -147,7 +147,7 @@ describe('GET /api/auth/osm-callback', () => {
       vi
         .fn()
         .mockResolvedValueOnce({ access_token: 'tok' })
-        .mockResolvedValueOnce({ user: { id: 1, display_name: 'new', account_created: 'x' } })
+        .mockResolvedValueOnce({ user: { account_created: 'x', display_name: 'new', id: 1 } })
     )
     const event = callbackEvent({ code: 'c', state: 'abc' })
     await (

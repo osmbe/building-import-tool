@@ -11,9 +11,9 @@ export const extractFeaturesFromLayer = (
   targetProjection = 'EPSG:4326'
 ): Feature[] => {
   const source = layer.getSource()
-  if (!source) {
+  if (!source) 
     return []
-  }
+  
 
   const features = source.getFeatures()
   const geoJsonFormat = new GeoJSON()
@@ -23,7 +23,7 @@ export const extractFeaturesFromLayer = (
       dataProjection: targetProjection,
       featureProjection: 'EPSG:3857' // Web Mercator (default OpenLayers projection)
     })
-    return geoJsonFeature as Feature
+    return geoJsonFeature
   })
 }
 
@@ -43,6 +43,6 @@ export const extractFeaturesFromSource = (
       dataProjection: targetProjection,
       featureProjection: sourceProjection
     })
-    return geoJsonFeature as Feature
+    return geoJsonFeature
   })
 }

@@ -16,9 +16,9 @@ const BBOX_3857: [number, number, number, number] = [484000, 6594000, 484200, 65
 
 const mockFetch = (elements: any[], ok = true, status = 200) => {
   const fn = vi.fn().mockResolvedValue({
+    json: async () => ({ elements }),
     ok,
     status,
-    json: async () => ({ elements }),
     text: async () => JSON.stringify({ elements })
   })
   vi.stubGlobal('fetch', fn)
@@ -51,15 +51,15 @@ describe('fetchOverpassBuildings', () => {
   it('builds a Polygon from a closed way', async () => {
     mockFetch([
       {
-        type: 'way',
         geometry: [
-          { lon: 0, lat: 0 },
-          { lon: 0, lat: 1 },
-          { lon: 1, lat: 1 },
-          { lon: 1, lat: 0 },
-          { lon: 0, lat: 0 }
+          { lat: 0, lon: 0 },
+          { lat: 1, lon: 0 },
+          { lat: 1, lon: 1 },
+          { lat: 0, lon: 1 },
+          { lat: 0, lon: 0 }
         ],
-        tags: { building: 'yes' }
+        tags: { building: 'yes' },
+        type: 'way'
       }
     ])
 
@@ -82,14 +82,14 @@ describe('fetchOverpassBuildings', () => {
   it('closes an unclosed ring automatically', async () => {
     mockFetch([
       {
-        type: 'way',
         geometry: [
-          { lon: 0, lat: 0 },
-          { lon: 0, lat: 1 },
-          { lon: 1, lat: 1 },
-          { lon: 1, lat: 0 }
+          { lat: 0, lon: 0 },
+          { lat: 1, lon: 0 },
+          { lat: 1, lon: 1 },
+          { lat: 0, lon: 1 }
         ],
-        tags: { building: 'house' }
+        tags: { building: 'house' },
+        type: 'way'
       }
     ])
 
@@ -102,24 +102,24 @@ describe('fetchOverpassBuildings', () => {
   it('extracts GRB oidn from source:geometry:oidn and source:geometry:ref tags', async () => {
     mockFetch([
       {
-        type: 'way',
         geometry: [
-          { lon: 0, lat: 0 },
-          { lon: 0, lat: 1 },
-          { lon: 1, lat: 1 },
-          { lon: 0, lat: 0 }
+          { lat: 0, lon: 0 },
+          { lat: 1, lon: 0 },
+          { lat: 1, lon: 1 },
+          { lat: 0, lon: 0 }
         ],
-        tags: { building: 'yes', 'source:geometry:oidn': '111' }
+        tags: { building: 'yes', 'source:geometry:oidn': '111' },
+        type: 'way'
       },
       {
-        type: 'way',
         geometry: [
-          { lon: 2, lat: 2 },
-          { lon: 2, lat: 3 },
-          { lon: 3, lat: 3 },
-          { lon: 2, lat: 2 }
+          { lat: 2, lon: 2 },
+          { lat: 3, lon: 2 },
+          { lat: 3, lon: 3 },
+          { lat: 2, lon: 2 }
         ],
-        tags: { building: 'yes', 'source:geometry:ref': 'Gbg/222;Gba/333' }
+        tags: { building: 'yes', 'source:geometry:ref': 'Gbg/222;Gba/333' },
+        type: 'way'
       }
     ])
 
@@ -130,12 +130,12 @@ describe('fetchOverpassBuildings', () => {
   it('skips degenerate ways with fewer than 3 nodes', async () => {
     mockFetch([
       {
-        type: 'way',
         geometry: [
-          { lon: 0, lat: 0 },
-          { lon: 1, lat: 1 }
+          { lat: 0, lon: 0 },
+          { lat: 1, lon: 1 }
         ],
-        tags: { building: 'yes' }
+        tags: { building: 'yes' },
+        type: 'way'
       }
     ])
     const result = await fetchOverpassBuildings(BBOX_3857)
@@ -147,11 +147,11 @@ describe('fetchOverpassBuildings', () => {
     mockFetch([])
     const result = await fetchOverpassBuildings(BBOX_3857)
     expect(result).toEqual({
+      features: [],
       geomCollection: null,
       geomCollection3857: null,
-      totalOsm: 0,
       sourceRefs: [],
-      features: []
+      totalOsm: 0
     })
   })
 
@@ -162,7 +162,7 @@ describe('fetchOverpassBuildings', () => {
     expect(fn).toHaveBeenCalledOnce()
     const init = fn.mock.calls[0]?.[1]
     expect(init?.method).toBe('POST')
-    expect(String(init?.body)).toContain('way%5B%22building%22%5D') // way["building"] url-encoded
+    expect(String(init?.body)).toContain('way%5B%22building%22%5D') // Way["building"] url-encoded
   })
 
   it('identifies itself with a descriptive User-Agent (public Overpass answers 406 to generic clients)', async () => {
@@ -175,8 +175,8 @@ describe('fetchOverpassBuildings', () => {
   it('throws when Overpass returns a non-OK status', async () => {
     mockFetch([], false, 500)
     await expect(fetchOverpassBuildings(BBOX_3857)).rejects.toMatchObject({
-      statusCode: 502,
-      message: expect.stringMatching(/Overpass request failed \(500\)/)
+      message: expect.stringMatching(/Overpass request failed \(500\)/),
+      statusCode: 502
     })
   })
 
@@ -245,23 +245,23 @@ describe('stitchRings', () => {
 
 describe('parseOverpassElements', () => {
   const square = (x: number, y: number, s: number) => [
-    { lon: x, lat: y },
-    { lon: x, lat: y + s },
-    { lon: x + s, lat: y + s },
-    { lon: x + s, lat: y },
-    { lon: x, lat: y }
+    { lat: y, lon: x },
+    { lat: y + s, lon: x },
+    { lat: y + s, lon: x + s },
+    { lat: y, lon: x + s },
+    { lat: y, lon: x }
   ]
 
   it('builds a polygon with a hole from a multipolygon relation', () => {
     const result = parseOverpassElements([
       {
-        type: 'relation',
         id: 5,
-        tags: { building: 'yes', 'source:geometry:oidn': '42' },
         members: [
-          { type: 'way', role: 'outer', geometry: square(0, 0, 10) },
-          { type: 'way', role: 'inner', geometry: square(2, 2, 2) }
-        ]
+          { geometry: square(0, 0, 10), role: 'outer', type: 'way' },
+          { geometry: square(2, 2, 2), role: 'inner', type: 'way' }
+        ],
+        tags: { building: 'yes', 'source:geometry:oidn': '42' },
+        type: 'relation'
       }
     ])
     expect(result.totalOsm).toBe(1)
@@ -271,7 +271,7 @@ describe('parseOverpassElements', () => {
   })
 
   it('provides a Web Mercator collection alongside the WGS84 one', () => {
-    const result = parseOverpassElements([{ type: 'way', id: 1, geometry: square(4, 50, 0.001), tags: {} }])
+    const result = parseOverpassElements([{ geometry: square(4, 50, 0.001), id: 1, tags: {}, type: 'way' }])
     const wgs = JSON.parse(result.geomCollection as string)
     const merc = JSON.parse(result.geomCollection3857 as string)
     expect(wgs.geometries[0].coordinates[0][0][0]).toBeCloseTo(4)

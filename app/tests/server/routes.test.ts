@@ -4,24 +4,24 @@ import { asHandler, createEvent, expectHttpError, stubNitro } from './nitro'
 
 const fsMock = vi.hoisted(() => ({
   mkdir: vi.fn(),
-  writeFile: vi.fn(),
+  readFile: vi.fn(),
   readdir: vi.fn(),
   stat: vi.fn(),
   unlink: vi.fn(),
-  readFile: vi.fn()
+  writeFile: vi.fn()
 }))
 const db = vi.hoisted(() => ({ queryGrb: vi.fn() }))
 const overpass = vi.hoisted(() => ({ fetchOverpassBuildings: vi.fn() }))
 
-vi.mock('fs', () => ({ promises: fsMock, default: { promises: fsMock } }))
-vi.mock('fs/promises', () => ({ readFile: fsMock.readFile, default: { readFile: fsMock.readFile } }))
+vi.mock('fs', () => ({ default: { promises: fsMock }, promises: fsMock }))
+vi.mock('fs/promises', () => ({ default: { readFile: fsMock.readFile }, readFile: fsMock.readFile }))
 vi.mock('../../server/utils/db', () => db)
 vi.mock('~/server/utils/overpass', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/server/utils/overpass')>()),
   fetchOverpassBuildings: overpass.fetchOverpassBuildings
 }))
 
-const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
+const flushPromises =  async () => new Promise((resolve) => setTimeout(resolve, 0))
 
 beforeEach(() => {
   stubNitro()
@@ -38,7 +38,7 @@ describe('GET /api/health', () => {
   const load = async () => asHandler(await import('~/server/api/health.get'))
 
   it('reports healthy', async () => {
-    expect(await (await load())(createEvent())).toMatchObject({ status: 'healthy', service: 'be2osm-nuxt' })
+    expect(await (await load())(createEvent())).toMatchObject({ service: 'be2osm-nuxt', status: 'healthy' })
   })
 
   it('reports unhealthy with 503 when a check throws', async () => {
@@ -46,7 +46,7 @@ describe('GET /api/health', () => {
       throw new Error('no uptime')
     })
     const event = createEvent()
-    expect(await (await load())(event)).toMatchObject({ status: 'unhealthy', error: 'no uptime' })
+    expect(await (await load())(event)).toMatchObject({ error: 'no uptime', status: 'unhealthy' })
     expect(event.status).toBe(503)
   })
 
@@ -70,9 +70,9 @@ describe('GET /api/health/ready', () => {
       .mockResolvedValueOnce([])
     const event = createEvent()
     expect(await (await load())(event)).toEqual({
+      migrations: { common: [], grb: ['001_a', '002_b'] },
       ready: true,
-      sha: 'abc123',
-      migrations: { grb: ['001_a', '002_b'], common: [] }
+      sha: 'abc123'
     })
     expect(event.status).toBeUndefined()
     expect(db.queryGrb).toHaveBeenCalledWith('SELECT version FROM "grb".schema_migrations ORDER BY version')
@@ -96,30 +96,30 @@ describe('GET /api/health/ready', () => {
       .mockResolvedValueOnce([{ view: 'grb.candidates' }, { view: 'urbis.candidates' }])
     const event = createEvent()
     expect(await (await load())(event)).toEqual({
-      ready: false,
-      sha: 'abc123',
+      error: 'missing views: grb.candidates, urbis.candidates (run the migrations)',
       migrations: { grb: ['003_x'] },
-      error: 'missing views: grb.candidates, urbis.candidates (run the migrations)'
+      ready: false,
+      sha: 'abc123'
     })
     expect(event.status).toBe(503)
   })
 
   it('reports "dev" when the build has no SHA', async () => {
     db.queryGrb.mockResolvedValue([])
-    expect(await (await load())(createEvent())).toMatchObject({ ready: true, sha: 'dev', migrations: {} })
+    expect(await (await load())(createEvent())).toMatchObject({ migrations: {}, ready: true, sha: 'dev' })
   })
 
   it('is not ready (503) when the database does not answer', async () => {
     stubNitro({ gitSha: 'abc123' })
     db.queryGrb.mockRejectedValue(new Error('connection refused'))
     const event = createEvent()
-    expect(await (await load())(event)).toEqual({ ready: false, sha: 'abc123', error: 'connection refused' })
+    expect(await (await load())(event)).toEqual({ error: 'connection refused', ready: false, sha: 'abc123' })
     expect(event.status).toBe(503)
   })
 
   it('reports an unknown error for non-Error failures', async () => {
     db.queryGrb.mockRejectedValue('boom')
-    expect(await (await load())(createEvent())).toMatchObject({ ready: false, error: 'Unknown error' })
+    expect(await (await load())(createEvent())).toMatchObject({ error: 'Unknown error', ready: false })
   })
 })
 
@@ -151,11 +151,11 @@ describe('POST /api/buildings/osm-live', () => {
   })
 
   it('returns the live footprints as a FeatureCollection', async () => {
-    const feature = { type: 'Feature', geometry: { type: 'Polygon', coordinates: [] }, properties: { osm_id: 'way/1' } }
+    const feature = { geometry: { coordinates: [], type: 'Polygon' }, properties: { osm_id: 'way/1' }, type: 'Feature' }
     overpass.fetchOverpassBuildings.mockResolvedValue({ features: [feature], totalOsm: 1 })
     const result = await (await load())(createEvent({ body: { bounds: BOUNDS } }))
     expect(overpass.fetchOverpassBuildings).toHaveBeenCalledWith(BOUNDS)
-    expect(result).toEqual({ type: 'FeatureCollection', features: [feature], stats: { totalOsm: 1 } })
+    expect(result).toEqual({ features: [feature], stats: { totalOsm: 1 }, type: 'FeatureCollection' })
   })
 
   it.each([
@@ -179,11 +179,11 @@ describe('GET /api/proxy/brussels-wms', () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(
-        new Response(new Uint8Array([1, 2, 3]), { status: 200, headers: { 'content-type': 'image/png' } })
+        new Response(new Uint8Array([1, 2, 3]), { headers: { 'content-type': 'image/png' }, status: 200 })
       )
     vi.stubGlobal('fetch', fetchMock)
     const event = createEvent({
-      query: { WIDTH: '512', height: '512', CRS: 'EPSG:3857', LAYERS: 'urbisFR', FORMAT_OPTIONS: 'dpi:180' }
+      query: { CRS: 'EPSG:3857', FORMAT_OPTIONS: 'dpi:180', LAYERS: 'urbisFR', WIDTH: '512', height: '512' }
     })
 
     const body = await (await load())(event)
@@ -191,10 +191,10 @@ describe('GET /api/proxy/brussels-wms', () => {
     const url = new URL(String(fetchMock.mock.calls[0]?.[0]))
     expect(url.origin + url.pathname).toBe('https://geoservices-urbis.irisnet.be/geowebcache/service/wms')
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      WIDTH: '256',
-      height: '256',
       CRS: 'EPSG:900913',
-      LAYERS: 'urbisFR'
+      LAYERS: 'urbisFR',
+      WIDTH: '256',
+      height: '256'
     })
     expect(event.responseHeaders['Content-Type']).toBe('image/png')
     expect(Buffer.isBuffer(body)).toBe(true)
@@ -244,7 +244,7 @@ describe('POST /api/export/upload', () => {
   })
 
   it('stores the file under a random name and returns its URL', async () => {
-    const event = createEvent({ body: OSM_XML, headers: { 'x-forwarded-proto': 'https', host: 'be2osm.test' } })
+    const event = createEvent({ body: OSM_XML, headers: { host: 'be2osm.test', 'x-forwarded-proto': 'https' } })
     const result = await (await load())(event)
 
     expect(result.status).toBe('stored')
@@ -317,8 +317,8 @@ describe('GET /exports/:filename', () => {
     expect(await (await load())(event)).toBe('<osm/>')
     expect(String(fsMock.readFile.mock.calls[0]?.[0])).toMatch(/public[/\\]exports[/\\]abc123\.osm$/)
     expect(event.responseHeaders).toEqual({
-      'Content-Type': 'application/xml',
-      'Content-Disposition': `inline; filename="${FILE}"`
+      'Content-Disposition': `inline; filename="${FILE}"`,
+      'Content-Type': 'application/xml'
     })
   })
 

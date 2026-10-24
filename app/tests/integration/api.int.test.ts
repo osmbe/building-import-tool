@@ -1,16 +1,16 @@
 // API integration tests against a real PostGIS loaded with the fixtures of tests/fixtures (see
-// tests/db/cases/70-api.sh, which imports them and runs this file with TEST_PG_PORT set). Skipped otherwise.
+// Tests/db/cases/70-api.sh, which imports them and runs this file with TEST_PG_PORT set). Skipped otherwise.
 //
 // __snapshots__/legacy/ holds the difference responses of the API before the candidates contract (properties
-// named per source). They characterise which candidates each source and match mode returns: the contract
-// responses must hold the same candidates (same objects, same geometry) with the same stats, and the JOSM
-// exports (export-*.osm, also recorded before the contract) must stay byte for byte the same.
+// Named per source). They characterise which candidates each source and match mode returns: the contract
+// Responses must hold the same candidates (same objects, same geometry) with the same stats, and the JOSM
+// Exports (export-*.osm, also recorded before the contract) must stay byte for byte the same.
 import { readFileSync } from 'node:fs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vite-plus/test'
-import { CANDIDATES_CONTRACT, candidateToOsmFeature, type CandidateSource } from '~/utils/candidates'
+import { CANDIDATES_CONTRACT, type CandidateSource, candidateToOsmFeature } from '~/utils/candidates'
 import { geojsonToOsm } from '~/utils/geojsonToOsm'
-import type { Feature, FeatureCollection, Position } from 'geojson'
-import { asHandler, createEvent, runtimeConfig, stubNitro, type TestHandler } from '../server/nitro'
+import type { Feature, Position } from 'geojson'
+import { type TestHandler, asHandler, createEvent, runtimeConfig, stubNitro } from '../server/nitro'
 
 const PORT = process.env.TEST_PG_PORT
 
@@ -49,12 +49,12 @@ const round = (value: unknown): unknown =>
 function normalise(response: DifferenceResponse): string {
   const features = response.features
     .map((f) => ({
-      properties: f.properties,
-      coordinates: round((f.geometry as { coordinates: unknown }).coordinates)
+      coordinates: round((f.geometry as { coordinates: unknown }).coordinates),
+      properties: f.properties
     }))
     .toSorted((a, b) => JSON.stringify(a.properties).localeCompare(JSON.stringify(b.properties)))
   const { bounds: _bounds, ...stats } = response.stats
-  return `${JSON.stringify({ stats, features }, null, 2)}\n`
+  return `${JSON.stringify({ features, stats }, null, 2)}\n`
 }
 
 /** The object id of a pre-contract feature (properties named per source), as the contract's source_id. */
@@ -79,21 +79,21 @@ function legacyCandidates(file: string, source: CandidateSource): { stats: Stats
     features: { properties: Record<string, unknown>; coordinates: unknown }[]
   }
   const candidates = snapshot.features
-    .map((f) => ({ id: LEGACY_ID[source](f.properties), coordinates: flat(f.coordinates) }))
+    .map((f) => ({ coordinates: flat(f.coordinates), id: LEGACY_ID[source](f.properties) }))
     .toSorted((a, b) => a.id.localeCompare(b.id))
-  return { stats: snapshot.stats, candidates }
+  return { candidates, stats: snapshot.stats }
 }
 
 /** The same for a contract response (GRB is identified by Entity/oidn, the others by their source id). */
 function contractCandidates(response: DifferenceResponse): { stats: Stats; candidates: Candidate[] } {
   const candidates = response.features
     .map((f) => ({
-      id: String(f.properties?.source === 'grb' ? f.properties.source_ref : f.properties?.source_id),
-      coordinates: flat(round((f.geometry as { coordinates: unknown }).coordinates))
+      coordinates: flat(round((f.geometry as { coordinates: unknown }).coordinates)),
+      id: String(f.properties?.source === 'grb' ? f.properties.source_ref : f.properties?.source_id)
     }))
     .toSorted((a, b) => a.id.localeCompare(b.id))
   const { bounds: _bounds, ...stats } = response.stats
-  return { stats, candidates }
+  return { candidates, stats }
 }
 
 /** The contract response has the candidates and stats of the pre-contract snapshot, coordinates within 2e-6°. */
@@ -105,19 +105,19 @@ function expectSameCandidates(response: DifferenceResponse, file: string, source
   current.candidates.forEach((candidate, i) => {
     const expected = legacy.candidates[i]?.coordinates ?? []
     expect(candidate.coordinates).toHaveLength(expected.length)
-    candidate.coordinates.forEach((value, j) => expect(Math.abs(value - (expected[j] ?? NaN))).toBeLessThan(2e-6))
+    candidate.coordinates.forEach((value, j) =>{  expect(Math.abs(value - (expected[j] ?? NaN))).toBeLessThan(2e-6); })
   })
 }
 
 /** The JOSM export of a response, coordinates rounded to 6 decimals (about 10 cm) against reprojection noise. */
 function exportXml(response: DifferenceResponse): string {
   const osm = geojsonToOsm({
-    type: 'FeatureCollection',
-    features: response.features.map(candidateToOsmFeature)
-  } as FeatureCollection)
-  return osm.replace(/(lat|lon)="(-?\d+\.\d+)"/g, (_m, axis: string, value: string) => {
-    return `${axis}="${Number(value).toFixed(6)}"`
+    features: response.features.map(candidateToOsmFeature),
+    type: 'FeatureCollection'
   })
+  return osm.replace(/(lat|lon)="(-?\d+\.\d+)"/g, (_m, axis: string, value: string) =>
+    `${axis}="${Number(value).toFixed(6)}"`
+  )
 }
 
 /** "Gbg/1001"-style references of the GRB candidates in a response. */
@@ -137,11 +137,11 @@ describe.skipIf(!PORT)('API against the fixture database', () => {
 
   // Globals are restored after every test (unstubGlobals), so stub them before each one
   beforeEach(() => {
-    stubNitro({ ...runtimeConfig, dbHost: '127.0.0.1', dbPort: PORT, dbUser: 'be2osm', dbPassword: 'be2osm' })
+    stubNitro({ ...runtimeConfig, dbHost: '127.0.0.1', dbPassword: 'be2osm', dbPort: PORT, dbUser: 'be2osm' })
   })
 
   beforeAll(async () => {
-    stubNitro({ ...runtimeConfig, dbHost: '127.0.0.1', dbPort: PORT, dbUser: 'be2osm', dbPassword: 'be2osm' })
+    stubNitro({ ...runtimeConfig, dbHost: '127.0.0.1', dbPassword: 'be2osm', dbPort: PORT, dbUser: 'be2osm' })
     difference = asHandler(await import('~/server/api/buildings/difference.post'))
     dataDates = asHandler(await import('~/server/api/meta/data-dates.get'))
     ;({ closeDbConnections: closeDb } = await import('~/server/utils/db'))
@@ -177,16 +177,16 @@ describe.skipIf(!PORT)('API against the fixture database', () => {
     it('candidates carry the contract properties: reference, type, survey date, building, address', async () => {
       const response = await post({ bounds: AREAS.grb, dataSource: 'grb', matchMode: 'source' })
       expect(response.features[0]?.properties).toMatchObject({
-        source: 'grb',
+        address_count: 1,
+        addresses: 'Kerkstraat 1',
+        details: {},
         entity: 'Gbg',
+        parent_id: '5001',
+        source: 'grb',
         source_id: '1001',
         source_ref: 'Gbg/1001',
-        type_label: 'hoofdgebouw',
         survey_date: '2023-03-15',
-        parent_id: '5001',
-        addresses: 'Kerkstraat 1',
-        address_count: 1,
-        details: {}
+        type_label: 'hoofdgebouw'
       })
     })
 
@@ -209,7 +209,7 @@ describe.skipIf(!PORT)('API against the fixture database', () => {
   it('PICC geometry mode hides the building matched by OSM', async () => {
     const response = await post({ bounds: AREAS.picc, dataSource: 'picc', matchMode: 'geometry' })
     expect(response.features.map((f) => f.properties?.source_id)).toEqual(['11'])
-    expect(response.features[0]?.properties).toMatchObject({ addresses: 'Rue de Fer 5', address_count: 1 })
+    expect(response.features[0]?.properties).toMatchObject({ address_count: 1, addresses: 'Rue de Fer 5' })
     expectSameCandidates(response, 'difference-picc-geometry.json', 'picc')
     await expect(normalise(response)).toMatchFileSnapshot('__snapshots__/difference-picc-geometry.json')
   })
@@ -255,8 +255,8 @@ describe.skipIf(!PORT)('API against the fixture database', () => {
 
   it('data-dates reports the import time of every source', async () => {
     const dates = (await dataDates(createEvent())) as Record<string, string | null>
-    for (const source of ['grb', 'knw', 'picc', 'urbis']) {
+    for (const source of ['grb', 'knw', 'picc', 'urbis'])
       expect(dates[source], source).toMatch(/^\d{4}-\d{2}-\d{2}T/)
-    }
+
   })
 })
