@@ -1,35 +1,6 @@
 {
-  "stats": {
-    "total": 1,
-    "totalGrb": 3,
-    "totalOsm": 2,
-    "dataSource": "grb",
-    "matchMode": "source"
-  },
   "features": [
     {
-      "properties": {
-        "fid": "1",
-        "source": "grb",
-        "entity": "Gbg",
-        "source_id": "1001",
-        "source_ref": "Gbg/1001",
-        "type_code": null,
-        "type_label": "hoofdgebouw",
-        "survey_date": "2023-03-15",
-        "origin_label": "terreinbezoek",
-        "area_m2": 55.5,
-        "parent_id": "5001",
-        "parent_type_label": "hoofdgebouw",
-        "parent_part_count": 2,
-        "parent_area_m2": 111,
-        "addresses": "Kerkstraat 1",
-        "street_names": "Kerkstraat",
-        "postcodes": "2000",
-        "municipalities": "Antwerpen",
-        "address_count": 1,
-        "details": {}
-      },
       "coordinates": [
         [
           [
@@ -53,7 +24,36 @@
             51.2
           ]
         ]
-      ]
+      ],
+      "properties": {
+        "fid": "1",
+        "source": "grb",
+        "entity": "Gbg",
+        "source_id": "1001",
+        "source_ref": "Gbg/1001",
+        "type_code": null,
+        "type_label": "hoofdgebouw",
+        "survey_date": "2023-03-15",
+        "origin_label": "terreinbezoek",
+        "area_m2": 55.5,
+        "parent_id": "5001",
+        "parent_type_label": "hoofdgebouw",
+        "parent_part_count": 2,
+        "parent_area_m2": 111,
+        "addresses": "Kerkstraat 1",
+        "street_names": "Kerkstraat",
+        "postcodes": "2000",
+        "municipalities": "Antwerpen",
+        "address_count": 1,
+        "details": {}
+      }
     }
-  ]
+  ],
+  "stats": {
+    "total": 1,
+    "totalGrb": 3,
+    "totalOsm": 2,
+    "dataSource": "grb",
+    "matchMode": "source"
+  }
 }
