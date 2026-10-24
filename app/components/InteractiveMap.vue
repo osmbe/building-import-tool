@@ -99,36 +99,6 @@
               </div>
             </div>
 
-            <!-- Prerequisite checklist (shown until everything is ready) -->
-            <div v-if="!canCalculateDifference" class="px-2 pt-2 pb-1.5 space-y-1 border-b border-white/[0.05]">
-              <div class="text-[8px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                Before you start
-              </div>
-              <button class="check-row" @click="revealLayersPanel">
-                <span class="check-mark" :class="hasSourceLayer ? 'check-done' : ''"
-                  ><Check v-if="hasSourceLayer" class="h-2 w-2"
-                /></span>
-                <span class="flex-1 text-left" :class="hasSourceLayer ? 'text-emerald-400/80' : ''"
-                  >Source dataset on</span
-                >
-                <span v-if="!hasSourceLayer" class="check-action">Layers</span>
-              </button>
-              <button class="check-row" @click="revealLayersPanel">
-                <span class="check-mark" :class="hasOsmLayer ? 'check-done' : ''"
-                  ><Check v-if="hasOsmLayer" class="h-2 w-2"
-                /></span>
-                <span class="flex-1 text-left" :class="hasOsmLayer ? 'text-emerald-400/80' : ''">OSM Buildings on</span>
-                <span v-if="!hasOsmLayer" class="check-action">Layers</span>
-              </button>
-              <button class="check-row" @click="zoomToWorkingLevel">
-                <span class="check-mark" :class="zoomReady ? 'check-done' : ''"
-                  ><Check v-if="zoomReady" class="h-2 w-2"
-                /></span>
-                <span class="flex-1 text-left" :class="zoomReady ? 'text-emerald-400/80' : ''">Zoom in to ≥ 16</span>
-                <span v-if="!zoomReady" class="check-action">Zoom</span>
-              </button>
-            </div>
-
             <!-- Actions -->
             <div class="p-2 space-y-1">
               <button
@@ -396,6 +366,13 @@
         <!-- Match Mode Control -->
         <MatchModeControl
           :source-supports-tags="supportsSourceTags(selectedSource === 'none' ? 'grb' : selectedSource)"
+          :map-ready="Boolean(map)"
+          :source-layer-enabled="hasSourceLayer"
+          :osm-layer-enabled="hasOsmLayer"
+          :zoom="currentZoom"
+          @readiness-change="canCalculateDifference = $event"
+          @reveal-layers="revealLayersPanel"
+          @zoom-to-working-level="zoomToWorkingLevel"
         />
       </div>
 
@@ -1111,12 +1088,7 @@ const hasSourceLayer = computed(() =>
   )
 )
 const hasOsmLayer = computed(() => Boolean(osmBuildingsLayerRef.value && overlayLayers.value.osmBuildings))
-const zoomReady = computed(() => currentZoom.value >= 16)
-
-// Computed property to check if Get Difference button should be enabled
-const canCalculateDifference = computed(
-  () => Boolean(map.value) && hasOsmLayer.value && zoomReady.value && hasSourceLayer.value
-)
+const canCalculateDifference = ref(false)
 
 // Difference workflow lifecycle state, surfaced as a persistent results panel
 // instead of disappearing toasts.

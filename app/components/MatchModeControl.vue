@@ -15,6 +15,33 @@
 
     <!-- Collapsible body -->
     <div v-show="!collapsed" class="p-2.5">
+      <div v-if="!canCalculateDifference" class="mb-2.5 pb-2.5 space-y-1 border-b border-white/[0.05]">
+        <div class="text-[8px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+          Before you start
+        </div>
+        <button class="check-row" @click="emit('revealLayers')">
+          <span class="check-mark" :class="sourceLayerEnabled ? 'check-done' : ''">
+            <Check v-if="sourceLayerEnabled" class="h-2 w-2" />
+          </span>
+          <span class="flex-1 text-left" :class="sourceLayerEnabled ? 'text-emerald-400/80' : ''">Source dataset on</span>
+          <span v-if="!sourceLayerEnabled" class="check-action">Layers</span>
+        </button>
+        <button class="check-row" @click="emit('revealLayers')">
+          <span class="check-mark" :class="osmLayerEnabled ? 'check-done' : ''">
+            <Check v-if="osmLayerEnabled" class="h-2 w-2" />
+          </span>
+          <span class="flex-1 text-left" :class="osmLayerEnabled ? 'text-emerald-400/80' : ''">OSM Buildings on</span>
+          <span v-if="!osmLayerEnabled" class="check-action">Layers</span>
+        </button>
+        <button class="check-row" @click="emit('zoomToWorkingLevel')">
+          <span class="check-mark" :class="zoomReady ? 'check-done' : ''">
+            <Check v-if="zoomReady" class="h-2 w-2" />
+          </span>
+          <span class="flex-1 text-left" :class="zoomReady ? 'text-emerald-400/80' : ''">Zoom in to ≥ 16</span>
+          <span v-if="!zoomReady" class="check-action">Zoom</span>
+        </button>
+      </div>
+
       <div class="grid grid-cols-3 gap-1 bg-white/[0.03] rounded p-0.5">
         <button
           class="flex items-center justify-center px-1 py-1.5 rounded text-[11px] font-medium transition-all duration-150 whitespace-nowrap"
@@ -108,16 +135,36 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, Radio } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { Check, ChevronDown, Radio } from 'lucide-vue-next'
+import { computed, ref, watch } from 'vue'
 import { useMatchMode } from '~/composables/useMatchMode'
 
-withDefaults(defineProps<{ sourceSupportsTags?: boolean }>(), { sourceSupportsTags: true })
+const props = withDefaults(
+  defineProps<{
+    sourceSupportsTags?: boolean
+    mapReady: boolean
+    sourceLayerEnabled: boolean
+    osmLayerEnabled: boolean
+    zoom: number
+  }>(),
+  { sourceSupportsTags: true }
+)
+const emit = defineEmits<{
+  readinessChange: [ready: boolean]
+  revealLayers: []
+  zoomToWorkingLevel: []
+}>()
 
 const tagsUnavailableMessage = 'Source and Both modes need GRB data (PICC, UrbIS and KNW have no source tags in OSM).'
 
 const { matchMode, geometryThreshold, useOverpass, setMatchMode, setGeometryThreshold, setUseOverpass } = useMatchMode()
 const collapsed = ref(false)
+const zoomReady = computed(() => props.zoom >= 16)
+const canCalculateDifference = computed(
+  () => props.mapReady && props.sourceLayerEnabled && props.osmLayerEnabled && zoomReady.value
+)
+
+watch(canCalculateDifference, (ready) => emit('readinessChange', ready), { immediate: true })
 
 const onThresholdInput = (event: Event) => {
   const target = event.target as HTMLInputElement | null
