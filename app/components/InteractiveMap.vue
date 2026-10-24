@@ -43,143 +43,6 @@
                 <RotateCcw class="h-3.5 w-3.5" />
               </button>
             </div>
-
-            <!-- Base layer selection -->
-            <div class="p-2 border-b border-white/[0.05]">
-              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Basemap</div>
-              <div class="flex flex-wrap gap-1">
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'blank' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('blank')"
-                  title="No background"
-                >
-                  Blank
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'osm' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('osm')"
-                  title="OpenStreetMap Belgium (tile.openstreetmap.be)"
-                >
-                  OSM
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'esri' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('esri')"
-                  title="Esri World Imagery (Maxar/Earthstar) — mosaic, dates vary by area — Belgium only"
-                >
-                  Esri
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'flanders' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('flanders')"
-                  title="Orthophoto Vlaanderen — Digitaal Vlaanderen (OFW, always latest)"
-                >
-                  Flanders <span class="opacity-60">latest</span>
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'brussels' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('brussels')"
-                  title="Ortho UrbIS 2024 (nadir) — geoservices-urbis.irisnet.be"
-                >
-                  Brussels <span class="opacity-60">'24</span>
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'wallonia' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('wallonia')"
-                  title="Orthophoto Wallonie 2024 — geoservices.wallonie.be"
-                >
-                  Wallonia <span class="opacity-60">'24</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Prerequisite checklist (shown until everything is ready) -->
-            <div v-if="!canCalculateDifference" class="px-2 pt-2 pb-1.5 space-y-1 border-b border-white/[0.05]">
-              <div class="text-[8px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                Before you start
-              </div>
-              <button class="check-row" @click="revealLayersPanel">
-                <span class="check-mark" :class="hasSourceLayer ? 'check-done' : ''"
-                  ><Check v-if="hasSourceLayer" class="h-2 w-2"
-                /></span>
-                <span class="flex-1 text-left" :class="hasSourceLayer ? 'text-emerald-400/80' : ''"
-                  >Source dataset on</span
-                >
-                <span v-if="!hasSourceLayer" class="check-action">Layers</span>
-              </button>
-              <button class="check-row" @click="revealLayersPanel">
-                <span class="check-mark" :class="hasOsmLayer ? 'check-done' : ''"
-                  ><Check v-if="hasOsmLayer" class="h-2 w-2"
-                /></span>
-                <span class="flex-1 text-left" :class="hasOsmLayer ? 'text-emerald-400/80' : ''">OSM Buildings on</span>
-                <span v-if="!hasOsmLayer" class="check-action">Layers</span>
-              </button>
-              <button class="check-row" @click="zoomToWorkingLevel">
-                <span class="check-mark" :class="zoomReady ? 'check-done' : ''"
-                  ><Check v-if="zoomReady" class="h-2 w-2"
-                /></span>
-                <span class="flex-1 text-left" :class="zoomReady ? 'text-emerald-400/80' : ''">Zoom in to ≥ 16</span>
-                <span v-if="!zoomReady" class="check-action">Zoom</span>
-              </button>
-            </div>
-
-            <!-- Actions -->
-            <div class="p-2 space-y-1">
-              <button
-                class="action-btn w-full"
-                :disabled="!canCalculateDifference || isCalculatingDifference"
-                title="Get Difference (G)"
-                aria-label="Get Difference"
-                @click="calculateDifference"
-              >
-                <Loader2 v-if="isCalculatingDifference" class="h-3 w-3 animate-spin shrink-0" />
-                <GitCompareArrows v-else class="h-3 w-3 shrink-0" />
-                <span>{{ isCalculatingDifference ? 'Calculating…' : 'Get Difference' }}</span>
-              </button>
-              <button
-                class="action-btn w-full"
-                :disabled="!canExportToJOSM"
-                title="Open in JOSM (J)"
-                aria-label="Open candidates in JOSM"
-                @click="exportToJOSM"
-              >
-                <ExternalLink class="h-3 w-3 shrink-0" />
-                <span>Open in JOSM</span>
-              </button>
-
-              <!-- JOSM connection status -->
-              <div class="flex items-center justify-between px-0.5 pt-1">
-                <div class="flex items-center gap-1.5">
-                  <span
-                    class="h-1.5 w-1.5 rounded-full shrink-0"
-                    :class="
-                      josmConnected === true
-                        ? 'bg-emerald-400'
-                        : josmConnected === false
-                          ? 'bg-red-400'
-                          : 'bg-muted-foreground/40'
-                    "
-                  ></span>
-                  <span class="text-[9px] text-muted-foreground">
-                    {{
-                      josmConnected === true ? 'JOSM ready' : josmConnected === false ? 'JOSM offline' : 'JOSM unknown'
-                    }}
-                  </span>
-                </div>
-                <button
-                  class="text-[9px] text-primary/80 hover:text-primary transition-colors"
-                  @click="josmHelpOpen = true"
-                >
-                  Set up
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -250,6 +113,62 @@
                 One dataset at a time, compared against OSM Buildings.
               </p>
             </div>
+
+            <!-- Base layer selection -->
+            <div class="mt-3 pt-3 border-t border-white/[0.05]">
+              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Basemap</div>
+              <div class="grid grid-cols-2 gap-1">
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'blank' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('blank')"
+                  title="No background"
+                >
+                  Blank
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'osm' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('osm')"
+                  title="OpenStreetMap Belgium (tile.openstreetmap.be)"
+                >
+                  OSM
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'esri' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('esri')"
+                  title="Esri World Imagery (Maxar/Earthstar) — mosaic, dates vary by area — Belgium only"
+                >
+                  Esri
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'flanders' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('flanders')"
+                  title="Orthophoto Vlaanderen — Digitaal Vlaanderen (OFW, always latest)"
+                >
+                  Flanders <span class="opacity-60">latest</span>
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'brussels' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('brussels')"
+                  title="Ortho UrbIS 2024 (nadir) — geoservices-urbis.irisnet.be"
+                >
+                  Brussels <span class="opacity-60">'24</span>
+                </button>
+                <button
+                  class="layer-btn"
+                  :class="currentBaseLayer === 'wallonia' ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer('wallonia')"
+                  title="Orthophoto Wallonie 2024 — geoservices.wallonie.be"
+                >
+                  Wallonia <span class="opacity-60">'24</span>
+                </button>
+              </div>
+            </div>
+
             <div class="mt-3 pt-3 border-t border-white/[0.05] space-y-1">
               <div class="flex items-center justify-between text-[10px]">
                 <span class="text-muted-foreground">Zoom</span>
@@ -390,12 +309,61 @@
             <p class="text-[9px] text-muted-foreground/70 pt-1.5 leading-relaxed">
               {{ matchSummary }}. Open in JOSM to review before upload.
             </p>
+
+            <div class="p-2 space-y-1">
+              <button
+                class="action-btn w-full"
+                :disabled="!canExportToJOSM"
+                title="Open in JOSM (J)"
+                aria-label="Open candidates in JOSM"
+                @click="exportToJOSM"
+              >
+                <ExternalLink class="h-3 w-3 shrink-0" />
+                <span>Open in JOSM</span>
+              </button>
+
+              <!-- JOSM connection status -->
+              <div class="flex items-center justify-between px-0.5 pt-1">
+                <div class="flex items-center gap-1.5">
+                  <span
+                    class="h-1.5 w-1.5 rounded-full shrink-0"
+                    :class="
+                      josmConnected === true
+                        ? 'bg-emerald-400'
+                        : josmConnected === false
+                          ? 'bg-red-400'
+                          : 'bg-muted-foreground/40'
+                    "
+                  ></span>
+                  <span class="text-[9px] text-muted-foreground">
+                    {{
+                      josmConnected === true ? 'JOSM ready' : josmConnected === false ? 'JOSM offline' : 'JOSM unknown'
+                    }}
+                  </span>
+                </div>
+                <button
+                  class="text-[9px] text-primary/80 hover:text-primary transition-colors"
+                  @click="josmHelpOpen = true"
+                >
+                  Set up
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Match Mode Control -->
         <MatchModeControl
           :source-supports-tags="supportsSourceTags(selectedSource === 'none' ? 'grb' : selectedSource)"
+          :map-ready="Boolean(map)"
+          :source-layer-enabled="hasSourceLayer"
+          :osm-layer-enabled="hasOsmLayer"
+          :zoom="currentZoom"
+          :calculating="isCalculatingDifference"
+          @readiness-change="canCalculateDifference = $event"
+          @calculate-difference="calculateDifference"
+          @reveal-layers="revealLayersPanel"
+          @zoom-to-working-level="zoomToWorkingLevel"
         />
       </div>
 
@@ -980,7 +948,6 @@ import {
   ChevronDown,
   CircleAlert,
   ExternalLink,
-  GitCompareArrows,
   Landmark,
   Loader2,
   RotateCcw,
@@ -1111,12 +1078,7 @@ const hasSourceLayer = computed(() =>
   )
 )
 const hasOsmLayer = computed(() => Boolean(osmBuildingsLayerRef.value && overlayLayers.value.osmBuildings))
-const zoomReady = computed(() => currentZoom.value >= 16)
-
-// Computed property to check if Get Difference button should be enabled
-const canCalculateDifference = computed(
-  () => Boolean(map.value) && hasOsmLayer.value && zoomReady.value && hasSourceLayer.value
-)
+const canCalculateDifference = ref(false)
 
 // Difference workflow lifecycle state, surfaced as a persistent results panel
 // instead of disappearing toasts.
