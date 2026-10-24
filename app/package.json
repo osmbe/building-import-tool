@@ -12,7 +12,9 @@
     "test:watch": "vp test",
     "test:coverage": "vp test run --coverage",
     "lint": "nuxt prepare && vp lint",
+    "lint:fix": "nuxt prepare && vp lint --fix",
     "fmt": "vp fmt",
+    "fmt:fix": "vp fmt --write",
     "typecheck": "nuxt prepare && vue-tsc -b --noEmit"
   },
   "dependencies": {
