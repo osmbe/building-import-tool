@@ -184,6 +184,12 @@ describe('POST /api/buildings/difference: one query for every source', () => {
 })
 
 describe('POST /api/buildings/difference: geometry matching', () => {
+  it('uses the default geometry threshold when omitted', async () => {
+    fakeDatabases()
+    await post({ dataSource: 'knw' })
+    expect(candidateCall().params).toEqual([...BOUNDS, 'OSM_GC', 0.85])
+  })
+
   it('drops candidates covered by an OSM outline both ways, at the threshold, in EPSG:3857', async () => {
     fakeDatabases()
     await post({ dataSource: 'knw', geometryThreshold: 0.8 })

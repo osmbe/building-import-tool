@@ -5,7 +5,6 @@ describe('useMatchMode', () => {
   beforeEach(() => {
     const m = useMatchMode()
     m.setMatchMode('geometry')
-    m.setGeometryThreshold(0.85)
     m.setUseOverpass(false)
   })
 
