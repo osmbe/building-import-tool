@@ -1,5 +1,5 @@
 import type { Feature } from 'geojson'
-import { KNW_TAG_MAP_BY_CODE, VERDIEPING_FIXME, isBuildingTypeLabel } from '~/utils/grbExportTags'
+import { KNW_TAG_MAP_BY_CODE, VERDIEPING_FIXME, isBuildingTypeLabel, isRoofTypeLabel } from '~/utils/grbExportTags'
 
 // The candidates contract: every source exposes its buildings with the same properties, in the database views
 // Grb.candidates, grb.knw_candidates, picc.candidates and urbis.candidates (processing/sql/migrations/grb/
@@ -113,7 +113,8 @@ const knwTags = (props: CandidateProperties): Record<string, string> => {
 
 /**
  * The OSM tags of a candidate, per source (docs/GRB_PROPERTY_MAPPINGS.md, issues #22, #49 and #53):
- * - GRB: building=yes for the building types only (gbg-1, gbg-2, gba-1); a verdieping (gba-1) gets a fixme;
+ * - GRB: building=yes for the building types only (gbg-1, gbg-2, gba-1); building=roof for gba-2 (afdak);
+ *   a verdieping (gba-1) gets a fixme;
  * - KNW: the default tags of its type, no building tag;
  * - PICC and UrbIS: building=yes;
  * - source:geometry:date (survey date) and source:geometry:ref (GRB and KNW reference) when known;
@@ -125,6 +126,7 @@ export const candidateTags = (props: CandidateProperties): Record<string, string
     .toLowerCase()
     .trim()
   if (props.source === 'knw') Object.assign(tags, knwTags(props))
+  else if (props.source === 'grb' && isRoofTypeLabel(typeLabel)) tags.building = 'roof'
   else if (props.source !== 'grb' || isBuildingTypeLabel(typeLabel)) tags.building = 'yes'
 
   if (props.source === 'grb' && typeLabel === 'verdieping') tags.fixme = VERDIEPING_FIXME
