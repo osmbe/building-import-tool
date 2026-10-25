@@ -9,7 +9,7 @@ import type { MatchMode } from '~/utils/matchMode'
  */
 
 const matchMode = ref<MatchMode>('geometry')
-const geometryThreshold = ref(0.7)
+const geometryThreshold = ref(0.85)
 // Issue #9: opt-in to sourcing OSM buildings live from Overpass instead of the daily Postgres mirror.
 const useOverpass = ref(false)
 

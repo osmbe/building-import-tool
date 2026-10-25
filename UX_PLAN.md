@@ -82,7 +82,7 @@ Effort: M. Impact: High.
 ### P1 — Workflow comprehension (medium effort, medium/high impact)
 
 **6. Label which match mode and freshness produced the current results.** After a run, show
-"Geometry overlap >= 70% · OSM mirror" (or "· Live Overpass") on the results panel. Today
+"Geometry overlap >= 85% · OSM mirror" (or "· Live Overpass") on the results panel. Today
 the user can change mode/threshold (`MatchModeControl.vue`) and re-run with no indication of
 what the visible candidates represent.
 Effort: S. Impact: Medium.
