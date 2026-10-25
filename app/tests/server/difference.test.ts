@@ -172,9 +172,9 @@ describe('POST /api/buildings/difference: one query for every source', () => {
     fakeDatabases()
     await post({ dataSource: 'grb' })
     expect(candidateCall().sql).toContain('lower(c.type_label) = ANY(')
-    expect(candidateCall().params).toContainEqual(['hoofdgebouw', 'bijgebouw', 'verdieping'])
+    expect(candidateCall().params).toContainEqual(['hoofdgebouw', 'bijgebouw', 'verdieping', 'afdak'])
     expect(countCall().sql).toContain('lower(c.type_label) = ANY(')
-    expect(countCall().params).toEqual([...BOUNDS, ['hoofdgebouw', 'bijgebouw', 'verdieping']])
+    expect(countCall().params).toEqual([...BOUNDS, ['hoofdgebouw', 'bijgebouw', 'verdieping', 'afdak']])
 
     db.queryGrb.mockClear()
     await post({ dataSource: 'picc' })

@@ -47,6 +47,8 @@ assert_eq "$(row grb.candidates "source_ref = 'Gbg/1001'")" \
     "a GRB polygon: entity, oidn, type, survey date, building and address"
 assert_eq "$(row grb.candidates "source_ref = 'Gba/1001'")" "grb | Gba | 1001 | Gba/1001 | - | verdieping | 2023-03-15 | - |  |  |  |  | 0" \
     "the GBA polygon sharing its OIDN is a separate candidate"
+assert_eq "$(row grb.candidates "source_ref = 'Gba/3001'")" "grb | Gba | 3001 | Gba/3001 | - | afdak | 2023-03-15 | - |  |  |  |  | 0" \
+    "a GBA afdak polygon (gba-2) is a candidate too"
 assert_eq "$(row grb.knw_candidates "source_id = '7001'")" "knw | Knw | 7001 | Knw/7001 | 7 | schoorsteen | 2022-01-10 | - | - | - | - | - | 0" \
     "a kunstwerk: type code and label, survey date"
 assert_eq "$(row picc.candidates "source_id = '11'")" "picc | - | 11 | - | BAT | Batiment | 2019-05-20 | - | Rue de Fer 5 | Rue de Fer | 5000 | Namur | 1" \

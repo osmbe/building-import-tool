@@ -95,7 +95,7 @@ describe('candidateTags: buildings (#53)', () => {
       expect(candidateTags(candidate({ type_label })).building).toBe('yes')
   })
 
-  it.each(['gebouw afgezoomd met virtuele gevels', 'trap', 'afdak', 'loopbrug', 'luifel', 'verheven garagetoegang'])(
+  it.each(['gebouw afgezoomd met virtuele gevels', 'trap', 'loopbrug', 'luifel', 'verheven garagetoegang'])(
     'does not tag the GRB type "%s" as a building',
     (type_label) => {
       const tags = candidateTags(candidate({ type_label }))
@@ -104,6 +104,12 @@ describe('candidateTags: buildings (#53)', () => {
     }
   )
 
+  it('tags the GRB type "afdak" (gba-2) as building=roof, without a fixme', () => {
+    expect(candidateTags(candidate({ type_label: 'afdak' })).building).toBe('roof')
+    expect(candidateTags(candidate({ type_label: ' Afdak ' })).building).toBe('roof')
+    expect(candidateTags(candidate({ type_label: 'afdak' })).fixme).toBeUndefined()
+  })
+
   it('flags a verdieping for manual correction, case-insensitively', () => {
     expect(candidateTags(candidate({ type_label: 'VERDIEPING' })).fixme).toBe(VERDIEPING_FIXME)
   })
@@ -111,6 +117,7 @@ describe('candidateTags: buildings (#53)', () => {
   it('tags PICC and UrbIS buildings whatever their type label (the GRB allow-list is GRB only)', () => {
     expect(candidateTags(picc({ type_label: 'Batiment' })).building).toBe('yes')
     expect(candidateTags(picc({ type_label: 'verdieping' })).fixme).toBeUndefined()
+    expect(candidateTags(picc({ type_label: 'afdak' })).building).toBe('yes')
     expect(candidateTags(urbis()).building).toBe('yes')
   })
 })
