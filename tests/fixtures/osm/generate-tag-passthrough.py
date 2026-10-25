@@ -4,9 +4,17 @@
 # buildings. imposm3 only reads PBF (no plain .osm XML), and the processing image has no OSM XML->PBF
 # converter, so the fixture is committed as a binary; regenerate it with `pip install osmium` and this script
 # if it ever needs to change.
+import os
+
 import osmium
 
-writer = osmium.SimpleWriter('tag-passthrough.osm.pbf')
+OUTPUT = 'tag-passthrough.osm.pbf'
+# SimpleWriter refuses to overwrite an existing file (and older pyosmium versions don't even support an
+# overwrite argument), but this fixture is committed, so regenerating it must replace it in place.
+if os.path.exists(OUTPUT):
+    os.remove(OUTPUT)
+
+writer = osmium.SimpleWriter(OUTPUT)
 
 nodes = [
     (1, 4.4200, 51.2000),
