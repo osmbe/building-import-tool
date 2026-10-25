@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
       bounds,
       matchMode = 'geometry',
       dataSource = 'grb',
-      geometryThreshold = 0.7,
+      geometryThreshold = 0.85,
       useOverpass = false,
       contract
     } = body

@@ -5,14 +5,14 @@ describe('useMatchMode', () => {
   beforeEach(() => {
     const m = useMatchMode()
     m.setMatchMode('geometry')
-    m.setGeometryThreshold(0.7)
+    m.setGeometryThreshold(0.85)
     m.setUseOverpass(false)
   })
 
-  it('defaults to geometry matching at 70% without Overpass', () => {
+  it('defaults to geometry matching at 85% without Overpass', () => {
     const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
     expect(matchMode.value).toBe('geometry')
-    expect(geometryThreshold.value).toBe(0.7)
+    expect(geometryThreshold.value).toBe(0.85)
     expect(useOverpass.value).toBe(false)
   })
 
