@@ -8,7 +8,7 @@ fixtures grb
 just_run grb-import >/dev/null
 
 assert_eq "$(sql "SELECT string_agg(entity || '/' || oidn, ',' ORDER BY entity DESC, oidn) FROM grb.building_polygons")" \
-    "Gbg/1001,Gbg/1002,Gbg/1003,Gba/1001,Gba/2001" "every GBG and GBA polygon is imported, including Gba/1001"
+    "Gbg/1001,Gbg/1002,Gbg/1003,Gba/1001,Gba/2001,Gba/3001" "every GBG and GBA polygon is imported, including Gba/1001"
 assert_eq "$(sql "SELECT coalesce(gebouw_id::text, '-') FROM grb.building_polygons WHERE entity = 'Gba' AND oidn = 1001")" "-" \
     "RltGbgGebouw does not give Gba/1001 the gebouw_id of Gbg/1001"
 assert_eq "$(sql "SELECT gebouw_id FROM grb.building_polygons WHERE entity = 'Gbg' AND oidn = 1001")" "5001" \
@@ -16,7 +16,7 @@ assert_eq "$(sql "SELECT gebouw_id FROM grb.building_polygons WHERE entity = 'Gb
 assert_eq "$(sql "SELECT string_agg(entity || '/' || oidn || '=' || survey_date, ',' ORDER BY entity DESC, oidn) FROM grb.building_polygons WHERE oidn IN (1001, 1002)")" \
     "Gbg/1001=2023-03-15,Gbg/1002=2021-06-30,Gba/1001=2023-03-15" "survey dates are converted for GBG and GBA (both input formats)"
 assert_eq "$(sql "SELECT count(*) FROM grb.kunstwerken")" "1" "KNW structures are imported"
-assert_eq "$(sql "SELECT count(*) FROM grb.buildings_with_addresses")" "5" "the view has one row per polygon"
+assert_eq "$(sql "SELECT count(*) FROM grb.buildings_with_addresses")" "6" "the view has one row per polygon"
 assert_eq "$(sql "SELECT entity || '/' || oidn || ':' || addresses FROM grb.buildings_with_addresses WHERE address_count > 0")" \
     "Gbg/1001:Kerkstraat 1" "the address is joined to the polygon that contains it"
 assert_eq "$(sql "SELECT polygon_count FROM grb.buildings_with_addresses WHERE entity = 'Gbg' AND oidn = 1001")" "2" \

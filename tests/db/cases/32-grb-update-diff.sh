@@ -8,10 +8,10 @@ just_run grb-import >/dev/null 2>&1
 polygons() {
     sql "SELECT string_agg(entity || '/' || oidn || ':' || uidn || ':' || coalesce(gebouw_id::text, '-') || ':' || survey_date, ',' ORDER BY entity DESC, oidn) FROM grb.building_polygons"
 }
-assert_eq "$(polygons)" "Gbg/1001:10010:5001:2023-03-15,Gbg/1002:10020:5001:2021-06-30,Gbg/1003:10030:5002:2023-03-15,Gba/1001:10010:-:2023-03-15,Gba/2001:20010:-:2023-03-15" \
+assert_eq "$(polygons)" "Gbg/1001:10010:5001:2023-03-15,Gbg/1002:10020:5001:2021-06-30,Gbg/1003:10030:5002:2023-03-15,Gba/1001:10010:-:2023-03-15,Gba/2001:20010:-:2023-03-15,Gba/3001:30010:-:2023-03-15" \
     "before: the full import"
 
-expected="Gbg/1001:10011:5001:2026-05-04,Gbg/1003:10030:5002:2023-03-15,Gbg/1004:10040:-:2026-09-01,Gba/1001:10010:-:2023-03-15,Gba/2001:20010:-:2023-03-15"
+expected="Gbg/1001:10011:5001:2026-05-04,Gbg/1003:10030:5002:2023-03-15,Gbg/1004:10040:-:2026-09-01,Gba/1001:10010:-:2023-03-15,Gba/2001:20010:-:2023-03-15,Gba/3001:30010:-:2023-03-15"
 fixtures grb-diff
 out=$(just_run _grb-import-diff-building-polygons 2>&1) && rc=0 || rc=$?
 assert_eq "$rc" "0" "the diff is applied"

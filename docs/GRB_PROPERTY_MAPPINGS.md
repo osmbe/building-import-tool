@@ -39,8 +39,9 @@ never tags them as buildings:
 | `hoofdgebouw` | GBG (gbg-1) | `building=yes` |
 | `bijgebouw` | GBG (gbg-2) | `building=yes` |
 | `verdieping` | GBA (gba-1) | `building=yes` + `fixme=verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!` |
+| `afdak` | GBA (gba-2) | `building=roof` |
 | `gebouw afgezoomd met virtuele gevels` | GBG (gbg-3) | not exported |
-| every other GBA type (`trap`, `afdak`, `luifel`, `loopbrug`, garage entrances, ...) | GBA | not exported |
+| every other GBA type (`trap`, `luifel`, `loopbrug`, garage entrances, ...) | GBA | not exported |
 | no label | GBG | `building=yes` |
 
 PICC and UrbIS buildings always get `building=yes`: the allow-list is GRB only (a PICC nature such as `Batiment`
