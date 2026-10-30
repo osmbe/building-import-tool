@@ -29,22 +29,22 @@ assert_eq "$rc" "0" "the restore succeeds while the live view is being read"
 [ "$rc" = 0 ] || log "$out"
 wait "$reader" || true
 assert_eq "$(sql "SELECT string_agg(objectid::text, ',' ORDER BY objectid) FROM picc.buildings_with_addresses")" "11,12" \
-    "the live schema has the dump's data"
+  "the live schema has the dump's data"
 assert_eq "$(sql "SELECT count(*) FROM pg_namespace WHERE nspname IN ('picc_next', 'picc_prev')")" "0" \
-    "nothing is left next to it"
+  "nothing is left next to it"
 assert_eq "$(sql "SELECT count(*) FROM picc.schema_migrations")" "$(migration_count picc)" "the migration tracking came with it"
 assert_true "SELECT imported_at IS NOT NULL FROM picc.import_meta" "and the import time"
 
 for run in 6101 6102 6199; do
-    out=$(restore "$run") && rc=0 || rc=$?
-    case "$run" in
-    6101) what="a dump built with other migrations" ;;
-    6102) what="an old-format dump (schema picc)" ;;
-    6199) what="a run without an artifact" ;;
-    esac
-    assert_eq "$rc" "1" "$what is refused"
-    assert_eq "$(sql "SELECT string_agg(objectid::text, ',' ORDER BY objectid) FROM picc.buildings_with_addresses")" "11,12" \
-        "  and the live data is untouched"
+  out=$(restore "$run") && rc=0 || rc=$?
+  case "$run" in
+  6101) what="a dump built with other migrations" ;;
+  6102) what="an old-format dump (schema picc)" ;;
+  6199) what="a run without an artifact" ;;
+  esac
+  assert_eq "$rc" "1" "$what is refused"
+  assert_eq "$(sql "SELECT string_agg(objectid::text, ',' ORDER BY objectid) FROM picc.buildings_with_addresses")" "11,12" \
+    "  and the live data is untouched"
 done
 grep -q "deploy first" <<<"$(restore 6101)" && pass "the migration mismatch says what to do" || fail "the migration mismatch says what to do"
 assert_eq "$(sql "SELECT count(*) FROM pg_namespace WHERE nspname = 'picc_next'")" "0" "a refused dump is dropped"

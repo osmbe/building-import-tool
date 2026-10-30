@@ -14,16 +14,16 @@ export ROOT
 source "$ROOT/tests/db/lib.sh"
 
 cleanup() {
-    if [ "${KEEP:-0}" != "1" ]; then
-        "${COMPOSE[@]}" --profile martin --profile tools down -v --remove-orphans >/dev/null 2>&1 || true
-    fi
+  if [ "${KEEP:-0}" != "1" ]; then
+    "${COMPOSE[@]}" --profile martin --profile tools down -v --remove-orphans >/dev/null 2>&1 || true
+  fi
 }
 trap cleanup EXIT
 
 echo "▶ Starting the test stack"
 "${COMPOSE[@]}" --profile martin --profile tools down -v --remove-orphans >/dev/null 2>&1 || true
 if [ "${SKIP_BUILD:-0}" != "1" ]; then
-    "${COMPOSE[@]}" build processing webhook >/dev/null
+  "${COMPOSE[@]}" build processing webhook >/dev/null
 fi
 "${COMPOSE[@]}" up -d --wait postgres >/dev/null
 
@@ -38,27 +38,27 @@ sed '/^\\c be2osm/d' "$ROOT/postgres/05-setup-picc.sql" | psql_db -d be2osm_v708
 sed '/^\\c be2osm/d' "$ROOT/postgres/06-setup-urbis.sql" | psql_db -d be2osm_v7088 -f - >/dev/null
 # production: the schema snapshot taken by scripts/server-bootstrap.sh, when it has been committed
 if [ -f "$ROOT/tests/db/schemas/be2osm-production.sql" ]; then
-    psql_db -d postgres -c "CREATE DATABASE be2osm_production" >/dev/null
-    sed "s/'REDACTED'/'be2osm'/g" "$ROOT/tests/db/schemas/be2osm-production.sql" | psql_db -d be2osm_production -f - >/dev/null
+  psql_db -d postgres -c "CREATE DATABASE be2osm_production" >/dev/null
+  sed "s/'REDACTED'/'be2osm'/g" "$ROOT/tests/db/schemas/be2osm-production.sql" | psql_db -d be2osm_production -f - >/dev/null
 fi
 
 FAILED=()
 for case_file in "$ROOT"/tests/db/cases/*.sh; do
-    name="$(basename "$case_file" .sh)"
-    if [ "$#" -gt 0 ]; then
-        selected=0
-        for prefix in "$@"; do [[ "$name" == "$prefix"* ]] && selected=1; done
-        [ "$selected" = 1 ] || continue
-    fi
-    echo "▶ $name"
-    if ! bash -c "set -euo pipefail; source '$ROOT/tests/db/lib.sh'; source '$case_file'; exit \$CASE_FAILURES"; then
-        FAILED+=("$name")
-    fi
+  name="$(basename "$case_file" .sh)"
+  if [ "$#" -gt 0 ]; then
+    selected=0
+    for prefix in "$@"; do [[ "$name" == "$prefix"* ]] && selected=1; done
+    [ "$selected" = 1 ] || continue
+  fi
+  echo "▶ $name"
+  if ! bash -c "set -euo pipefail; source '$ROOT/tests/db/lib.sh'; source '$case_file'; exit \$CASE_FAILURES"; then
+    FAILED+=("$name")
+  fi
 done
 
 echo
 if [ "${#FAILED[@]}" -gt 0 ]; then
-    printf '\033[31m✗ %d case(s) failed:\033[0m %s\n' "${#FAILED[@]}" "${FAILED[*]}"
-    exit 1
+  printf '\033[31m✗ %d case(s) failed:\033[0m %s\n' "${#FAILED[@]}" "${FAILED[*]}"
+  exit 1
 fi
 printf '\033[32m✓ all database cases passed\033[0m\n'

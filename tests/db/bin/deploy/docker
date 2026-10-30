@@ -10,17 +10,17 @@ tagfile() { printf '%s/tags/%s' "$state" "$(tr '/:' '__' <<<"$1")"; }
 case "$1" in
 login) cat >/dev/null ;;
 pull)
-    ref="${*: -1}"
-    if [ -n "${FAKE_MISSING_IMAGE:-}" ] && [[ "$ref" == *"/${FAKE_MISSING_IMAGE}:"* ]]; then exit 1; fi
-    echo "sha256:${ref##*/}" >"$(tagfile "$ref")"
-    ;;
+  ref="${*: -1}"
+  if [ -n "${FAKE_MISSING_IMAGE:-}" ] && [[ "$ref" == *"/${FAKE_MISSING_IMAGE}:"* ]]; then exit 1; fi
+  echo "sha256:${ref##*/}" >"$(tagfile "$ref")"
+  ;;
 tag) cp "$(tagfile "$2")" "$(tagfile "$3")" ;;
 image) [ -f "$(tagfile "${*: -1}")" ] && cat "$(tagfile "${*: -1}")" || exit 1 ;;
 compose)
-    if [[ " $* " == *" db-migrate "* ]]; then exit "${FAKE_MIGRATE_EXIT:-0}"; fi
-    # The app "starts" with whatever image is tagged :deployed (read back by the fake curl)
-    if [[ " $* " == *" up "* && " $* " == *" nuxt-app"* ]]; then
-        cat "$(tagfile "${FAKE_PREFIX:?}/nuxt-app:deployed")" >"$state/nuxt-running"
-    fi
-    ;;
+  if [[ " $* " == *" db-migrate "* ]]; then exit "${FAKE_MIGRATE_EXIT:-0}"; fi
+  # The app "starts" with whatever image is tagged :deployed (read back by the fake curl)
+  if [[ " $* " == *" up "* && " $* " == *" nuxt-app"* ]]; then
+    cat "$(tagfile "${FAKE_PREFIX:?}/nuxt-app:deployed")" >"$state/nuxt-running"
+  fi
+  ;;
 esac

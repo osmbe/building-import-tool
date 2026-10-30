@@ -9,7 +9,7 @@ psql_db -d osmbe -c "TRUNCATE osm.osm_buildings" >/dev/null
 psql_db -d osmbe -f - <"$ROOT/tests/fixtures/osm/buildings.sql" >/dev/null
 
 if (cd "$ROOT/app" && TEST_PG_PORT="${TEST_PG_PORT:-55432}" npx vp test run tests/integration); then
-    pass "API integration tests"
+  pass "API integration tests"
 else
-    fail "API integration tests"
+  fail "API integration tests"
 fi

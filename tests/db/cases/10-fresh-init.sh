@@ -4,15 +4,15 @@ reset_db fresh
 
 just_run db-migrate >/dev/null
 assert_true "SELECT EXISTS (SELECT 1 FROM pg_matviews WHERE schemaname = 'grb' AND matviewname = 'buildings_with_addresses')" \
-    "db-migrate creates grb.buildings_with_addresses"
+  "db-migrate creates grb.buildings_with_addresses"
 assert_true "SELECT count(*) = 2 FROM pg_attribute WHERE attrelid = 'grb.buildings_with_addresses'::regclass AND attname IN ('entity', 'polygon_id') AND NOT attisdropped" \
-    "the view has entity and polygon_id"
+  "the view has entity and polygon_id"
 assert_true "SELECT indisunique AND indisvalid FROM pg_index WHERE indexrelid = 'grb.building_polygons_entity_oidn_key'::regclass" \
-    "building_polygons is unique on (entity, oidn)"
+  "building_polygons is unique on (entity, oidn)"
 assert_eq "$(sql "SELECT string_agg(version, ',' ORDER BY version) FROM grb.schema_migrations")" \
-    "$(migrations_of grb)" "every GRB migration is recorded"
+  "$(migrations_of grb)" "every GRB migration is recorded"
 assert_true "SELECT NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'building_polygons_oidn_key')" \
-    "the old UNIQUE (oidn) is gone"
+  "the old UNIQUE (oidn) is gone"
 
 before=$(psql_db -c "SELECT md5(string_agg(format('%s.%s:%s', table_name, column_name, data_type), ',' ORDER BY 1)) FROM information_schema.columns WHERE table_schema = 'grb'")
 just_run db-migrate >/dev/null
@@ -23,7 +23,7 @@ assert_eq "$after" "$before" "running db-migrate twice leaves the schema unchang
 # is the one an old database (7088df9) is migrated to: a CI import (fresh) is swapped in on the server
 # (migrated), and both releases must work on either.
 grb_catalog() {
-    sql "SELECT string_agg(item, E'\\n' ORDER BY item) FROM (
+  sql "SELECT string_agg(item, E'\\n' ORDER BY item) FROM (
         SELECT format('column %s.%s %s %s %s', table_name, column_name, data_type, is_nullable, column_default) AS item
         FROM information_schema.columns WHERE table_schema = 'grb'
         UNION ALL SELECT format('constraint %s %s', conname, pg_get_constraintdef(oid)) FROM pg_constraint WHERE connamespace = 'grb'::regnamespace
@@ -35,7 +35,7 @@ grb_catalog() {
 # Objects nothing reads, dropped by the cleanup migrations (grb/007, common/001): absent on a fresh database and
 # on an old one once migrated
 unused_objects() {
-    sql "SELECT string_agg(name, ',' ORDER BY name) FROM (
+  sql "SELECT string_agg(name, ',' ORDER BY name) FROM (
         SELECT n.nspname || '.' || c.relname AS name FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
         WHERE (n.nspname, c.relname) IN (('grb', 'address_building_links'), ('grb', 'building_polygons_summary'),
             ('grb', 'addresses_summary'), ('grb', 'import_statistics'), ('public', 'osm_buildings_cache'))
@@ -49,16 +49,16 @@ unused_objects() {
 assert_eq "$(unused_objects)" "" "a fresh database has none of the unused objects"
 fresh_catalog=$(grb_catalog)
 grep -q '^trigger CREATE TRIGGER building_polygons_before_update' <<<"$fresh_catalog" &&
-    pass "the migrations create the GRB triggers" || fail "the migrations create the GRB triggers"
+  pass "the migrations create the GRB triggers" || fail "the migrations create the GRB triggers"
 reset_db v7088
 assert_eq "$(unused_objects)" "extension postgres_fdw,function refresh_buildings_with_addresses,function refresh_osm_cache,grb.address_building_links,grb.addresses_summary,grb.building_polygons_summary,grb.import_statistics,public.osm_buildings_cache,schema osm,server osmbe_server" \
-    "an old database has the unused objects (FDW, cache, links, summaries)"
+  "an old database has the unused objects (FDW, cache, links, summaries)"
 just_run db-migrate >/dev/null
 assert_eq "$(unused_objects)" "" "migrating an old database drops the unused objects"
 upgraded_catalog=$(grb_catalog)
 if [ "$fresh_catalog" = "$upgraded_catalog" ]; then
-    pass "a fresh and an upgraded database have the same GRB catalog"
+  pass "a fresh and an upgraded database have the same GRB catalog"
 else
-    fail "a fresh and an upgraded database have the same GRB catalog"
-    diff <(echo "$fresh_catalog") <(echo "$upgraded_catalog") | sed 's/^/      /' || true
+  fail "a fresh and an upgraded database have the same GRB catalog"
+  diff <(echo "$fresh_catalog") <(echo "$upgraded_catalog") | sed 's/^/      /' || true
 fi

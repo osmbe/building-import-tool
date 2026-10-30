@@ -14,14 +14,14 @@ REFRESH MATERIALIZED VIEW grb.buildings_with_addresses;" >/dev/null
 just_run db-migrate >/dev/null
 just_run db-migrate >/dev/null
 assert_eq "$(sql "SELECT string_agg(entity || '/' || oidn, ',' ORDER BY oidn) FROM grb.building_polygons")" \
-    "Gbg/2664,Gba/2665,Gbg/2666" "entity backfilled from the type label (unlabelled = Gbg)"
+  "Gbg/2664,Gba/2665,Gbg/2666" "entity backfilled from the type label (unlabelled = Gbg)"
 assert_eq "$(sql "SELECT count(*) FROM grb.buildings_with_addresses")" "3" "the view is rebuilt with every polygon"
 assert_eq "$(sql "SELECT address_count FROM grb.buildings_with_addresses WHERE entity = 'Gbg' AND oidn = 2664")" "1" \
-    "addresses are still joined per polygon"
+  "addresses are still joined per polygon"
 
 psql_db -c "INSERT INTO grb.building_polygons (entity, oidn, type_label, geom)
   VALUES ('Gba', 2664, 'trap', ST_GeomFromText('POLYGON((4.43 51.20,4.4301 51.20,4.4301 51.2001,4.43 51.2001,4.43 51.20))', 4326))" >/dev/null
 assert_eq "$(sql "SELECT count(*) FROM grb.building_polygons WHERE oidn = 2664")" "2" \
-    "a GBA polygon can now share its OIDN with a GBG polygon"
+  "a GBA polygon can now share its OIDN with a GBG polygon"
 assert_fails "an unknown entity is rejected" \
-    sql "INSERT INTO grb.building_polygons (entity, oidn, geom) VALUES ('Xyz', 1, ST_GeomFromText('POLYGON((4 51,4.1 51,4.1 51.1,4 51))', 4326))"
+  sql "INSERT INTO grb.building_polygons (entity, oidn, geom) VALUES ('Xyz', 1, ST_GeomFromText('POLYGON((4 51,4.1 51,4.1 51.1,4 51))', 4326))"

@@ -14,8 +14,8 @@ gh run download "${RUN_ID}" -R "${REPO}" -n osmbe-dump -D "${WORK_DIR}"
 
 DUMP_FILE="${WORK_DIR}/osmbe.sql.gz"
 if [ ! -f "${DUMP_FILE}" ]; then
-    echo "[restore] ERROR: dump file not found at ${DUMP_FILE}" >&2
-    exit 1
+  echo "[restore] ERROR: dump file not found at ${DUMP_FILE}" >&2
+  exit 1
 fi
 
 echo "[restore] Restoring to osmbe database..."

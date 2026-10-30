@@ -31,35 +31,35 @@ say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 info() { printf '   %s\n' "$*"; }
 warn() { printf '   \033[33m! %s\033[0m\n' "$*"; }
 die() {
-    printf '   \033[31mERROR: %s\033[0m\n' "$*" >&2
-    exit 1
+  printf '   \033[31mERROR: %s\033[0m\n' "$*" >&2
+  exit 1
 }
 
 # --- helpers (also used by tests/db/cases/85-bootstrap.sh, which sources this file with BOOTSTRAP_LIB=1) ----
 
 # Redact secrets from a schema-only dump (FDW user mappings carry the database password)
 redact_schema() {
-    sed -E "s/(password[[:space:]]+')[^']*'/\1REDACTED'/Ig"
+  sed -E "s/(password[[:space:]]+')[^']*'/\1REDACTED'/Ig"
 }
 
 # .env without image overrides and with the compose project pinned. Usage: normalise_env <.env> <project> <dir>
 normalise_env() {
-    local file="$1" project="$2" dir="$3"
-    sed -i -E '/^[[:space:]]*(NUXT|PROCESSING|WEBHOOK)_IMAGE=/d' "$file"
-    if grep -q '^COMPOSE_PROJECT_NAME=' "$file"; then
-        sed -i -E "s|^COMPOSE_PROJECT_NAME=.*|COMPOSE_PROJECT_NAME=${project}|" "$file"
-    else
-        printf '\n# Compose project of the running stack (deploys recreate services in it)\nCOMPOSE_PROJECT_NAME=%s\n' "$project" >>"$file"
-    fi
-    if grep -q '^COMPOSE_PROJECT_DIR=' "$file"; then
-        sed -i -E "s|^COMPOSE_PROJECT_DIR=.*|COMPOSE_PROJECT_DIR=${dir}|" "$file"
-    else
-        printf 'COMPOSE_PROJECT_DIR=%s\n' "$dir" >>"$file"
-    fi
+  local file="$1" project="$2" dir="$3"
+  sed -i -E '/^[[:space:]]*(NUXT|PROCESSING|WEBHOOK)_IMAGE=/d' "$file"
+  if grep -q '^COMPOSE_PROJECT_NAME=' "$file"; then
+    sed -i -E "s|^COMPOSE_PROJECT_NAME=.*|COMPOSE_PROJECT_NAME=${project}|" "$file"
+  else
+    printf '\n# Compose project of the running stack (deploys recreate services in it)\nCOMPOSE_PROJECT_NAME=%s\n' "$project" >>"$file"
+  fi
+  if grep -q '^COMPOSE_PROJECT_DIR=' "$file"; then
+    sed -i -E "s|^COMPOSE_PROJECT_DIR=.*|COMPOSE_PROJECT_DIR=${dir}|" "$file"
+  else
+    printf 'COMPOSE_PROJECT_DIR=%s\n' "$dir" >>"$file"
+  fi
 }
 
 env_value() { # <key>: value from .env (last one wins), unquoted
-    sed -n -E "s/^[[:space:]]*$1=//p" "$DIR/.env" | tail -1 | sed -E "s/^['\"]//; s/['\"]$//"
+  sed -n -E "s/^[[:space:]]*$1=//p" "$DIR/.env" | tail -1 | sed -E "s/^['\"]//; s/['\"]$//"
 }
 
 [ "${BOOTSTRAP_LIB:-0}" = 1 ] && return 0
@@ -67,11 +67,11 @@ env_value() { # <key>: value from .env (last one wins), unquoted
 REPORT_ONLY=0
 BACKUP=0
 for arg in "$@"; do
-    case "$arg" in
-    --report) REPORT_ONLY=1 ;;
-    --backup) BACKUP=1 ;;
-    *) die "unknown option $arg (use --report or --backup)" ;;
-    esac
+  case "$arg" in
+  --report) REPORT_ONLY=1 ;;
+  --backup) BACKUP=1 ;;
+  *) die "unknown option $arg (use --report or --backup)" ;;
+  esac
 done
 
 cd "$DIR"
@@ -97,7 +97,7 @@ info "compose project: $PROJECT, checkout: $DIR at $(git -C "$DIR" rev-parse --s
 info "free disk: $(free_gb "$DOCKER_ROOT") GB on the Docker root ($DOCKER_ROOT), $(free_gb "$DIR") GB on the checkout"
 info "databases:"
 docker exec be2osm-postgres psql -U "$PG_USER" -d be2osm -X -tA -c \
-    "SELECT '     ' || datname || ': ' || pg_size_pretty(pg_database_size(datname)) FROM pg_database WHERE datname IN ('be2osm', 'osmbe')"
+  "SELECT '     ' || datname || ': ' || pg_size_pretty(pg_database_size(datname)) FROM pg_database WHERE datname IN ('be2osm', 'osmbe')"
 info "be2osm schemas:"
 psql_be2osm -c "SELECT '     ' || n.nspname || ': ' || pg_size_pretty(sum(pg_total_relation_size(c.oid))::bigint)
     FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -111,13 +111,13 @@ info "migrations: $(psql_be2osm -c "SELECT CASE WHEN to_regclass('grb.schema_mig
 info "containers:"
 docker ps --filter "label=com.docker.compose.project=$PROJECT" --format '     {{.Names}}: {{.Image}} ({{.Status}})'
 if [ -n "$TOKEN" ]; then
-    scopes="$(curl -fsSI -H "Authorization: token $TOKEN" https://api.github.com/ | tr -d '\r' |
-        sed -n 's/^x-oauth-scopes: //Ip')" || scopes="(token rejected)"
-    info "GH_TOKEN scopes: ${scopes:-none listed (fine-grained token: check repository contents, actions and packages read access)}"
-    case "$scopes" in *repo*) ;; *) warn "a classic token needs 'repo' (private checkout and artifacts) and 'read:packages' (images)" ;; esac
-    case "$scopes" in *packages*) ;; *) [ -z "$scopes" ] || warn "no packages scope: image pulls from GHCR will fail" ;; esac
+  scopes="$(curl -fsSI -H "Authorization: token $TOKEN" https://api.github.com/ | tr -d '\r' |
+    sed -n 's/^x-oauth-scopes: //Ip')" || scopes="(token rejected)"
+  info "GH_TOKEN scopes: ${scopes:-none listed (fine-grained token: check repository contents, actions and packages read access)}"
+  case "$scopes" in *repo*) ;; *) warn "a classic token needs 'repo' (private checkout and artifacts) and 'read:packages' (images)" ;; esac
+  case "$scopes" in *packages*) ;; *) [ -z "$scopes" ] || warn "no packages scope: image pulls from GHCR will fail" ;; esac
 else
-    warn "GH_TOKEN is not set in .env: deploys cannot fetch the private repository or pull images"
+  warn "GH_TOKEN is not set in .env: deploys cannot fetch the private repository or pull images"
 fi
 
 # --- 2. schema snapshot ------------------------------------------------------------------------------------
@@ -129,33 +129,33 @@ info "Copy it to tests/db/schemas/be2osm-production.sql in the repository and co
 info "(tests/db/cases/25-upgrade-production.sh) then migrates exactly this schema."
 
 [ "$REPORT_ONLY" = 1 ] && {
-    say "Report only: nothing was changed"
-    exit 0
+  say "Report only: nothing was changed"
+  exit 0
 }
 
 # --- 3. backup ---------------------------------------------------------------------------------------------
 say "3. Backup of the grb schema"
 if [ "$BACKUP" = 1 ]; then
-    grb_gb="$(psql_be2osm -c "SELECT ceil(sum(pg_total_relation_size(c.oid)) / 1024.0^3) FROM pg_class c JOIN pg_namespace n
+  grb_gb="$(psql_be2osm -c "SELECT ceil(sum(pg_total_relation_size(c.oid)) / 1024.0^3) FROM pg_class c JOIN pg_namespace n
         ON n.oid = c.relnamespace WHERE n.nspname = 'grb' AND c.relkind = 'r'")"
-    [ "$(free_gb "$OUT")" -gt $((grb_gb + MIN_FREE_GB)) ] || die "not enough disk for a backup of about ${grb_gb} GB"
-    docker exec be2osm-postgres pg_dump -U "$PG_USER" -Fc -n grb be2osm >"$OUT/grb-$(date +%Y%m%d).dump"
-    info "written to $OUT/grb-$(date +%Y%m%d).dump"
+  [ "$(free_gb "$OUT")" -gt $((grb_gb + MIN_FREE_GB)) ] || die "not enough disk for a backup of about ${grb_gb} GB"
+  docker exec be2osm-postgres pg_dump -U "$PG_USER" -Fc -n grb be2osm >"$OUT/grb-$(date +%Y%m%d).dump"
+  info "written to $OUT/grb-$(date +%Y%m%d).dump"
 else
-    info "skipped (run with --backup to keep a pg_dump of the grb schema; a new CI import can always rebuild it)"
+  info "skipped (run with --backup to keep a pg_dump of the grb schema; a new CI import can always rebuild it)"
 fi
 
 # --- 4. no running jobs ------------------------------------------------------------------------------------
 say "4. Waiting for running jobs"
 running_jobs() {
-    {
-        docker ps --format '{{.Names}}' | grep -E 'processing-run|be2osm-processing' || true
-        docker top be2osm-webhook -eo args 2>/dev/null | grep -E '(restore|import|update|deploy)[-a-z]*\.sh' || true
-    } | sort -u
+  {
+    docker ps --format '{{.Names}}' | grep -E 'processing-run|be2osm-processing' || true
+    docker top be2osm-webhook -eo args 2>/dev/null | grep -E '(restore|import|update|deploy)[-a-z]*\.sh' || true
+  } | sort -u
 }
 while [ -n "$(running_jobs)" ]; do
-    info "still running: $(running_jobs | tr '\n' ' ')"
-    sleep 30
+  info "still running: $(running_jobs | tr '\n' ' ')"
+  sleep 30
 done
 info "nothing is running"
 
@@ -163,20 +163,20 @@ info "nothing is running"
 say "5. Checkout"
 OLD_HEAD="$(git rev-parse HEAD)"
 git_fetch() {
-    (
-        if [ -n "$TOKEN" ]; then
-            export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="http.https://github.com/.extraheader"
-            GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
-            export GIT_CONFIG_VALUE_0
-        fi
-        git fetch --quiet "https://github.com/${REPO}.git" "+refs/heads/main:refs/remotes/origin/main"
-    )
+  (
+    if [ -n "$TOKEN" ]; then
+      export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="http.https://github.com/.extraheader"
+      GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+      export GIT_CONFIG_VALUE_0
+    fi
+    git fetch --quiet "https://github.com/${REPO}.git" "+refs/heads/main:refs/remotes/origin/main"
+  )
 }
 git_fetch || die "cannot fetch main (check GH_TOKEN)"
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-    patch="$OUT/local-changes-$(date +%Y%m%d-%H%M%S).patch"
-    git diff HEAD >"$patch"
-    warn "local changes saved to $patch (deploys require a clean checkout)"
+  patch="$OUT/local-changes-$(date +%Y%m%d-%H%M%S).patch"
+  git diff HEAD >"$patch"
+  warn "local changes saved to $patch (deploys require a clean checkout)"
 fi
 git reset --quiet --hard origin/main
 SHA="$(git rev-parse HEAD)"
@@ -192,10 +192,10 @@ info "image overrides removed, COMPOSE_PROJECT_NAME=$PROJECT, COMPOSE_PROJECT_DI
 say "7. Images"
 [ -z "$TOKEN" ] || printf '%s' "$TOKEN" | docker login ghcr.io -u x-access-token --password-stdin >/dev/null
 for image in "${IMAGES[@]}"; do
-    docker pull --quiet "$PREFIX/$image:sha-$SHA" >/dev/null ||
-        die "$PREFIX/$image:sha-$SHA is not available: wait until CI has built main, then run this again"
-    docker tag "$PREFIX/$image:sha-$SHA" "$PREFIX/$image:deployed"
-    info "$image: sha-$SHA tagged :deployed"
+  docker pull --quiet "$PREFIX/$image:sha-$SHA" >/dev/null ||
+    die "$PREFIX/$image:sha-$SHA is not available: wait until CI has built main, then run this again"
+  docker tag "$PREFIX/$image:sha-$SHA" "$PREFIX/$image:deployed"
+  info "$image: sha-$SHA tagged :deployed"
 done
 "${COMPOSE[@]}" up -d --no-deps webhook
 info "webhook recreated (job registry, scripts from the checkout)"
@@ -204,7 +204,7 @@ info "webhook recreated (job registry, scripts from the checkout)"
 say "8. Migrations"
 "${COMPOSE[@]}" run --rm -T --no-deps processing just db-migrate --status || true
 if [ -z "${TMUX:-}${STY:-}" ]; then
-    warn "not running in tmux/screen: if this SSH session drops, run the script again (it resumes)"
+  warn "not running in tmux/screen: if this SSH session drops, run the script again (it resumes)"
 fi
 view_gb="$(psql_be2osm -c "SELECT ceil(coalesce(sum(pg_total_relation_size(c.oid)), 0) / 1024.0^3) FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'grb' AND c.relname LIKE 'buildings_with_addresses%'")"
@@ -213,7 +213,7 @@ picc_gb="$(psql_be2osm -c "SELECT ceil(coalesce(sum(pg_total_relation_size(c.oid
     JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'picc' AND c.relkind IN ('r', 'm')")"
 need=$((view_gb * 2 + picc_gb + MIN_FREE_GB))
 [ "$(free_gb "$DOCKER_ROOT")" -ge "$need" ] ||
-    die "the new GRB view and PICC tables are built next to the old ones: ${need} GB free needed, $(free_gb "$DOCKER_ROOT") GB available"
+  die "the new GRB view and PICC tables are built next to the old ones: ${need} GB free needed, $(free_gb "$DOCKER_ROOT") GB available"
 info "applying every pending migration (the GRB view rebuild takes about 30 minutes, PICC a few; the old views are served meanwhile)"
 "${COMPOSE[@]}" run --rm -T --no-deps processing just db-migrate
 
@@ -230,42 +230,42 @@ in_webhook() { docker exec be2osm-webhook "$@"; }
 ok=1
 ready=""
 for _ in $(seq 1 90); do
-    ready="$(in_webhook curl -fsS --max-time 5 http://nuxt-app:3000/api/health/ready 2>/dev/null || true)"
-    grep -q "\"sha\":\"$SHA\"" <<<"$ready" && break
-    sleep 2
+  ready="$(in_webhook curl -fsS --max-time 5 http://nuxt-app:3000/api/health/ready 2>/dev/null || true)"
+  grep -q "\"sha\":\"$SHA\"" <<<"$ready" && break
+  sleep 2
 done
 if grep -q "\"sha\":\"$SHA\"" <<<"$ready"; then info "app ready: $ready"; else
-    warn "the app does not report $SHA: ${ready:-no answer}"
-    ok=0
+  warn "the app does not report $SHA: ${ready:-no answer}"
+  ok=0
 fi
 for tiles in grb-tiles osm-tiles picc-tiles urbis-tiles; do
-    if catalog="$(in_webhook curl -fsS --max-time 10 "http://$tiles:3000/catalog")" && grep -q '"tiles"' <<<"$catalog"; then
-        info "$tiles: $(grep -o '"[a-z_]*candidates"\|"osm_buildings"' <<<"$catalog" | sort -u | tr '\n' ' ')"
-    else
-        warn "$tiles does not serve its catalog"
-        ok=0
-    fi
+  if catalog="$(in_webhook curl -fsS --max-time 10 "http://$tiles:3000/catalog")" && grep -q '"tiles"' <<<"$catalog"; then
+    info "$tiles: $(grep -o '"[a-z_]*candidates"\|"osm_buildings"' <<<"$catalog" | sort -u | tr '\n' ' ')"
+  else
+    warn "$tiles does not serve its catalog"
+    ok=0
+  fi
 done
 # Antwerp centre, EPSG:3857
 # (contract: CANDIDATES_CONTRACT of app/utils/candidates.ts, checked by its unit test)
 body='{"bounds":[489583,6659946,490362,6660657],"dataSource":"grb","matchMode":"geometry","contract":1}'
 if diff="$(in_webhook curl -fsS --max-time 60 -H 'Content-Type: application/json' -d "$body" \
-    http://nuxt-app:3000/api/buildings/difference)"; then
-    info "GRB difference: $(grep -o '"stats":{[^}]*}' <<<"$diff")"
+  http://nuxt-app:3000/api/buildings/difference)"; then
+  info "GRB difference: $(grep -o '"stats":{[^}]*}' <<<"$diff")"
 else
-    warn "the GRB difference request failed"
-    ok=0
+  warn "the GRB difference request failed"
+  ok=0
 fi
 
 say "Summary"
 info "checkout and images: $SHA; migrations: $(psql_be2osm -c "SELECT string_agg(version, ', ' ORDER BY version) FROM grb.schema_migrations")"
 if [ "$ok" = 1 ]; then
-    info "Everything answers. Last steps:"
-    # info "  1. enable automatic deploys:  gh variable set DEPLOY_V2 --body true -R $REPO"
-    # info "     (optionally APP_URL too, e.g. https://buildings.osm.be, for the public readiness check)"
-    info "  2. commit $SNAPSHOT as tests/db/schemas/be2osm-production.sql"
-    info "  3. run a GRB Import workflow: it restores the GBA polygons that share an OIDN with a GBG polygon"
+  info "Everything answers. Last steps:"
+  # info "  1. enable automatic deploys:  gh variable set DEPLOY_V2 --body true -R $REPO"
+  # info "     (optionally APP_URL too, e.g. https://buildings.osm.be, for the public readiness check)"
+  info "  2. commit $SNAPSHOT as tests/db/schemas/be2osm-production.sql"
+  info "  3. run a GRB Import workflow: it restores the GBA polygons that share an OIDN with a GBG polygon"
 else
-    warn "Some checks failed: see docs/RUNBOOK.md (Troubleshooting). Don't set DEPLOY_V2 yet."
-    exit 1
+  warn "Some checks failed: see docs/RUNBOOK.md (Troubleshooting). Don't set DEPLOY_V2 yet."
+  exit 1
 fi
