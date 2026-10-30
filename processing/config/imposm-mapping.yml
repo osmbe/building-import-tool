@@ -2,6 +2,18 @@
 # Imposm3 mapping for Belgium OSM buildings
 # This configuration imports building polygons with relevant tags
 
+# Imposm3 only caches tags that are referenced in a table's `mapping`/`columns`, even for hstore_tags
+# columns that are meant to capture "all tags" (see https://imposm.org/docs/imposm3/latest/mapping.html#tags).
+# source:geometry:ref/:date/:entity are written by BE2OSM exports (app/utils/candidates.ts) but never
+# used in any table mapping/columns here, so without this they are silently dropped before the
+# hstore_tags column ever sees them, and the "Source" match mode in the difference API never matches
+# anything (source:geometry:oidn doesn't need to be listed: it already has its own column below).
+tags:
+  include:
+    - source:geometry:ref
+    - source:geometry:date
+    - source:geometry:entity
+
 tables:
   buildings:
     type: polygon
