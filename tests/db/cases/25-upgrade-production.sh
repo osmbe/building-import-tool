@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Upgrading the production schema (snapshot taken by scripts/server-bootstrap.sh, committed as
 # tests/db/schemas/be2osm-production.sql) with every migration keeps its data. Skipped until the snapshot exists.
 if [ ! -f "$ROOT/tests/db/schemas/be2osm-production.sql" ]; then

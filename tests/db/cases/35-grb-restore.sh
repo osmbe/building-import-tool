@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # webhook/restore-grb.sh publishes the dump of a CI GRB import (schema grb_next, like
 # .github/workflows/grb-import.yml): restored next to the live data, checked, swapped in.
 reset_db fresh

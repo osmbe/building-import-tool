@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # A server database imported by the old recipes (raw tables urbis.buildings, urbis.addresses, ... with the
 # GeoPackage columns, built with the justfile of 09b98f1) is migrated: same view contents, on the new tables.
 reset_db fresh

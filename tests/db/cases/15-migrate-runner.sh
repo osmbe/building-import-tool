@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # The migration runner (processing/sql/migrate.sh, `just db-migrate`): tracking, checksums, the heavy-migration
 # guard of deploys, the advisory lock and lock timeouts.
 

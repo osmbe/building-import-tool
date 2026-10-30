@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Upgrading a database from before migration 001 (GRB schema of 7088df9) keeps its data, backfills the entity
 # from the type label and rebuilds the view with entity and polygon_id.
 reset_db v7088

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # The local UrbIS import (GeoPackage): raw ogr2ogr layers are mapped into the migration-owned urbis.buildings /
 # urbis.addresses (streets and municipalities resolved by id), the view is refreshed, and the import does not
 # change the schema. Importing again replaces the data, so urbis-update (a full re-download) is safe.

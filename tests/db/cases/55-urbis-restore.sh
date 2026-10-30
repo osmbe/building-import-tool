@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # webhook/restore-urbis.sh publishes the dump of a CI UrbIS import (schema urbis_next, like
 # .github/workflows/urbis-import.yml) next to the live data and swaps it in.
 reset_db fresh

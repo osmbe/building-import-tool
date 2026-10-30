@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # A server database imported by the old recipes (raw ogr2ogr tables picc.constr_batiemprise / picc.icar_adr_pt and
 # their view, built with the justfile of b8a1c9c) is migrated: same view contents, on the new tables.
 reset_db fresh

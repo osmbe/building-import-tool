@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # A fresh volume (production init scripts) plus `just db-migrate` gives the current GRB schema,
 # and applying the migrations again changes nothing.
 reset_db fresh

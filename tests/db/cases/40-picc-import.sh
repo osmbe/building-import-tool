@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # The local PICC import (FileGDB + ICAR shapefile): raw ogr2ogr tables are mapped into the migration-owned
 # picc.buildings / picc.addresses, the view is refreshed, and the import does not change the schema.
 reset_db fresh

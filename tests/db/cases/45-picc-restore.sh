@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # webhook/restore-picc.sh publishes the dump of a CI PICC import (schema picc_next, like
 # .github/workflows/picc-import.yml): restored next to the live data, checked, swapped in.
 reset_db fresh

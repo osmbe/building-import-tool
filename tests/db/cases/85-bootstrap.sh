@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Helpers of scripts/server-bootstrap.sh (the rest of it only runs against the production stack).
 out=$(webhook_run webhook bash -c '
 set -euo pipefail

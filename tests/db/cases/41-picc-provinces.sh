@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # The CI PICC import: each province is loaded into raw tables and dumped in its own database
 # (picc-province-load), then picc-finalize-provinces merges the dumps. Province downloads use the ADRESS_POINT
 # address format (float postcodes) and can repeat an objectid.

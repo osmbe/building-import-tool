@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # The full GRB import on fixture shapefiles: GBG + GBA polygons sharing an OIDN are both imported, gebouw_id
 # comes from RltGbgGebouw for GBG polygons only, survey dates are converted, addresses join per polygon, and the
 # import does not change the schema.

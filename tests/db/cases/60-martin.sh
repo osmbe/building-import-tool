@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Start the four Martin tile servers with the production configs (config/martin/*.yaml) against imported
 # fixtures: each must connect (config env substitution), publish its sources with the configured properties and
 # serve a non-empty tile at a fixture location. Guards against Martin upgrades breaking the configs.

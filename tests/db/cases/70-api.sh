@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # API integration tests (app/tests/integration) against the imported fixtures of every source plus OSM
 # buildings that match some of them. Runs vitest on the host against the test database.
 reset_db fresh

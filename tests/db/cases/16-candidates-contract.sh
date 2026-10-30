@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Every source exposes its buildings through the same contract: grb.candidates, grb.knw_candidates,
 # picc.candidates and urbis.candidates have the same columns with the same types, in the same order. The
 # difference API and the Martin "candidates" sources read only these views.

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # The GRB differential update applies a difference download (delete + add file per entity) in one transaction:
 # a changed polygon gets its new version and keeps its gebouw_id, a removed one disappears, a new one is added.
 # Applying the same diff twice gives the same result. The next diff starts from the date in grb.import_meta.

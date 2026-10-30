@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # The PICC ArcGIS update (picc-update without the fetch): the changed buildings and addresses replace the stored
 # ones with the same objectid, in one transaction. The next update starts from picc.import_meta.
 reset_db fresh

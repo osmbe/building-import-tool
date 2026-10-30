@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Imposm3 only caches OSM tags referenced in a table's mapping/columns (even for hstore_tags columns meant
 # to capture "all tags"): the real osm-import recipe must run against config/imposm-mapping.yml, not a
 # hand-rolled INSERT, to catch a tag silently missing from the config (as source:geometry:ref/:date were,

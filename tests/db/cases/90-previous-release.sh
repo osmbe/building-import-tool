@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Expand before contract: the previous release (its Martin configs and its API, with its own fixtures and
 # snapshots) must keep working on a database migrated and imported by this release, because deploys migrate
 # first and keep the schema when they roll back.
