@@ -1,6 +1,13 @@
 <template>
-  <SliderRoot :class="cn('relative flex w-full touch-none select-none items-center', className)" v-bind="$attrs">
-    <SliderTrack class="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
+  <SliderRoot
+    :class="
+      cn('relative flex w-full touch-none select-none items-center', className)
+    "
+    v-bind="$attrs"
+  >
+    <SliderTrack
+      class="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary"
+    >
       <SliderRange class="absolute h-full bg-primary" />
     </SliderTrack>
     <SliderThumb
@@ -10,10 +17,10 @@
 </template>
 
 <script setup lang="ts">
-import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'radix-vue'
-import { cn } from '~/lib/utils'
+import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from "radix-vue";
+import { cn } from "~/lib/utils";
 
 const { class: className } = defineProps<{
-  class?: string
-}>()
+  class?: string;
+}>();
 </script>

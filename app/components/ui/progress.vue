@@ -1,6 +1,11 @@
 <template>
   <ProgressRoot
-    :class="cn('relative h-4 w-full overflow-hidden rounded-full bg-secondary', className)"
+    :class="
+      cn(
+        'relative h-4 w-full overflow-hidden rounded-full bg-secondary',
+        className,
+      )
+    "
     :model-value="modelValue"
     v-bind="$attrs"
   >
@@ -12,11 +17,11 @@
 </template>
 
 <script setup lang="ts">
-import { ProgressIndicator, ProgressRoot } from 'radix-vue'
-import { cn } from '~/lib/utils'
+import { ProgressIndicator, ProgressRoot } from "radix-vue";
+import { cn } from "~/lib/utils";
 
 const { modelValue, class: className } = defineProps<{
-  modelValue?: number
-  class?: string
-}>()
+  modelValue?: number;
+  class?: string;
+}>();
 </script>

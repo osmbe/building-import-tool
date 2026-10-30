@@ -5,5 +5,5 @@
 </template>
 
 <script setup lang="ts">
-import { DropdownMenuTrigger } from 'radix-vue'
+import { DropdownMenuTrigger } from "radix-vue";
 </script>

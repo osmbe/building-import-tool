@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # webhook/restore-urbis.sh publishes the dump of a CI UrbIS import (schema urbis_next, like
 # .github/workflows/urbis-import.yml) next to the live data and swaps it in.
 reset_db fresh
@@ -12,5 +13,5 @@ out=$(webhook_run -e RESTART_TILES=0 webhook bash /repo/webhook/restore-urbis.sh
 assert_eq "$rc" "0" "the restore succeeds"
 [ "$rc" = 0 ] || log "$out"
 assert_eq "$(sql "SELECT string_agg(building_id || ':' || address_count, ',' ORDER BY building_id) FROM urbis.buildings_with_addresses")" \
-    "21:2,22:0" "the live schema has the dump's data"
+  "21:2,22:0" "the live schema has the dump's data"
 assert_eq "$(sql "SELECT count(*) FROM pg_namespace WHERE nspname IN ('urbis_next', 'urbis_prev')")" "0" "nothing is left next to it"

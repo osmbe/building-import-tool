@@ -18,18 +18,26 @@ updates:
         dependency-type: "production"
       development:
         dependency-type: "development"
+    cooldown:
+      default-days: 7
   - package-ecosystem: "docker"
-    directories: 
+    directories:
       - "/app/"
       - "/processing/"
       - "/webhook/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
   - package-ecosystem: "docker-compose"
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7

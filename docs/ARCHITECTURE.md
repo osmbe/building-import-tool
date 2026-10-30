@@ -1,6 +1,6 @@
 # Architecture
 
-How the data is stored, imported, served and deployed, and why. The README has the overview; this page is for
+How the data is stored, imported, served and deployed, and why. The readme has the overview; this page is for
 changing things.
 
 ## Data model
@@ -16,14 +16,14 @@ The app reads both through two connection pools (`app/server/utils/db.ts`); the 
 
 ### GRB (Flanders)
 
-| Object | Content |
-|---|---|
-| `grb.building_polygons` | GBG (*gebouw aan de grond*) and GBA (*gebouwaanhorigheid*: floors, stairs, canopies, ...) polygons, EPSG:4326. Unique on `(entity, oidn)`: GBG and GBA OIDNs are only unique per entity. |
-| `grb.buildings` | per `gebouw_id` (the building registry id, from the RltGbgGebouw relation): polygon count, area and type |
-| `grb.addresses` | address points |
-| `grb.kunstwerken` | KNW structures (bridges, chimneys, silos, wind turbines, ...) |
-| `grb.buildings_with_addresses` | materialized view: one row per polygon, its addresses (joined by geometry, see [GRB_ADDRESS_JOIN.md](GRB_ADDRESS_JOIN.md)), its parent building, geometry in EPSG:3857 |
-| `grb.candidates`, `grb.knw_candidates` | the candidates contract (below) |
+| Object                                 | Content                                                                                                                                                                                  |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `grb.building_polygons`                | GBG (_gebouw aan de grond_) and GBA (_gebouwaanhorigheid_: floors, stairs, canopies, ...) polygons, EPSG:4326. Unique on `(entity, oidn)`: GBG and GBA OIDNs are only unique per entity. |
+| `grb.buildings`                        | per `gebouw_id` (the building registry ID, from the RltGbgGebouw relation): polygon count, area and type                                                                                 |
+| `grb.addresses`                        | address points                                                                                                                                                                           |
+| `grb.kunstwerken`                      | KNW structures (bridges, chimneys, silos, wind turbines, ...)                                                                                                                            |
+| `grb.buildings_with_addresses`         | materialized view: one row per polygon, its addresses (joined by geometry, see [GRB_ADDRESS_JOIN.md](GRB_ADDRESS_JOIN.md)), its parent building, geometry in EPSG:3857                   |
+| `grb.candidates`, `grb.knw_candidates` | the candidates contract (below)                                                                                                                                                          |
 
 ### PICC (Wallonia) and UrbIS (Brussels)
 
@@ -40,20 +40,21 @@ source formats (ICAR and ADRESS_POINT addresses for PICC; street and municipalit
 `grb.candidates`, `grb.knw_candidates`, `picc.candidates` and `urbis.candidates` are plain views with exactly the
 same columns, types and order:
 
-| Column | Meaning |
-|---|---|
-| `fid` | unique, stable id (the tile feature id) |
-| `source` | `grb`, `knw`, `picc`, `urbis` |
-| `entity`, `source_id`, `source_ref` | the source's own id; `source_ref` is the `source:geometry:ref` value (`Gbg/123`; GRB and KNW only) |
-| `type_code`, `type_label` | the source's classification (GRB LBLTYPE, KNW type, PICC nature) |
-| `survey_date`, `origin_label` | when and how the object was surveyed (`YYYY-MM-DD`) |
-| `area_m2` | area in m² |
-| `parent_id`, `parent_type_label`, `parent_part_count`, `parent_area_m2` | the GRB building or the UrbIS block it belongs to |
-| `addresses`, `street_names`, `postcodes`, `municipalities`, `address_count` | the addresses inside it |
-| `details` | jsonb, source-specific extras; tiles carry each key as a property |
-| `geom` | EPSG:3857 |
+| Column                                                                      | Meaning                                                                                            |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `fid`                                                                       | unique, stable ID (the tile feature ID)                                                            |
+| `source`                                                                    | `grb`, `knw`, `picc`, `urbis`                                                                      |
+| `entity`, `source_id`, `source_ref`                                         | the source's own ID; `source_ref` is the `source:geometry:ref` value (`Gbg/123`; GRB and KNW only) |
+| `type_code`, `type_label`                                                   | the source's classification (GRB LBLTYPE, KNW type, PICC nature)                                   |
+| `survey_date`, `origin_label`                                               | when and how the object was surveyed (`YYYY-MM-DD`)                                                |
+| `area_m2`                                                                   | area in m²                                                                                         |
+| `parent_id`, `parent_type_label`, `parent_part_count`, `parent_area_m2`     | the GRB building or the UrbIS block it belongs to                                                  |
+| `addresses`, `street_names`, `postcodes`, `municipalities`, `address_count` | the addresses inside it                                                                            |
+| `details`                                                                   | jsonb, source-specific extras; tiles carry each key as a property                                  |
+| `geom`                                                                      | EPSG:3857                                                                                          |
 
 Everything downstream reads only these columns:
+
 - the Martin `candidates` sources;
 - the difference API: one query on `CANDIDATE_VIEWS`;
 - the tag mapping for JOSM: `candidateTags` in `app/utils/candidates.ts`, documented in
@@ -101,6 +102,7 @@ The restore (`webhook/restore-*.sh`, then `processing/scripts/publish-schema.sh`
 If anything fails, the live schema is untouched.
 
 **Updates** change the live data in one transaction:
+
 - `grb-update` applies the GRB difference download with `processing/sql/updates/grb-apply-diff.sql`;
 - `picc-update` replaces the objects changed since `picc.import_meta`, fetched from the ArcGIS REST service;
 - `urbis-update` downloads everything again and replaces it.

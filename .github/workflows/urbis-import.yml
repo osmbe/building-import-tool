@@ -36,6 +36,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Install PostgreSQL 18 client
         run: |
@@ -93,6 +95,8 @@ jobs:
     name: Import UrbIS
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Restore the dump on the server (waits for the job)
         if: ${{ vars.WEBHOOK_URL != '' }}
         timeout-minutes: 300

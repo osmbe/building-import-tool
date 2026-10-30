@@ -7,13 +7,13 @@ export PATH="/tests/bin/deploy:$PATH"
 FAILURES=0
 ok() { echo "    ok   $*"; }
 ko() {
-    echo "    FAIL $*"
-    FAILURES=$((FAILURES + 1))
+  echo "    FAIL $*"
+  FAILURES=$((FAILURES + 1))
 }
 check() { # <message> <command...>
-    local msg="$1"
-    shift
-    if "$@"; then ok "$msg"; else ko "$msg"; fi
+  local msg="$1"
+  shift
+  if "$@"; then ok "$msg"; else ko "$msg"; fi
 }
 
 ORIGIN=/tmp/origin.git
@@ -23,16 +23,16 @@ PREFIX=ghcr.io/test/app
 export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.org GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@example.org
 
 commit() { # <message> <file> <content>
-    mkdir -p "$WORK/$(dirname "$2")"
-    echo "$3" >"$WORK/$2"
-    git -C "$WORK" add -A && git -C "$WORK" commit -qm "$1" && git -C "$WORK" rev-parse HEAD
+  mkdir -p "$WORK/$(dirname "$2")"
+  echo "$3" >"$WORK/$2"
+  git -C "$WORK" add -A && git -C "$WORK" commit -qm "$1" && git -C "$WORK" rev-parse HEAD
 }
 
 git init -q --bare -b main "$ORIGIN"
 git init -q -b main "$WORK"
 echo ".env" >"$WORK/.gitignore"
 for f in docker-compose.yml caddy/Caddyfile config/martin/{grb,osm,picc,urbis}-config.yaml; do
-    mkdir -p "$WORK/$(dirname "$f")" && echo "v1" >"$WORK/$f"
+  mkdir -p "$WORK/$(dirname "$f")" && echo "v1" >"$WORK/$f"
 done
 A=$(commit "A" README v1)
 B=$(commit "B: GRB tiles config" config/martin/grb-config.yaml v2)
@@ -46,10 +46,10 @@ git -C "$SERVER" reset -q --hard "$A"
 echo "POSTGRES_USER=be2osm" >"$SERVER/.env"
 
 deploy() { # [sha]: runs deploy.sh with a fresh docker log, output in $OUT
-    rm -f /tmp/state/docker.log
-    OUT=$(COMPOSE_PROJECT_DIR="$SERVER" DEPLOY_GIT_URL="$ORIGIN" IMAGE_PREFIX="$PREFIX" FAKE_PREFIX="$PREFIX" \
-        FAKE_STATE=/tmp/state DEPLOY_MIN_FREE_GB="${MIN_FREE_GB:-0}" DEPLOY_READY_TIMEOUT=2 GH_TOKEN="" \
-        bash /repo/webhook/deploy.sh "$@" 2>&1)
+  rm -f /tmp/state/docker.log
+  OUT=$(COMPOSE_PROJECT_DIR="$SERVER" DEPLOY_GIT_URL="$ORIGIN" IMAGE_PREFIX="$PREFIX" FAKE_PREFIX="$PREFIX" \
+    FAKE_STATE=/tmp/state DEPLOY_MIN_FREE_GB="${MIN_FREE_GB:-0}" DEPLOY_READY_TIMEOUT=2 GH_TOKEN="" \
+    bash /repo/webhook/deploy.sh "$@" 2>&1)
 }
 head_is() { [ "$(git -C "$SERVER" rev-parse HEAD)" = "$1" ]; }
 called() { grep -qF -- "$1" /tmp/state/docker.log 2>/dev/null; }
@@ -118,7 +118,7 @@ check "an app that never gets ready fails the deploy" [ $? != 0 ]
 check "the checkout is back at C" head_is "$C"
 check "the images are back to C" deployed nuxt-app "$C"
 check "the recreated Martin server is recreated again with the old config" \
-    [ "$(grep -c "force-recreate grb-tiles" /tmp/state/docker.log)" = 2 ]
+  [ "$(grep -c "force-recreate grb-tiles" /tmp/state/docker.log)" = 2 ]
 check "the app is restarted on the previous image" [ "$(cat /tmp/state/nuxt-running)" = "sha256:nuxt-app:sha-$C" ]
 
 exit "$FAILURES"

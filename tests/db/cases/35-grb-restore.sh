@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # webhook/restore-grb.sh publishes the dump of a CI GRB import (schema grb_next, like
 # .github/workflows/grb-import.yml): restored next to the live data, checked, swapped in.
 reset_db fresh
@@ -5,14 +6,14 @@ fixtures grb
 just_run grb-import >/dev/null
 
 snapshot() {
-    sql "SELECT (SELECT string_agg(entity || '/' || oidn || ':' || coalesce(gebouw_id::text, '-'), ',' ORDER BY entity, oidn) FROM grb.building_polygons)
+  sql "SELECT (SELECT string_agg(entity || '/' || oidn || ':' || coalesce(gebouw_id::text, '-'), ',' ORDER BY entity, oidn) FROM grb.building_polygons)
         || ' | ' || (SELECT count(*) FROM grb.kunstwerken) || ' knw | ' || (SELECT count(*) FROM grb.addresses) || ' addresses | '
         || (SELECT count(*) FROM grb.buildings_with_addresses) || ' view rows | ' || (SELECT count(*) FROM grb.import_meta) || ' meta'"
 }
 expected=$(snapshot)
 
 "${COMPOSE[@]}" exec -T postgres pg_dump -U be2osm --data-only --disable-triggers --no-owner --no-acl \
-    -n grb --exclude-table-data=grb.schema_migrations be2osm | gzip | artifact 4242 grb-dump grb.sql.gz
+  -n grb --exclude-table-data=grb.schema_migrations be2osm | gzip | artifact 4242 grb-dump grb.sql.gz
 
 # Full dumps of grb_next, as the import workflow makes them
 psql_db -c "ALTER SCHEMA grb RENAME TO grb_next" >/dev/null

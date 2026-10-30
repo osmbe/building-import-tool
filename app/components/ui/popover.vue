@@ -5,5 +5,5 @@
 </template>
 
 <script setup lang="ts">
-import { PopoverRoot } from 'radix-vue'
+import { PopoverRoot } from "radix-vue";
 </script>

@@ -4,13 +4,15 @@ on:
   workflow_dispatch:
   # Monthly: a full re-download, loaded and swapped in one transaction (the map keeps the previous data meanwhile)
   schedule:
-    - cron: '0 5 1 * *'
+    - cron: "0 5 1 * *"
 
 jobs:
   trigger-update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Trigger UrbIS update on server
         if: ${{ vars.WEBHOOK_URL != '' }}
         timeout-minutes: 300

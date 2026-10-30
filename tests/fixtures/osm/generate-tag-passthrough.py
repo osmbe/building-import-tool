@@ -8,7 +8,7 @@ import os
 
 import osmium
 
-OUTPUT = 'tag-passthrough.osm.pbf'
+OUTPUT = "tag-passthrough.osm.pbf"
 # SimpleWriter refuses to overwrite an existing file (and older pyosmium versions don't even support an
 # overwrite argument), but this fixture is committed, so regenerating it must replace it in place.
 if os.path.exists(OUTPUT):
@@ -30,9 +30,9 @@ writer.add_way(
         id=9001,
         nodes=[1, 2, 3, 4, 1],
         tags={
-            'building': 'yes',
-            'source:geometry:ref': 'Gbg/1002',
-            'source:geometry:date': '2012-08-08',
+            "building": "yes",
+            "source:geometry:ref": "Gbg/1002",
+            "source:geometry:date": "2012-08-08",
         },
     )
 )

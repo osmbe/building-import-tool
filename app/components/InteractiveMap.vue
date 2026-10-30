@@ -22,7 +22,10 @@
             :class="!controlsCollapsed ? 'border-b border-white/[0.05]' : ''"
             @click="controlsCollapsed = !controlsCollapsed"
           >
-            <span class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Controls</span>
+            <span
+              class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground"
+              >Controls</span
+            >
             <ChevronDown
               class="h-3 w-3 text-muted-foreground transition-transform duration-200"
               :class="controlsCollapsed ? '-rotate-90' : ''"
@@ -32,14 +35,31 @@
           <!-- Collapsible body -->
           <div v-show="!controlsCollapsed">
             <!-- Zoom controls -->
-            <div class="flex items-center gap-1 p-2 border-b border-white/[0.05]">
-              <button class="map-icon-btn" @click="zoomIn" title="Zoom in" aria-label="Zoom in">
+            <div
+              class="flex items-center gap-1 p-2 border-b border-white/[0.05]"
+            >
+              <button
+                class="map-icon-btn"
+                @click="zoomIn"
+                title="Zoom in"
+                aria-label="Zoom in"
+              >
                 <ZoomIn class="h-3.5 w-3.5" />
               </button>
-              <button class="map-icon-btn" @click="zoomOut" title="Zoom out" aria-label="Zoom out">
+              <button
+                class="map-icon-btn"
+                @click="zoomOut"
+                title="Zoom out"
+                aria-label="Zoom out"
+              >
                 <ZoomOut class="h-3.5 w-3.5" />
               </button>
-              <button class="map-icon-btn" @click="resetView" title="Reset view" aria-label="Reset view">
+              <button
+                class="map-icon-btn"
+                @click="resetView"
+                title="Reset view"
+                aria-label="Reset view"
+              >
                 <RotateCcw class="h-3.5 w-3.5" />
               </button>
             </div>
@@ -56,7 +76,11 @@
             :class="!layersCollapsed ? 'border-b border-white/[0.05]' : ''"
             @click="layersCollapsed = !layersCollapsed"
           >
-            <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Layers</h3>
+            <h3
+              class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground"
+            >
+              Layers
+            </h3>
             <ChevronDown
               class="h-3 w-3 text-muted-foreground transition-transform duration-200"
               :class="layersCollapsed ? '-rotate-90' : ''"
@@ -68,11 +92,21 @@
             <div class="space-y-2.5">
               <div class="layer-row">
                 <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="color: hsl(var(--layer-candidate)); background: currentColor"></span>
-                  <span class="text-xs text-foreground/85">Candidate Buildings</span>
+                  <span
+                    class="layer-dot"
+                    style="
+                      color: hsl(var(--layer-candidate));
+                      background: currentColor;
+                    "
+                  ></span>
+                  <span class="text-xs text-foreground/85"
+                    >Candidate Buildings</span
+                  >
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="text-[10px] font-mono text-muted-foreground">{{ candidateBuildingCount }}</span>
+                  <span class="text-[10px] font-mono text-muted-foreground">{{
+                    candidateBuildingCount
+                  }}</span>
                   <Switch
                     v-model:checked="overlayLayers.candidateBuildings"
                     @update:checked="toggleCandidateBuildings"
@@ -81,16 +115,27 @@
               </div>
               <div class="layer-row">
                 <div class="flex items-center gap-2">
-                  <span class="layer-dot" style="color: hsl(var(--layer-osm)); background: currentColor"></span>
+                  <span
+                    class="layer-dot"
+                    style="
+                      color: hsl(var(--layer-osm));
+                      background: currentColor;
+                    "
+                  ></span>
                   <span class="text-xs text-foreground/85">OSM Buildings</span>
                 </div>
-                <Switch v-model:checked="overlayLayers.osmBuildings" @update:checked="toggleOsmBuildings" />
+                <Switch
+                  v-model:checked="overlayLayers.osmBuildings"
+                  @update:checked="toggleOsmBuildings"
+                />
               </div>
             </div>
 
             <!-- Source dataset (single-select; compared against OSM) -->
             <div class="mt-3 pt-3 border-t border-white/[0.05]">
-              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+              <div
+                class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2"
+              >
                 Source dataset
               </div>
               <div class="grid grid-cols-2 gap-1">
@@ -104,23 +149,34 @@
                 >
                   <span
                     class="layer-dot"
-                    :style="{ color: `hsl(var(${opt.varName}))`, background: 'currentColor' }"
+                    :style="{
+                      color: `hsl(var(${opt.varName}))`,
+                      background: 'currentColor',
+                    }"
                   ></span>
                   {{ opt.label }}
                 </button>
               </div>
-              <p class="text-[9px] text-muted-foreground/70 mt-1.5 leading-relaxed">
+              <p
+                class="text-[9px] text-muted-foreground/70 mt-1.5 leading-relaxed"
+              >
                 One dataset at a time, compared against OSM Buildings.
               </p>
             </div>
 
             <!-- Base layer selection -->
             <div class="mt-3 pt-3 border-t border-white/[0.05]">
-              <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Basemap</div>
+              <div
+                class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2"
+              >
+                Basemap
+              </div>
               <div class="grid grid-cols-2 gap-1">
                 <button
                   class="layer-btn"
-                  :class="currentBaseLayer === 'blank' ? 'layer-btn-active' : ''"
+                  :class="
+                    currentBaseLayer === 'blank' ? 'layer-btn-active' : ''
+                  "
                   @click="switchBaseLayer('blank')"
                   title="No background"
                 >
@@ -144,7 +200,9 @@
                 </button>
                 <button
                   class="layer-btn"
-                  :class="currentBaseLayer === 'flanders' ? 'layer-btn-active' : ''"
+                  :class="
+                    currentBaseLayer === 'flanders' ? 'layer-btn-active' : ''
+                  "
                   @click="switchBaseLayer('flanders')"
                   title="Orthophoto Vlaanderen — Digitaal Vlaanderen (OFW, always latest)"
                 >
@@ -152,7 +210,9 @@
                 </button>
                 <button
                   class="layer-btn"
-                  :class="currentBaseLayer === 'brussels' ? 'layer-btn-active' : ''"
+                  :class="
+                    currentBaseLayer === 'brussels' ? 'layer-btn-active' : ''
+                  "
                   @click="switchBaseLayer('brussels')"
                   title="Ortho UrbIS 2024 (nadir) — geoservices-urbis.irisnet.be"
                 >
@@ -160,7 +220,9 @@
                 </button>
                 <button
                   class="layer-btn"
-                  :class="currentBaseLayer === 'wallonia' ? 'layer-btn-active' : ''"
+                  :class="
+                    currentBaseLayer === 'wallonia' ? 'layer-btn-active' : ''
+                  "
                   @click="switchBaseLayer('wallonia')"
                   title="Orthophoto Wallonie 2024 — geoservices.wallonie.be"
                 >
@@ -172,12 +234,15 @@
             <div class="mt-3 pt-3 border-t border-white/[0.05] space-y-1">
               <div class="flex items-center justify-between text-[10px]">
                 <span class="text-muted-foreground">Zoom</span>
-                <span class="font-mono text-foreground/55">{{ currentZoom }}</span>
+                <span class="font-mono text-foreground/55">{{
+                  currentZoom
+                }}</span>
               </div>
               <div class="flex items-center justify-between text-[10px]">
                 <span class="text-muted-foreground">Center</span>
                 <span class="font-mono text-foreground/55"
-                  >{{ currentCenter[1].toFixed(4) }}, {{ currentCenter[0].toFixed(4) }}</span
+                  >{{ currentCenter[1].toFixed(4) }},
+                  {{ currentCenter[0].toFixed(4) }}</span
                 >
               </div>
             </div>
@@ -188,10 +253,17 @@
       <!-- Bottom-right: Match Mode + Stats stacked -->
       <div class="absolute bottom-4 right-4 flex flex-col gap-2 w-56">
         <!-- Results panel (loading / empty / error / success) -->
-        <div v-if="differenceState !== 'idle'" class="glass-panel rounded-lg p-3">
+        <div
+          v-if="differenceState !== 'idle'"
+          class="glass-panel rounded-lg p-3"
+        >
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-1.5">
-              <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Results</h3>
+              <h3
+                class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground"
+              >
+                Results
+              </h3>
               <span
                 v-if="useOverpass"
                 class="inline-flex items-center gap-1 px-1 py-px rounded text-[8px] font-semibold uppercase tracking-wide text-emerald-400 bg-emerald-400/10 border border-emerald-400/20"
@@ -224,7 +296,10 @@
               <CircleAlert class="h-3.5 w-3.5 shrink-0 mt-px text-red-400" />
               <span>Could not calculate the difference.</span>
             </div>
-            <p v-if="differenceError" class="text-[10px] text-muted-foreground break-words leading-relaxed">
+            <p
+              v-if="differenceError"
+              class="text-[10px] text-muted-foreground break-words leading-relaxed"
+            >
               {{ differenceError }}
             </p>
             <button class="result-retry" @click="calculateDifference">
@@ -235,38 +310,55 @@
 
           <!-- Empty -->
           <div v-else-if="differenceState === 'empty'" class="space-y-1.5">
-            <p class="text-[11px] text-foreground/85">No missing buildings here.</p>
-            <p class="text-[10px] text-muted-foreground leading-relaxed">
-              Everything in view already matches OSM. Pan to a new area, lower the match strictness, or switch match
-              mode.
+            <p class="text-[11px] text-foreground/85">
+              No missing buildings here.
             </p>
-            <p class="text-[9px] text-muted-foreground/70 pt-0.5">{{ matchSummary }}</p>
+            <p class="text-[10px] text-muted-foreground leading-relaxed">
+              Everything in view already matches OSM. Pan to a new area, lower
+              the match strictness, or switch match mode.
+            </p>
+            <p class="text-[9px] text-muted-foreground/70 pt-0.5">
+              {{ matchSummary }}
+            </p>
           </div>
 
           <!-- Success -->
-          <div v-else-if="differenceState === 'success' && matchingStats" class="space-y-1.5 text-[11px]">
+          <div
+            v-else-if="differenceState === 'success' && matchingStats"
+            class="space-y-1.5 text-[11px]"
+          >
             <div class="flex items-center justify-between">
               <span class="text-muted-foreground">Source total</span>
-              <span class="font-mono text-foreground/65">{{ matchingStats.totalGrb }}</span>
+              <span class="font-mono text-foreground/65">{{
+                matchingStats.totalGrb
+              }}</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-muted-foreground">OSM total</span>
-              <span class="font-mono text-foreground/65">{{ matchingStats.totalOsm }}</span>
+              <span class="font-mono text-foreground/65">{{
+                matchingStats.totalOsm
+              }}</span>
             </div>
             <div class="pt-2 mt-1 border-t border-white/[0.05] space-y-1.5">
               <div class="flex items-center justify-between">
                 <span class="text-emerald-400/90">Matched</span>
-                <span class="font-mono font-medium text-emerald-400">{{ matchingStats.matched }}</span>
+                <span class="font-mono font-medium text-emerald-400">{{
+                  matchingStats.matched
+                }}</span>
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-sky-400/90">Candidates</span>
-                <span class="font-mono font-medium text-sky-400">{{ matchingStats.unmatched }}</span>
+                <span class="font-mono font-medium text-sky-400">{{
+                  matchingStats.unmatched
+                }}</span>
               </div>
             </div>
             <div class="pt-2 border-t border-white/[0.05]">
               <div class="flex items-center justify-between mb-1.5">
                 <span class="text-muted-foreground">Coverage</span>
-                <span class="font-mono text-primary font-medium">{{ coveragePct }}%</span>
+                <span class="font-mono text-primary font-medium"
+                  >{{ coveragePct }}%</span
+                >
               </div>
               <div class="h-1 bg-white/[0.05] rounded-full overflow-hidden">
                 <div
@@ -276,21 +368,37 @@
               </div>
             </div>
             <!-- Cap notice when there are more candidates than we render/export at once -->
-            <div v-if="candidateCapped" class="flex items-start gap-1.5 pt-2 text-[10px] text-amber-300/90">
+            <div
+              v-if="candidateCapped"
+              class="flex items-start gap-1.5 pt-2 text-[10px] text-amber-300/90"
+            >
               <CircleAlert class="h-3 w-3 shrink-0 mt-px text-amber-400" />
               <span
-                >Showing the first {{ candidateBuildingCount.toLocaleString() }} of
-                {{ candidateTotalInView.toLocaleString() }}. Zoom in to review the rest.</span
+                >Showing the first
+                {{ candidateBuildingCount.toLocaleString() }} of
+                {{ candidateTotalInView.toLocaleString() }}. Zoom in to review
+                the rest.</span
               >
             </div>
 
             <!-- Optional simplification before export -->
             <div class="pt-2 mt-1 border-t border-white/[0.05]">
-              <label class="flex items-center justify-between gap-2 cursor-pointer select-none">
-                <span class="text-[10px] text-foreground/80">Simplify geometry on export</span>
-                <input type="checkbox" class="accent-primary h-3 w-3" v-model="simplifyOnExport" />
+              <label
+                class="flex items-center justify-between gap-2 cursor-pointer select-none"
+              >
+                <span class="text-[10px] text-foreground/80"
+                  >Simplify geometry on export</span
+                >
+                <input
+                  type="checkbox"
+                  class="accent-primary h-3 w-3"
+                  v-model="simplifyOnExport"
+                />
               </label>
-              <div v-if="simplifyOnExport" class="mt-1.5 flex items-center gap-2">
+              <div
+                v-if="simplifyOnExport"
+                class="mt-1.5 flex items-center gap-2"
+              >
                 <input
                   type="range"
                   min="50"
@@ -299,14 +407,23 @@
                   class="flex-1 accent-primary"
                   v-model.number="simplifyPercent"
                 />
-                <span class="font-mono text-[10px] text-foreground/60 w-8 text-right">{{ simplifyPercent }}%</span>
+                <span
+                  class="font-mono text-[10px] text-foreground/60 w-8 text-right"
+                  >{{ simplifyPercent }}%</span
+                >
               </div>
-              <p v-if="simplifyOnExport" class="text-[9px] text-muted-foreground/70 mt-1 leading-relaxed">
-                Keeps {{ simplifyPercent }}% of detail. Reduces node count on dense GRB outlines.
+              <p
+                v-if="simplifyOnExport"
+                class="text-[9px] text-muted-foreground/70 mt-1 leading-relaxed"
+              >
+                Keeps {{ simplifyPercent }}% of detail. Reduces node count on
+                dense GRB outlines.
               </p>
             </div>
 
-            <p class="text-[9px] text-muted-foreground/70 pt-1.5 leading-relaxed">
+            <p
+              class="text-[9px] text-muted-foreground/70 pt-1.5 leading-relaxed"
+            >
               {{ matchSummary }}. Open in JOSM to review before upload.
             </p>
 
@@ -337,7 +454,11 @@
                   ></span>
                   <span class="text-[9px] text-muted-foreground">
                     {{
-                      josmConnected === true ? 'JOSM ready' : josmConnected === false ? 'JOSM offline' : 'JOSM unknown'
+                      josmConnected === true
+                        ? "JOSM ready"
+                        : josmConnected === false
+                          ? "JOSM offline"
+                          : "JOSM unknown"
                     }}
                   </span>
                 </div>
@@ -354,7 +475,11 @@
 
         <!-- Match Mode Control -->
         <MatchModeControl
-          :source-supports-tags="supportsSourceTags(selectedSource === 'none' ? 'grb' : selectedSource)"
+          :source-supports-tags="
+            supportsSourceTags(
+              selectedSource === 'none' ? 'grb' : selectedSource,
+            )
+          "
           :map-ready="Boolean(map)"
           :source-layer-enabled="hasSourceLayer"
           :osm-layer-enabled="hasOsmLayer"
@@ -367,7 +492,11 @@
         />
       </div>
 
-      <ObjectInfoPanel :building="activeBuilding" :is-open="panelOpen" @close="panelOpen = false" />
+      <ObjectInfoPanel
+        :building="activeBuilding"
+        :is-open="panelOpen"
+        @close="panelOpen = false"
+      />
 
       <!-- JOSM setup help -->
       <JosmHelpDialog
@@ -387,7 +516,10 @@
         <div class="glass-panel rounded-lg overflow-hidden">
           <template v-if="activeFeatures.length > 0">
             <!-- Feature switcher pills (shown when multiple features) -->
-            <div v-if="activeFeatures.length > 1" class="flex items-center gap-1.5 px-3 pt-3 pb-1">
+            <div
+              v-if="activeFeatures.length > 1"
+              class="flex items-center gap-1.5 px-3 pt-3 pb-1"
+            >
               <button
                 v-for="(feat, idx) in activeFeatures"
                 :key="idx"
@@ -398,24 +530,26 @@
                   'feature-pill--picc': feat._layer_type === 'picc',
                   'feature-pill--urbis': feat._layer_type === 'urbis',
                   'feature-pill--osm': feat._layer_type === 'osm',
-                  'feature-pill--active': idx === activeFeatureIndex
+                  'feature-pill--active': idx === activeFeatureIndex,
                 }"
                 @click="activeFeatureIndex = idx"
               >
                 <span class="feature-pill__dot" />
                 <span>{{
-                  feat._layer_type === 'grb'
-                    ? 'GRB'
-                    : feat._layer_type === 'knw'
-                      ? 'KNW'
-                      : feat._layer_type === 'picc'
-                        ? 'PICC'
-                        : feat._layer_type === 'urbis'
-                          ? 'UrbIS'
-                          : 'OSM'
+                  feat._layer_type === "grb"
+                    ? "GRB"
+                    : feat._layer_type === "knw"
+                      ? "KNW"
+                      : feat._layer_type === "picc"
+                        ? "PICC"
+                        : feat._layer_type === "urbis"
+                          ? "UrbIS"
+                          : "OSM"
                 }}</span>
                 <span class="opacity-50 font-mono">{{
-                  feat._layer_type === 'osm' ? feat.osm_id : candidateDisplayId(feat)
+                  feat._layer_type === "osm"
+                    ? feat.osm_id
+                    : candidateDisplayId(feat)
                 }}</span>
               </button>
               <!-- Close button -->
@@ -440,12 +574,23 @@
                       <Building2 class="h-2.5 w-2.5" />GRB
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">
-                      {{ formatGRBBuildingType(currentFeature.type_label || currentFeature.parent_type_label) }}
+                      {{
+                        formatGRBBuildingType(
+                          currentFeature.type_label ||
+                            currentFeature.parent_type_label,
+                        )
+                      }}
                     </h2>
-                    <div v-if="currentFeature.parent_id" class="text-[10px] font-mono text-muted-foreground mt-0.5">
+                    <div
+                      v-if="currentFeature.parent_id"
+                      class="text-[10px] font-mono text-muted-foreground mt-0.5"
+                    >
                       Building ID: {{ currentFeature.parent_id }}
                     </div>
-                    <div v-if="currentFeature.source_ref" class="text-[10px] font-mono text-muted-foreground">
+                    <div
+                      v-if="currentFeature.source_ref"
+                      class="text-[10px] font-mono text-muted-foreground"
+                    >
                       OIDN: {{ currentFeature.source_ref }}
                     </div>
                   </div>
@@ -460,17 +605,26 @@
 
                 <!-- Addresses (grouped by base address) -->
                 <div v-if="currentFeature.addresses" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     Addresses
                   </div>
                   <div class="space-y-1">
                     <div
-                      v-for="(group, idx) in groupAddresses(parsePostgresArray(currentFeature.addresses))"
+                      v-for="(group, idx) in groupAddresses(
+                        parsePostgresArray(currentFeature.addresses),
+                      )"
                       :key="idx"
                     >
-                      <div class="text-xs text-foreground font-medium">{{ group.base }}</div>
-                      <div v-if="group.boxes.length > 0" class="text-[10px] text-muted-foreground mt-0.5 pl-2">
-                        bus {{ group.boxes.join(', ') }}
+                      <div class="text-xs text-foreground font-medium">
+                        {{ group.base }}
+                      </div>
+                      <div
+                        v-if="group.boxes.length > 0"
+                        class="text-[10px] text-muted-foreground mt-0.5 pl-2"
+                      >
+                        bus {{ group.boxes.join(", ") }}
                       </div>
                     </div>
                   </div>
@@ -480,30 +634,47 @@
                 <div
                   v-if="
                     !currentFeature.addresses &&
-                    (currentFeature.street_names || currentFeature.postcodes || currentFeature.municipalities)
+                    (currentFeature.street_names ||
+                      currentFeature.postcodes ||
+                      currentFeature.municipalities)
                   "
                   class="mb-3"
                 >
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     Location
                   </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.street_names" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Street</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Street</span
+                      >
                       <span class="text-foreground font-medium">{{
-                        parsePostgresArray(currentFeature.street_names).join(', ')
+                        parsePostgresArray(currentFeature.street_names).join(
+                          ", ",
+                        )
                       }}</span>
                     </div>
                     <div v-if="currentFeature.postcodes" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Postcode</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Postcode</span
+                      >
                       <span class="text-foreground font-medium">{{
-                        parsePostgresArray(currentFeature.postcodes).join(', ')
+                        parsePostgresArray(currentFeature.postcodes).join(", ")
                       }}</span>
                     </div>
-                    <div v-if="currentFeature.municipalities" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Municipality</span>
+                    <div
+                      v-if="currentFeature.municipalities"
+                      class="flex gap-3"
+                    >
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Municipality</span
+                      >
                       <span class="text-foreground font-medium">{{
-                        parsePostgresArray(currentFeature.municipalities).join(', ')
+                        parsePostgresArray(currentFeature.municipalities).join(
+                          ", ",
+                        )
                       }}</span>
                     </div>
                   </div>
@@ -518,26 +689,46 @@
                     currentFeature.origin_label
                   "
                 >
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     Details
                   </div>
                   <div class="space-y-1 text-xs">
-                    <div v-if="currentFeature.parent_area_m2" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Area</span>
+                    <div
+                      v-if="currentFeature.parent_area_m2"
+                      class="flex gap-3"
+                    >
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Area</span
+                      >
                       <span class="text-foreground font-medium font-mono">{{
                         formatArea(currentFeature.parent_area_m2)
                       }}</span>
                     </div>
-                    <div v-if="currentFeature.parent_part_count" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Parts</span>
-                      <span class="text-foreground font-medium font-mono">{{ currentFeature.parent_part_count }}</span>
+                    <div
+                      v-if="currentFeature.parent_part_count"
+                      class="flex gap-3"
+                    >
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Parts</span
+                      >
+                      <span class="text-foreground font-medium font-mono">{{
+                        currentFeature.parent_part_count
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.survey_date" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Surveyed</span>
-                      <span class="text-foreground font-medium font-mono">{{ currentFeature.survey_date }}</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Surveyed</span
+                      >
+                      <span class="text-foreground font-medium font-mono">{{
+                        currentFeature.survey_date
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.origin_label" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Source</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Source</span
+                      >
                       <span class="text-foreground font-medium">{{
                         formatOriginLabel(currentFeature.origin_label)
                       }}</span>
@@ -556,9 +747,11 @@
                       <Landmark class="h-2.5 w-2.5" />KNW
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">
-                      {{ currentFeature.type_label || 'Structure' }}
+                      {{ currentFeature.type_label || "Structure" }}
                     </h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
+                    <div
+                      class="text-[10px] font-mono text-muted-foreground mt-0.5"
+                    >
                       OIDN: {{ currentFeature.source_id }}
                     </div>
                   </div>
@@ -580,32 +773,56 @@
                     currentFeature.type_code
                   "
                 >
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     Details
                   </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.type_code" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Type code</span>
-                      <span class="text-foreground font-medium font-mono">{{ currentFeature.type_code }}</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Type code</span
+                      >
+                      <span class="text-foreground font-medium font-mono">{{
+                        currentFeature.type_code
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.area_m2" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Area</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Area</span
+                      >
                       <span class="text-foreground font-medium font-mono">{{
                         formatArea(currentFeature.area_m2)
                       }}</span>
                     </div>
-                    <div v-if="candidateDetail(currentFeature, 'length_m')" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Length</span>
+                    <div
+                      v-if="candidateDetail(currentFeature, 'length_m')"
+                      class="flex gap-3"
+                    >
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Length</span
+                      >
                       <span class="text-foreground font-medium font-mono"
-                        >{{ Number(candidateDetail(currentFeature, 'length_m')).toFixed(2) }} m</span
+                        >{{
+                          Number(
+                            candidateDetail(currentFeature, "length_m"),
+                          ).toFixed(2)
+                        }}
+                        m</span
                       >
                     </div>
                     <div v-if="currentFeature.survey_date" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Surveyed</span>
-                      <span class="text-foreground font-medium font-mono">{{ currentFeature.survey_date }}</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Surveyed</span
+                      >
+                      <span class="text-foreground font-medium font-mono">{{
+                        currentFeature.survey_date
+                      }}</span>
                     </div>
                     <div v-if="currentFeature.origin_label" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Source</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Source</span
+                      >
                       <span class="text-foreground font-medium">{{
                         formatOriginLabel(currentFeature.origin_label)
                       }}</span>
@@ -623,8 +840,12 @@
                     >
                       <Building2 class="h-2.5 w-2.5" />PICC
                     </div>
-                    <h2 class="text-sm font-semibold text-foreground">{{ currentFeature.type_label || 'Building' }}</h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
+                    <h2 class="text-sm font-semibold text-foreground">
+                      {{ currentFeature.type_label || "Building" }}
+                    </h2>
+                    <div
+                      class="text-[10px] font-mono text-muted-foreground mt-0.5"
+                    >
                       ID: {{ currentFeature.source_id }}
                     </div>
                   </div>
@@ -639,12 +860,16 @@
 
                 <!-- Addresses -->
                 <div v-if="currentFeature.addresses" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     Addresses
                   </div>
                   <div class="space-y-0.5 text-xs">
                     <div
-                      v-for="(addr, idx) in parseSemicolonList(currentFeature.addresses)"
+                      v-for="(addr, idx) in parseSemicolonList(
+                        currentFeature.addresses,
+                      )"
                       :key="idx"
                       class="text-foreground font-medium"
                     >
@@ -657,30 +882,47 @@
                 <div
                   v-if="
                     !currentFeature.addresses &&
-                    (currentFeature.street_names || currentFeature.postcodes || currentFeature.municipalities)
+                    (currentFeature.street_names ||
+                      currentFeature.postcodes ||
+                      currentFeature.municipalities)
                   "
                   class="mb-3"
                 >
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     Location
                   </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.street_names" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Street</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Street</span
+                      >
                       <span class="text-foreground font-medium">{{
-                        parseSemicolonList(currentFeature.street_names).join(', ')
+                        parseSemicolonList(currentFeature.street_names).join(
+                          ", ",
+                        )
                       }}</span>
                     </div>
                     <div v-if="currentFeature.postcodes" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Postcode</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Postcode</span
+                      >
                       <span class="text-foreground font-medium">{{
-                        parseSemicolonList(currentFeature.postcodes).join(', ')
+                        parseSemicolonList(currentFeature.postcodes).join(", ")
                       }}</span>
                     </div>
-                    <div v-if="currentFeature.municipalities" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Municipality</span>
+                    <div
+                      v-if="currentFeature.municipalities"
+                      class="flex gap-3"
+                    >
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Municipality</span
+                      >
                       <span class="text-foreground font-medium">{{
-                        parseSemicolonList(currentFeature.municipalities).join(', ')
+                        parseSemicolonList(currentFeature.municipalities).join(
+                          ", ",
+                        )
                       }}</span>
                     </div>
                   </div>
@@ -695,40 +937,64 @@
                     currentFeature.survey_date
                   "
                 >
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     Details
                   </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.area_m2" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Area</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Area</span
+                      >
                       <span class="text-foreground font-medium font-mono">{{
                         formatArea(currentFeature.area_m2)
                       }}</span>
                     </div>
                     <div v-if="currentFeature.type_code" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Type</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Type</span
+                      >
                       <span class="text-foreground font-medium">{{
                         currentFeature.type_label || currentFeature.type_code
                       }}</span>
                     </div>
                     <div v-if="currentFeature.survey_date" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Surveyed</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Surveyed</span
+                      >
                       <span class="text-foreground font-medium font-mono">{{
                         formatPiccDate(currentFeature.survey_date)
                       }}</span>
                     </div>
-                    <div v-if="candidateDetail(currentFeature, 'date_modif')" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Modified</span>
+                    <div
+                      v-if="candidateDetail(currentFeature, 'date_modif')"
+                      class="flex gap-3"
+                    >
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Modified</span
+                      >
                       <span class="text-foreground font-medium font-mono">{{
-                        formatPiccDate(String(candidateDetail(currentFeature, 'date_modif')))
+                        formatPiccDate(
+                          String(candidateDetail(currentFeature, "date_modif")),
+                        )
                       }}</span>
                     </div>
-                    <div v-if="candidateDetail(currentFeature, 'georef_id')" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">GeoRef</span>
+                    <div
+                      v-if="candidateDetail(currentFeature, 'georef_id')"
+                      class="flex gap-3"
+                    >
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >GeoRef</span
+                      >
                       <span
                         class="text-foreground font-medium font-mono text-[10px] truncate"
-                        :title="String(candidateDetail(currentFeature, 'georef_id'))"
-                        >{{ candidateDetail(currentFeature, 'georef_id') }}</span
+                        :title="
+                          String(candidateDetail(currentFeature, 'georef_id'))
+                        "
+                        >{{
+                          candidateDetail(currentFeature, "georef_id")
+                        }}</span
                       >
                     </div>
                   </div>
@@ -744,8 +1010,12 @@
                     >
                       <Building2 class="h-2.5 w-2.5" />UrbIS
                     </div>
-                    <h2 class="text-sm font-semibold text-foreground">Building</h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
+                    <h2 class="text-sm font-semibold text-foreground">
+                      Building
+                    </h2>
+                    <div
+                      class="text-[10px] font-mono text-muted-foreground mt-0.5"
+                    >
                       ID: {{ currentFeature.source_id }}
                     </div>
                   </div>
@@ -760,12 +1030,16 @@
 
                 <!-- Addresses -->
                 <div v-if="currentFeature.addresses" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     Addresses
                   </div>
                   <div class="space-y-0.5 text-xs">
                     <div
-                      v-for="(addr, idx) in parseSemicolonList(currentFeature.addresses)"
+                      v-for="(addr, idx) in parseSemicolonList(
+                        currentFeature.addresses,
+                      )"
                       :key="idx"
                       class="text-foreground font-medium"
                     >
@@ -778,30 +1052,47 @@
                 <div
                   v-if="
                     !currentFeature.addresses &&
-                    (currentFeature.street_names || currentFeature.postcodes || currentFeature.municipalities)
+                    (currentFeature.street_names ||
+                      currentFeature.postcodes ||
+                      currentFeature.municipalities)
                   "
                   class="mb-3"
                 >
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     Location
                   </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.street_names" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Street</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Street</span
+                      >
                       <span class="text-foreground font-medium">{{
-                        parseSemicolonList(currentFeature.street_names).join(', ')
+                        parseSemicolonList(currentFeature.street_names).join(
+                          ", ",
+                        )
                       }}</span>
                     </div>
                     <div v-if="currentFeature.postcodes" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Postcode</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Postcode</span
+                      >
                       <span class="text-foreground font-medium">{{
-                        parseSemicolonList(currentFeature.postcodes).join(', ')
+                        parseSemicolonList(currentFeature.postcodes).join(", ")
                       }}</span>
                     </div>
-                    <div v-if="currentFeature.municipalities" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Municipality</span>
+                    <div
+                      v-if="currentFeature.municipalities"
+                      class="flex gap-3"
+                    >
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Municipality</span
+                      >
                       <span class="text-foreground font-medium">{{
-                        parseSemicolonList(currentFeature.municipalities).join(', ')
+                        parseSemicolonList(currentFeature.municipalities).join(
+                          ", ",
+                        )
                       }}</span>
                     </div>
                   </div>
@@ -809,25 +1100,36 @@
 
                 <!-- Details -->
                 <div v-if="currentFeature.area_m2 || currentFeature.source_id">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     Details
                   </div>
                   <div class="space-y-1 text-xs">
                     <div v-if="currentFeature.area_m2" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Area</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Area</span
+                      >
                       <span class="text-foreground font-medium font-mono">{{
                         formatArea(currentFeature.area_m2)
                       }}</span>
                     </div>
                     <div v-if="currentFeature.source_id" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">INSPIRE</span>
-                      <span class="text-foreground font-medium font-mono text-[10px]">{{
-                        currentFeature.source_id
-                      }}</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >INSPIRE</span
+                      >
+                      <span
+                        class="text-foreground font-medium font-mono text-[10px]"
+                        >{{ currentFeature.source_id }}</span
+                      >
                     </div>
                     <div v-if="currentFeature.parent_id" class="flex gap-3">
-                      <span class="text-muted-foreground w-20 shrink-0">Block</span>
-                      <span class="text-foreground font-medium font-mono">{{ currentFeature.parent_id }}</span>
+                      <span class="text-muted-foreground w-20 shrink-0"
+                        >Block</span
+                      >
+                      <span class="text-foreground font-medium font-mono">{{
+                        currentFeature.parent_id
+                      }}</span>
                     </div>
                   </div>
                 </div>
@@ -844,12 +1146,15 @@
                     </div>
                     <h2 class="text-sm font-semibold text-foreground">
                       {{
-                        (currentFeature.building && currentFeature.building !== 'yes'
+                        (currentFeature.building &&
+                        currentFeature.building !== "yes"
                           ? currentFeature.building
-                          : null) || 'Building'
+                          : null) || "Building"
                       }}
                     </h2>
-                    <div class="text-[10px] font-mono text-muted-foreground mt-0.5">
+                    <div
+                      class="text-[10px] font-mono text-muted-foreground mt-0.5"
+                    >
                       ID: {{ currentFeature.osm_id }}
                     </div>
                   </div>
@@ -863,62 +1168,100 @@
                 </div>
                 <!-- Grouped OSM tags -->
                 <!-- Address group -->
-                <div v-if="getGroupedOsmProperties(currentFeature).address.length > 0" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                <div
+                  v-if="
+                    getGroupedOsmProperties(currentFeature).address.length > 0
+                  "
+                  class="mb-3"
+                >
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     Address
                   </div>
                   <div class="space-y-1 text-xs">
                     <div
-                      v-for="[key, value] in getGroupedOsmProperties(currentFeature).address"
+                      v-for="[key, value] in getGroupedOsmProperties(
+                        currentFeature,
+                      ).address"
                       :key="key"
                       class="flex gap-3"
                     >
-                      <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{
-                        formatPropertyKey(key)
-                      }}</span>
-                      <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{
-                        formatPropertyValue(value)
-                      }}</span>
+                      <span
+                        class="text-muted-foreground w-20 shrink-0 truncate"
+                        :title="key"
+                        >{{ formatPropertyKey(key) }}</span
+                      >
+                      <span
+                        class="text-foreground font-medium font-mono truncate"
+                        :title="String(value)"
+                        >{{ formatPropertyValue(value) }}</span
+                      >
                     </div>
                   </div>
                 </div>
                 <!-- GRB Source group -->
-                <div v-if="getGroupedOsmProperties(currentFeature).source.length > 0" class="mb-3">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                <div
+                  v-if="
+                    getGroupedOsmProperties(currentFeature).source.length > 0
+                  "
+                  class="mb-3"
+                >
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     GRB Source
                   </div>
                   <div class="space-y-1 text-xs">
                     <div
-                      v-for="[key, value] in getGroupedOsmProperties(currentFeature).source"
+                      v-for="[key, value] in getGroupedOsmProperties(
+                        currentFeature,
+                      ).source"
                       :key="key"
                       class="flex gap-3"
                     >
-                      <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{
-                        formatPropertyKey(key)
-                      }}</span>
-                      <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{
-                        formatPropertyValue(value)
-                      }}</span>
+                      <span
+                        class="text-muted-foreground w-20 shrink-0 truncate"
+                        :title="key"
+                        >{{ formatPropertyKey(key) }}</span
+                      >
+                      <span
+                        class="text-foreground font-medium font-mono truncate"
+                        :title="String(value)"
+                        >{{ formatPropertyValue(value) }}</span
+                      >
                     </div>
                   </div>
                 </div>
                 <!-- Other properties -->
-                <div v-if="getGroupedOsmProperties(currentFeature).other.length > 0">
-                  <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+                <div
+                  v-if="
+                    getGroupedOsmProperties(currentFeature).other.length > 0
+                  "
+                >
+                  <div
+                    class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5"
+                  >
                     Properties
                   </div>
                   <div class="space-y-1 text-xs">
                     <div
-                      v-for="[key, value] in getGroupedOsmProperties(currentFeature).other"
+                      v-for="[key, value] in getGroupedOsmProperties(
+                        currentFeature,
+                      ).other"
                       :key="key"
                       class="flex gap-3"
                     >
-                      <span class="text-muted-foreground w-20 shrink-0 truncate" :title="key">{{
-                        formatPropertyKey(key)
-                      }}</span>
-                      <span class="text-foreground font-medium font-mono truncate" :title="String(value)">{{
-                        formatPropertyValue(value)
-                      }}</span>
+                      <span
+                        class="text-muted-foreground w-20 shrink-0 truncate"
+                        :title="key"
+                        >{{ formatPropertyKey(key) }}</span
+                      >
+                      <span
+                        class="text-foreground font-medium font-mono truncate"
+                        :title="String(value)"
+                        >{{ formatPropertyValue(value) }}</span
+                      >
                     </div>
                   </div>
                 </div>
@@ -927,12 +1270,25 @@
           </template>
 
           <!-- Footer hints -->
-          <div v-if="!isTooltipSticky" class="px-4 py-2 border-t border-white/[0.05]">
-            <p class="text-[9px] text-muted-foreground text-center tracking-wide">Click to pin · Esc to close</p>
+          <div
+            v-if="!isTooltipSticky"
+            class="px-4 py-2 border-t border-white/[0.05]"
+          >
+            <p
+              class="text-[9px] text-muted-foreground text-center tracking-wide"
+            >
+              Click to pin · Esc to close
+            </p>
           </div>
-          <div v-else-if="activeFeatures.length > 1" class="px-4 py-1.5 border-t border-white/[0.05]">
-            <p class="text-[9px] text-muted-foreground text-center tracking-wide">
-              {{ activeFeatureIndex + 1 }} / {{ activeFeatures.length }} features
+          <div
+            v-else-if="activeFeatures.length > 1"
+            class="px-4 py-1.5 border-t border-white/[0.05]"
+          >
+            <p
+              class="text-[9px] text-muted-foreground text-center tracking-wide"
+            >
+              {{ activeFeatureIndex + 1 }} /
+              {{ activeFeatures.length }} features
             </p>
           </div>
         </div>
@@ -953,89 +1309,103 @@ import {
   RotateCcw,
   X,
   ZoomIn,
-  ZoomOut
-} from 'lucide-vue-next'
-import { Fill, Stroke, Style } from 'ol/style'
-import { GeoJSON, MVT } from 'ol/format'
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { fromLonLat, toLonLat } from 'ol/proj'
-import Feature from 'ol/Feature'
-import MatchModeControl from '~/components/MatchModeControl.vue'
-import ObjectInfoPanel from '~/components/ObjectInfoPanel.vue'
-import GettingStartedCard from '~/components/GettingStartedCard.vue'
-import JosmHelpDialog from '~/components/JosmHelpDialog.vue'
-import type { BuildingData } from '~/types/buildingData'
-import type { SearchResult } from '~/composables/useSearch'
-import Switch from '~/components/ui/switch.vue'
-import VectorTileLayer from 'ol/layer/VectorTile'
-import VectorTileSource from 'ol/source/VectorTile'
-import { extractFeaturesFromLayer } from '~/utils/openlayers'
-import { CANDIDATES_CONTRACT, candidateDetail, candidateDisplayId, candidateTileUrl } from '~/utils/candidates'
-import { useAuth } from '~/composables/useAuth'
-import { useJosmExport } from '~/composables/useJosmExport'
-import { useMapLayers } from '~/composables/useMapLayers'
-import { useMatchMode } from '~/composables/useMatchMode'
-import { resolveMatchMode, supportsSourceTags } from '~/utils/matchMode'
-import { useToast } from '~/composables/useToast'
+  ZoomOut,
+} from "lucide-vue-next";
+import { Fill, Stroke, Style } from "ol/style";
+import { GeoJSON, MVT } from "ol/format";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { fromLonLat, toLonLat } from "ol/proj";
+import Feature from "ol/Feature";
+import MatchModeControl from "~/components/MatchModeControl.vue";
+import ObjectInfoPanel from "~/components/ObjectInfoPanel.vue";
+import GettingStartedCard from "~/components/GettingStartedCard.vue";
+import JosmHelpDialog from "~/components/JosmHelpDialog.vue";
+import type { BuildingData } from "~/types/buildingData";
+import type { SearchResult } from "~/composables/useSearch";
+import Switch from "~/components/ui/switch.vue";
+import VectorTileLayer from "ol/layer/VectorTile";
+import VectorTileSource from "ol/source/VectorTile";
+import { extractFeaturesFromLayer } from "~/utils/openlayers";
+import {
+  CANDIDATES_CONTRACT,
+  candidateDetail,
+  candidateDisplayId,
+  candidateTileUrl,
+} from "~/utils/candidates";
+import { useAuth } from "~/composables/useAuth";
+import { useJosmExport } from "~/composables/useJosmExport";
+import { useMapLayers } from "~/composables/useMapLayers";
+import { useMatchMode } from "~/composables/useMatchMode";
+import { resolveMatchMode, supportsSourceTags } from "~/utils/matchMode";
+import { useToast } from "~/composables/useToast";
 
-const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
+const { selectedLocation } = defineProps<{
+  selectedLocation: SearchResult | null;
+}>();
 
-const mapRef = ref<HTMLElement>()
-const { exportLayerToJosm, testJosmConnection, getJosmInstructions } = useJosmExport()
-const josmInstructions = getJosmInstructions()
-const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
-const toast = useToast()
+const mapRef = ref<HTMLElement>();
+const { exportLayerToJosm, testJosmConnection, getJosmInstructions } =
+  useJosmExport();
+const josmInstructions = getJosmInstructions();
+const { matchMode, geometryThreshold, useOverpass } = useMatchMode();
+const toast = useToast();
 
 // Use the map layers composable
-const { map, currentBaseLayer, initializeMap, switchBaseLayer, destroy } = useMapLayers()
+const { map, currentBaseLayer, initializeMap, switchBaseLayer, destroy } =
+  useMapLayers();
 
 // OSM Buildings layer state
-const osmBuildingsLayerRef = ref<any>(null)
+const osmBuildingsLayerRef = ref<any>(null);
 
 // Live OSM layer (Overpass, issue #9): replaces the tile layer while "Live OSM data" is on
-const liveOsmLayerRef = ref<any>(null)
+const liveOsmLayerRef = ref<any>(null);
 
 // GRB Buildings layer state
-const grbBuildingsLayerRef = ref<any>(null)
-const isLoadingGRB = ref(false)
+const grbBuildingsLayerRef = ref<any>(null);
+const isLoadingGRB = ref(false);
 
 // GRB KNW structures layer state
-const knwStructuresLayerRef = ref<any>(null)
+const knwStructuresLayerRef = ref<any>(null);
 
 // PICC Buildings layer state
-const piccBuildingsLayerRef = ref<any>(null)
+const piccBuildingsLayerRef = ref<any>(null);
 
 // UrbIS Buildings layer state
-const urbisBuildingsLayerRef = ref<any>(null)
+const urbisBuildingsLayerRef = ref<any>(null);
 
 // Candidate Buildings layer state
-const candidateBuildingsLayerRef = ref<any>(null)
-const candidateBuildingCount = ref(0)
+const candidateBuildingsLayerRef = ref<any>(null);
+const candidateBuildingCount = ref(0);
 
 // Building feature info panel state
-const hoveredFeatures = ref<any[]>([])
-const clickedFeatures = ref<any[]>([])
-const isTooltipSticky = ref(false)
-const activeFeatureIndex = ref(0)
+const hoveredFeatures = ref<any[]>([]);
+const clickedFeatures = ref<any[]>([]);
+const isTooltipSticky = ref(false);
+const activeFeatureIndex = ref(0);
 
 // Sorted features currently being displayed (hover or pinned)
 const activeFeatures = computed(() =>
-  sortFeatures(isTooltipSticky.value ? clickedFeatures.value : hoveredFeatures.value)
-)
+  sortFeatures(
+    isTooltipSticky.value ? clickedFeatures.value : hoveredFeatures.value,
+  ),
+);
 
 // Currently selected feature from the switcher
-const currentFeature = computed(() => activeFeatures.value[activeFeatureIndex.value] || activeFeatures.value[0])
+const currentFeature = computed(
+  () =>
+    activeFeatures.value[activeFeatureIndex.value] || activeFeatures.value[0],
+);
 
 // Reset switcher index when the feature list changes
 watch(
   () => activeFeatures.value.length,
   () => {
-    activeFeatureIndex.value = 0
-  }
-)
+    activeFeatureIndex.value = 0;
+  },
+);
 
-const controlsCollapsed = ref(false)
-const layersCollapsed = ref(false)
+const controlsCollapsed = ref(false);
+const layersCollapsed = ref(false);
 
 // Overlay layers (can be combined)
 const overlayLayers = ref({
@@ -1047,25 +1417,25 @@ const overlayLayers = ref({
   knwStructures: false,
   osmBuildings: true,
   piccBuildings: false,
-  urbisBuildings: false
-})
+  urbisBuildings: false,
+});
 
-const currentZoom = ref(8)
-const currentCenter = ref<[number, number]>([4.3517, 50.8503])
-const panelOpen = ref(false)
-const activeBuilding = ref<BuildingData | null>(null)
+const currentZoom = ref(8);
+const currentCenter = ref<[number, number]>([4.3517, 50.8503]);
+const panelOpen = ref(false);
+const activeBuilding = ref<BuildingData | null>(null);
 
 // Matching stats state
 const matchingStats = ref<{
-  totalGrb: number
-  totalOsm: number
-  matched: number
-  unmatched: number
-} | null>(null)
+  totalGrb: number;
+  totalOsm: number;
+  matched: number;
+  unmatched: number;
+} | null>(null);
 
 // Candidate buildings state
-const originalCandidateFeatures = ref<any[]>([]) // Store original features for reset
-const isCalculatingDifference = ref(false) // Loading state for Get Difference button
+const originalCandidateFeatures = ref<any[]>([]); // Store original features for reset
+const isCalculatingDifference = ref(false); // Loading state for Get Difference button
 
 // Workflow prerequisites (issue: turn gates into visible guidance).
 // At least one source layer (GRB, KNW, PICC, or UrbIS) must be loaded and visible.
@@ -1074,794 +1444,871 @@ const hasSourceLayer = computed(() =>
     (grbBuildingsLayerRef.value && overlayLayers.value.grbBuildings) ||
     (knwStructuresLayerRef.value && overlayLayers.value.knwStructures) ||
     (piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings) ||
-    (urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings)
-  )
-)
-const hasOsmLayer = computed(() => Boolean(osmBuildingsLayerRef.value && overlayLayers.value.osmBuildings))
-const canCalculateDifference = ref(false)
+    (urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings),
+  ),
+);
+const hasOsmLayer = computed(() =>
+  Boolean(osmBuildingsLayerRef.value && overlayLayers.value.osmBuildings),
+);
+const canCalculateDifference = ref(false);
 
 // Difference workflow lifecycle state, surfaced as a persistent results panel
 // Instead of disappearing toasts.
-type DifferenceState = 'idle' | 'loading' | 'success' | 'empty' | 'error'
-const differenceState = ref<DifferenceState>('idle')
-const differenceError = ref('')
+type DifferenceState = "idle" | "loading" | "success" | "empty" | "error";
+const differenceState = ref<DifferenceState>("idle");
+const differenceError = ref("");
 
 // Optional geometry simplification applied at export time (reuses the export's mapshaper path).
-const simplifyOnExport = ref(false)
-const simplifyPercent = ref(85)
+const simplifyOnExport = ref(false);
+const simplifyPercent = ref(85);
 
 // Soft cap on rendered/exported candidates (mass-import safety + browser performance).
-const CANDIDATE_RENDER_CAP = 2000
-const candidateTotalInView = ref(0)
-const candidateCapped = ref(false)
+const CANDIDATE_RENDER_CAP = 2000;
+const candidateTotalInView = ref(0);
+const candidateCapped = ref(false);
 
 // JOSM remote-control connection status (null = not checked yet)
-const josmConnected = ref<boolean | null>(null)
-const josmTesting = ref(false)
-const josmHelpOpen = ref(false)
+const josmConnected = ref<boolean | null>(null);
+const josmTesting = ref(false);
+const josmHelpOpen = ref(false);
 
 const checkJosm = async () => {
-  josmTesting.value = true
+  josmTesting.value = true;
   try {
-    josmConnected.value = await testJosmConnection()
+    josmConnected.value = await testJosmConnection();
   } catch {
-    josmConnected.value = false
+    josmConnected.value = false;
   } finally {
-    josmTesting.value = false
+    josmTesting.value = false;
   }
-}
+};
 
 // Open the layers panel and scroll a hint into view (used by the checklist).
 const revealLayersPanel = () => {
-  layersCollapsed.value = false
-}
+  layersCollapsed.value = false;
+};
 
 const zoomToWorkingLevel = () => {
-  if (!map.value) return
-  const view = map.value.getView()
-  view.animate({ duration: 600, zoom: Math.max(16, view.getZoom() || 16) })
-}
+  if (!map.value) return;
+  const view = map.value.getView();
+  view.animate({ duration: 600, zoom: Math.max(16, view.getZoom() || 16) });
+};
 
 const dismissResults = () => {
-  differenceState.value = 'idle'
-  matchingStats.value = null
-}
+  differenceState.value = "idle";
+  matchingStats.value = null;
+};
 
 // Keyboard shortcuts: G = Get Difference, J = open in JOSM. Ignored while typing.
 const handleKeydown = (e: KeyboardEvent) => {
-  if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return
-  const target = e.target as HTMLElement | null
-  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+  if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+  const target = e.target as HTMLElement | null;
+  if (
+    target &&
+    (target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable)
+  )
+    return;
 
-  const key = e.key.toLowerCase()
-  if (key === 'g' && canCalculateDifference.value && !isCalculatingDifference.value) {
-    e.preventDefault()
-    calculateDifference()
-  } else if (key === 'j' && canExportToJOSM.value) {
-    e.preventDefault()
-    exportToJOSM()
+  const key = e.key.toLowerCase();
+  if (
+    key === "g" &&
+    canCalculateDifference.value &&
+    !isCalculatingDifference.value
+  ) {
+    e.preventDefault();
+    calculateDifference();
+  } else if (key === "j" && canExportToJOSM.value) {
+    e.preventDefault();
+    exportToJOSM();
   }
-}
+};
 
 const coveragePct = computed(() => {
-  const s = matchingStats.value
-  if (!s || !s.totalGrb) return 0
-  return Math.round((s.matched / s.totalGrb) * 100)
-})
+  const s = matchingStats.value;
+  if (!s || !s.totalGrb) return 0;
+  return Math.round((s.matched / s.totalGrb) * 100);
+});
 
 // Source/combined modes are GRB-only; other sources are matched by geometry (see resolveMatchMode).
 const effectiveMatchMode = computed(
-  () => resolveMatchMode(matchMode.value, selectedSource.value === 'none' ? 'grb' : selectedSource.value).mode
-)
+  () =>
+    resolveMatchMode(
+      matchMode.value,
+      selectedSource.value === "none" ? "grb" : selectedSource.value,
+    ).mode,
+);
 
 // Short, human label for what produced the current results (which mode, freshness).
 const matchSummary = computed(() => {
-  const pct = Math.round(geometryThreshold.value * 100)
+  const pct = Math.round(geometryThreshold.value * 100);
   const mode =
-    effectiveMatchMode.value === 'source'
-      ? 'Source tag'
-      : effectiveMatchMode.value === 'both'
+    effectiveMatchMode.value === "source"
+      ? "Source tag"
+      : effectiveMatchMode.value === "both"
         ? `Geometry ${pct}% + source tag`
-        : `Geometry ${pct}%`
-  const freshness = useOverpass.value ? 'live Overpass' : 'OSM mirror'
-  return `${mode} · ${freshness}`
-})
+        : `Geometry ${pct}%`;
+  const freshness = useOverpass.value ? "live Overpass" : "OSM mirror";
+  return `${mode} · ${freshness}`;
+});
 
 // Computed property to check if JOSM export button should be enabled
 const canExportToJOSM = computed(
   () =>
     // Check if there are candidate buildings
-    candidateBuildingCount.value > 0
-)
+    candidateBuildingCount.value > 0,
+);
 
 watch(
   () => selectedLocation,
   (loc) => {
-    if (!loc || !map.value) return
-    const coords = fromLonLat(loc.coordinates)
+    if (!loc || !map.value) return;
+    const coords = fromLonLat(loc.coordinates);
     map.value.getView().animate({
       center: coords,
       duration: 1000,
-      zoom: 16
-    })
-  }
-)
+      zoom: 16,
+    });
+  },
+);
 
 // Watch for match mode changes and refetch candidate buildings if they're already loaded
 watch(matchMode, () => {
   if (candidateBuildingsLayerRef.value)
     // Refetch candidate buildings with the new match mode
-    calculateDifference()
-})
+    calculateDifference();
+});
 
 watch(geometryThreshold, () => {
-  if ((matchMode.value === 'geometry' || matchMode.value === 'both') && candidateBuildingsLayerRef.value)
-    calculateDifference()
-})
+  if (
+    (matchMode.value === "geometry" || matchMode.value === "both") &&
+    candidateBuildingsLayerRef.value
+  )
+    calculateDifference();
+});
 
 watch(useOverpass, (live) => {
-  if (!live) clearLiveOsmLayer()
-  if (candidateBuildingsLayerRef.value) calculateDifference()
-})
+  if (!live) clearLiveOsmLayer();
+  if (candidateBuildingsLayerRef.value) calculateDifference();
+});
 
 const setupMap = () => {
-  if (!mapRef.value) return
+  if (!mapRef.value) return;
 
   // Initialize map with composable
   const mapInstance = initializeMap(mapRef.value, {
     center: [4.3517, 50.8503],
-    zoom: 8
-  })
+    zoom: 8,
+  });
 
   // Update reactive values when map moves
-  mapInstance.on('moveend', () => {
-    if (!map.value) return
-    const view = map.value.getView()
-    const zoom = Math.round(view.getZoom() || 13)
-    currentZoom.value = zoom
-    const center = view.getCenter()
+  mapInstance.on("moveend", () => {
+    if (!map.value) return;
+    const view = map.value.getView();
+    const zoom = Math.round(view.getZoom() || 13);
+    currentZoom.value = zoom;
+    const center = view.getCenter();
     if (center) {
-      const [lon, lat] = toLonLat(center)
-      if (lon !== undefined && lat !== undefined) currentCenter.value = [lon, lat]
+      const [lon, lat] = toLonLat(center);
+      if (lon !== undefined && lat !== undefined)
+        currentCenter.value = [lon, lat];
     }
 
     // Handle visibility of building layers based on zoom
-    handleZoomBasedLayerVisibility(zoom)
-  })
-}
+    handleZoomBasedLayerVisibility(zoom);
+  });
+};
 
 const zoomIn = () => {
-  if (!map.value) return
-  const view = map.value.getView()
+  if (!map.value) return;
+  const view = map.value.getView();
   view.animate({
     duration: 250,
-    zoom: (view.getZoom() || 13) + 1
-  })
-}
+    zoom: (view.getZoom() || 13) + 1,
+  });
+};
 
 const zoomOut = () => {
-  if (!map.value) return
-  const view = map.value.getView()
+  if (!map.value) return;
+  const view = map.value.getView();
   view.animate({
     duration: 250,
-    zoom: (view.getZoom() || 13) - 1
-  })
-}
+    zoom: (view.getZoom() || 13) - 1,
+  });
+};
 
 const resetView = () => {
-  if (!map.value) return
+  if (!map.value) return;
   map.value.getView().animate({
     center: fromLonLat([4.3517, 50.8503]),
     duration: 1000,
-    zoom: 8
-  })
-}
+    zoom: 8,
+  });
+};
 
 // Handle visibility of building layers based on zoom level
 const handleZoomBasedLayerVisibility = (zoom: number) => {
-  if (!map.value) return
+  if (!map.value) return;
 
-  const shouldShowBuildings = zoom >= 16
+  const shouldShowBuildings = zoom >= 16;
 
   // Only show/hide existing layers, don't auto-load
   if (osmBuildingsLayerRef.value)
     osmBuildingsLayerRef.value.setVisible(
-      shouldShowBuildings && overlayLayers.value.osmBuildings && !liveOsmLayerRef.value
-    )
+      shouldShowBuildings &&
+        overlayLayers.value.osmBuildings &&
+        !liveOsmLayerRef.value,
+    );
 
-  if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.osmBuildings)
+  if (liveOsmLayerRef.value)
+    liveOsmLayerRef.value.setVisible(
+      shouldShowBuildings && overlayLayers.value.osmBuildings,
+    );
 
   if (grbBuildingsLayerRef.value)
-    grbBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.grbBuildings)
+    grbBuildingsLayerRef.value.setVisible(
+      shouldShowBuildings && overlayLayers.value.grbBuildings,
+    );
 
   if (knwStructuresLayerRef.value)
-    knwStructuresLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.knwStructures)
+    knwStructuresLayerRef.value.setVisible(
+      shouldShowBuildings && overlayLayers.value.knwStructures,
+    );
 
   if (piccBuildingsLayerRef.value)
-    piccBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.piccBuildings)
+    piccBuildingsLayerRef.value.setVisible(
+      shouldShowBuildings && overlayLayers.value.piccBuildings,
+    );
 
   if (urbisBuildingsLayerRef.value)
-    urbisBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.urbisBuildings)
-}
+    urbisBuildingsLayerRef.value.setVisible(
+      shouldShowBuildings && overlayLayers.value.urbisBuildings,
+    );
+};
 
 // Handle Load GRB KNW structures using Vector Tiles
 const handleLoadKNW = () => {
   if (!map.value) {
-    console.error('Map not initialized')
-    return
+    console.error("Map not initialized");
+    return;
   }
 
   try {
-    if (knwStructuresLayerRef.value) map.value.removeLayer(knwStructuresLayerRef.value)
+    if (knwStructuresLayerRef.value)
+      map.value.removeLayer(knwStructuresLayerRef.value);
 
     const knwTileSource = new VectorTileSource({
-      attributions: '© GRB Kunstwerken',
+      attributions: "© GRB Kunstwerken",
       format: new MVT(),
       maxZoom: 18,
       minZoom: 10,
-      url: candidateTileUrl('knw')
-    })
+      url: candidateTileUrl("knw"),
+    });
 
     const knwStyleFunction = (feature: any) => {
-      const isHovered = feature.get('hovered')
+      const isHovered = feature.get("hovered");
 
-      let fillColor = hslVar('--layer-knw', 0.14)
-      let strokeColor = hslVar('--layer-knw', 1)
+      let fillColor = hslVar("--layer-knw", 0.14);
+      let strokeColor = hslVar("--layer-knw", 1);
 
       if (isHovered) {
-        fillColor = hslVar('--layer-knw', 0.28)
-        strokeColor = hslVar('--layer-knw-light', 1)
+        fillColor = hslVar("--layer-knw", 0.28);
+        strokeColor = hslVar("--layer-knw-light", 1);
       }
 
       return new Style({
         fill: new Fill({ color: fillColor }),
         stroke: new Stroke({
           color: strokeColor,
-          width: isHovered ? 3 : 2
-        })
-      })
-    }
+          width: isHovered ? 3 : 2,
+        }),
+      });
+    };
 
     const knwTileLayer = new VectorTileLayer({
       properties: {
-        title: 'GRB Kunstwerken',
-        type: 'overlay'
+        title: "GRB Kunstwerken",
+        type: "overlay",
       },
       source: knwTileSource,
       style: knwStyleFunction,
-      zIndex: 10
-    })
+      zIndex: 10,
+    });
 
-    knwStructuresLayerRef.value = knwTileLayer
-    map.value.addLayer(knwTileLayer)
-    knwTileLayer.setVisible(false)
+    knwStructuresLayerRef.value = knwTileLayer;
+    map.value.addLayer(knwTileLayer);
+    knwTileLayer.setVisible(false);
   } catch (error) {
-    console.error('Failed to load GRB kunstwerken:', error)
+    console.error("Failed to load GRB kunstwerken:", error);
   }
-}
+};
 
 // Read HSL CSS variable and return color string for OpenLayers
 const hslVar = (name: string, alpha: number): string => {
-  const hsl = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-  return `hsl(${hsl} / ${alpha})`
-}
+  const hsl = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  return `hsl(${hsl} / ${alpha})`;
+};
 
 // Handle Load OSM Buildings using Vector Tiles from Martin
 const handleLoadOSM = () => {
   if (!map.value) {
-    console.error('Map not initialized')
-    return
+    console.error("Map not initialized");
+    return;
   }
 
   try {
     // Remove existing OSM buildings layer if present
-    if (osmBuildingsLayerRef.value) map.value.removeLayer(osmBuildingsLayerRef.value)
+    if (osmBuildingsLayerRef.value)
+      map.value.removeLayer(osmBuildingsLayerRef.value);
 
     // Create vector tile source for OSM buildings
     const osmTileSource = new VectorTileSource({
-      attributions: '© OpenStreetMap contributors',
+      attributions: "© OpenStreetMap contributors",
       format: new MVT(),
       maxZoom: 18,
       minZoom: 10,
-      url: '/tiles/osm/osm_buildings/{z}/{x}/{y}'
-    })
+      url: "/tiles/osm/osm_buildings/{z}/{x}/{y}",
+    });
 
     // Style function for OSM buildings
     const osmStyleFunction = (feature: any) => {
-      const isHovered = feature.get('hovered')
-      const source = feature.get('source') || ''
+      const isHovered = feature.get("hovered");
+      const source = feature.get("source") || "";
 
-      let fillColor = hslVar('--layer-osm', 0.15)
-      let strokeColor = hslVar('--layer-osm', 1)
+      let fillColor = hslVar("--layer-osm", 0.15);
+      let strokeColor = hslVar("--layer-osm", 1);
 
-      if (source.includes('Gbg')) {
-        fillColor = hslVar('--layer-osm-light', 0.15)
-        strokeColor = hslVar('--layer-osm-light', 1)
+      if (source.includes("Gbg")) {
+        fillColor = hslVar("--layer-osm-light", 0.15);
+        strokeColor = hslVar("--layer-osm-light", 1);
       }
 
       if (isHovered) {
-        fillColor = hslVar('--layer-osm', 0.3)
-        strokeColor = hslVar('--layer-osm-light', 1)
+        fillColor = hslVar("--layer-osm", 0.3);
+        strokeColor = hslVar("--layer-osm-light", 1);
       }
 
       return new Style({
         fill: new Fill({
-          color: fillColor
+          color: fillColor,
         }),
         stroke: new Stroke({
           color: strokeColor,
-          width: isHovered ? 3 : 2
-        })
-      })
-    }
+          width: isHovered ? 3 : 2,
+        }),
+      });
+    };
 
     // Create vector tile layer
     const osmTileLayer = new VectorTileLayer({
       properties: {
-        title: 'OSM Buildings',
-        type: 'overlay'
+        title: "OSM Buildings",
+        type: "overlay",
       },
       source: osmTileSource,
       style: osmStyleFunction,
-      zIndex: 9
-    })
+      zIndex: 9,
+    });
 
     // Add layer to map
-    osmBuildingsLayerRef.value = osmTileLayer
-    map.value.addLayer(osmTileLayer)
+    osmBuildingsLayerRef.value = osmTileLayer;
+    map.value.addLayer(osmTileLayer);
 
     // Update UI state
-    overlayLayers.value.osmBuildings = true
+    overlayLayers.value.osmBuildings = true;
 
     // Set initial visibility based on current zoom level
-    const currentZoomLevel = Math.round(map.value.getView().getZoom() || 13)
-    const shouldShow = currentZoomLevel >= 16 && overlayLayers.value.osmBuildings
-    osmTileLayer.setVisible(shouldShow)
+    const currentZoomLevel = Math.round(map.value.getView().getZoom() || 13);
+    const shouldShow =
+      currentZoomLevel >= 16 && overlayLayers.value.osmBuildings;
+    osmTileLayer.setVisible(shouldShow);
   } catch (error) {
-    console.error('Failed to load OSM buildings:', error)
+    console.error("Failed to load OSM buildings:", error);
   }
-}
+};
 
 // Handle Load GRB Buildings using Vector Tiles
 const handleLoadGRB = () => {
   if (!map.value) {
-    console.error('Map not initialized')
-    return
+    console.error("Map not initialized");
+    return;
   }
 
   try {
-    isLoadingGRB.value = true
+    isLoadingGRB.value = true;
 
     // Remove existing GRB buildings layer if present
-    if (grbBuildingsLayerRef.value) map.value.removeLayer(grbBuildingsLayerRef.value)
+    if (grbBuildingsLayerRef.value)
+      map.value.removeLayer(grbBuildingsLayerRef.value);
 
     // Create vector tile source for GRB buildings
     const grbTileSource = new VectorTileSource({
-      attributions: '© GRB Buildings',
+      attributions: "© GRB Buildings",
       format: new MVT(),
       maxZoom: 18,
       minZoom: 10,
-      url: candidateTileUrl('grb')
-    })
+      url: candidateTileUrl("grb"),
+    });
 
     // Style function for GRB buildings
     const grbStyleFunction = (feature: any) => {
-      const isHovered = feature.get('hovered')
-      const buildingType = feature.get('building_type')
+      const isHovered = feature.get("hovered");
+      const buildingType = feature.get("building_type");
 
-      let fillColor = hslVar('--layer-grb', 0.15)
-      if (buildingType === 'shed') fillColor = hslVar('--layer-grb-dark', 0.15)
+      let fillColor = hslVar("--layer-grb", 0.15);
+      if (buildingType === "shed") fillColor = hslVar("--layer-grb-dark", 0.15);
 
-      let strokeColor = hslVar('--layer-grb', 1)
+      let strokeColor = hslVar("--layer-grb", 1);
 
       if (isHovered) {
-        fillColor = hslVar('--layer-grb', 0.3)
-        strokeColor = hslVar('--layer-grb-light', 1)
+        fillColor = hslVar("--layer-grb", 0.3);
+        strokeColor = hslVar("--layer-grb-light", 1);
       }
 
       return new Style({
         fill: new Fill({
-          color: fillColor
+          color: fillColor,
         }),
         stroke: new Stroke({
           color: strokeColor,
-          width: isHovered ? 3 : 2
-        })
-      })
-    }
+          width: isHovered ? 3 : 2,
+        }),
+      });
+    };
 
     // Create vector tile layer
     const grbTileLayer = new VectorTileLayer({
       properties: {
-        title: 'GRB Buildings',
-        type: 'overlay'
+        title: "GRB Buildings",
+        type: "overlay",
       },
       source: grbTileSource,
       style: grbStyleFunction,
-      zIndex: 10
-    })
+      zIndex: 10,
+    });
 
     // Add layer to map (hidden by default — user toggles it on)
-    grbBuildingsLayerRef.value = grbTileLayer
-    map.value.addLayer(grbTileLayer)
-    grbTileLayer.setVisible(false)
+    grbBuildingsLayerRef.value = grbTileLayer;
+    map.value.addLayer(grbTileLayer);
+    grbTileLayer.setVisible(false);
   } catch (error) {
-    console.error('Failed to load GRB buildings:', error)
+    console.error("Failed to load GRB buildings:", error);
   } finally {
-    isLoadingGRB.value = false
+    isLoadingGRB.value = false;
   }
-}
+};
 
 // Handle Load PICC Buildings using Vector Tiles from Martin
 const handleLoadPICC = () => {
   if (!map.value) {
-    console.error('Map not initialized')
-    return
+    console.error("Map not initialized");
+    return;
   }
 
   try {
     // Remove existing PICC buildings layer if present
-    if (piccBuildingsLayerRef.value) map.value.removeLayer(piccBuildingsLayerRef.value)
+    if (piccBuildingsLayerRef.value)
+      map.value.removeLayer(piccBuildingsLayerRef.value);
 
     // Create vector tile source for PICC buildings
     const piccTileSource = new VectorTileSource({
-      attributions: '© PICC Wallonia',
+      attributions: "© PICC Wallonia",
       format: new MVT(),
       maxZoom: 18,
       minZoom: 10,
-      url: candidateTileUrl('picc')
-    })
+      url: candidateTileUrl("picc"),
+    });
 
     // Style function for PICC buildings
     const piccStyleFunction = (feature: any) => {
-      const isHovered = feature.get('hovered')
+      const isHovered = feature.get("hovered");
 
-      let fillColor = hslVar('--layer-picc', 0.15)
-      let strokeColor = hslVar('--layer-picc', 1)
+      let fillColor = hslVar("--layer-picc", 0.15);
+      let strokeColor = hslVar("--layer-picc", 1);
 
       if (isHovered) {
-        fillColor = hslVar('--layer-picc', 0.3)
-        strokeColor = hslVar('--layer-picc-light', 1)
+        fillColor = hslVar("--layer-picc", 0.3);
+        strokeColor = hslVar("--layer-picc-light", 1);
       }
 
       return new Style({
         fill: new Fill({
-          color: fillColor
+          color: fillColor,
         }),
         stroke: new Stroke({
           color: strokeColor,
-          width: isHovered ? 3 : 2
-        })
-      })
-    }
+          width: isHovered ? 3 : 2,
+        }),
+      });
+    };
 
     // Create vector tile layer
     const piccTileLayer = new VectorTileLayer({
       properties: {
-        title: 'PICC Buildings',
-        type: 'overlay'
+        title: "PICC Buildings",
+        type: "overlay",
       },
       source: piccTileSource,
       style: piccStyleFunction,
-      zIndex: 11
-    })
+      zIndex: 11,
+    });
 
     // Add layer to map (hidden by default — user toggles it on)
-    piccBuildingsLayerRef.value = piccTileLayer
-    map.value.addLayer(piccTileLayer)
-    piccTileLayer.setVisible(false)
+    piccBuildingsLayerRef.value = piccTileLayer;
+    map.value.addLayer(piccTileLayer);
+    piccTileLayer.setVisible(false);
   } catch (error) {
-    console.error('Failed to load PICC buildings:', error)
+    console.error("Failed to load PICC buildings:", error);
   }
-}
+};
 
 // Handle Load UrbIS Buildings using Vector Tiles from Martin
 const handleLoadUrbis = () => {
   if (!map.value) {
-    console.error('Map not initialized')
-    return
+    console.error("Map not initialized");
+    return;
   }
 
   try {
     // Remove existing UrbIS buildings layer if present
-    if (urbisBuildingsLayerRef.value) map.value.removeLayer(urbisBuildingsLayerRef.value)
+    if (urbisBuildingsLayerRef.value)
+      map.value.removeLayer(urbisBuildingsLayerRef.value);
 
     // Create vector tile source for UrbIS buildings
     const urbisTileSource = new VectorTileSource({
-      attributions: '© UrbIS Brussels',
+      attributions: "© UrbIS Brussels",
       format: new MVT(),
       maxZoom: 18,
       minZoom: 10,
-      url: candidateTileUrl('urbis')
-    })
+      url: candidateTileUrl("urbis"),
+    });
 
     // Style function for UrbIS buildings
     const urbisStyleFunction = (feature: any) => {
-      const isHovered = feature.get('hovered')
+      const isHovered = feature.get("hovered");
 
-      let fillColor = hslVar('--layer-urbis', 0.15)
-      let strokeColor = hslVar('--layer-urbis', 1)
+      let fillColor = hslVar("--layer-urbis", 0.15);
+      let strokeColor = hslVar("--layer-urbis", 1);
 
       if (isHovered) {
-        fillColor = hslVar('--layer-urbis', 0.3)
-        strokeColor = hslVar('--layer-urbis-light', 1)
+        fillColor = hslVar("--layer-urbis", 0.3);
+        strokeColor = hslVar("--layer-urbis-light", 1);
       }
 
       return new Style({
         fill: new Fill({
-          color: fillColor
+          color: fillColor,
         }),
         stroke: new Stroke({
           color: strokeColor,
-          width: isHovered ? 3 : 2
-        })
-      })
-    }
+          width: isHovered ? 3 : 2,
+        }),
+      });
+    };
 
     // Create vector tile layer
     const urbisTileLayer = new VectorTileLayer({
       properties: {
-        title: 'UrbIS Buildings',
-        type: 'overlay'
+        title: "UrbIS Buildings",
+        type: "overlay",
       },
       source: urbisTileSource,
       style: urbisStyleFunction,
-      zIndex: 12
-    })
+      zIndex: 12,
+    });
 
     // Add layer to map (hidden by default — user toggles it on)
-    urbisBuildingsLayerRef.value = urbisTileLayer
-    map.value.addLayer(urbisTileLayer)
-    urbisTileLayer.setVisible(false)
+    urbisBuildingsLayerRef.value = urbisTileLayer;
+    map.value.addLayer(urbisTileLayer);
+    urbisTileLayer.setVisible(false);
   } catch (error) {
-    console.error('Failed to load UrbIS buildings:', error)
+    console.error("Failed to load UrbIS buildings:", error);
   }
-}
+};
 
 // Layer toggle functions (kept for layer panel compatibility)
 
 const toggleCandidateBuildings = (visible: boolean) => {
-  overlayLayers.value.candidateBuildings = visible
+  overlayLayers.value.candidateBuildings = visible;
 
   // Toggle visibility of candidate buildings layer
-  if (candidateBuildingsLayerRef.value) candidateBuildingsLayerRef.value.setVisible(visible)
-}
+  if (candidateBuildingsLayerRef.value)
+    candidateBuildingsLayerRef.value.setVisible(visible);
+};
 
 const toggleOsmBuildings = (visible: boolean) => {
-  overlayLayers.value.osmBuildings = visible
+  overlayLayers.value.osmBuildings = visible;
 
   // Toggle visibility of OSM buildings layer
-  if (osmBuildingsLayerRef.value) osmBuildingsLayerRef.value.setVisible(visible && !liveOsmLayerRef.value)
+  if (osmBuildingsLayerRef.value)
+    osmBuildingsLayerRef.value.setVisible(visible && !liveOsmLayerRef.value);
 
-  if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(visible)
-}
+  if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(visible);
+};
 
 const toggleGrbBuildings = (visible: boolean) => {
-  overlayLayers.value.grbBuildings = visible
-  const shouldShow = visible && currentZoom.value >= 16
+  overlayLayers.value.grbBuildings = visible;
+  const shouldShow = visible && currentZoom.value >= 16;
 
-  if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(shouldShow)
+  if (grbBuildingsLayerRef.value)
+    grbBuildingsLayerRef.value.setVisible(shouldShow);
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
     if (overlayLayers.value.piccBuildings) {
-      overlayLayers.value.piccBuildings = false
-      if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
+      overlayLayers.value.piccBuildings = false;
+      if (piccBuildingsLayerRef.value)
+        piccBuildingsLayerRef.value.setVisible(false);
     }
     if (overlayLayers.value.urbisBuildings) {
-      overlayLayers.value.urbisBuildings = false
-      if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
+      overlayLayers.value.urbisBuildings = false;
+      if (urbisBuildingsLayerRef.value)
+        urbisBuildingsLayerRef.value.setVisible(false);
     }
     if (overlayLayers.value.knwStructures) {
-      overlayLayers.value.knwStructures = false
-      if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
+      overlayLayers.value.knwStructures = false;
+      if (knwStructuresLayerRef.value)
+        knwStructuresLayerRef.value.setVisible(false);
     }
   }
-}
+};
 
 const toggleKnwStructures = (visible: boolean) => {
-  overlayLayers.value.knwStructures = visible
-  const shouldShow = visible && currentZoom.value >= 16
+  overlayLayers.value.knwStructures = visible;
+  const shouldShow = visible && currentZoom.value >= 16;
 
-  if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(shouldShow)
+  if (knwStructuresLayerRef.value)
+    knwStructuresLayerRef.value.setVisible(shouldShow);
 
   if (visible) {
     if (overlayLayers.value.piccBuildings) {
-      overlayLayers.value.piccBuildings = false
-      if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
+      overlayLayers.value.piccBuildings = false;
+      if (piccBuildingsLayerRef.value)
+        piccBuildingsLayerRef.value.setVisible(false);
     }
     if (overlayLayers.value.urbisBuildings) {
-      overlayLayers.value.urbisBuildings = false
-      if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
+      overlayLayers.value.urbisBuildings = false;
+      if (urbisBuildingsLayerRef.value)
+        urbisBuildingsLayerRef.value.setVisible(false);
     }
     if (overlayLayers.value.grbBuildings) {
-      overlayLayers.value.grbBuildings = false
-      if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
+      overlayLayers.value.grbBuildings = false;
+      if (grbBuildingsLayerRef.value)
+        grbBuildingsLayerRef.value.setVisible(false);
     }
   }
-}
+};
 
 const togglePiccBuildings = (visible: boolean) => {
-  overlayLayers.value.piccBuildings = visible
-  const shouldShow = visible && currentZoom.value >= 16
+  overlayLayers.value.piccBuildings = visible;
+  const shouldShow = visible && currentZoom.value >= 16;
 
-  if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(shouldShow)
+  if (piccBuildingsLayerRef.value)
+    piccBuildingsLayerRef.value.setVisible(shouldShow);
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
     if (overlayLayers.value.grbBuildings) {
-      overlayLayers.value.grbBuildings = false
-      if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
+      overlayLayers.value.grbBuildings = false;
+      if (grbBuildingsLayerRef.value)
+        grbBuildingsLayerRef.value.setVisible(false);
     }
     if (overlayLayers.value.knwStructures) {
-      overlayLayers.value.knwStructures = false
-      if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
+      overlayLayers.value.knwStructures = false;
+      if (knwStructuresLayerRef.value)
+        knwStructuresLayerRef.value.setVisible(false);
     }
     if (overlayLayers.value.urbisBuildings) {
-      overlayLayers.value.urbisBuildings = false
-      if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
+      overlayLayers.value.urbisBuildings = false;
+      if (urbisBuildingsLayerRef.value)
+        urbisBuildingsLayerRef.value.setVisible(false);
     }
   }
-}
+};
 
 const toggleUrbisBuildings = (visible: boolean) => {
-  overlayLayers.value.urbisBuildings = visible
-  const shouldShow = visible && currentZoom.value >= 16
+  overlayLayers.value.urbisBuildings = visible;
+  const shouldShow = visible && currentZoom.value >= 16;
 
-  if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(shouldShow)
+  if (urbisBuildingsLayerRef.value)
+    urbisBuildingsLayerRef.value.setVisible(shouldShow);
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
     if (overlayLayers.value.grbBuildings) {
-      overlayLayers.value.grbBuildings = false
-      if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
+      overlayLayers.value.grbBuildings = false;
+      if (grbBuildingsLayerRef.value)
+        grbBuildingsLayerRef.value.setVisible(false);
     }
     if (overlayLayers.value.knwStructures) {
-      overlayLayers.value.knwStructures = false
-      if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
+      overlayLayers.value.knwStructures = false;
+      if (knwStructuresLayerRef.value)
+        knwStructuresLayerRef.value.setVisible(false);
     }
     if (overlayLayers.value.piccBuildings) {
-      overlayLayers.value.piccBuildings = false
-      if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
+      overlayLayers.value.piccBuildings = false;
+      if (piccBuildingsLayerRef.value)
+        piccBuildingsLayerRef.value.setVisible(false);
     }
   }
-}
+};
 
 // Source dataset is single-select (GRB / KNW / PICC / UrbIS are mutually exclusive).
 // Reflect the active one and route clicks through the existing toggle handlers, which
 // Already disable the others.
-type SourceKind = 'grb' | 'knw' | 'picc' | 'urbis'
-const selectedSource = computed<SourceKind | 'none'>(() => {
-  if (overlayLayers.value.grbBuildings) return 'grb'
-  if (overlayLayers.value.knwStructures) return 'knw'
-  if (overlayLayers.value.piccBuildings) return 'picc'
-  if (overlayLayers.value.urbisBuildings) return 'urbis'
-  return 'none'
-})
+type SourceKind = "grb" | "knw" | "picc" | "urbis";
+const selectedSource = computed<SourceKind | "none">(() => {
+  if (overlayLayers.value.grbBuildings) return "grb";
+  if (overlayLayers.value.knwStructures) return "knw";
+  if (overlayLayers.value.piccBuildings) return "picc";
+  if (overlayLayers.value.urbisBuildings) return "urbis";
+  return "none";
+});
 
 const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
-  { key: 'grb', label: 'GRB', varName: '--layer-grb' },
-  { key: 'knw', label: 'KNW', varName: '--layer-knw' },
-  { key: 'picc', label: 'PICC', varName: '--layer-picc' },
-  { key: 'urbis', label: 'UrbIS', varName: '--layer-urbis' }
-]
+  { key: "grb", label: "GRB", varName: "--layer-grb" },
+  { key: "knw", label: "KNW", varName: "--layer-knw" },
+  { key: "picc", label: "PICC", varName: "--layer-picc" },
+  { key: "urbis", label: "UrbIS", varName: "--layer-urbis" },
+];
 
 // Import dates of the official datasets, shown as a tooltip on the source buttons (Issue #59)
-const dataDates = ref<Partial<Record<SourceKind, string | null>>>({})
+const dataDates = ref<Partial<Record<SourceKind, string | null>>>({});
 const dataDateTitle = (src: SourceKind, label: string) => {
-  const iso = dataDates.value[src]
-  if (!iso) return label
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return label
-  return `${label} data imported on ${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
-}
+  const iso = dataDates.value[src];
+  if (!iso) return label;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return label;
+  return `${label} data imported on ${date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}`;
+};
 const loadDataDates = async () => {
   try {
-    dataDates.value = await $fetch<Record<SourceKind, string | null>>('/api/meta/data-dates')
+    dataDates.value = await $fetch<Record<SourceKind, string | null>>(
+      "/api/meta/data-dates",
+    );
   } catch (error) {
-    console.warn('Failed to load data dates:', error)
+    console.warn("Failed to load data dates:", error);
   }
-}
+};
 
 const selectSource = (src: SourceKind) => {
   // Clicking the active dataset turns it off; otherwise switch to it.
-  const turnOn = selectedSource.value !== src
-  if (src === 'grb') toggleGrbBuildings(turnOn)
-  else if (src === 'knw') toggleKnwStructures(turnOn)
-  else if (src === 'picc') togglePiccBuildings(turnOn)
-  else toggleUrbisBuildings(turnOn)
-}
+  const turnOn = selectedSource.value !== src;
+  if (src === "grb") toggleGrbBuildings(turnOn);
+  else if (src === "knw") toggleKnwStructures(turnOn);
+  else if (src === "picc") togglePiccBuildings(turnOn);
+  else toggleUrbisBuildings(turnOn);
+};
 
 // Helper function to calculate polygon centroid
 const getPolygonCentroid = (coords: [number, number][]): [number, number] => {
-  if (!coords || coords.length === 0) return [0, 0]
+  if (!coords || coords.length === 0) return [0, 0];
   let x = 0,
-    y = 0
+    y = 0;
   for (const coord of coords) {
-    x += coord[0]
-    y += coord[1]
+    x += coord[0];
+    y += coord[1];
   }
-  return [x / coords.length, y / coords.length]
-}
+  return [x / coords.length, y / coords.length];
+};
 
 // Helper function to check if a point is inside a polygon (ray casting algorithm)
-const pointInPolygon = (point: [number, number], polygon: [number, number][]): boolean => {
-  const [x, y] = point
-  let inside = false
+const pointInPolygon = (
+  point: [number, number],
+  polygon: [number, number][],
+): boolean => {
+  const [x, y] = point;
+  let inside = false;
 
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const pi = polygon[i]
-    const pj = polygon[j]
-    if (!pi || !pj) continue
-    const [xi, yi] = pi
-    const [xj, yj] = pj
+    const pi = polygon[i];
+    const pj = polygon[j];
+    if (!pi || !pj) continue;
+    const [xi, yi] = pi;
+    const [xj, yj] = pj;
 
-    const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi
-    if (intersect) inside = !inside
+    const intersect =
+      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
   }
 
-  return inside
-}
+  return inside;
+};
 
 // Helper function to check if two polygons overlap significantly
-const polygonsOverlap = (grbCoords: [number, number][], osmCoords: [number, number][]): boolean => {
+const polygonsOverlap = (
+  grbCoords: [number, number][],
+  osmCoords: [number, number][],
+): boolean => {
   // Check if any GRB vertex is inside OSM polygon
-  for (const coord of grbCoords) if (pointInPolygon(coord, osmCoords)) return true
+  for (const coord of grbCoords)
+    if (pointInPolygon(coord, osmCoords)) return true;
 
   // Check if any OSM vertex is inside GRB polygon
-  for (const coord of osmCoords) if (pointInPolygon(coord, grbCoords)) return true
+  for (const coord of osmCoords)
+    if (pointInPolygon(coord, grbCoords)) return true;
 
-  return false
-}
+  return false;
+};
 
 // Helper function to check if a GRB feature has a matching OSM feature
-const hasMatchingOSMFeature = (grbFeature: any, osmFeatures: any[]): boolean => {
-  const grbGeom = grbFeature.geometry
-  if (!grbGeom || !grbGeom.coordinates || grbGeom.type !== 'Polygon') return false
+const hasMatchingOSMFeature = (
+  grbFeature: any,
+  osmFeatures: any[],
+): boolean => {
+  const grbGeom = grbFeature.geometry;
+  if (!grbGeom || !grbGeom.coordinates || grbGeom.type !== "Polygon")
+    return false;
 
-  const [grbCoords] = grbGeom.coordinates // Exterior ring
+  const [grbCoords] = grbGeom.coordinates; // Exterior ring
 
   // Check if any OSM feature overlaps with this GRB feature
   for (const osmFeature of osmFeatures) {
-    const osmSource = osmFeature.properties?.source || ''
+    const osmSource = osmFeature.properties?.source || "";
 
     // Skip OSM features that already have GRB as source
-    if (osmSource.includes('Gbg')) continue
+    if (osmSource.includes("Gbg")) continue;
 
     // Check OSM geometry
-    const osmGeom = osmFeature.geometry
-    if (!osmGeom || !osmGeom.coordinates || osmGeom.type !== 'Polygon') continue
+    const osmGeom = osmFeature.geometry;
+    if (!osmGeom || !osmGeom.coordinates || osmGeom.type !== "Polygon")
+      continue;
 
-    const [osmCoords] = osmGeom.coordinates // Exterior ring
+    const [osmCoords] = osmGeom.coordinates; // Exterior ring
 
     // Check if polygons overlap
-    if (polygonsOverlap(grbCoords, osmCoords)) return true
+    if (polygonsOverlap(grbCoords, osmCoords)) return true;
   }
 
-  return false
-}
+  return false;
+};
 
 // Helper function to get bounding box of a polygon
-const getBoundingBox = (coords: [number, number][]): [number, number, number, number] => {
-  if (!coords || coords.length === 0) return [0, 0, 0, 0]
+const getBoundingBox = (
+  coords: [number, number][],
+): [number, number, number, number] => {
+  if (!coords || coords.length === 0) return [0, 0, 0, 0];
   let maxX = -Infinity,
     maxY = -Infinity,
     minX = Infinity,
-    minY = Infinity
+    minY = Infinity;
   for (const [x, y] of coords) {
-    minX = Math.min(minX, x)
-    minY = Math.min(minY, y)
-    maxX = Math.max(maxX, x)
-    maxY = Math.max(maxY, y)
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
   }
-  return [minX, minY, maxX, maxY]
-}
+  return [minX, minY, maxX, maxY];
+};
 
 // Helper function to check if two bounding boxes overlap or are very close
 const boundingBoxesIntersect = (
   bbox1: [number, number, number, number],
   bbox2: [number, number, number, number],
-  tolerance = 5
+  tolerance = 5,
 ): boolean =>
   // Tolerance in map units (meters in EPSG:31370)
   !(
@@ -1869,859 +2316,948 @@ const boundingBoxesIntersect = (
     bbox1[0] - tolerance > bbox2[2] ||
     bbox1[3] + tolerance < bbox2[1] ||
     bbox1[1] - tolerance > bbox2[3]
-  )
+  );
 
 // Helper function to merge polygon fragments properly
 // Combines all coordinates from fragments and reconstructs the polygon
-const mergePolygonFragments = (polygons: [number, number][][]): [number, number][] => {
-  const [firstPolygon] = polygons
-  if (!firstPolygon) return []
-  if (polygons.length === 1) return firstPolygon
+const mergePolygonFragments = (
+  polygons: [number, number][][],
+): [number, number][] => {
+  const [firstPolygon] = polygons;
+  if (!firstPolygon) return [];
+  if (polygons.length === 1) return firstPolygon;
 
   // For 2+ fragments, combine all unique coordinates and reconstruct
   // The key insight: vector tile fragments overlap at boundaries,
   // So combining all points gives us the complete building outline
-  const allCoords: [number, number][] = []
+  const allCoords: [number, number][] = [];
 
-  for (const polygon of polygons) allCoords.push(...polygon)
+  for (const polygon of polygons) allCoords.push(...polygon);
 
   // Remove duplicate/very close coordinates (within 0.01 units)
-  const uniqueCoords: [number, number][] = []
+  const uniqueCoords: [number, number][] = [];
   for (const coord of allCoords) {
     const isDuplicate = uniqueCoords.some(
-      (existing) => Math.abs(existing[0] - coord[0]) < 0.01 && Math.abs(existing[1] - coord[1]) < 0.01
-    )
-    if (!isDuplicate) uniqueCoords.push(coord)
+      (existing) =>
+        Math.abs(existing[0] - coord[0]) < 0.01 &&
+        Math.abs(existing[1] - coord[1]) < 0.01,
+    );
+    if (!isDuplicate) uniqueCoords.push(coord);
   }
 
-  if (uniqueCoords.length < 3) return firstPolygon
+  if (uniqueCoords.length < 3) return firstPolygon;
 
   // Use Concave Hull (radial sweep) to order points while preserving concavity
   // This is more accurate than angle-from-centroid for concave shapes
-  const ordered = concaveHull(uniqueCoords)
+  const ordered = concaveHull(uniqueCoords);
 
-  return ordered.length >= 3 ? ordered : firstPolygon
-}
+  return ordered.length >= 3 ? ordered : firstPolygon;
+};
 
 // Concave hull algorithm - orders points to form a polygon preserving concavity
 const concaveHull = (points: [number, number][]): [number, number][] => {
-  if (points.length <= 3) return points
+  if (points.length <= 3) return points;
 
   // Find the leftmost point
-  let leftmostIdx = 0
-  let leftmostX = Infinity
+  let leftmostIdx = 0;
+  let leftmostX = Infinity;
   for (const [i, [x]] of points.entries())
     if (x < leftmostX) {
-      leftmostX = x
-      leftmostIdx = i
+      leftmostX = x;
+      leftmostIdx = i;
     }
 
   // Gift wrapping (Jarvis march) algorithm adapted for concave hulls
-  const hull: [number, number][] = []
-  let current = leftmostIdx
-  let previous = -1
+  const hull: [number, number][] = [];
+  let current = leftmostIdx;
+  let previous = -1;
 
   do {
-    const curr = points[current]
-    if (!curr) break
-    hull.push(curr)
-    let next = 0
+    const curr = points[current];
+    if (!curr) break;
+    hull.push(curr);
+    let next = 0;
 
     for (const [i, candidate] of points.entries()) {
-      if (i === current || i === previous) continue
+      if (i === current || i === previous) continue;
 
-      const cross = (a: [number, number], b: [number, number], c: [number, number]) =>
-        (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+      const cross = (
+        a: [number, number],
+        b: [number, number],
+        c: [number, number],
+      ) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
 
-      const nxt = points[next]
+      const nxt = points[next];
 
       if (next === previous || !nxt) {
-        next = i
+        next = i;
       } else {
-        const crossProduct = cross(curr, nxt, candidate)
-        if (crossProduct > 0) next = i
+        const crossProduct = cross(curr, nxt, candidate);
+        if (crossProduct > 0) next = i;
       }
     }
 
-    previous = current
-    current = next
-  } while (current !== leftmostIdx && current !== 0 && hull.length < points.length + 5)
+    previous = current;
+    current = next;
+  } while (
+    current !== leftmostIdx &&
+    current !== 0 &&
+    hull.length < points.length + 5
+  );
 
-  return hull
-}
+  return hull;
+};
 
 // Merge fragmented building features that span multiple tiles
 // Strategy: Group by ID first (matching fragments), then merge by combining coordinates
 const mergeFragmentedBuildings = (features: any[]): any[] => {
-  if (features.length <= 1) return features
+  if (features.length <= 1) return features;
 
-  const merged: any[] = []
-  const processed = new Set<number>()
-  const tolerance = 5 // Meters in EPSG:31370 - tolerance for considering features as fragments of same building
+  const merged: any[] = [];
+  const processed = new Set<number>();
+  const tolerance = 5; // Meters in EPSG:31370 - tolerance for considering features as fragments of same building
 
   for (let i = 0; i < features.length; i++) {
-    if (processed.has(i)) continue
+    if (processed.has(i)) continue;
 
-    const feature = features[i]
-    const coords = feature.geometry?.coordinates?.[0]
+    const feature = features[i];
+    const coords = feature.geometry?.coordinates?.[0];
     if (!coords) {
-      merged.push(feature)
-      processed.add(i)
-      continue
+      merged.push(feature);
+      processed.add(i);
+      continue;
     }
 
     // Find all features that should be merged with this one
-    const featureId = feature.properties?.id
-    const bbox1 = getBoundingBox(coords)
-    const fragmentsToMerge = [{ coords, properties: feature.properties }]
+    const featureId = feature.properties?.id;
+    const bbox1 = getBoundingBox(coords);
+    const fragmentsToMerge = [{ coords, properties: feature.properties }];
 
     for (let j = i + 1; j < features.length; j++) {
-      if (processed.has(j)) continue
+      if (processed.has(j)) continue;
 
-      const otherFeature = features[j]
-      const otherCoords = otherFeature.geometry?.coordinates?.[0]
-      if (!otherCoords) continue
+      const otherFeature = features[j];
+      const otherCoords = otherFeature.geometry?.coordinates?.[0];
+      if (!otherCoords) continue;
 
-      const otherFeatureId = otherFeature.properties?.id
+      const otherFeatureId = otherFeature.properties?.id;
 
       // First priority: merge by ID if both have IDs and they match
       if (featureId && otherFeatureId && featureId === otherFeatureId) {
-        fragmentsToMerge.push({ coords: otherCoords, properties: otherFeature.properties })
-        processed.add(j)
+        fragmentsToMerge.push({
+          coords: otherCoords,
+          properties: otherFeature.properties,
+        });
+        processed.add(j);
       } else if (!featureId && !otherFeatureId) {
         // If neither has ID, merge by proximity
-        const bbox2 = getBoundingBox(otherCoords)
+        const bbox2 = getBoundingBox(otherCoords);
         if (boundingBoxesIntersect(bbox1, bbox2, tolerance)) {
-          fragmentsToMerge.push({ coords: otherCoords, properties: otherFeature.properties })
-          processed.add(j)
+          fragmentsToMerge.push({
+            coords: otherCoords,
+            properties: otherFeature.properties,
+          });
+          processed.add(j);
         }
       }
       // Don't merge if one has ID and the other doesn't, or if IDs don't match
     }
 
-    processed.add(i)
+    processed.add(i);
 
     // Merge all found fragments
     if (fragmentsToMerge.length > 1) {
-      const coordsToMerge = fragmentsToMerge.map((f) => f.coords)
+      const coordsToMerge = fragmentsToMerge.map((f) => f.coords);
       // Merge all fragments by combining coordinates and reconstructing polygon
-      const mergedCoords = mergePolygonFragments(coordsToMerge)
+      const mergedCoords = mergePolygonFragments(coordsToMerge);
       merged.push({
         geometry: {
           coordinates: [mergedCoords],
-          type: 'Polygon'
+          type: "Polygon",
         },
         properties: feature.properties || {},
-        type: 'Feature'
-      })
+        type: "Feature",
+      });
     } else {
-      merged.push(feature)
+      merged.push(feature);
     }
   }
 
-  return merged
-}
+  return merged;
+};
 
 // Calculate difference between source (GRB/PICC) and OSM buildings and display them
 // Issue #9: drop the live OSM layer and show the tile layer (Postgres mirror) again.
 const clearLiveOsmLayer = () => {
-  if (liveOsmLayerRef.value && map.value) map.value.removeLayer(liveOsmLayerRef.value)
-  liveOsmLayerRef.value = null
+  if (liveOsmLayerRef.value && map.value)
+    map.value.removeLayer(liveOsmLayerRef.value);
+  liveOsmLayerRef.value = null;
   if (osmBuildingsLayerRef.value)
     osmBuildingsLayerRef.value.setVisible(
-      overlayLayers.value.osmBuildings && Math.round(map.value?.getView().getZoom() || 0) >= 16
-    )
-}
+      overlayLayers.value.osmBuildings &&
+        Math.round(map.value?.getView().getZoom() || 0) >= 16,
+    );
+};
 
 // Issue #9: draw the fresh Overpass buildings for the view so the map matches the difference results.
 const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
-  if (!map.value) return
-  const geojson: any = await $fetch('/api/buildings/osm-live', { body: { bounds }, method: 'POST' })
+  if (!map.value) return;
+  const geojson: any = await $fetch("/api/buildings/osm-live", {
+    body: { bounds },
+    method: "POST",
+  });
 
-  const { default: VectorLayer } = await import('ol/layer/Vector')
-  const { default: VectorSource } = await import('ol/source/Vector')
-  const { default: GeoJSONFormat } = await import('ol/format/GeoJSON')
+  const { default: VectorLayer } = await import("ol/layer/Vector");
+  const { default: VectorSource } = await import("ol/source/Vector");
+  const { default: GeoJSONFormat } = await import("ol/format/GeoJSON");
 
-  if (liveOsmLayerRef.value) map.value.removeLayer(liveOsmLayerRef.value)
+  if (liveOsmLayerRef.value) map.value.removeLayer(liveOsmLayerRef.value);
 
   const features = new GeoJSONFormat().readFeatures(geojson, {
-    dataProjection: 'EPSG:4326',
-    featureProjection: 'EPSG:3857'
-  })
+    dataProjection: "EPSG:4326",
+    featureProjection: "EPSG:3857",
+  });
   const layer = new VectorLayer({
-    properties: { title: 'OSM Buildings (live)', type: 'overlay' },
+    properties: { title: "OSM Buildings (live)", type: "overlay" },
     source: new VectorSource({ features }),
     style: new Style({
-      fill: new Fill({ color: hslVar('--layer-osm', 0.15) }),
-      stroke: new Stroke({ color: hslVar('--layer-osm', 1), width: 2 })
+      fill: new Fill({ color: hslVar("--layer-osm", 0.15) }),
+      stroke: new Stroke({ color: hslVar("--layer-osm", 1), width: 2 }),
     }),
     visible: overlayLayers.value.osmBuildings,
-    zIndex: 9
-  })
-  liveOsmLayerRef.value = layer
-  map.value.addLayer(layer)
-  osmBuildingsLayerRef.value?.setVisible(false)
-}
+    zIndex: 9,
+  });
+  liveOsmLayerRef.value = layer;
+  map.value.addLayer(layer);
+  osmBuildingsLayerRef.value?.setVisible(false);
+};
 
 // Prefer the API's message (e.g. Overpass rate limit) over the generic fetch error text.
 const apiErrorMessage = (error: any): string =>
-  error?.data?.statusMessage || error?.statusMessage || (error instanceof Error ? error.message : String(error))
+  error?.data?.statusMessage ||
+  error?.statusMessage ||
+  (error instanceof Error ? error.message : String(error));
 
 const calculateDifference = async () => {
-  if (!map.value) return
+  if (!map.value) return;
 
   // Determine which data source is active (GRB, PICC, or UrbIS)
-  const grbActive = overlayLayers.value.grbBuildings && grbBuildingsLayerRef.value
-  const knwActive = overlayLayers.value.knwStructures && knwStructuresLayerRef.value
-  const piccActive = overlayLayers.value.piccBuildings && piccBuildingsLayerRef.value
-  const urbisActive = overlayLayers.value.urbisBuildings && urbisBuildingsLayerRef.value
-  const dataSource = urbisActive ? 'urbis' : piccActive ? 'picc' : knwActive ? 'knw' : 'grb'
+  const grbActive =
+    overlayLayers.value.grbBuildings && grbBuildingsLayerRef.value;
+  const knwActive =
+    overlayLayers.value.knwStructures && knwStructuresLayerRef.value;
+  const piccActive =
+    overlayLayers.value.piccBuildings && piccBuildingsLayerRef.value;
+  const urbisActive =
+    overlayLayers.value.urbisBuildings && urbisBuildingsLayerRef.value;
+  const dataSource = urbisActive
+    ? "urbis"
+    : piccActive
+      ? "picc"
+      : knwActive
+        ? "knw"
+        : "grb";
 
   // Check if OSM layer and at least one source layer are loaded
-  if (!osmBuildingsLayerRef.value || (!grbActive && !knwActive && !piccActive && !urbisActive)) {
-    toast.warning('Layers required', 'Please enable OSM Buildings and a source layer (GRB, KNW, PICC, or UrbIS) first.')
-    return
+  if (
+    !osmBuildingsLayerRef.value ||
+    (!grbActive && !knwActive && !piccActive && !urbisActive)
+  ) {
+    toast.warning(
+      "Layers required",
+      "Please enable OSM Buildings and a source layer (GRB, KNW, PICC, or UrbIS) first.",
+    );
+    return;
   }
 
   // Check zoom level
-  const view = map.value.getView()
-  const zoom = view.getZoom() || 13
-  const roundedZoom = Math.round(zoom)
+  const view = map.value.getView();
+  const zoom = view.getZoom() || 13;
+  const roundedZoom = Math.round(zoom);
   if (roundedZoom < 16) {
-    toast.warning('Zoom in required', `Please zoom in to at least level 16. Current zoom: ${roundedZoom}`)
-    return
+    toast.warning(
+      "Zoom in required",
+      `Please zoom in to at least level 16. Current zoom: ${roundedZoom}`,
+    );
+    return;
   }
 
   // Check if OSM layer is visible
   if (!overlayLayers.value.osmBuildings) {
-    toast.warning('Layer required', 'Please enable the OSM Buildings layer first.')
-    return
+    toast.warning(
+      "Layer required",
+      "Please enable the OSM Buildings layer first.",
+    );
+    return;
   }
 
   // Set loading state
-  isCalculatingDifference.value = true
-  differenceState.value = 'loading'
-  differenceError.value = ''
+  isCalculatingDifference.value = true;
+  differenceState.value = "loading";
+  differenceError.value = "";
 
   try {
     // Get map extent in Web Mercator (EPSG:3857)
-    const mapExtent = map.value.getView().calculateExtent(map.value.getSize())
+    const mapExtent = map.value.getView().calculateExtent(map.value.getSize());
 
     // Send Web Mercator bounds to API - PostGIS will handle transformation
-    const bounds = [mapExtent[0], mapExtent[1], mapExtent[2], mapExtent[3]]
+    const bounds = [mapExtent[0], mapExtent[1], mapExtent[2], mapExtent[3]];
 
     // Live mode: refresh the OSM layer from Overpass too (non-fatal; the difference call reports errors)
-    if (useOverpass.value) await refreshLiveOsmLayer(bounds).catch((e) => console.warn('Live OSM layer failed:', e))
-    else clearLiveOsmLayer()
+    if (useOverpass.value)
+      await refreshLiveOsmLayer(bounds).catch((e) =>
+        console.warn("Live OSM layer failed:", e),
+      );
+    else clearLiveOsmLayer();
 
     // Call backend API to calculate difference
-    const response = await $fetch('/api/buildings/difference', {
+    const response = await $fetch("/api/buildings/difference", {
       body: {
         bounds,
         contract: CANDIDATES_CONTRACT,
         dataSource,
         geometryThreshold: geometryThreshold.value,
         matchMode: resolveMatchMode(matchMode.value, dataSource).mode,
-        useOverpass: useOverpass.value
+        useOverpass: useOverpass.value,
       },
-      method: 'POST'
-    })
+      method: "POST",
+    });
 
-    const candidateGeoJSON = response as any
+    const candidateGeoJSON = response as any;
 
     if (!candidateGeoJSON || candidateGeoJSON.features.length === 0) {
       // Persistent empty state in the results panel rather than a disappearing toast.
-      differenceState.value = 'empty'
+      differenceState.value = "empty";
 
       // Remove existing candidate buildings layer if present
       if (candidateBuildingsLayerRef.value) {
-        map.value.removeLayer(candidateBuildingsLayerRef.value)
-        candidateBuildingsLayerRef.value = null
+        map.value.removeLayer(candidateBuildingsLayerRef.value);
+        candidateBuildingsLayerRef.value = null;
       }
 
-      matchingStats.value = null
-      candidateBuildingCount.value = 0
-      candidateCapped.value = false
-      candidateTotalInView.value = 0
-      originalCandidateFeatures.value = []
-      return
+      matchingStats.value = null;
+      candidateBuildingCount.value = 0;
+      candidateCapped.value = false;
+      candidateTotalInView.value = 0;
+      originalCandidateFeatures.value = [];
+      return;
     }
 
     // Soft cap on how many candidates we render and export at once. Mass imports need
     // Review; loading tens of thousands of features also strains the browser. The true
     // Count is still reported in the stats; the note tells the user what is loaded.
-    const totalCandidates = candidateGeoJSON.features.length
-    candidateTotalInView.value = totalCandidates
-    candidateCapped.value = totalCandidates > CANDIDATE_RENDER_CAP
-    if (candidateCapped.value) candidateGeoJSON.features = candidateGeoJSON.features.slice(0, CANDIDATE_RENDER_CAP)
+    const totalCandidates = candidateGeoJSON.features.length;
+    candidateTotalInView.value = totalCandidates;
+    candidateCapped.value = totalCandidates > CANDIDATE_RENDER_CAP;
+    if (candidateCapped.value)
+      candidateGeoJSON.features = candidateGeoJSON.features.slice(
+        0,
+        CANDIDATE_RENDER_CAP,
+      );
 
     // Stamp the source kind on each candidate so the review tooltip and JOSM export
     // Know what they are looking at (the candidate layer is a single OL layer).
     const sourceKind =
-      dataSource === 'knw' ? 'knw' : dataSource === 'picc' ? 'picc' : dataSource === 'urbis' ? 'urbis' : 'grb'
+      dataSource === "knw"
+        ? "knw"
+        : dataSource === "picc"
+          ? "picc"
+          : dataSource === "urbis"
+            ? "urbis"
+            : "grb";
     for (const f of candidateGeoJSON.features) {
-      f.properties = f.properties || {}
-      f.properties._layer_type = sourceKind
+      f.properties = f.properties || {};
+      f.properties._layer_type = sourceKind;
     }
 
     // Update matching stats (unmatched reflects the true count missing from OSM)
-    const stats = (candidateGeoJSON as any).stats || {}
+    const stats = (candidateGeoJSON as any).stats || {};
     matchingStats.value = {
       matched: (stats.totalGrb || 0) - totalCandidates,
       totalGrb: stats.totalGrb || totalCandidates,
       totalOsm: stats.totalOsm || 0,
-      unmatched: totalCandidates
-    }
+      unmatched: totalCandidates,
+    };
 
     // Candidate count reflects what is actually loaded/exportable (post-cap)
-    candidateBuildingCount.value = candidateGeoJSON.features.length
+    candidateBuildingCount.value = candidateGeoJSON.features.length;
 
     // Store original features for simplification
-    originalCandidateFeatures.value = candidateGeoJSON.features
+    originalCandidateFeatures.value = candidateGeoJSON.features;
 
     // Remove existing candidate buildings layer if present
-    if (candidateBuildingsLayerRef.value) map.value.removeLayer(candidateBuildingsLayerRef.value)
+    if (candidateBuildingsLayerRef.value)
+      map.value.removeLayer(candidateBuildingsLayerRef.value);
 
     // Import OpenLayers modules
-    const { default: VectorLayer } = await import('ol/layer/Vector')
-    const { default: VectorSource } = await import('ol/source/Vector')
-    const { default: GeoJSONFormat } = await import('ol/format/GeoJSON')
+    const { default: VectorLayer } = await import("ol/layer/Vector");
+    const { default: VectorSource } = await import("ol/source/Vector");
+    const { default: GeoJSONFormat } = await import("ol/format/GeoJSON");
 
-    console.log('Candidate features loaded:', candidateGeoJSON.features.length)
+    console.log("Candidate features loaded:", candidateGeoJSON.features.length);
 
     // Parse GeoJSON and create source
-    const geoJsonFormat = new GeoJSONFormat()
+    const geoJsonFormat = new GeoJSONFormat();
     const features = geoJsonFormat.readFeatures(candidateGeoJSON, {
-      dataProjection: 'EPSG:4326',
-      featureProjection: 'EPSG:3857'
-    })
+      dataProjection: "EPSG:4326",
+      featureProjection: "EPSG:3857",
+    });
 
-    const candidateSource = new VectorSource({ features })
+    const candidateSource = new VectorSource({ features });
 
     // Style function for candidate buildings
     const candidateStyleFunction = () =>
       new Style({
         fill: new Fill({
-          color: hslVar('--layer-candidate', 0.35)
+          color: hslVar("--layer-candidate", 0.35),
         }),
         stroke: new Stroke({
-          color: hslVar('--layer-candidate', 1),
-          width: 2
-        })
-      })
+          color: hslVar("--layer-candidate", 1),
+          width: 2,
+        }),
+      });
 
     // Create vector layer for candidate buildings
     const candidateLayer = new VectorLayer({
       properties: {
-        title: 'Candidate Buildings',
-        type: 'overlay'
+        title: "Candidate Buildings",
+        type: "overlay",
       },
       source: candidateSource,
       style: candidateStyleFunction,
-      zIndex: 11
-    })
+      zIndex: 11,
+    });
 
     // Add layer to map
-    candidateBuildingsLayerRef.value = candidateLayer
-    map.value.addLayer(candidateLayer)
+    candidateBuildingsLayerRef.value = candidateLayer;
+    map.value.addLayer(candidateLayer);
 
     // Enable candidate buildings layer
-    overlayLayers.value.candidateBuildings = true
-    differenceState.value = 'success'
+    overlayLayers.value.candidateBuildings = true;
+    differenceState.value = "success";
   } catch (error) {
-    console.error('Error calculating difference:', error)
-    differenceState.value = 'error'
-    differenceError.value = apiErrorMessage(error)
+    console.error("Error calculating difference:", error);
+    differenceState.value = "error";
+    differenceError.value = apiErrorMessage(error);
   } finally {
     // Reset loading state
-    isCalculatingDifference.value = false
+    isCalculatingDifference.value = false;
   }
-}
+};
 
 const exportToJOSM = async () => {
-  if (!map.value) return
+  if (!map.value) return;
 
   // Check if we have candidate buildings data
   if (originalCandidateFeatures.value.length === 0) {
-    toast.warning('No candidates', 'Please click "Get Difference" first to calculate candidate buildings.')
-    return
+    toast.warning(
+      "No candidates",
+      'Please click "Get Difference" first to calculate candidate buildings.',
+    );
+    return;
   }
 
   try {
     // Check JOSM connection first
-    josmTesting.value = true
-    const isConnected = await testJosmConnection()
-    josmConnected.value = isConnected
-    josmTesting.value = false
+    josmTesting.value = true;
+    const isConnected = await testJosmConnection();
+    josmConnected.value = isConnected;
+    josmTesting.value = false;
     if (!isConnected) {
       // Open the setup dialog instead of cramming instructions into a toast.
-      josmHelpOpen.value = true
-      return
+      josmHelpOpen.value = true;
+      return;
     }
 
     // Use ALL features from the original API response (not just visible ones)
     // This ensures we export everything from "Get Difference", not just what's in viewport
-    const allFeatures = originalCandidateFeatures.value
+    const allFeatures = originalCandidateFeatures.value;
 
     if (allFeatures.length === 0) {
-      toast.warning('Nothing to export', 'No buildings available to export.')
-      return
+      toast.warning("Nothing to export", "No buildings available to export.");
+      return;
     }
 
-    console.log(`Exporting ${allFeatures.length} candidate buildings to JOSM`)
+    console.log(`Exporting ${allFeatures.length} candidate buildings to JOSM`);
 
     // Export to JOSM - ALL features from the candidate layer
     const hasKnwCandidates = allFeatures.some((feature: any) => {
-      const layerType = String(feature?.properties?._layer_type || '').toLowerCase()
-      const entity = String(feature?.properties?.entity || '').toLowerCase()
-      return layerType === 'knw' || entity === 'knw'
-    })
+      const layerType = String(
+        feature?.properties?._layer_type || "",
+      ).toLowerCase();
+      const entity = String(feature?.properties?.entity || "").toLowerCase();
+      return layerType === "knw" || entity === "knw";
+    });
 
     const result = await exportLayerToJosm(
       allFeatures,
-      hasKnwCandidates ? 'GRB Candidate Structures (KNW)' : 'GRB Candidate Buildings',
+      hasKnwCandidates
+        ? "GRB Candidate Structures (KNW)"
+        : "GRB Candidate Buildings",
       {
         includeMeta: false,
         simplify: simplifyOnExport.value,
         simplifyPercent: simplifyPercent.value,
-        uploadToBackend: false
-      }
-    )
+        uploadToBackend: false,
+      },
+    );
 
-    console.log('✅ Export successful')
+    console.log("✅ Export successful");
     toast.success(
-      'Exported to JOSM',
-      `${result.featureCount} building${result.featureCount === 1 ? '' : 's'} loaded as a new layer in JOSM.`
-    )
+      "Exported to JOSM",
+      `${result.featureCount} building${result.featureCount === 1 ? "" : "s"} loaded as a new layer in JOSM.`,
+    );
   } catch (error: any) {
-    console.error('Error exporting candidate buildings to JOSM:', error)
-    josmTesting.value = false
-    toast.error('JOSM export failed', error.message || 'Could not send data to JOSM.')
+    console.error("Error exporting candidate buildings to JOSM:", error);
+    josmTesting.value = false;
+    toast.error(
+      "JOSM export failed",
+      error.message || "Could not send data to JOSM.",
+    );
   }
-}
+};
 
 // Remove a specific feature from the clicked features array
 const removeFeature = (index: number) => {
-  clickedFeatures.value.splice(index, 1)
+  clickedFeatures.value.splice(index, 1);
 
   // If no features left, close the panel
-  if (clickedFeatures.value.length === 0) closeTooltip()
-}
+  if (clickedFeatures.value.length === 0) closeTooltip();
+};
 
 // Close tooltip function
 const closeTooltip = () => {
-  isTooltipSticky.value = false
-  clickedFeatures.value = []
-  hoveredFeatures.value = []
-  activeFeatureIndex.value = 0
-}
+  isTooltipSticky.value = false;
+  clickedFeatures.value = [];
+  hoveredFeatures.value = [];
+  activeFeatureIndex.value = 0;
+};
 
 // Helper function to parse PostgreSQL array format {item1,item2} to JS array
 const parsePostgresArray = (value: string[] | string | undefined): string[] => {
-  if (!value) return []
-  if (Array.isArray(value)) return value
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
 
   // Handle PostgreSQL array format: {item1,item2,"item with spaces"}
-  const str = String(value).trim()
-  if (str.startsWith('{') && str.endsWith('}')) {
-    const inner = str.slice(1, -1)
-    if (inner === '') return []
+  const str = String(value).trim();
+  if (str.startsWith("{") && str.endsWith("}")) {
+    const inner = str.slice(1, -1);
+    if (inner === "") return [];
 
     // Split by comma, but respect quoted strings
-    const items: string[] = []
-    let current = ''
-    let inQuotes = false
+    const items: string[] = [];
+    let current = "";
+    let inQuotes = false;
 
     for (const char of inner)
       if (char === '"') {
-        inQuotes = !inQuotes
-      } else if (char === ',' && !inQuotes) {
-        items.push(current.trim())
-        current = ''
+        inQuotes = !inQuotes;
+      } else if (char === "," && !inQuotes) {
+        items.push(current.trim());
+        current = "";
       } else {
-        current += char
+        current += char;
       }
 
-    if (current) items.push(current.trim())
+    if (current) items.push(current.trim());
 
-    return items.map((item) => item.replace(/^"|"$/g, ''))
+    return items.map((item) => item.replace(/^"|"$/g, ""));
   }
 
   // Handle '; '-separated strings (STRING_AGG with '; ' separator, e.g. addresses column)
-  if (str.includes('; '))
+  if (str.includes("; "))
     return str
-      .split('; ')
+      .split("; ")
       .map((s) => s.trim())
-      .filter(Boolean)
+      .filter(Boolean);
 
-  return [str]
-}
+  return [str];
+};
 
 // Group addresses that share the same base address, collapsing box numbers
 // E.g. ["Boekfos 49, 1730 Asse", "Boekfos 49 bus 1, 1730 Asse", "Boekfos 49 bus 2, 1730 Asse"]
 //   → [{ base: "Boekfos 49, 1730 Asse", boxes: ["1", "2"] }]
 interface GroupedAddress {
-  base: string
-  boxes: string[]
+  base: string;
+  boxes: string[];
 }
 const groupAddresses = (addresses: string[]): GroupedAddress[] => {
   // Pattern: "<street> <number> bus <box>, <postcode> <city>"
-  const busPattern = /^(.+?)\s+bus\s+(.+?),\s*(.+)$/i
-  const groups = new Map<string, string[]>()
-  const order: string[] = []
+  const busPattern = /^(.+?)\s+bus\s+(.+?),\s*(.+)$/i;
+  const groups = new Map<string, string[]>();
+  const order: string[] = [];
 
   for (const addr of addresses) {
-    const [, street, box, locality] = addr.match(busPattern) ?? []
+    const [, street, box, locality] = addr.match(busPattern) ?? [];
     if (street && box && locality) {
-      const base = `${street}, ${locality}`
+      const base = `${street}, ${locality}`;
       if (!groups.has(base)) {
-        groups.set(base, [])
-        order.push(base)
+        groups.set(base, []);
+        order.push(base);
       }
-      groups.get(base)!.push(box)
+      groups.get(base)!.push(box);
     } else // No bus number — standalone address
     if (!groups.has(addr)) {
-      groups.set(addr, [])
-      order.push(addr)
+      groups.set(addr, []);
+      order.push(addr);
     }
   }
 
   // Sort box numbers naturally (1, 2, 3, ... 10, 11 instead of 1, 10, 11, 2)
-  const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+  const collator = new Intl.Collator(undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
 
   return order.map((base) => ({
     base,
-    boxes: groups.get(base)!.sort(collator.compare)
-  }))
-}
+    boxes: groups.get(base)!.sort(collator.compare),
+  }));
+};
 
 // Helper to parse semicolon-separated lists from PICC matview
 const parseSemicolonList = (value: string | undefined): string[] => {
-  if (!value) return []
+  if (!value) return [];
   return value
-    .split(';')
+    .split(";")
     .map((s) => s.trim())
-    .filter(Boolean)
-}
+    .filter(Boolean);
+};
 
 // Helper to format PICC dates to yyyy-mm-dd
 const formatPiccDate = (value: string | undefined): string => {
-  if (!value) return '—'
+  if (!value) return "—";
   try {
-    const date = new Date(value)
-    if (isNaN(date.getTime())) return value
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return value;
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   } catch {
-    return value
+    return value;
   }
-}
+};
 
 // Helper function to format area
 const formatArea = (area: number): string => {
-  if (!area) return '—'
-  if (area >= 10000) return `${(area / 10000).toFixed(2)} ha`
+  if (!area) return "—";
+  if (area >= 10000) return `${(area / 10000).toFixed(2)} ha`;
 
-  return `${area.toFixed(2)} m²`
-}
+  return `${area.toFixed(2)} m²`;
+};
 
 // Helper function to translate GRB building types
 const formatGRBBuildingType = (type: string | undefined): string => {
-  if (!type) return 'Building'
+  if (!type) return "Building";
 
   const translations: Record<string, string> = {
-    afdak: 'Shelter',
-    berging: 'Storage',
-    bijgebouw: 'Outbuilding',
-    garage: 'Garage',
-    'gebouw afgezoomd met virtuele gevels': 'Building with Virtual Facades',
-    hoofdgebouw: 'Main Building',
-    'ingezonken garagetoegang': 'Sunken Garage Entrance',
-    loopbrug: 'Walkway',
-    serre: 'Conservatory',
-    trap: 'Staircase',
-    verdieping: 'Upper Floor',
-    'verheven garagetoegang': 'Elevated Garage Entrance',
-    'zichtbare onderkeldering': 'Visible Basement'
-  }
+    afdak: "Shelter",
+    berging: "Storage",
+    bijgebouw: "Outbuilding",
+    garage: "Garage",
+    "gebouw afgezoomd met virtuele gevels": "Building with Virtual Facades",
+    hoofdgebouw: "Main Building",
+    "ingezonken garagetoegang": "Sunken Garage Entrance",
+    loopbrug: "Walkway",
+    serre: "Conservatory",
+    trap: "Staircase",
+    verdieping: "Upper Floor",
+    "verheven garagetoegang": "Elevated Garage Entrance",
+    "zichtbare onderkeldering": "Visible Basement",
+  };
 
-  return translations[type.toLowerCase()] || type
-}
+  return translations[type.toLowerCase()] || type;
+};
 
 // Helper function to translate GRB origin labels (Dutch to English)
 const formatOriginLabel = (label: string | undefined): string => {
-  if (!label) return ''
+  if (!label) return "";
   const translations: Record<string, string> = {
-    andere: 'Other',
-    'as-built plan': 'As-Built Plan',
-    fotogrammetrisch: 'Photogrammetry',
-    gedigitaliseerd: 'Digitized',
-    'gemeentelijk as-built plan': 'Municipal As-Built Plan',
-    luchtfoto: 'Aerial Photo',
-    'niet gekend': 'Unknown',
-    terreinbezoek: 'Field Survey'
-  }
-  return translations[label.toLowerCase()] || label
-}
+    andere: "Other",
+    "as-built plan": "As-Built Plan",
+    fotogrammetrisch: "Photogrammetry",
+    gedigitaliseerd: "Digitized",
+    "gemeentelijk as-built plan": "Municipal As-Built Plan",
+    luchtfoto: "Aerial Photo",
+    "niet gekend": "Unknown",
+    terreinbezoek: "Field Survey",
+  };
+  return translations[label.toLowerCase()] || label;
+};
 
 // Group OSM properties into address, source:geometry, and other
 const getGroupedOsmProperties = (
-  feature: any
-): { address: [string, any][]; source: [string, any][]; other: [string, any][] } => {
-  const all = getDisplayableProperties(feature)
-  const address: [string, any][] = []
-  const source: [string, any][] = []
-  const other: [string, any][] = []
+  feature: any,
+): {
+  address: [string, any][];
+  source: [string, any][];
+  other: [string, any][];
+} => {
+  const all = getDisplayableProperties(feature);
+  const address: [string, any][] = [];
+  const source: [string, any][] = [];
+  const other: [string, any][] = [];
 
   for (const [key, value] of all)
-    if (key.startsWith('addr:') || key.startsWith('addr_')) address.push([key, value])
-    else if (key.startsWith('source:geometry:') || key === 'source:geometry') source.push([key, value])
-    else other.push([key, value])
+    if (key.startsWith("addr:") || key.startsWith("addr_"))
+      address.push([key, value]);
+    else if (key.startsWith("source:geometry:") || key === "source:geometry")
+      source.push([key, value]);
+    else other.push([key, value]);
 
-  return { address, other, source }
-}
+  return { address, other, source };
+};
 
 // Helper function to sort features - GRB first, then OSM
 // Uses function declaration (not const arrow) so it's hoisted above computed() calls that reference it
 function sortFeatures(features: any[]): any[] {
   return [...features].sort((a, b) => {
     const weight = (layerType: string) => {
-      if (layerType === 'grb') return 0
-      if (layerType === 'knw') return 1
-      if (layerType === 'picc') return 2
-      if (layerType === 'urbis') return 3
-      if (layerType === 'osm') return 4
-      return 5
-    }
-    return weight(a._layer_type) - weight(b._layer_type)
-  })
+      if (layerType === "grb") return 0;
+      if (layerType === "knw") return 1;
+      if (layerType === "picc") return 2;
+      if (layerType === "urbis") return 3;
+      if (layerType === "osm") return 4;
+      return 5;
+    };
+    return weight(a._layer_type) - weight(b._layer_type);
+  });
 }
 
 const setMapCursor = (cursor: string) => {
-  const target = map.value?.getTargetElement()
-  if (target) target.style.cursor = cursor
-}
+  const target = map.value?.getTargetElement();
+  if (target) target.style.cursor = cursor;
+};
 
 // Helper function to parse PostgreSQL hstore tags format
 const parseHstoreTags = (tagsString: string): Record<string, string> => {
-  const tags: Record<string, string> = {}
+  const tags: Record<string, string> = {};
 
   // Parse hstore format: "key"=>"value", "key2"=>"value2"
-  const regex = /"([^"]+)"=>"([^"]*)"/g
-  let match
+  const regex = /"([^"]+)"=>"([^"]*)"/g;
+  let match;
 
   while ((match = regex.exec(tagsString)) !== null) {
-    const [, key, value = ''] = match
-    if (key) tags[key] = value
+    const [, key, value = ""] = match;
+    if (key) tags[key] = value;
   }
 
-  return tags
-}
+  return tags;
+};
 
 // Property mapping for GRB features (Dutch to English)
 const grbPropertyMapping: Record<string, string | null> = {
   // Map to English
-  BEGINDATUM: 'begin_date',
-  VERSDATUM: 'version_date',
-  LBLBGNINV: 'source_inventory_label',
-  BGNINV: 'source_inventory',
+  BEGINDATUM: "begin_date",
+  VERSDATUM: "version_date",
+  LBLBGNINV: "source_inventory_label",
+  BGNINV: "source_inventory",
 
   // Keep important fields
-  source: 'source',
-  source_dataset: 'source_dataset',
-  source_geometry: 'source_geometry',
-  source_geometry_date: 'source_geometry_date',
-  source_geometry_entity: 'source_geometry_entity',
-  postal_code: 'postal_code',
-  building_type: 'building_type',
+  source: "source",
+  source_dataset: "source_dataset",
+  source_geometry: "source_geometry",
+  source_geometry_date: "source_geometry_date",
+  source_geometry_entity: "source_geometry_entity",
+  postal_code: "postal_code",
+  building_type: "building_type",
 
   // Filter out duplicates and noise
-  'begin date': null,
-  'version date': null,
-  'source inventory': null,
-  'source inventory label': null,
-  'imported at': null,
-  'updated at': null,
+  "begin date": null,
+  "version date": null,
+  "source inventory": null,
+  "source inventory label": null,
+  "imported at": null,
+  "updated at": null,
   source_geometry_version: null,
   importedAt: null,
-  updatedAt: null
-}
+  updatedAt: null,
+};
 
 // Property display names (for formatting)
 const propertyDisplayNames: Record<string, string> = {
-  addr_housenumber: 'House Number',
-  addr_street: 'Street',
-  begin_date: 'Begin Date',
-  building: 'Building',
-  building_type: 'Building Type',
-  name: 'Name',
-  postal_code: 'Postal Code',
-  source: 'Source',
-  source_dataset: 'Dataset',
-  source_geometry: 'Geometry Source',
-  source_geometry_date: 'Geometry Date',
-  source_geometry_entity: 'Entity',
-  source_inventory: 'Inventory',
-  source_inventory_label: 'Inventory Label',
-  version_date: 'Version Date'
-}
+  addr_housenumber: "House Number",
+  addr_street: "Street",
+  begin_date: "Begin Date",
+  building: "Building",
+  building_type: "Building Type",
+  name: "Name",
+  postal_code: "Postal Code",
+  source: "Source",
+  source_dataset: "Dataset",
+  source_geometry: "Geometry Source",
+  source_geometry_date: "Geometry Date",
+  source_geometry_entity: "Entity",
+  source_inventory: "Inventory",
+  source_inventory_label: "Inventory Label",
+  version_date: "Version Date",
+};
 
 // Helper functions for tooltip display
 const getDisplayableProperties = (feature: any) => {
-  if (!feature) return []
+  if (!feature) return [];
 
-  const isGrb = feature._layer_type === 'grb' || feature._layer_type === 'knw'
-  const isOsm = feature._layer_type === 'osm'
+  const isGrb = feature._layer_type === "grb" || feature._layer_type === "knw";
+  const isOsm = feature._layer_type === "osm";
 
   // Properties to exclude from display (internal or already shown)
   const excludedProps = [
-    'geometry',
-    'osm_id',
-    'osm_type',
-    'hovered',
-    'id',
-    'grbid',
-    '_layer_type',
-    'tags',
-    'layer',
-    'extent',
-    'type'
-  ]
+    "geometry",
+    "osm_id",
+    "osm_type",
+    "hovered",
+    "id",
+    "grbid",
+    "_layer_type",
+    "tags",
+    "layer",
+    "extent",
+    "type",
+  ];
 
-  const properties: [string, any][] = []
+  const properties: [string, any][] = [];
 
   // First, add all regular properties (including source)
   Object.entries(feature)
     .filter(
       ([key, value]) =>
         // Exclude internal properties and empty values
-        !excludedProps.includes(key) && value !== null && value !== undefined && value !== ''
+        !excludedProps.includes(key) &&
+        value !== null &&
+        value !== undefined &&
+        value !== "",
     )
     .forEach(([key, value]) => {
       // Apply GRB mapping if it's a GRB feature
       if (isGrb && Object.hasOwn(grbPropertyMapping, key)) {
-        const mappedKey = grbPropertyMapping[key]
-        if (typeof mappedKey === 'string') properties.push([mappedKey, value])
+        const mappedKey = grbPropertyMapping[key];
+        if (typeof mappedKey === "string") properties.push([mappedKey, value]);
 
         // If mapped to null, skip this property
-      } else if (!isGrb || !Object.keys(grbPropertyMapping).some((k) => k.toLowerCase() === key.toLowerCase()))
+      } else if (
+        !isGrb ||
+        !Object.keys(grbPropertyMapping).some(
+          (k) => k.toLowerCase() === key.toLowerCase(),
+        )
+      )
       // For OSM features or unmapped GRB properties, include them
       {
-        properties.push([key, value])
+        properties.push([key, value]);
       }
-    })
+    });
 
   // Parse and add tags if they exist (PostgreSQL hstore format or JSONB object)
   if (feature.tags) {
-    let parsedTags: any = {}
+    let parsedTags: any = {};
 
-    if (typeof feature.tags === 'string')
+    if (typeof feature.tags === "string")
       // Parse hstore string format
-      parsedTags = parseHstoreTags(feature.tags)
-    else if (typeof feature.tags === 'object' && feature.tags !== null)
+      parsedTags = parseHstoreTags(feature.tags);
+    else if (typeof feature.tags === "object" && feature.tags !== null)
       // Already an object (JSONB from vector tiles)
-      parsedTags = feature.tags
+      parsedTags = feature.tags;
 
     // For OSM features, show all tags
     Object.entries(parsedTags)
-      .filter(([, value]) => value !== null && value !== undefined && value !== '')
+      .filter(
+        ([, value]) => value !== null && value !== undefined && value !== "",
+      )
       .forEach(([key, value]) => {
-        properties.push([key, value])
-      })
+        properties.push([key, value]);
+      });
   }
 
   // Sort alphabetically
-  const sorted = properties.sort(([a], [b]) => a.localeCompare(b))
+  const sorted = properties.sort(([a], [b]) => a.localeCompare(b));
 
   // Remove duplicates based on actual key names and formatted names
-  const seenKeys = new Set<string>()
-  const seenFormattedKeys = new Set<string>()
-  const uniqueProperties: [string, any][] = []
+  const seenKeys = new Set<string>();
+  const seenFormattedKeys = new Set<string>();
+  const uniqueProperties: [string, any][] = [];
 
   for (const [key, value] of sorted) {
-    const normalizedKey = key.toLowerCase()
-    const formattedKey = formatPropertyKey(key)
+    const normalizedKey = key.toLowerCase();
+    const formattedKey = formatPropertyKey(key);
 
     if (!seenKeys.has(normalizedKey) && !seenFormattedKeys.has(formattedKey)) {
-      seenKeys.add(normalizedKey)
-      seenFormattedKeys.add(formattedKey)
-      uniqueProperties.push([key, value])
+      seenKeys.add(normalizedKey);
+      seenFormattedKeys.add(formattedKey);
+      uniqueProperties.push([key, value]);
     }
   }
 
-  return uniqueProperties
-}
+  return uniqueProperties;
+};
 
 const formatPropertyKey = (key: string) => {
   // Check if we have a custom display name
-  if (propertyDisplayNames[key]) return propertyDisplayNames[key]
+  if (propertyDisplayNames[key]) return propertyDisplayNames[key];
 
   // Convert underscores to spaces and handle special cases
   return key
-    .replace(/_/g, ' ')
-    .replace(/:/g, ' ')
-    .replace(/addr /g, '')
-    .replace(/building /g, '')
-    .trim()
-}
+    .replace(/_/g, " ")
+    .replace(/:/g, " ")
+    .replace(/addr /g, "")
+    .replace(/building /g, "")
+    .trim();
+};
 
 // Helper to format a valid Date as a localized string
 const formatDateValue = (date: Date, includeTime: boolean): string => {
   if (includeTime)
-    return new Intl.DateTimeFormat('nl-BE', {
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      month: '2-digit',
-      second: '2-digit',
-      year: 'numeric'
-    }).format(date)
+    return new Intl.DateTimeFormat("nl-BE", {
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      month: "2-digit",
+      second: "2-digit",
+      year: "numeric",
+    }).format(date);
 
-  return new Intl.DateTimeFormat('nl-BE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  }).format(date)
-}
+  return new Intl.DateTimeFormat("nl-BE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+};
 
 const formatPropertyValue = (value: any): string => {
-  if (value === null || value === undefined) return ''
+  if (value === null || value === undefined) return "";
 
   // Try to parse as date/datetime
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     // Check if it looks like a date (YYYY-MM-DD or ISO datetime)
-    const dateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+    const dateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (dateMatch)
       try {
-        const date = new Date(value)
+        const date = new Date(value);
 
         // Check if it's a valid date
         if (!isNaN(date.getTime())) {
-          const hasTime = value.includes('T') || /\d{2}:\d{2}/.test(value)
-          return formatDateValue(date, hasTime)
+          const hasTime = value.includes("T") || /\d{2}:\d{2}/.test(value);
+          return formatDateValue(date, hasTime);
         }
       } catch {
         // If parsing fails, return original value
       }
   }
 
-  return String(value)
-}
+  return String(value);
+};
 
 // Setup hover interaction for building features
 const setupHoverInteraction = () => {
-  if (!map.value) return
+  if (!map.value) return;
 
-  let currentHoveredFeatureObj: any = null
-  const hoverTimeout: any = null
-  let debounceTimeout: any = null
+  let currentHoveredFeatureObj: any = null;
+  const hoverTimeout: any = null;
+  let debounceTimeout: any = null;
 
   // Add click interaction for sticky tooltip
-  map.value.on('click', (evt) => {
-    if (!map.value) return
+  map.value.on("click", (evt) => {
+    if (!map.value) return;
 
-    const pixel = map.value.getEventPixel(evt.originalEvent)
+    const pixel = map.value.getEventPixel(evt.originalEvent);
 
-    const foundFeatures: any[] = []
+    const foundFeatures: any[] = [];
     map.value.forEachFeatureAtPixel(
       pixel,
       (feature, layer) => {
@@ -2734,64 +3270,65 @@ const setupHoverInteraction = () => {
           layer === candidateBuildingsLayerRef.value
         ) {
           // Get properties for clicked feature
-          let properties: any
+          let properties: any;
           try {
-            properties = feature.getProperties()
+            properties = feature.getProperties();
           } catch (error) {
-            console.warn('Error getting clicked feature properties:', error)
-            properties = {}
+            console.warn("Error getting clicked feature properties:", error);
+            properties = {};
           }
 
           // Extract feature ID and add it to properties
-          const featureId = feature.getId() ?? null
+          const featureId = feature.getId() ?? null;
           if (featureId)
-            if (layer === osmBuildingsLayerRef.value) properties.osm_id = featureId
-            else properties.id = featureId
+            if (layer === osmBuildingsLayerRef.value)
+              properties.osm_id = featureId;
+            else properties.id = featureId;
 
           // Add layer type to distinguish OSM from GRB/PICC features
           properties._layer_type =
             layer === osmBuildingsLayerRef.value
-              ? 'osm'
+              ? "osm"
               : layer === knwStructuresLayerRef.value
-                ? 'knw'
+                ? "knw"
                 : layer === piccBuildingsLayerRef.value
-                  ? 'picc'
+                  ? "picc"
                   : layer === urbisBuildingsLayerRef.value
-                    ? 'urbis'
+                    ? "urbis"
                     : layer === candidateBuildingsLayerRef.value
-                      ? properties._layer_type || 'grb'
-                      : 'grb'
+                      ? properties._layer_type || "grb"
+                      : "grb";
 
-          foundFeatures.push(properties)
+          foundFeatures.push(properties);
         }
-        return false // Continue to collect all features
+        return false; // Continue to collect all features
       },
       {
-        hitTolerance: 3
-      }
-    )
+        hitTolerance: 3,
+      },
+    );
 
     if (foundFeatures.length > 0) {
       // Make tooltip sticky with all found features
-      clickedFeatures.value = foundFeatures
-      isTooltipSticky.value = true
+      clickedFeatures.value = foundFeatures;
+      isTooltipSticky.value = true;
     } else
     // Clicked outside features, close sticky tooltip
     {
-      closeTooltip()
+      closeTooltip();
     }
-  })
+  });
 
-  map.value.on('pointermove', (evt) => {
-    if (!map.value) return
+  map.value.on("pointermove", (evt) => {
+    if (!map.value) return;
 
     // Debounce to reduce canvas read operations
-    if (debounceTimeout) clearTimeout(debounceTimeout)
+    if (debounceTimeout) clearTimeout(debounceTimeout);
 
     debounceTimeout = setTimeout(() => {
-      if (!map.value) return
+      if (!map.value) return;
 
-      const pixel = map.value.getEventPixel(evt.originalEvent)
+      const pixel = map.value.getEventPixel(evt.originalEvent);
 
       // Only update cursor if not sticky
       if (!isTooltipSticky.value) {
@@ -2801,18 +3338,19 @@ const setupHoverInteraction = () => {
       // Clear previous hover state (only if not sticky)
       if (currentHoveredFeatureObj && !isTooltipSticky.value) {
         try {
-          if (currentHoveredFeatureObj instanceof Feature) currentHoveredFeatureObj.set('hovered', false)
+          if (currentHoveredFeatureObj instanceof Feature)
+            currentHoveredFeatureObj.set("hovered", false);
         } catch (error) {
           // Ignore errors when clearing hover state
         }
-        currentHoveredFeatureObj = null
-        hoveredFeatures.value = []
-        setMapCursor('')
+        currentHoveredFeatureObj = null;
+        hoveredFeatures.value = [];
+        setMapCursor("");
       }
 
       // Check if we're hovering over features from building layers (collect all)
-      const foundFeatures: any[] = []
-      let firstFeature: any = null
+      const foundFeatures: any[] = [];
+      let firstFeature: any = null;
 
       map.value.forEachFeatureAtPixel(
         pixel,
@@ -2825,120 +3363,129 @@ const setupHoverInteraction = () => {
             layer === urbisBuildingsLayerRef.value ||
             layer === candidateBuildingsLayerRef.value
           ) {
-            if (!firstFeature) firstFeature = feature
+            if (!firstFeature) firstFeature = feature;
 
             // Get properties - handle both regular features and vector tile features
-            let properties: any
+            let properties: any;
             try {
               // Both Feature and vector tile RenderFeature expose getProperties()
-              properties = feature.getProperties()
+              properties = feature.getProperties();
             } catch (error) {
-              console.warn('Error getting feature properties:', error)
-              properties = {}
+              console.warn("Error getting feature properties:", error);
+              properties = {};
             }
 
             // Extract feature ID and add it to properties
-            const featureId = feature.getId() ?? null
+            const featureId = feature.getId() ?? null;
             if (featureId)
-              if (layer === osmBuildingsLayerRef.value) properties.osm_id = featureId
-              else properties.id = featureId
+              if (layer === osmBuildingsLayerRef.value)
+                properties.osm_id = featureId;
+              else properties.id = featureId;
 
             // Add layer type to distinguish OSM from GRB/PICC features
             properties._layer_type =
               layer === osmBuildingsLayerRef.value
-                ? 'osm'
+                ? "osm"
                 : layer === knwStructuresLayerRef.value
-                  ? 'knw'
+                  ? "knw"
                   : layer === piccBuildingsLayerRef.value
-                    ? 'picc'
+                    ? "picc"
                     : layer === urbisBuildingsLayerRef.value
-                      ? 'urbis'
+                      ? "urbis"
                       : layer === candidateBuildingsLayerRef.value
-                        ? properties._layer_type || 'grb'
-                        : 'grb'
+                        ? properties._layer_type || "grb"
+                        : "grb";
 
-            foundFeatures.push(properties)
+            foundFeatures.push(properties);
           }
-          return false // Continue to collect all features
+          return false; // Continue to collect all features
         },
         {
-          hitTolerance: 3
-        }
-      )
+          hitTolerance: 3,
+        },
+      );
 
       if (foundFeatures.length > 0 && !isTooltipSticky.value) {
         // Clear previous hover state
-        if (currentHoveredFeatureObj && currentHoveredFeatureObj !== firstFeature)
-          if (currentHoveredFeatureObj instanceof Feature) currentHoveredFeatureObj.set('hovered', false)
+        if (
+          currentHoveredFeatureObj &&
+          currentHoveredFeatureObj !== firstFeature
+        )
+          if (currentHoveredFeatureObj instanceof Feature)
+            currentHoveredFeatureObj.set("hovered", false);
 
         // Set new hover state on first feature
         if (currentHoveredFeatureObj !== firstFeature) {
           // Only set hover state for regular features, not vector tile features
           try {
-            if (firstFeature instanceof Feature && firstFeature.set) firstFeature.set('hovered', true)
+            if (firstFeature instanceof Feature && firstFeature.set)
+              firstFeature.set("hovered", true);
           } catch (error) {
             // Vector tile features don't support set method
           }
-          currentHoveredFeatureObj = firstFeature
+          currentHoveredFeatureObj = firstFeature;
 
-          hoveredFeatures.value = foundFeatures
+          hoveredFeatures.value = foundFeatures;
 
           // Change cursor to pointer
-          setMapCursor('pointer')
+          setMapCursor("pointer");
         }
       } else if (!isTooltipSticky.value)
       // Clear hover state
       {
         if (currentHoveredFeatureObj) {
           try {
-            if (currentHoveredFeatureObj instanceof Feature && currentHoveredFeatureObj.set)
-              currentHoveredFeatureObj.set('hovered', false)
+            if (
+              currentHoveredFeatureObj instanceof Feature &&
+              currentHoveredFeatureObj.set
+            )
+              currentHoveredFeatureObj.set("hovered", false);
           } catch (error) {
             // Vector tile features don't support set method
           }
-          currentHoveredFeatureObj = null
-          hoveredFeatures.value = []
+          currentHoveredFeatureObj = null;
+          hoveredFeatures.value = [];
 
           // Reset cursor
-          setMapCursor('')
+          setMapCursor("");
         }
       }
-    }, 16) // ~60fps, reduces canvas reads significantly
-  })
-}
+    }, 16); // ~60fps, reduces canvas reads significantly
+  });
+};
 
 onMounted(() => {
-  loadDataDates()
+  loadDataDates();
   nextTick().then(() => {
     setTimeout(() => {
-      setupMap()
-      setupHoverInteraction()
+      setupMap();
+      setupHoverInteraction();
 
       // Check initial zoom level for layer visibility
       if (map.value) {
-        const initialZoom = Math.round(map.value.getView().getZoom() || 13)
-        handleZoomBasedLayerVisibility(initialZoom)
+        const initialZoom = Math.round(map.value.getView().getZoom() || 13);
+        handleZoomBasedLayerVisibility(initialZoom);
       }
 
       // Automatically load OSM and GRB layers
       setTimeout(() => {
-        handleLoadOSM()
-        handleLoadGRB()
-        handleLoadKNW()
-        handleLoadPICC()
-        handleLoadUrbis()
-      }, 100)
-    }, 50)
-  })
+        handleLoadOSM();
+        handleLoadGRB();
+        handleLoadKNW();
+        handleLoadPICC();
+        handleLoadUrbis();
+      }, 100);
+    }, 50);
+  });
 
   // One quiet probe so the JOSM status chip reflects reality on load.
-  checkJosm()
+  checkJosm();
 
-  window.addEventListener('keydown', handleKeydown)
-})
+  window.addEventListener("keydown", handleKeydown);
+});
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown)
-  destroy()
-})
+  window.removeEventListener("keydown", handleKeydown);
+  destroy();
+});
 </script>

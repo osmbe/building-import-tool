@@ -37,8 +37,8 @@ RUN for attempt in 1 2 3 4 5; do \
     # Symlink: imposm3 expects libleveldb.so.1, find actual library and link it
     && ARCH=$(uname -m) \
     && if [ "$ARCH" = "x86_64" ]; then LIB_DIR="/usr/lib/x86_64-linux-gnu"; \
-       elif [ "$ARCH" = "aarch64" ]; then LIB_DIR="/usr/lib/aarch64-linux-gnu"; \
-       else LIB_DIR="/usr/lib"; fi \
+        elif [ "$ARCH" = "aarch64" ]; then LIB_DIR="/usr/lib/aarch64-linux-gnu"; \
+        else LIB_DIR="/usr/lib"; fi \
     && ln -sf $(ls ${LIB_DIR}/libleveldb.so.1* 2>/dev/null | head -1) ${LIB_DIR}/libleveldb.so.1 || true
 
 # Install PostgreSQL 18 client (psql, pg_dump, pg_restore must match server version)

@@ -1,166 +1,210 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
-import { asHandler, createEvent, expectHttpError, stubNitro } from './nitro'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vite-plus/test";
+import { asHandler, createEvent, expectHttpError, stubNitro } from "./nitro";
 
 beforeEach(() => {
-  stubNitro()
-})
+  stubNitro();
+});
 
 afterEach(() => {
-  vi.unstubAllEnvs()
-})
+  vi.unstubAllEnvs();
+});
 
-describe('GET /api/auth/me', () => {
-  const load = async () => asHandler(await import('~/server/api/auth/me.get'))
+describe("GET /api/auth/me", () => {
+  const load = async () => asHandler(await import("~/server/api/auth/me.get"));
 
-  it('returns no user without the cookie', async () => {
-    expect(await (await load())(createEvent())).toEqual({ user: null })
-  })
+  it("returns no user without the cookie", async () => {
+    expect(await (await load())(createEvent())).toEqual({ user: null });
+  });
 
-  it('returns the user stored in the cookie', async () => {
-    const event = createEvent({ cookies: { osm_user: JSON.stringify({ id: 1, username: 'mapper' }) } })
-    expect(await (await load())(event)).toEqual({ user: { id: 1, username: 'mapper' } })
-  })
+  it("returns the user stored in the cookie", async () => {
+    const event = createEvent({
+      cookies: { osm_user: JSON.stringify({ id: 1, username: "mapper" }) },
+    });
+    expect(await (await load())(event)).toEqual({
+      user: { id: 1, username: "mapper" },
+    });
+  });
 
-  it('returns no user when the cookie is not valid JSON', async () => {
-    expect(await (await load())(createEvent({ cookies: { osm_user: '{nope' } }))).toEqual({ user: null })
-  })
-})
+  it("returns no user when the cookie is not valid JSON", async () => {
+    expect(
+      await (
+        await load()
+      )(createEvent({ cookies: { osm_user: "{nope" } })),
+    ).toEqual({ user: null });
+  });
+});
 
-describe('GET /api/auth/osm-login', () => {
-  const load = async () => asHandler(await import('~/server/api/auth/osm-login.get'))
+describe("GET /api/auth/osm-login", () => {
+  const load = async () =>
+    asHandler(await import("~/server/api/auth/osm-login.get"));
 
-  it('stores a CSRF state cookie and redirects to the OSM authorize URL', async () => {
-    const event = createEvent()
+  it("stores a CSRF state cookie and redirects to the OSM authorize URL", async () => {
+    const event = createEvent();
     await (
       await load()
-    )(event)
+    )(event);
 
-    const state = event.setCookies.oauth_state
-    expect(state?.value).toMatch(/^[a-z0-9]+$/)
-    expect(state?.opts).toMatchObject({ httpOnly: true, maxAge: 600, path: '/', sameSite: 'lax', secure: false })
+    const state = event.setCookies.oauth_state;
+    expect(state?.value).toMatch(/^[a-z0-9]+$/);
+    expect(state?.opts).toMatchObject({
+      httpOnly: true,
+      maxAge: 600,
+      path: "/",
+      sameSite: "lax",
+      secure: false,
+    });
 
-    const url = new URL(event.redirect ?? '')
-    expect(url.origin + url.pathname).toBe('https://www.openstreetmap.org/oauth2/authorize')
+    const url = new URL(event.redirect ?? "");
+    expect(url.origin + url.pathname).toBe(
+      "https://www.openstreetmap.org/oauth2/authorize",
+    );
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      client_id: 'client-id',
-      redirect_uri: 'https://be2osm.test/api/auth/osm-callback',
-      response_type: 'code',
-      scope: 'read_prefs',
-      state: state?.value
-    })
-  })
+      client_id: "client-id",
+      redirect_uri: "https://be2osm.test/api/auth/osm-callback",
+      response_type: "code",
+      scope: "read_prefs",
+      state: state?.value,
+    });
+  });
 
-  it('marks the state cookie secure in production', async () => {
-    vi.stubEnv('NODE_ENV', 'production')
-    const event = createEvent()
+  it("marks the state cookie secure in production", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const event = createEvent();
     await (
       await load()
-    )(event)
-    expect(event.setCookies.oauth_state?.opts.secure).toBe(true)
-  })
-})
+    )(event);
+    expect(event.setCookies.oauth_state?.opts.secure).toBe(true);
+  });
+});
 
-describe('POST /api/auth/osm-logout', () => {
-  it('deletes both auth cookies', async () => {
-    const handler = asHandler(await import('~/server/api/auth/osm-logout.post'))
-    const event = createEvent()
-    expect(await handler(event)).toEqual({ success: true })
-    expect(event.deletedCookies).toEqual(['osm_token', 'osm_user'])
-  })
-})
+describe("POST /api/auth/osm-logout", () => {
+  it("deletes both auth cookies", async () => {
+    const handler = asHandler(
+      await import("~/server/api/auth/osm-logout.post"),
+    );
+    const event = createEvent();
+    expect(await handler(event)).toEqual({ success: true });
+    expect(event.deletedCookies).toEqual(["osm_token", "osm_user"]);
+  });
+});
 
-describe('GET /api/auth/osm-callback', () => {
-  const load = async () => asHandler(await import('~/server/api/auth/osm-callback.get'))
-  const callbackEvent = (query: Record<string, string>, storedState = 'abc') =>
-    createEvent({ cookies: { oauth_state: storedState }, query })
+describe("GET /api/auth/osm-callback", () => {
+  const load = async () =>
+    asHandler(await import("~/server/api/auth/osm-callback.get"));
+  const callbackEvent = (query: Record<string, string>, storedState = "abc") =>
+    createEvent({ cookies: { oauth_state: storedState }, query });
 
   beforeEach(() => {
-    vi.spyOn(console, 'error').mockImplementation(() => {})
-  })
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
 
-  it('rejects a state that does not match the cookie (CSRF)', async () => {
-    const error = await expectHttpError((await load())(callbackEvent({ code: 'c', state: 'other' })))
-    expect(error.statusCode).toBe(400)
-  })
+  it("rejects a state that does not match the cookie (CSRF)", async () => {
+    const error = await expectHttpError(
+      (await load())(callbackEvent({ code: "c", state: "other" })),
+    );
+    expect(error.statusCode).toBe(400);
+  });
 
-  it('rejects a missing state', async () => {
-    const error = await expectHttpError((await load())(callbackEvent({ code: 'c' })))
-    expect(error.statusCode).toBe(400)
-  })
+  it("rejects a missing state", async () => {
+    const error = await expectHttpError(
+      (await load())(callbackEvent({ code: "c" })),
+    );
+    expect(error.statusCode).toBe(400);
+  });
 
-  it('rejects a missing code after clearing the state cookie', async () => {
-    const event = callbackEvent({ state: 'abc' })
-    const error = await expectHttpError((await load())(event))
-    expect(error.statusCode).toBe(400)
-    expect(error.message).toBe('No authorization code received')
-    expect(event.deletedCookies).toEqual(['oauth_state'])
-  })
+  it("rejects a missing code after clearing the state cookie", async () => {
+    const event = callbackEvent({ state: "abc" });
+    const error = await expectHttpError((await load())(event));
+    expect(error.statusCode).toBe(400);
+    expect(error.message).toBe("No authorization code received");
+    expect(event.deletedCookies).toEqual(["oauth_state"]);
+  });
 
-  it('exchanges the code, stores the token and user cookies and redirects', async () => {
+  it("exchanges the code, stores the token and user cookies and redirects", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce({ access_token: 'tok' })
+      .mockResolvedValueOnce({ access_token: "tok" })
       .mockResolvedValueOnce({
         user: {
-          account_created: '2020-01-01T00:00:00Z',
+          account_created: "2020-01-01T00:00:00Z",
           changesets: { count: 12 },
-          display_name: 'mapper',
+          display_name: "mapper",
           id: 42,
-          img: { href: 'https://img/avatar.png' }
-        }
-      })
-    vi.stubGlobal('$fetch', fetchMock)
+          img: { href: "https://img/avatar.png" },
+        },
+      });
+    vi.stubGlobal("$fetch", fetchMock);
 
-    const event = callbackEvent({ code: 'the-code', state: 'abc' })
-    expect(await (await load())(event)).toBe('/?auth=success')
+    const event = callbackEvent({ code: "the-code", state: "abc" });
+    expect(await (await load())(event)).toBe("/?auth=success");
 
-    const [tokenUrl, tokenInit] = fetchMock.mock.calls[0] as [string, { method: string; body: string }]
-    expect(tokenUrl).toBe('https://www.openstreetmap.org/oauth2/token')
-    expect(tokenInit.method).toBe('POST')
+    const [tokenUrl, tokenInit] = fetchMock.mock.calls[0] as [
+      string,
+      { method: string; body: string },
+    ];
+    expect(tokenUrl).toBe("https://www.openstreetmap.org/oauth2/token");
+    expect(tokenInit.method).toBe("POST");
     expect(Object.fromEntries(new URLSearchParams(tokenInit.body))).toEqual({
-      client_id: 'client-id',
-      client_secret: 'secret',
-      code: 'the-code',
-      grant_type: 'authorization_code',
-      redirect_uri: 'https://be2osm.test/api/auth/osm-callback'
-    })
-    const [, userInit] = fetchMock.mock.calls[1] as [string, { headers: Record<string, string> }]
-    expect(userInit.headers.Authorization).toBe('Bearer tok')
+      client_id: "client-id",
+      client_secret: "secret",
+      code: "the-code",
+      grant_type: "authorization_code",
+      redirect_uri: "https://be2osm.test/api/auth/osm-callback",
+    });
+    const [, userInit] = fetchMock.mock.calls[1] as [
+      string,
+      { headers: Record<string, string> },
+    ];
+    expect(userInit.headers.Authorization).toBe("Bearer tok");
 
-    expect(event.setCookies.osm_token?.value).toBe('tok')
-    expect(event.setCookies.osm_token?.opts.httpOnly).toBe(true)
-    expect(JSON.parse(event.setCookies.osm_user?.value ?? '')).toEqual({
-      avatar: 'https://img/avatar.png',
+    expect(event.setCookies.osm_token?.value).toBe("tok");
+    expect(event.setCookies.osm_token?.opts.httpOnly).toBe(true);
+    expect(JSON.parse(event.setCookies.osm_user?.value ?? "")).toEqual({
+      avatar: "https://img/avatar.png",
       changesets: 12,
-      displayName: 'mapper',
+      displayName: "mapper",
       id: 42,
-      joinDate: '2020-01-01T00:00:00Z',
-      username: 'mapper'
-    })
-    expect(event.setCookies.osm_user?.opts.httpOnly).toBe(false)
-  })
+      joinDate: "2020-01-01T00:00:00Z",
+      username: "mapper",
+    });
+    expect(event.setCookies.osm_user?.opts.httpOnly).toBe(false);
+  });
 
-  it('defaults the avatar and changeset count when OSM omits them', async () => {
-    vi.stubEnv('NODE_ENV', 'production')
+  it("defaults the avatar and changeset count when OSM omits them", async () => {
+    vi.stubEnv("NODE_ENV", "production");
     vi.stubGlobal(
-      '$fetch',
+      "$fetch",
       vi
         .fn()
-        .mockResolvedValueOnce({ access_token: 'tok' })
-        .mockResolvedValueOnce({ user: { account_created: 'x', display_name: 'new', id: 1 } })
-    )
-    const event = callbackEvent({ code: 'c', state: 'abc' })
+        .mockResolvedValueOnce({ access_token: "tok" })
+        .mockResolvedValueOnce({
+          user: { account_created: "x", display_name: "new", id: 1 },
+        }),
+    );
+    const event = callbackEvent({ code: "c", state: "abc" });
     await (
       await load()
-    )(event)
-    expect(JSON.parse(event.setCookies.osm_user?.value ?? '')).toMatchObject({ avatar: null, changesets: 0 })
-    expect(event.setCookies.osm_token?.opts.secure).toBe(true)
-  })
+    )(event);
+    expect(JSON.parse(event.setCookies.osm_user?.value ?? "")).toMatchObject({
+      avatar: null,
+      changesets: 0,
+    });
+    expect(event.setCookies.osm_token?.opts.secure).toBe(true);
+  });
 
-  it('answers 500 when the OSM token exchange fails', async () => {
-    vi.stubGlobal('$fetch', vi.fn().mockRejectedValue(new Error('network')))
-    const error = await expectHttpError((await load())(callbackEvent({ code: 'c', state: 'abc' })))
-    expect(error.statusCode).toBe(500)
-    expect(error.message).toBe('Authentication failed')
-  })
-})
+  it("answers 500 when the OSM token exchange fails", async () => {
+    vi.stubGlobal("$fetch", vi.fn().mockRejectedValue(new Error("network")));
+    const error = await expectHttpError(
+      (await load())(callbackEvent({ code: "c", state: "abc" })),
+    );
+    expect(error.statusCode).toBe(500);
+    expect(error.message).toBe("Authentication failed");
+  });
+});

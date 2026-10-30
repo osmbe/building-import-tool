@@ -1,5 +1,5 @@
-import { ref } from 'vue'
-import type { MatchMode } from '~/utils/matchMode'
+import { ref } from "vue";
+import type { MatchMode } from "~/utils/matchMode";
 
 /**
  * Match mode for comparing GRB and OSM buildings (see utils/matchMode.ts)
@@ -8,28 +8,28 @@ import type { MatchMode } from '~/utils/matchMode'
  * - 'both': Candidate only if it is BOTH spatially unmatched AND missing the source tag (GRB only)
  */
 
-const matchMode = ref<MatchMode>('geometry')
-const geometryThreshold = ref(0.85)
+const matchMode = ref<MatchMode>("geometry");
+const geometryThreshold = ref(0.85);
 // Issue #9: opt-in to sourcing OSM buildings live from Overpass instead of the daily Postgres mirror.
-const useOverpass = ref(false)
+const useOverpass = ref(false);
 
 export function useMatchMode() {
   const setMatchMode = (mode: MatchMode) => {
-    matchMode.value = mode
-  }
+    matchMode.value = mode;
+  };
 
   const toggleMatchMode = () => {
-    matchMode.value = matchMode.value === 'geometry' ? 'source' : 'geometry'
-  }
+    matchMode.value = matchMode.value === "geometry" ? "source" : "geometry";
+  };
 
   const setGeometryThreshold = (value: number) => {
-    if (Number.isNaN(value)) return
-    geometryThreshold.value = Math.min(0.95, Math.max(0.3, value))
-  }
+    if (Number.isNaN(value)) return;
+    geometryThreshold.value = Math.min(0.95, Math.max(0.3, value));
+  };
 
   const setUseOverpass = (value: boolean) => {
-    useOverpass.value = value
-  }
+    useOverpass.value = value;
+  };
 
   return {
     geometryThreshold,
@@ -38,6 +38,6 @@ export function useMatchMode() {
     setMatchMode,
     setUseOverpass,
     toggleMatchMode,
-    useOverpass
-  }
+    useOverpass,
+  };
 }

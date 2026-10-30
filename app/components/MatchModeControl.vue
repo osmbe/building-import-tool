@@ -6,7 +6,11 @@
       :class="!collapsed ? 'border-b border-white/[0.05]' : ''"
       @click="collapsed = !collapsed"
     >
-      <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Match Mode</div>
+      <div
+        class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground"
+      >
+        Match Mode
+      </div>
       <ChevronDown
         class="h-3 w-3 text-muted-foreground transition-transform duration-200"
         :class="collapsed ? '-rotate-90' : ''"
@@ -15,15 +19,26 @@
 
     <!-- Collapsible body -->
     <div v-show="!collapsed" class="p-2.5">
-      <div v-if="!canCalculateDifference" class="mb-2.5 pb-2.5 space-y-1 border-b border-white/[0.05]">
-        <div class="text-[8px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+      <div
+        v-if="!canCalculateDifference"
+        class="mb-2.5 pb-2.5 space-y-1 border-b border-white/[0.05]"
+      >
+        <div
+          class="text-[8px] font-semibold uppercase tracking-widest text-muted-foreground mb-1"
+        >
           Before you start
         </div>
         <button class="check-row" @click="emit('revealLayers')">
-          <span class="check-mark" :class="sourceLayerEnabled ? 'check-done' : ''">
+          <span
+            class="check-mark"
+            :class="sourceLayerEnabled ? 'check-done' : ''"
+          >
             <Check v-if="sourceLayerEnabled" class="h-2 w-2" />
           </span>
-          <span class="flex-1 text-left" :class="sourceLayerEnabled ? 'text-emerald-400/80' : ''">
+          <span
+            class="flex-1 text-left"
+            :class="sourceLayerEnabled ? 'text-emerald-400/80' : ''"
+          >
             Source dataset on
           </span>
           <span v-if="!sourceLayerEnabled" class="check-action">Layers</span>
@@ -32,14 +47,22 @@
           <span class="check-mark" :class="osmLayerEnabled ? 'check-done' : ''">
             <Check v-if="osmLayerEnabled" class="h-2 w-2" />
           </span>
-          <span class="flex-1 text-left" :class="osmLayerEnabled ? 'text-emerald-400/80' : ''">OSM Buildings on</span>
+          <span
+            class="flex-1 text-left"
+            :class="osmLayerEnabled ? 'text-emerald-400/80' : ''"
+            >OSM Buildings on</span
+          >
           <span v-if="!osmLayerEnabled" class="check-action">Layers</span>
         </button>
         <button class="check-row" @click="emit('zoomToWorkingLevel')">
           <span class="check-mark" :class="zoomReady ? 'check-done' : ''">
             <Check v-if="zoomReady" class="h-2 w-2" />
           </span>
-          <span class="flex-1 text-left" :class="zoomReady ? 'text-emerald-400/80' : ''">Zoom in to ≥ 16</span>
+          <span
+            class="flex-1 text-left"
+            :class="zoomReady ? 'text-emerald-400/80' : ''"
+            >Zoom in to ≥ 16</span
+          >
           <span v-if="!zoomReady" class="check-action">Zoom</span>
         </button>
       </div>
@@ -84,20 +107,40 @@
         </button>
       </div>
       <p class="text-[9px] text-muted-foreground mt-2 leading-relaxed">
-        <template v-if="matchMode === 'geometry'">Spatial: unmatched buildings in view (GRB, PICC, or UrbIS)</template>
-        <template v-else-if="matchMode === 'source'">Missing source:geometry:oidn tag (GRB only)</template>
-        <template v-else>Spatially unmatched AND missing source tag (GRB only)</template>
+        <template v-if="matchMode === 'geometry'"
+          >Spatial: unmatched buildings in view (GRB, PICC, or UrbIS)</template
+        >
+        <template v-else-if="matchMode === 'source'"
+          >Missing source:geometry:oidn tag (GRB only)</template
+        >
+        <template v-else
+          >Spatially unmatched AND missing source tag (GRB only)</template
+        >
       </p>
 
-      <p v-if="!sourceSupportsTags" class="text-[9px] text-amber-400/90 mt-1.5 leading-relaxed">
+      <p
+        v-if="!sourceSupportsTags"
+        class="text-[9px] text-amber-400/90 mt-1.5 leading-relaxed"
+      >
         {{ tagsUnavailableMessage }}
-        <template v-if="matchMode !== 'geometry'">Using geometry matching instead.</template>
+        <template v-if="matchMode !== 'geometry'"
+          >Using geometry matching instead.</template
+        >
       </p>
 
-      <div v-if="matchMode === 'geometry' || matchMode === 'both' || !sourceSupportsTags" class="mt-2.5 space-y-1.5">
+      <div
+        v-if="
+          matchMode === 'geometry' ||
+          matchMode === 'both' ||
+          !sourceSupportsTags
+        "
+        class="mt-2.5 space-y-1.5"
+      >
         <div class="flex items-center justify-between text-[10px]">
           <span class="text-muted-foreground">Match strictness</span>
-          <span class="font-mono text-foreground/70">{{ Math.round(geometryThreshold * 100) }}%</span>
+          <span class="font-mono text-foreground/70"
+            >{{ Math.round(geometryThreshold * 100) }}%</span
+          >
         </div>
         <input
           type="range"
@@ -115,8 +158,12 @@
 
       <!-- Issue #9: opt-in to live OSM data from Overpass -->
       <div class="mt-3 pt-2.5 border-t border-white/[0.05]">
-        <label class="flex items-center justify-between gap-2 cursor-pointer select-none">
-          <span class="flex items-center gap-1.5 text-[10px] text-foreground/80">
+        <label
+          class="flex items-center justify-between gap-2 cursor-pointer select-none"
+        >
+          <span
+            class="flex items-center gap-1.5 text-[10px] text-foreground/80"
+          >
             <Radio class="h-3 w-3 text-primary/70" />
             Live OSM data
           </span>
@@ -124,12 +171,15 @@
             type="checkbox"
             class="accent-primary h-3 w-3"
             :checked="useOverpass"
-            @change="setUseOverpass(($event.target as HTMLInputElement).checked)"
+            @change="
+              setUseOverpass(($event.target as HTMLInputElement).checked)
+            "
           />
         </label>
         <p class="text-[9px] text-muted-foreground/80 mt-1.5 leading-relaxed">
-          Queries OpenStreetMap live (Overpass) for this view instead of our daily copy, for the map and the difference.
-          Slower, and limited to a small view (about a city block to a town centre).
+          Queries OpenStreetMap live (Overpass) for this view instead of our
+          daily copy, for the map and the difference. Slower, and limited to a
+          small view (about a city block to a town centre).
         </p>
       </div>
 
@@ -142,53 +192,73 @@
       >
         <Loader2 v-if="calculating" class="h-3 w-3 animate-spin shrink-0" />
         <GitCompareArrows v-else class="h-3 w-3 shrink-0" />
-        <span>{{ calculating ? 'Calculating…' : 'Get Difference' }}</span>
+        <span>{{ calculating ? "Calculating…" : "Get Difference" }}</span>
       </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Check, ChevronDown, GitCompareArrows, Loader2, Radio } from 'lucide-vue-next'
-import { computed, ref, watch } from 'vue'
-import { useMatchMode } from '~/composables/useMatchMode'
+import {
+  Check,
+  ChevronDown,
+  GitCompareArrows,
+  Loader2,
+  Radio,
+} from "lucide-vue-next";
+import { computed, ref, watch } from "vue";
+import { useMatchMode } from "~/composables/useMatchMode";
 
 const props = withDefaults(
   defineProps<{
-    sourceSupportsTags?: boolean
-    mapReady: boolean
-    sourceLayerEnabled: boolean
-    osmLayerEnabled: boolean
-    zoom: number
-    calculating?: boolean
+    sourceSupportsTags?: boolean;
+    mapReady: boolean;
+    sourceLayerEnabled: boolean;
+    osmLayerEnabled: boolean;
+    zoom: number;
+    calculating?: boolean;
   }>(),
-  { calculating: false, sourceSupportsTags: true }
-)
+  { calculating: false, sourceSupportsTags: true },
+);
 const emit = defineEmits<{
-  readinessChange: [ready: boolean]
-  calculateDifference: []
-  revealLayers: []
-  zoomToWorkingLevel: []
-}>()
+  readinessChange: [ready: boolean];
+  calculateDifference: [];
+  revealLayers: [];
+  zoomToWorkingLevel: [];
+}>();
 
-const tagsUnavailableMessage = 'Source and Both modes need GRB data (PICC, UrbIS and KNW have no source tags in OSM).'
+const tagsUnavailableMessage =
+  "Source and Both modes need GRB data (PICC, UrbIS and KNW have no source tags in OSM).";
 
-const { matchMode, geometryThreshold, useOverpass, setMatchMode, setGeometryThreshold, setUseOverpass } = useMatchMode()
-const collapsed = ref(false)
-const zoomReady = computed(() => props.zoom >= 16)
+const {
+  matchMode,
+  geometryThreshold,
+  useOverpass,
+  setMatchMode,
+  setGeometryThreshold,
+  setUseOverpass,
+} = useMatchMode();
+const collapsed = ref(false);
+const zoomReady = computed(() => props.zoom >= 16);
 const canCalculateDifference = computed(
-  () => props.mapReady && props.sourceLayerEnabled && props.osmLayerEnabled && zoomReady.value
-)
+  () =>
+    props.mapReady &&
+    props.sourceLayerEnabled &&
+    props.osmLayerEnabled &&
+    zoomReady.value,
+);
 
-watch(canCalculateDifference, (ready) => emit('readinessChange', ready), { immediate: true })
+watch(canCalculateDifference, (ready) => emit("readinessChange", ready), {
+  immediate: true,
+});
 
 const onThresholdInput = (event: Event) => {
-  const target = event.target as HTMLInputElement | null
-  if (!target) return
+  const target = event.target as HTMLInputElement | null;
+  if (!target) return;
 
-  const value = Number(target.value)
-  if (Number.isNaN(value)) return
+  const value = Number(target.value);
+  if (Number.isNaN(value)) return;
 
-  setGeometryThreshold(value / 100)
-}
+  setGeometryThreshold(value / 100);
+};
 </script>

@@ -34,9 +34,9 @@ case "${1:-}" in
 --deploy) MODE=deploy ;;
 --status) MODE=status ;;
 *)
-    echo "usage: $0 [--deploy|--status]" >&2
-    exit 2
-    ;;
+  echo "usage: $0 [--deploy|--status]" >&2
+  exit 2
+  ;;
 esac
 
 psql_q() { psql -X -q -tA -v ON_ERROR_STOP=1 "$@"; }
@@ -45,23 +45,23 @@ tracking_table() { [ "$1" = common ] && echo public.schema_migrations || echo "$
 
 # "<checksum>" of an applied version, or "" when it is not applied (or its schema/table doesn't exist yet)
 applied_checksum() { # <scope> <version>
-    local table
-    table=$(tracking_table "$1")
-    psql_q -c "SELECT coalesce((SELECT checksum FROM $table WHERE version = '$2'), '')" 2>/dev/null || true
+  local table
+  table=$(tracking_table "$1")
+  psql_q -c "SELECT coalesce((SELECT checksum FROM $table WHERE version = '$2'), '')" 2>/dev/null || true
 }
 
 apply_file() { # <scope> <file> <version> <checksum>
-    local scope="$1" file="$2" version="$3" checksum="$4" table begin="BEGIN;" commit="COMMIT;" create_schema=""
-    table=$(tracking_table "$scope")
-    [ "$scope" = common ] || create_schema="CREATE SCHEMA IF NOT EXISTS $scope;"
-    if grep -q '^-- migrate:no-transaction' "$file"; then
-        begin=""
-        commit=""
-    fi
-    local attempt output
-    for attempt in $(seq 1 "$RETRIES"); do
-        if output=$(
-            psql -X -q -v ON_ERROR_STOP=1 -v version="$version" -v checksum="$checksum" 2>&1 <<SQL
+  local scope="$1" file="$2" version="$3" checksum="$4" table begin="BEGIN;" commit="COMMIT;" create_schema=""
+  table=$(tracking_table "$scope")
+  [ "$scope" = common ] || create_schema="CREATE SCHEMA IF NOT EXISTS $scope;"
+  if grep -q '^-- migrate:no-transaction' "$file"; then
+    begin=""
+    commit=""
+  fi
+  local attempt output
+  for attempt in $(seq 1 "$RETRIES"); do
+    if output=$(
+      psql -X -q -v ON_ERROR_STOP=1 -v version="$version" -v checksum="$checksum" 2>&1 <<SQL
 SET client_min_messages = warning;
 SELECT pg_advisory_lock($LOCK_KEY) AS locked \gset
 $create_schema
@@ -79,64 +79,64 @@ INSERT INTO $table (version, checksum) VALUES (:'version', :'checksum');
 $commit
 \endif
 SQL
-        ); then
-            [ -z "$output" ] || printf '%s\n' "$output"
-            return 0
-        fi
-        if grep -q 'lock timeout' <<<"$output" && [ "$attempt" -lt "$RETRIES" ]; then
-            echo "   ⏳ $scope/$version waits for a lock held by running queries (attempt $attempt/$RETRIES), retrying..."
-            sleep 2
-            continue
-        fi
-        printf '%s\n' "$output" >&2
-        return 1
-    done
+    ); then
+      [ -z "$output" ] || printf '%s\n' "$output"
+      return 0
+    fi
+    if grep -q 'lock timeout' <<<"$output" && [ "$attempt" -lt "$RETRIES" ]; then
+      echo "   ⏳ $scope/$version waits for a lock held by running queries (attempt $attempt/$RETRIES), retrying..."
+      sleep 2
+      continue
+    fi
+    printf '%s\n' "$output" >&2
+    return 1
+  done
 }
 
 STATUS=0
 for scope in "${SCOPES[@]}"; do
-    dir="$MIGRATIONS_DIR/$scope"
-    [ -d "$dir" ] || continue
-    for file in "$dir"/[0-9]*.sql; do
-        [ -e "$file" ] || continue
-        version="$(basename "$file" .sql)"
-        checksum="$(sha256sum "$file" | cut -d' ' -f1)"
-        applied="$(applied_checksum "$scope" "$version")"
-        heavy=""
-        grep -q '^-- migrate:heavy' "$file" && heavy=" (heavy)"
+  dir="$MIGRATIONS_DIR/$scope"
+  [ -d "$dir" ] || continue
+  for file in "$dir"/[0-9]*.sql; do
+    [ -e "$file" ] || continue
+    version="$(basename "$file" .sql)"
+    checksum="$(sha256sum "$file" | cut -d' ' -f1)"
+    applied="$(applied_checksum "$scope" "$version")"
+    heavy=""
+    grep -q '^-- migrate:heavy' "$file" && heavy=" (heavy)"
 
-        if [ -n "$applied" ]; then
-            if [ "$applied" != "$checksum" ]; then
-                echo "❌ $scope/$version was applied with a different checksum: applied migrations must not change." >&2
-                echo "   Add a new migration instead." >&2
-                exit 1
-            fi
-            [ "$MODE" = status ] && echo "   applied  $scope/$version"
-            continue
-        fi
+    if [ -n "$applied" ]; then
+      if [ "$applied" != "$checksum" ]; then
+        echo "❌ $scope/$version was applied with a different checksum: applied migrations must not change." >&2
+        echo "   Add a new migration instead." >&2
+        exit 1
+      fi
+      [ "$MODE" = status ] && echo "   applied  $scope/$version"
+      continue
+    fi
 
-        case "$MODE" in
-        status)
-            echo "   pending  $scope/$version$heavy"
-            STATUS=3
-            ;;
-        deploy)
-            if [ -n "$heavy" ]; then
-                echo "❌ $scope/$version is a heavy migration and is not applied yet. Deploys don't start heavy" >&2
-                echo "   migrations: run \`just db-migrate\` on the server first (see docs/RUNBOOK.md)." >&2
-                exit 1
-            fi
-            ;&
-        apply)
-            echo "🔧 $scope/$version$heavy"
-            apply_file "$scope" "$file" "$version" "$checksum"
-            ;;
-        esac
-    done
+    case "$MODE" in
+    status)
+      echo "   pending  $scope/$version$heavy"
+      STATUS=3
+      ;;
+    deploy)
+      if [ -n "$heavy" ]; then
+        echo "❌ $scope/$version is a heavy migration and is not applied yet. Deploys don't start heavy" >&2
+        echo "   migrations: run \`just db-migrate\` on the server first (see docs/RUNBOOK.md)." >&2
+        exit 1
+      fi
+      ;&
+    apply)
+      echo "🔧 $scope/$version$heavy"
+      apply_file "$scope" "$file" "$version" "$checksum"
+      ;;
+    esac
+  done
 done
 
 if [ "$MODE" = status ]; then
-    [ "$STATUS" = 0 ] && echo "✅ every migration is applied" || echo "⚠️  pending migrations"
-    exit 0
+  [ "$STATUS" = 0 ] && echo "✅ every migration is applied" || echo "⚠️  pending migrations"
+  exit 0
 fi
 echo "✅ migrations applied"

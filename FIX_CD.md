@@ -20,18 +20,18 @@ webhook. It checks the result and rolls back automatically if the new app doesn'
 ## Before you start
 
 - [ ] **CI is green on the latest commit of `main`**
-  (<https://github.com/osmbe/building-import-tool/actions/workflows/ci.yml>). The script pulls the images CI built
-  for that commit.
+      (<https://github.com/osmbe/building-import-tool/actions/workflows/ci.yml>). The script pulls the images CI built
+      for that commit.
 - [ ] **No import workflow is running** (Actions → GRB/PICC/UrbIS/OSM Import). And don't start the GRB Import
-  before the upgrade: the old restore script on the server empties the GRB tables and can't load the new dump
-  format.
+      before the upgrade: the old restore script on the server empties the GRB tables and can't load the new dump
+      format.
 - [ ] **You can run `docker` on the server** (root, or a user in the `docker` group) and you are the owner of the
-  checkout, or root.
+      checkout, or root.
 - [ ] **`GH_TOKEN` in `/opt/docker/buildings/.env`** is a classic personal access token with the `repo` and
-  `read:packages` scopes. It is used to fetch the private repo, pull the images from GHCR and download import
-  artifacts. Step 2 below shows its scopes.
+      `read:packages` scopes. It is used to fetch the private repository, pull the images from GHCR and download import
+      artifacts. Step 2 below shows its scopes.
 - [ ] **Free disk:** the GRB view is rebuilt next to the old one, so you need roughly twice its size plus 10 GB.
-  The report in step 2 shows the sizes, and the script refuses to start the migrations without enough space.
+      The report in step 2 shows the sizes, and the script refuses to start the migrations without enough space.
 
 ## Steps
 
@@ -133,7 +133,8 @@ fixed.
 
 Start **Actions → GRB Import → Run workflow** (1–2 hours). It rebuilds GRB in the new format and swaps it in when
 it's ready:
-- GBA polygons that share an id with a GBG polygon show up again;
+
+- GBA polygons that share an ID with a GBG polygon show up again;
 - the disk freed by the dropped columns comes back.
 
 The site keeps serving the current data until the swap.

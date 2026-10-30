@@ -22,7 +22,12 @@
     </div>
 
     <SearchResults
-      v-if="open && (isLoading || results.length > 0 || (query.length < 3 && history.length > 0))"
+      v-if="
+        open &&
+        (isLoading ||
+          results.length > 0 ||
+          (query.length < 3 && history.length > 0))
+      "
       :results="results"
       :is-loading="isLoading"
       :search-history="history"
@@ -39,65 +44,65 @@ import {
   type SearchResult,
   addToSearchHistory,
   getSearchHistory,
-  searchLocations
-} from '~/composables/useSearch'
-import { Search, X } from 'lucide-vue-next'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
-import SearchResults from '~/components/SearchResults.vue'
+  searchLocations,
+} from "~/composables/useSearch";
+import { Search, X } from "lucide-vue-next";
+import { onMounted, onUnmounted, ref, watch } from "vue";
+import SearchResults from "~/components/SearchResults.vue";
 
-const emit = defineEmits<{ (e: 'select', result: SearchResult): void }>()
+const emit = defineEmits<{ (e: "select", result: SearchResult): void }>();
 
-const query = ref('')
-const provider = ref<Provider>('osm')
-const results = ref<SearchResult[]>([])
-const isLoading = ref(false)
-const open = ref(false)
-const history = ref<SearchResult[]>([])
+const query = ref("");
+const provider = ref<Provider>("osm");
+const results = ref<SearchResult[]>([]);
+const isLoading = ref(false);
+const open = ref(false);
+const history = ref<SearchResult[]>([]);
 
-let debounceTimer: NodeJS.Timeout | null = null
+let debounceTimer: NodeJS.Timeout | null = null;
 
 onMounted(() => {
-  history.value = getSearchHistory()
-})
+  history.value = getSearchHistory();
+});
 
 onUnmounted(() => {
-  if (debounceTimer) clearTimeout(debounceTimer)
-})
+  if (debounceTimer) clearTimeout(debounceTimer);
+});
 
 function clear() {
-  query.value = ''
-  results.value = []
+  query.value = "";
+  results.value = [];
 }
 
 watch([query, provider], ([q, p]) => {
-  if (debounceTimer) clearTimeout(debounceTimer)
+  if (debounceTimer) clearTimeout(debounceTimer);
 
   if (!q || q.trim().length < 3) {
-    results.value = []
-    isLoading.value = false
-    return
+    results.value = [];
+    isLoading.value = false;
+    return;
   }
 
-  isLoading.value = true
+  isLoading.value = true;
 
   debounceTimer = setTimeout(async () => {
     try {
-      const searchResults = await searchLocations(q, p)
-      results.value = searchResults
+      const searchResults = await searchLocations(q, p);
+      results.value = searchResults;
     } catch (e) {
-      console.error('Search error:', e)
-      results.value = []
+      console.error("Search error:", e);
+      results.value = [];
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
-  }, 500)
-})
+  }, 500);
+});
 
 function selectResult(result: SearchResult) {
-  addToSearchHistory(result)
-  history.value = getSearchHistory()
-  emit('select', result)
-  open.value = false
-  query.value = result.displayName
+  addToSearchHistory(result);
+  history.value = getSearchHistory();
+  emit("select", result);
+  open.value = false;
+  query.value = result.displayName;
 }
 </script>

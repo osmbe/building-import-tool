@@ -5,5 +5,5 @@
 </template>
 
 <script setup lang="ts">
-import { TabsRoot } from 'radix-vue'
+import { TabsRoot } from "radix-vue";
 </script>

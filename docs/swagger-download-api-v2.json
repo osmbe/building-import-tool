@@ -14,9 +14,7 @@
   "paths": {
     "/v2/apiinfo": {
       "get": {
-        "tags": [
-          "ApiInfo"
-        ],
+        "tags": ["ApiInfo"],
         "summary": "Request Info about this api",
         "operationId": "GetApiInfo",
         "responses": {
@@ -96,9 +94,7 @@
     },
     "/v2/categories": {
       "get": {
-        "tags": [
-          "Categories"
-        ],
+        "tags": ["Categories"],
         "summary": "Lists all product categories.",
         "operationId": "GetCategories",
         "responses": {
@@ -178,9 +174,7 @@
     },
     "/v2/categories/{categoryId}": {
       "get": {
-        "tags": [
-          "Categories"
-        ],
+        "tags": ["Categories"],
         "summary": "Lists all products associated with the provided category.",
         "operationId": "GetCategoryById",
         "parameters": [
@@ -273,9 +267,7 @@
     },
     "/v2/client/clientinfo": {
       "get": {
-        "tags": [
-          "Client"
-        ],
+        "tags": ["Client"],
         "summary": "Provides information of the current client.",
         "operationId": "GetClientInfo",
         "responses": {
@@ -325,9 +317,7 @@
     },
     "/v2/datasetgroups": {
       "get": {
-        "tags": [
-          "DatasetGroups"
-        ],
+        "tags": ["DatasetGroups"],
         "summary": "Lists all datasetgroups",
         "operationId": "GetDatasetGroups",
         "parameters": [
@@ -431,9 +421,7 @@
     },
     "/v2/datasetgroups/{datasetGroupId}": {
       "get": {
-        "tags": [
-          "DatasetGroups"
-        ],
+        "tags": ["DatasetGroups"],
         "summary": "Provides a description of a dataset group.",
         "operationId": "GetDatasetGroupById",
         "parameters": [
@@ -525,9 +513,7 @@
     },
     "/v2/orders/{orderId}/status": {
       "get": {
-        "tags": [
-          "Orders"
-        ],
+        "tags": ["Orders"],
         "summary": "Returns the status of the order.",
         "operationId": "GetOrderStatusById",
         "parameters": [
@@ -620,9 +606,7 @@
     },
     "/v2/orders": {
       "post": {
-        "tags": [
-          "Orders"
-        ],
+        "tags": ["Orders"],
         "summary": "Places an order. An orderid is returned upon successfull validation of the order configuration. The order is then processed async.",
         "description": "Example requests :\n            \n1) Minimal request\n            \n```\n{\n  \"productId\": 1,\n  \"format\": \"Shapefile\"\n}\n```\n\n2) Request with Geographical crop (SelectionEntity)\n            \n```\n{\n  \"productId\": 1,\n  \"format\": \"Shapefile\",\n  \"geographicalCrop\": {\n    \"selectionEntityCode\": \"Provincie\",\n    \"selectionEntityCodeValue\": [\"10000\"],\n  }\n}\n```\n            \n3) Request with Geographical crop (Polygon)\n            \n```\n{\n  \"productId\": 1454,\n  \"format\": \"Shapefile\",\n  \"geographicalCrop\": {\n    \"polygon\": {\n        \"coordinates\": [[187085.4939025,201638.5090496],[186000.8878598,191395.0075346],[171599.7298475,200312.8794418],[187085.4939025,201638.5090496]]\n     }\n  }\n}\n```\n            \n            \n4) Request a predefined file\n            \n```\n{\n  \"productId\":4450,\n  \"format\":\"GML\",\n  \"fileIds\": [\"4450/Landbouwgebruikspercelen_LV_2018_GewVLA_GML.zip\"]\n}\n```\n            \n5) Request with Temporal crop\n            \n```\n{\n  \"productId\":1454,\n  \"format\":\"Shapefile\",\n  \"TemporalCrop\" : {\n     \"from\" : \"2022-01-01T00:00:00\",\n     \"to\" : \"2022-01-30T00:00:00\"\n   }\n}\n```\n            \n6) Request a specific version of a product\n            \n```\n{\n  \"productId\":9753,\n  \"format\":\"Shapefile\",\n  \"datasetVersionIds\" : [ \"1493346a-25b3-40db-b5c7-00b4a7336146\" ] \n}\n```",
         "operationId": "CreateOrder",
@@ -714,9 +698,7 @@
         ]
       },
       "get": {
-        "tags": [
-          "Orders"
-        ],
+        "tags": ["Orders"],
         "summary": "Lists all Orders based on owner claims",
         "operationId": "GetOrders",
         "parameters": [
@@ -874,9 +856,7 @@
     },
     "/v2/orders/{orderId}/download/{fileId}": {
       "head": {
-        "tags": [
-          "Orders"
-        ],
+        "tags": ["Orders"],
         "summary": "Returns a file containing the requested orderitem binaries.",
         "operationId": "GetOrderDownloadFileByIdHEAD",
         "parameters": [
@@ -991,9 +971,7 @@
         ]
       },
       "get": {
-        "tags": [
-          "Orders"
-        ],
+        "tags": ["Orders"],
         "summary": "Returns a file containing the requested orderitem binaries.",
         "operationId": "GetOrderDownloadFileByIdGET",
         "parameters": [
@@ -1110,9 +1088,7 @@
     },
     "/v2/orders/getorderproducts": {
       "get": {
-        "tags": [
-          "Orders"
-        ],
+        "tags": ["Orders"],
         "summary": "Lists all Orders Products based on owner claims",
         "operationId": "GetOrderProducts",
         "parameters": [
@@ -1224,9 +1200,7 @@
     },
     "/v2/orders/{orderId}": {
       "get": {
-        "tags": [
-          "Orders"
-        ],
+        "tags": ["Orders"],
         "summary": "Provides the details of the requested order.",
         "operationId": "GetOrderById",
         "parameters": [
@@ -1319,9 +1293,7 @@
     },
     "/v2/orders/mostdownloaded": {
       "get": {
-        "tags": [
-          "Orders"
-        ],
+        "tags": ["Orders"],
         "summary": "Returns the top 5 most downloaded products",
         "operationId": "GetMostDownloadedProducts",
         "responses": {
@@ -1391,9 +1363,7 @@
     },
     "/v2/products": {
       "get": {
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "summary": "Lists all products available for download.",
         "operationId": "GetProducts",
         "parameters": [
@@ -1422,9 +1392,7 @@
             "schema": {
               "type": "array",
               "nullable": true,
-              "example": [
-                10
-              ],
+              "example": [10],
               "items": {
                 "type": "integer",
                 "format": "int32"
@@ -1587,9 +1555,7 @@
     },
     "/v2/products/{productId}": {
       "get": {
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "summary": "Provides a description of a product.",
         "operationId": "GetProductById",
         "parameters": [
@@ -1682,9 +1648,7 @@
     },
     "/v2/products/{productId}/exampleimages/{exampleImageId}": {
       "get": {
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "summary": "Returns a file containing the requested example image.",
         "operationId": "GetProductExampleImageById",
         "parameters": [
@@ -1789,9 +1753,7 @@
     },
     "/v2/products/{productId}/documents/{documentId}": {
       "get": {
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "summary": "Returns a file containing the requested document.",
         "operationId": "GetProductDocumentById",
         "parameters": [
@@ -1896,9 +1858,7 @@
     },
     "/v2/products/newandmodified": {
       "get": {
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "summary": "Returns the top 5 newest and updated products",
         "operationId": "GetNewAndModifiedProducts",
         "responses": {
@@ -1968,9 +1928,7 @@
     },
     "/v2/selectionentities": {
       "get": {
-        "tags": [
-          "SelectionEntities"
-        ],
+        "tags": ["SelectionEntities"],
         "summary": "Lists all entities that may be used for geographical selection.",
         "operationId": "GetSelectionEntities",
         "responses": {
@@ -2050,9 +2008,7 @@
     },
     "/v2/selectionentities/{selectionEntityId}": {
       "get": {
-        "tags": [
-          "SelectionEntities"
-        ],
+        "tags": ["SelectionEntities"],
         "summary": "Lists the allowed values of the provided selection entity with WKT information",
         "operationId": "GetSelectionEntityById",
         "parameters": [
@@ -2155,9 +2111,7 @@
     },
     "/v2/selectionentities/versions": {
       "get": {
-        "tags": [
-          "SelectionEntities"
-        ],
+        "tags": ["SelectionEntities"],
         "summary": "Lists all selection entity versions",
         "operationId": "GetAllSelectionEntityVersions",
         "responses": {
@@ -2296,12 +2250,7 @@
         "type": "object",
         "x-abstract": true,
         "additionalProperties": false,
-        "required": [
-          "type",
-          "title",
-          "status",
-          "detail"
-        ],
+        "required": ["type", "title", "status", "detail"],
         "properties": {
           "type": {
             "type": "string"
@@ -2753,9 +2702,7 @@
             "type": "array",
             "description": "Allowed roles for the product",
             "nullable": true,
-            "example": [
-              "role"
-            ],
+            "example": ["role"],
             "items": {
               "type": "string"
             }
@@ -2776,18 +2723,8 @@
       "EnumOrderStatus": {
         "type": "string",
         "description": "",
-        "x-enumNames": [
-          "Received",
-          "Processing",
-          "Completed",
-          "Error"
-        ],
-        "enum": [
-          "Received",
-          "Processing",
-          "Completed",
-          "Error"
-        ]
+        "x-enumNames": ["Received", "Processing", "Completed", "Error"],
+        "enum": ["Received", "Processing", "Completed", "Error"]
       },
       "OrderCreatedHydraCollection": {
         "type": "object",
@@ -2931,22 +2868,10 @@
             "type": "array",
             "description": "the coordinates of the polygon",
             "example": [
-              [
-                187085.4939025,
-                201638.5090496
-              ],
-              [
-                186000.8878598,
-                191395.0075346
-              ],
-              [
-                171599.7298475,
-                200312.8794418
-              ],
-              [
-                187085.4939025,
-                201638.5090496
-              ]
+              [187085.4939025, 201638.5090496],
+              [186000.8878598, 191395.0075346],
+              [171599.7298475, 200312.8794418],
+              [187085.4939025, 201638.5090496]
             ],
             "items": {
               "type": "array",
@@ -3100,14 +3025,8 @@
       "EnumProductType": {
         "type": "string",
         "description": "the type of a product",
-        "x-enumNames": [
-          "Dataset",
-          "Entity"
-        ],
-        "enum": [
-          "Dataset",
-          "Entity"
-        ]
+        "x-enumNames": ["Dataset", "Entity"],
+        "enum": ["Dataset", "Entity"]
       },
       "OrderConfigurationResponse": {
         "type": "object",
@@ -3553,9 +3472,7 @@
             "type": "array",
             "description": "Allowed roles for the product",
             "nullable": true,
-            "example": [
-              "role"
-            ],
+            "example": ["role"],
             "items": {
               "type": "string"
             }

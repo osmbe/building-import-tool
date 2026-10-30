@@ -41,4 +41,4 @@ postgres:
       # Frontend will flatten tags as top-level properties
       properties:
         osm_id: osm_id
-        tags: tags  # Complete JSONB with all OSM tags
+        tags: tags # Complete JSONB with all OSM tags

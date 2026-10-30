@@ -25,13 +25,13 @@ To build the image yourself: `docker compose build processing`. imposm3 is built
 
 ## Recipes by source
 
-| Source | Full import | Update | Status |
-|---|---|---|---|
-| GRB + KNW | `grb-full` (order, wait, download, import) or `grb-import` on downloaded files; `grb-import-remote` runs it on GitHub Actions | `grb-update` | `grb-status`, `grb-status-orders` |
-| PICC | `picc-full` (download, import); `picc-province-import <PROVINCE>` for one province; `picc-import-remote` | `picc-update` | `picc-status` |
-| UrbIS | `urbis-full` (download, import) | `urbis-update` | `urbis-status` |
-| OSM | `osm-download` then `osm-import`; `osm-import-remote` | `osm-update` | `osm-status` |
-| all | | | `db-sizes`, `db-migrate --status` |
+| Source    | Full import                                                                                                                   | Update         | Status                            |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------- | --------------------------------- |
+| GRB + KNW | `grb-full` (order, wait, download, import) or `grb-import` on downloaded files; `grb-import-remote` runs it on GitHub Actions | `grb-update`   | `grb-status`, `grb-status-orders` |
+| PICC      | `picc-full` (download, import); `picc-province-import <PROVINCE>` for one province; `picc-import-remote`                      | `picc-update`  | `picc-status`                     |
+| UrbIS     | `urbis-full` (download, import)                                                                                               | `urbis-update` | `urbis-status`                    |
+| OSM       | `osm-download` then `osm-import`; `osm-import-remote`                                                                         | `osm-update`   | `osm-status`                      |
+| all       |                                                                                                                               |                | `db-sizes`, `db-migrate --status` |
 
 On the server these run as webhook jobs started by GitHub Actions (see [docs/RUNBOOK.md](../docs/RUNBOOK.md)), not
 by hand.
@@ -41,14 +41,15 @@ by hand.
 GRB comes from the Digitaal Vlaanderen download API (reference: `docs/swagger-download-api-v2.json`). Products are
 ordered, prepared by the API (minutes to hours), then downloaded as shapefiles in Lambert 72:
 
-| Product | Content |
-|---|---|
-| GBG | building polygons and `RltGbgGebouw*.dbf` (polygon → building registry id) |
-| GBA | building attachments (floors, stairs, canopies, ...) |
-| KNW | structures (bridges, chimneys, silos, ...) |
+| Product   | Content                                                                                                                                                                           |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GBG       | building polygons and `RltGbgGebouw*.dbf` (polygon → building registry ID)                                                                                                        |
+| GBA       | building attachments (floors, stairs, canopies, ...)                                                                                                                              |
+| KNW       | structures (bridges, chimneys, silos, ...)                                                                                                                                        |
 | Addresses | address points. The `RltAdresGebouw*.dbf` link files in the same download are not imported: addresses are joined by geometry ([GRB_ADDRESS_JOIN.md](../docs/GRB_ADDRESS_JOIN.md)) |
 
 `grb-import`:
+
 1. `db-migrate`;
 2. load the RltGbgGebouw relation;
 3. import the GBG, GBA and KNW polygons (`entity` = `Gbg`/`Gba`, survey dates converted) and set `gebouw_id`;
@@ -97,17 +98,19 @@ schema, checks it, and swaps the two in one transaction.
 
 ## Folder layout
 
-```
+```mermaid
+treeView-beta
+
 processing/
-├── Dockerfile              # GDAL, imposm3, psql, just, jq
-├── justfile                # every recipe
-├── config/                 # imposm3 config and mapping
-├── scripts/publish-schema.sh
-└── sql/
-    ├── migrate.sh          # the migration runner
-    ├── migrations/         # common/, grb/, picc/, urbis/
-    ├── transforms/         # imposm tables → osm schema
-    └── updates/            # GRB difference download
+    Dockerfile              ## GDAL, imposm3, psql, just, jq
+    justfile                ## every recipe
+    config/                 ## imposm3 config and mapping
+    scripts/publish-schema.sh
+    sql/
+        migrate.sh          ## the migration runner
+        migrations/         ## common/, grb/, picc/, urbis/
+        transforms/         ## imposm tables → osm schema
+        updates/            ## GRB difference download
 ```
 
 ## Resources

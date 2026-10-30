@@ -143,8 +143,8 @@ SELECT
     geom
 FROM osm.osm_buildings
 WHERE tags ? 'source:geometry:ref'
-   OR tags ? 'source:geometry:oidn'
-   OR tags ? 'ref:be:grb';
+    OR tags ? 'source:geometry:oidn'
+    OR tags ? 'ref:be:grb';
 
 CREATE OR REPLACE VIEW osm.buildings_summary AS
 SELECT

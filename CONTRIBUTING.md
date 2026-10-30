@@ -15,7 +15,7 @@ npm run test:coverage    # unit tests; fails below 95% lines/functions/statement
 npm run build
 ```
 
-Database, imports, tiles and API (from the repository root, needs Docker, python3, curl and node):
+Database, imports, tiles and API (from the repository root, needs Docker, python3, cURL and node):
 
 ```bash
 tests/db/run.sh            # every case (a few minutes; PostGIS runs under amd64 emulation on Apple Silicon)
@@ -44,15 +44,15 @@ production: the same PostGIS image and init scripts, the processing image runnin
 four Martin servers with the real configs, and the webhook. Each case in `tests/db/cases/` starts from a clean
 database:
 
-| Cases | What they check |
-|---|---|
-| `05`, `06` | the webhook job server and the CI script that waits for jobs |
-| `10`–`25` | migrations: a fresh database, the runner (checksums, locks, `--deploy`), the candidates contract, upgrades from old schemas |
-| `30`–`55` | every import, update and restore recipe per source, on fixtures; imports must not change the schema |
-| `60` | every Martin config starts and serves a tile per source |
-| `70` | the API integration tests (`app/tests/integration/`), with recorded snapshots of the difference responses and JOSM exports |
-| `80`, `85` | `webhook/deploy.sh` scenarios (rollback included) and the bootstrap's helpers |
-| `90` | the previous release (its Martin configs and API tests) still works on this release's schema |
+| Cases      | What they check                                                                                                             |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `05`, `06` | the webhook job server and the CI script that waits for jobs                                                                |
+| `10`–`25`  | migrations: a fresh database, the runner (checksums, locks, `--deploy`), the candidates contract, upgrades from old schemas |
+| `30`–`55`  | every import, update and restore recipe per source, on fixtures; imports must not change the schema                         |
+| `60`       | every Martin config starts and serves a tile per source                                                                     |
+| `70`       | the API integration tests (`app/tests/integration/`), with recorded snapshots of the difference responses and JOSM exports  |
+| `80`, `85` | `webhook/deploy.sh` scenarios (rollback included) and the bootstrap's helpers                                               |
+| `90`       | the previous release (its Martin configs and API tests) still works on this release's schema                                |
 
 Fixtures are small GeoJSON/CSV/SQL files in `tests/fixtures/`. `tests/fixtures/build.sh` turns them into what the
 recipes read (shapefiles, DBF, FileGDB, GeoPackage).

@@ -23,6 +23,28 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      issues: write
+      pull-requests: write
+      statuses: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: super-linter/super-linter/slim@v9
+        env:
+          # To report GitHub Actions status checks
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_BIOME_FORMAT: false # Disable Biome format validation ; conflicts with Prettier
+          VALIDATE_BIOME_LINT: false # Disable Biome lint validation ; conflicts with ESLint & Stylelint
+          VALIDATE_PYTHON_RUFF_FORMAT: false # Disable Python Ruff validation ; conflicts with Black
+          VALIDATE_SPELL_CODESPELL: false # Disable codespell spell checking
+
   app-build:
     runs-on: ubuntu-latest
     defaults:
@@ -30,6 +52,8 @@ jobs:
         working-directory: app
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -38,24 +62,24 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-  app-lint:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-    defaults:
-      run:
-        working-directory: app
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: app/package-lock.json
-      - run: npm ci
-      - run: npm run fmt
-      - run: npm run lint -- --format=github
+  # app-lint:
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     security-events: write
+  #   defaults:
+  #     run:
+  #       working-directory: app
+  #   steps:
+  #     - uses: actions/checkout@v7
+  #     - uses: actions/setup-node@v7
+  #       with:
+  #         node-version: 24
+  #         cache: npm
+  #         cache-dependency-path: app/package-lock.json
+  #     - run: npm ci
+  #     - run: npm run fmt
+  #     - run: npm run lint -- --format=github
 
   app-test:
     runs-on: ubuntu-latest
@@ -64,6 +88,8 @@ jobs:
         working-directory: app
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -79,6 +105,8 @@ jobs:
         working-directory: app
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -92,13 +120,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: actionlint
-        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -no-color
-      - name: shellcheck
-        run: |
-          docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.10.0 -S warning -s bash \
-            webhook/*.sh tests/db/*.sh tests/db/cases/*.sh tests/db/bin/gh tests/db/bin/deploy/* \
-            tests/fixtures/build.sh processing/sql/migrate.sh processing/scripts/*.sh .github/scripts/*.sh scripts/*.sh
+        with:
+          persist-credentials: false
+      # - name: actionlint
+      #   run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -no-color
+      # - name: shellcheck
+      #   run: |
+      #     docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.10.0 -S warning -s bash \
+      #       webhook/*.sh tests/db/*.sh tests/db/cases/*.sh tests/db/bin/gh tests/db/bin/deploy/* \
+      #       tests/fixtures/build.sh processing/sql/migrate.sh processing/scripts/*.sh .github/scripts/*.sh scripts/*.sh
       - name: justfile parses
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq just
@@ -113,6 +143,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -135,62 +167,3 @@ jobs:
           (cd "$RUNNER_TEMP/previous/app" && npm ci --silent)
           echo "PREVIOUS_DIR=$RUNNER_TEMP/previous" >> "$GITHUB_ENV"
       - run: tests/db/run.sh
-
-  docker-build:
-    name: Build & push "${{ matrix.image }}"
-    needs: [app-build, test-infra, test-db]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      artifact-metadata: write
-      id-token: write
-    strategy:
-      matrix:
-        include:
-          - image: nuxt-app
-            context: ./app
-          - image: processing
-            context: ./processing
-          - image: webhook
-            context: ./webhook
-    steps:
-      - uses: actions/checkout@v7
-      - name: Extract metadata (tags, labels) for Docker Image
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}
-      - name: Login to registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Build & Push Docker Image
-        uses: docker/build-push-action@v7
-        id: push
-        with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.context }}/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            OSM_CLIENT_ID=${{ secrets.OSM_CLIENT_ID }}
-            OSM_CLIENT_SECRET=${{ secrets.OSM_CLIENT_SECRET }}
-            OSM_REDIRECT_URI=${{ secrets.OSM_REDIRECT_URI }}
-            GIT_SHA=${{ github.sha }}
-          cache-from: type=gha,scope=${{ matrix.image }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
-      - name: Generate artifact attestation
-        uses: actions/attest@v4
-        if: github.event_name != 'pull_request'
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
