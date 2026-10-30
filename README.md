@@ -18,15 +18,24 @@ described in [INSTALL.md](INSTALL.md).
 
 ## How it works
 
-```
-                       ┌──────────────── one server, docker compose ────────────────┐
- browser ── HTTPS ──▶  │ Caddy ─┬─ /tiles/{grb,osm,picc,urbis}/* ─▶ 4× Martin ─┐    │
-                       │        ├─ /webhook/*  ─▶ webhook (jobs) ─┐            │    │
-                       │        └─ everything else ─▶ Nuxt app ───┼────────────┤    │
-                       │                                          ▼            ▼    │
-                       │                      processing (just) ─▶ PostgreSQL + PostGIS
-                       └──────────────────────────────────────────▲─────────────────┘
- GitHub Actions: CI, image builds, deploys, heavy imports ────────┘ (through the webhook)
+```mermaid
+flowchart
+
+browser{Browser} --HTTPS--> server
+
+subgraph server[one server, docker compose]
+  Caddy --/tiles/{grb,osm,picc,urbis}/*--> martin@{ shape: st-rect, label: "4× Martin" }
+  Caddy --/webhook/*--> webhook["Webhook (jobs)"]
+  Caddy --everything else--> nuxt[Nuxt App]
+
+  processing["Processing (just)"]
+
+  martin & webhook & nuxt & processing --> pgsql[(PostgreSQL + PostGIS)]
+end
+
+gh@{ shape: lin-rect, label: "GitHub Actions: CI, image builds, deploys, heavy imports" }
+
+gh --(through the webhook)--> server
 ```
 
 - **PostgreSQL + PostGIS** holds two databases. `be2osm` has one schema per official source (`grb`, `picc`,

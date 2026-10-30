@@ -72,22 +72,22 @@ nano .env
 
 Update the following variables:
 
-| Variable                          | Description                                                                                                              | Example                                          |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| `POSTGRES_HOST`                   | Database host (use container name)                                                                                       | `postgres`                                       |
-| `POSTGRES_PORT`                   | Database port                                                                                                            | `5432`                                           |
-| `POSTGRES_USER`                   | Database username                                                                                                        | `be2osm`                                         |
-| `POSTGRES_PASSWORD`               | Database password                                                                                                        | `secure-password-here`                           |
-| `POSTGRES_DB`                     | Database name                                                                                                            | `be2osm`                                         |
-| `DOMAIN`                          | Your domain name                                                                                                         | `buildings.osm.be`                               |
-| `JWT_SECRET`                      | Random 32+ character string                                                                                              | `your-random-secret-here`                        |
-| `OSM_CLIENT_ID`                   | From OSM OAuth registration                                                                                              | `your-client-id`                                 |
-| `OSM_CLIENT_SECRET`               | From OSM OAuth registration                                                                                              | `your-client-secret`                             |
-| `OSM_REDIRECT_URI`                | OAuth callback URL                                                                                                       | `https://buildings.osm.be/api/auth/osm-callback` |
-| `OSM_REGION`                      | OSM region to download from Geofabrik                                                                                    | `europe/belgium`                                 |
-| `DIGITAL_VLAANDEREN_API_KEY`      | API key for GRB data                                                                                                     | `your-api-key`                                   |
-| `DIGITAL_VLAANDEREN_API_BASE_URL` | Digital Vlaanderen API URL                                                                                               | `https://download.api.vlaanderen.be/v2`          |
-| `WEBHOOK_SECRET`                  | Shared with the GitHub secret `WEBHOOK_SECRET`                                                                           | `your-random-webhook-secret`                     |
+| Variable                          | Description                                                                                                                    | Example                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| `POSTGRES_HOST`                   | Database host (use container name)                                                                                             | `postgres`                                       |
+| `POSTGRES_PORT`                   | Database port                                                                                                                  | `5432`                                           |
+| `POSTGRES_USER`                   | Database username                                                                                                              | `be2osm`                                         |
+| `POSTGRES_PASSWORD`               | Database password                                                                                                              | `secure-password-here`                           |
+| `POSTGRES_DB`                     | Database name                                                                                                                  | `be2osm`                                         |
+| `DOMAIN`                          | Your domain name                                                                                                               | `buildings.osm.be`                               |
+| `JWT_SECRET`                      | Random 32+ character string                                                                                                    | `your-random-secret-here`                        |
+| `OSM_CLIENT_ID`                   | From OSM OAuth registration                                                                                                    | `your-client-id`                                 |
+| `OSM_CLIENT_SECRET`               | From OSM OAuth registration                                                                                                    | `your-client-secret`                             |
+| `OSM_REDIRECT_URI`                | OAuth callback URL                                                                                                             | `https://buildings.osm.be/api/auth/osm-callback` |
+| `OSM_REGION`                      | OSM region to download from Geofabrik                                                                                          | `europe/belgium`                                 |
+| `DIGITAL_VLAANDEREN_API_KEY`      | API key for GRB data                                                                                                           | `your-api-key`                                   |
+| `DIGITAL_VLAANDEREN_API_BASE_URL` | Digital Vlaanderen API URL                                                                                                     | `https://download.api.vlaanderen.be/v2`          |
+| `WEBHOOK_SECRET`                  | Shared with the GitHub secret `WEBHOOK_SECRET`                                                                                 | `your-random-webhook-secret`                     |
 | `GH_TOKEN`                        | Classic PAT with `repo` and `read:packages`: deploys fetch the private repository and pull images, restores download artifacts | `ghp_...`                                        |
 
 Don't set `NUXT_IMAGE`, `PROCESSING_IMAGE` or `WEBHOOK_IMAGE`: deploys pin the images through their `:deployed` tags.

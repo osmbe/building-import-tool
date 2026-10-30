@@ -98,17 +98,19 @@ schema, checks it, and swaps the two in one transaction.
 
 ## Folder layout
 
-```
+```mermaid
+treeView-beta
+
 processing/
-├── Dockerfile              # GDAL, imposm3, psql, just, jq
-├── justfile                # every recipe
-├── config/                 # imposm3 config and mapping
-├── scripts/publish-schema.sh
-└── sql/
-    ├── migrate.sh          # the migration runner
-    ├── migrations/         # common/, grb/, picc/, urbis/
-    ├── transforms/         # imposm tables → osm schema
-    └── updates/            # GRB difference download
+    Dockerfile              ## GDAL, imposm3, psql, just, jq
+    justfile                ## every recipe
+    config/                 ## imposm3 config and mapping
+    scripts/publish-schema.sh
+    sql/
+        migrate.sh          ## the migration runner
+        migrations/         ## common/, grb/, picc/, urbis/
+        transforms/         ## imposm tables → osm schema
+        updates/            ## GRB difference download
 ```
 
 ## Resources

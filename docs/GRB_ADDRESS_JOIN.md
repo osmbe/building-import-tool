@@ -17,7 +17,7 @@ Despite using the same column name `GEBOUWID`, only **5% of address link IDs** m
 
 ## Evidence (March 2026 data)
 
-```
+```log
 building_polygons total:           5,052,689
   - with gebouw_id populated:        375,295   (from RltGbgGebouw)
   - with gebouw_id NULL:           4,677,394   (GBA polygons + unmatched)
