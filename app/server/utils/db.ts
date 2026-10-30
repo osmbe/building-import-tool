@@ -1,75 +1,75 @@
-import { Pool } from 'pg'
+import { Pool } from "pg";
 
 // Connection pools for both databases
-let grbPool: Pool | null = null
-let osmPool: Pool | null = null
+let grbPool: Pool | null = null;
+let osmPool: Pool | null = null;
 
 export function getGrbPool(): Pool {
   if (!grbPool) {
-    const config = useRuntimeConfig()
+    const config = useRuntimeConfig();
 
     const poolConfig = {
-      host: config.dbHost || process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(config.dbPort || process.env.POSTGRES_PORT || '5432', 10),
-      user: config.dbUser || process.env.POSTGRES_USER || 'postgres',
+      host: config.dbHost || process.env.POSTGRES_HOST || "localhost",
+      port: parseInt(config.dbPort || process.env.POSTGRES_PORT || "5432", 10),
+      user: config.dbUser || process.env.POSTGRES_USER || "postgres",
       // Password will be read from .pgpass file automatically if not provided
       password: config.dbPassword || process.env.POSTGRES_PASSWORD || undefined,
-      database: 'be2osm'
-    }
+      database: "be2osm",
+    };
 
-    grbPool = new Pool(poolConfig)
+    grbPool = new Pool(poolConfig);
   }
-  return grbPool
+  return grbPool;
 }
 
 export function getOsmPool(): Pool {
   if (!osmPool) {
-    const config = useRuntimeConfig()
+    const config = useRuntimeConfig();
 
     const poolConfig = {
-      host: config.dbHost || process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(config.dbPort || process.env.POSTGRES_PORT || '5432', 10),
-      user: config.dbUser || process.env.POSTGRES_USER || 'postgres',
+      host: config.dbHost || process.env.POSTGRES_HOST || "localhost",
+      port: parseInt(config.dbPort || process.env.POSTGRES_PORT || "5432", 10),
+      user: config.dbUser || process.env.POSTGRES_USER || "postgres",
       // Password will be read from .pgpass file automatically if not provided
       password: config.dbPassword || process.env.POSTGRES_PASSWORD || undefined,
-      database: 'osmbe'
-    }
+      database: "osmbe",
+    };
 
-    osmPool = new Pool(poolConfig)
+    osmPool = new Pool(poolConfig);
   }
-  return osmPool
+  return osmPool;
 }
 
 // Execute query on GRB database
 export async function queryGrb(sql: string, params?: any[]) {
-  const client = await getGrbPool().connect()
+  const client = await getGrbPool().connect();
   try {
-    const result = await client.query(sql, params)
-    return result.rows
+    const result = await client.query(sql, params);
+    return result.rows;
   } finally {
-    client.release()
+    client.release();
   }
 }
 
 // Execute query on OSM database
 export async function queryOsm(sql: string, params?: any[]) {
-  const client = await getOsmPool().connect()
+  const client = await getOsmPool().connect();
   try {
-    const result = await client.query(sql, params)
-    return result.rows
+    const result = await client.query(sql, params);
+    return result.rows;
   } finally {
-    client.release()
+    client.release();
   }
 }
 
 // Close all connections
 export async function closeDbConnections() {
   if (grbPool) {
-    await grbPool.end()
-    grbPool = null
+    await grbPool.end();
+    grbPool = null;
   }
   if (osmPool) {
-    await osmPool.end()
-    osmPool = null
+    await osmPool.end();
+    osmPool = null;
   }
 }

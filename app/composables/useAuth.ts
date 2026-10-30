@@ -1,55 +1,55 @@
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from "vue";
 
 export interface OSMUser {
-  id: number
-  username: string
-  displayName: string
-  avatar?: string | null
-  changesets: number
-  joinDate: string
+  id: number;
+  username: string;
+  displayName: string;
+  avatar?: string | null;
+  changesets: number;
+  joinDate: string;
 }
 
 export function useAuth() {
-  const user = ref<OSMUser | null>(null)
-  const isLoading = ref(true)
+  const user = ref<OSMUser | null>(null);
+  const isLoading = ref(true);
 
   onMounted(async () => {
     // Check if user is authenticated via cookie
     try {
-      const response = await $fetch<{ user: OSMUser | null }>('/api/auth/me')
-      if (response.user) user.value = response.user
+      const response = await $fetch<{ user: OSMUser | null }>("/api/auth/me");
+      if (response.user) user.value = response.user;
     } catch (error) {
-      console.error('Failed to fetch user:', error)
+      console.error("Failed to fetch user:", error);
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
 
     // Check for auth success redirect
-    const urlParams = new URLSearchParams(window.location.search)
-    if (urlParams.get('auth') === 'success') {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("auth") === "success") {
       // Reload user data after successful auth
       try {
-        const response = await $fetch<{ user: OSMUser | null }>('/api/auth/me')
-        if (response.user) user.value = response.user
+        const response = await $fetch<{ user: OSMUser | null }>("/api/auth/me");
+        if (response.user) user.value = response.user;
       } catch (error) {
-        console.error('Failed to fetch user after auth:', error)
+        console.error("Failed to fetch user after auth:", error);
       }
       // Clean up URL
-      window.history.replaceState({}, '', window.location.pathname)
+      window.history.replaceState({}, "", window.location.pathname);
     }
-  })
+  });
 
   function signIn(): void {
     // Redirect to OSM OAuth flow
-    window.location.href = '/api/auth/osm-login'
+    window.location.href = "/api/auth/osm-login";
   }
 
   async function signOut() {
     try {
-      await $fetch('/api/auth/osm-logout', { method: 'POST' })
-      user.value = null
+      await $fetch("/api/auth/osm-logout", { method: "POST" });
+      user.value = null;
     } catch (error) {
-      console.error('Failed to sign out:', error)
+      console.error("Failed to sign out:", error);
     }
   }
 
@@ -58,6 +58,6 @@ export function useAuth() {
     isLoading,
     signIn,
     signOut,
-    user
-  }
+    user,
+  };
 }
