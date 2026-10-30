@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   # Monthly: a full re-download, loaded and swapped in one transaction (the map keeps the previous data meanwhile)
   schedule:
-    - cron: '0 5 1 * *'
+    - cron: "0 5 1 * *"
 
 jobs:
   trigger-update:

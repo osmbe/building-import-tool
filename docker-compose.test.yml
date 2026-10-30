@@ -46,7 +46,11 @@ services:
     healthcheck:
       # Over TCP: the temporary server that runs the init scripts only listens on the socket, so this passes
       # once every init script has run and the final server is up.
-      test: ["CMD-SHELL", "PGPASSWORD=be2osm psql -h 127.0.0.1 -U be2osm -d be2osm -tAc \"SELECT 1 FROM information_schema.schemata WHERE schema_name = 'urbis'\" | grep -q 1"]
+      test:
+        [
+          "CMD-SHELL",
+          'PGPASSWORD=be2osm psql -h 127.0.0.1 -U be2osm -d be2osm -tAc "SELECT 1 FROM information_schema.schemata WHERE schema_name = ''urbis''" | grep -q 1',
+        ]
       interval: 3s
       timeout: 5s
       retries: 100

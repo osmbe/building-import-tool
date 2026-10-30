@@ -21,7 +21,7 @@ updates:
     cooldown:
       default-days: 7
   - package-ecosystem: "docker"
-    directories: 
+    directories:
       - "/app/"
       - "/processing/"
       - "/webhook/"

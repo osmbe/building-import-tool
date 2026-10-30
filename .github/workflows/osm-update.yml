@@ -3,7 +3,7 @@ name: OSM Update
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 4 * * *'  # Daily at 4am UTC
+    - cron: "0 4 * * *" # Daily at 4am UTC
 
 jobs:
   trigger-update:
