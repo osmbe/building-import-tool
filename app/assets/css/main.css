@@ -1,30 +1,28 @@
-@import "tailwindcss";
-@import "ol/ol.css";
+@import url("tailwindcss");
+@import url("ol/ol.css");
 
 @theme {
   /* ── Blueprint Cyan palette ── */
-  --color-background: hsl(224 42% 6%);
-  --color-foreground: hsl(208 18% 88%);
-  --color-card: hsl(224 38% 9%);
-  --color-card-foreground: hsl(208 18% 88%);
-  --color-popover: hsl(224 38% 11%);
-  --color-popover-foreground: hsl(208 18% 88%);
-  --color-primary: hsl(192 90% 46%);
-  --color-primary-foreground: hsl(224 42% 6%);
-  --color-secondary: hsl(224 26% 14%);
-  --color-secondary-foreground: hsl(208 14% 72%);
-  --color-muted: hsl(224 26% 12%);
-  --color-muted-foreground: hsl(212 12% 62%);
-  --color-accent: hsl(192 90% 46% / 0.1);
-  --color-accent-foreground: hsl(192 80% 62%);
-  --color-destructive: hsl(0 68% 56%);
-  --color-destructive-foreground: hsl(0 0% 100%);
-  --color-border: hsl(224 22% 15%);
-  --color-input: hsl(224 26% 12%);
-  --color-ring: hsl(192 90% 46%);
-
+  --color-background: hsl(224deg 42% 6%);
+  --color-foreground: hsl(208deg 18% 88%);
+  --color-card: hsl(224deg 38% 9%);
+  --color-card-foreground: hsl(208deg 18% 88%);
+  --color-popover: hsl(224deg 38% 11%);
+  --color-popover-foreground: hsl(208deg 18% 88%);
+  --color-primary: hsl(192deg 90% 46%);
+  --color-primary-foreground: hsl(224deg 42% 6%);
+  --color-secondary: hsl(224deg 26% 14%);
+  --color-secondary-foreground: hsl(208deg 14% 72%);
+  --color-muted: hsl(224deg 26% 12%);
+  --color-muted-foreground: hsl(212deg 12% 62%);
+  --color-accent: hsl(192deg 90% 46% / 10%);
+  --color-accent-foreground: hsl(192deg 80% 62%);
+  --color-destructive: hsl(0deg 68% 56%);
+  --color-destructive-foreground: hsl(0deg 0% 100%);
+  --color-border: hsl(224deg 22% 15%);
+  --color-input: hsl(224deg 26% 12%);
+  --color-ring: hsl(192deg 90% 46%);
   --radius: 0.375rem;
-
   --font-sans: "Outfit", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
@@ -51,8 +49,10 @@
   *::after {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
@@ -67,13 +67,13 @@
 
 /* ── Glass panel ── */
 .glass-panel {
-  background: rgba(6, 9, 22, 0.9);
+  background: rgb(6 9 22 / 90%);
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(14, 200, 228, 0.07);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgb(14 200 228 / 7%);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.55),
-    0 1px 0 rgba(14, 200, 228, 0.04) inset;
+    0 8px 32px rgb(0 0 0 / 55%),
+    0 1px 0 rgb(14 200 228 / 4%) inset;
 }
 
 /* ── Map icon button ── */
@@ -84,16 +84,17 @@
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 0.25rem;
-  color: hsl(215 12% 48%);
-  border: 1px solid rgba(255, 255, 255, 0.055);
+  color: hsl(215deg 12% 48%);
+  border: 1px solid rgb(255 255 255 / 5.5%);
   transition:
     background 0.12s ease,
     color 0.12s ease;
   cursor: pointer;
 }
+
 .map-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: hsl(210 18% 88%);
+  background: rgb(255 255 255 / 8%);
+  color: hsl(210deg 18% 88%);
 }
 
 /* ── Layer buttons (base map pills) ── */
@@ -103,8 +104,8 @@
   font-size: 0.625rem;
   font-weight: 500;
   letter-spacing: 0.02em;
-  color: hsl(215 12% 48%);
-  border: 1px solid rgba(255, 255, 255, 0.055);
+  color: hsl(215deg 12% 48%);
+  border: 1px solid rgb(255 255 255 / 5.5%);
   transition:
     background 0.12s ease,
     color 0.12s ease,
@@ -112,14 +113,16 @@
   cursor: pointer;
   white-space: nowrap;
 }
+
 .layer-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: hsl(210 18% 80%);
+  background: rgb(255 255 255 / 6%);
+  color: hsl(210deg 18% 80%);
 }
+
 .layer-btn-active {
-  background: hsl(192 90% 46% / 0.14);
-  border-color: hsl(192 90% 46% / 0.35);
-  color: hsl(192 80% 62%);
+  background: hsl(192deg 90% 46% / 14%);
+  border-color: hsl(192deg 90% 46% / 35%);
+  color: hsl(192deg 80% 62%);
 }
 
 /* ── Action buttons ── */
@@ -132,17 +135,19 @@
   border-radius: 0.25rem;
   font-size: 0.625rem;
   font-weight: 500;
-  color: hsl(215 12% 48%);
-  border: 1px solid rgba(255, 255, 255, 0.055);
+  color: hsl(215deg 12% 48%);
+  border: 1px solid rgb(255 255 255 / 5.5%);
   transition:
     background 0.12s ease,
     color 0.12s ease;
   cursor: pointer;
 }
+
 .action-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.07);
-  color: hsl(210 18% 88%);
+  background: rgb(255 255 255 / 7%);
+  color: hsl(210deg 18% 88%);
 }
+
 .action-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
@@ -154,7 +159,7 @@
 .action-btn:focus-visible,
 .check-row:focus-visible,
 .result-retry:focus-visible {
-  outline: 2px solid hsl(192 90% 46% / 0.7);
+  outline: 2px solid hsl(192deg 90% 46% / 70%);
   outline-offset: 1px;
 }
 
@@ -167,13 +172,15 @@
   font-size: 0.625rem;
   line-height: 1.2;
   padding: 0.125rem 0;
-  color: hsl(215 12% 52%);
+  color: hsl(215deg 12% 52%);
   cursor: pointer;
   transition: color 0.12s ease;
 }
+
 .check-row:hover {
-  color: hsl(210 18% 82%);
+  color: hsl(210deg 18% 82%);
 }
+
 .check-mark {
   display: inline-flex;
   align-items: center;
@@ -181,20 +188,23 @@
   width: 0.75rem;
   height: 0.75rem;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgb(255 255 255 / 15%);
   flex-shrink: 0;
 }
+
 .check-mark.check-done {
-  background: hsl(152 70% 50% / 0.15);
-  border-color: hsl(152 70% 50% / 0.4);
-  color: hsl(152 70% 60%);
+  background: hsl(152deg 70% 50% / 15%);
+  border-color: hsl(152deg 70% 50% / 40%);
+  color: hsl(152deg 70% 60%);
 }
+
 .check-action {
   font-size: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: hsl(192 80% 62% / 0.85);
+  color: hsl(192deg 80% 62% / 85%);
 }
+
 .result-retry {
   display: inline-flex;
   align-items: center;
@@ -203,13 +213,14 @@
   border-radius: 0.25rem;
   font-size: 0.625rem;
   font-weight: 500;
-  color: hsl(192 80% 62%);
-  border: 1px solid hsl(192 90% 46% / 0.25);
+  color: hsl(192deg 80% 62%);
+  border: 1px solid hsl(192deg 90% 46% / 25%);
   transition: background 0.12s ease;
   cursor: pointer;
 }
+
 .result-retry:hover {
-  background: hsl(192 90% 46% / 0.1);
+  background: hsl(192deg 90% 46% / 10%);
 }
 
 /* ── Layer panel rows ── */
@@ -219,13 +230,14 @@
   justify-content: space-between;
   gap: 0.75rem;
 }
+
 .layer-dot {
   display: inline-block;
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
   flex-shrink: 0;
-  box-shadow: 0 0 6px currentColor;
+  box-shadow: 0 0 6px currentcolor;
 }
 
 /* ── Feature switcher pills ── */
@@ -248,12 +260,15 @@
   opacity: 0.45;
   white-space: nowrap;
 }
+
 .feature-pill:hover {
   opacity: 0.75;
 }
+
 .feature-pill--active {
   opacity: 1 !important;
 }
+
 .feature-pill__dot {
   display: inline-block;
   width: 0.375rem;
@@ -261,97 +276,116 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
+
 /* GRB variant — vivid orange */
 .feature-pill--grb {
   color: hsl(var(--layer-grb));
-  background: hsl(var(--layer-grb) / 0.06);
+  background: hsl(var(--layer-grb) / 6%);
 }
+
 .feature-pill--grb.feature-pill--active {
-  background: hsl(var(--layer-grb) / 0.12);
-  border-color: hsl(var(--layer-grb) / 0.25);
+  background: hsl(var(--layer-grb) / 12%);
+  border-color: hsl(var(--layer-grb) / 25%);
 }
+
 .feature-pill--grb .feature-pill__dot {
   background: hsl(var(--layer-grb));
-  box-shadow: 0 0 4px hsl(var(--layer-grb) / 0.6);
+  box-shadow: 0 0 4px hsl(var(--layer-grb) / 60%);
 }
+
 /* KNW variant — warm red-orange */
 .feature-pill--knw {
   color: hsl(var(--layer-knw));
-  background: hsl(var(--layer-knw) / 0.06);
+  background: hsl(var(--layer-knw) / 6%);
 }
+
 .feature-pill--knw.feature-pill--active {
-  background: hsl(var(--layer-knw) / 0.12);
-  border-color: hsl(var(--layer-knw) / 0.25);
+  background: hsl(var(--layer-knw) / 12%);
+  border-color: hsl(var(--layer-knw) / 25%);
 }
+
 .feature-pill--knw .feature-pill__dot {
   background: hsl(var(--layer-knw));
-  box-shadow: 0 0 4px hsl(var(--layer-knw) / 0.6);
+  box-shadow: 0 0 4px hsl(var(--layer-knw) / 60%);
 }
+
 /* PICC variant — magenta */
 .feature-pill--picc {
   color: hsl(var(--layer-picc));
-  background: hsl(var(--layer-picc) / 0.06);
+  background: hsl(var(--layer-picc) / 6%);
 }
+
 .feature-pill--picc.feature-pill--active {
-  background: hsl(var(--layer-picc) / 0.12);
-  border-color: hsl(var(--layer-picc) / 0.25);
+  background: hsl(var(--layer-picc) / 12%);
+  border-color: hsl(var(--layer-picc) / 25%);
 }
+
 .feature-pill--picc .feature-pill__dot {
   background: hsl(var(--layer-picc));
-  box-shadow: 0 0 4px hsl(var(--layer-picc) / 0.6);
+  box-shadow: 0 0 4px hsl(var(--layer-picc) / 60%);
 }
+
 /* UrbIS variant — teal-cyan */
 .feature-pill--urbis {
   color: hsl(var(--layer-urbis));
-  background: hsl(var(--layer-urbis) / 0.06);
+  background: hsl(var(--layer-urbis) / 6%);
 }
+
 .feature-pill--urbis.feature-pill--active {
-  background: hsl(var(--layer-urbis) / 0.12);
-  border-color: hsl(var(--layer-urbis) / 0.25);
+  background: hsl(var(--layer-urbis) / 12%);
+  border-color: hsl(var(--layer-urbis) / 25%);
 }
+
 .feature-pill--urbis .feature-pill__dot {
   background: hsl(var(--layer-urbis));
-  box-shadow: 0 0 4px hsl(var(--layer-urbis) / 0.6);
+  box-shadow: 0 0 4px hsl(var(--layer-urbis) / 60%);
 }
+
 /* OSM variant — cobalt blue */
 .feature-pill--osm {
   color: hsl(var(--layer-osm));
-  background: hsl(var(--layer-osm) / 0.06);
+  background: hsl(var(--layer-osm) / 6%);
 }
+
 .feature-pill--osm.feature-pill--active {
-  background: hsl(var(--layer-osm) / 0.12);
-  border-color: hsl(var(--layer-osm) / 0.25);
+  background: hsl(var(--layer-osm) / 12%);
+  border-color: hsl(var(--layer-osm) / 25%);
 }
+
 .feature-pill--osm .feature-pill__dot {
   background: hsl(var(--layer-osm));
-  box-shadow: 0 0 4px hsl(var(--layer-osm) / 0.6);
+  box-shadow: 0 0 4px hsl(var(--layer-osm) / 60%);
 }
 
 /* ── Layer badge classes (for template use) ── */
 .layer-badge-osm {
   color: hsl(var(--layer-osm));
-  background: hsl(var(--layer-osm) / 0.1);
-  border-color: hsl(var(--layer-osm) / 0.2);
+  background: hsl(var(--layer-osm) / 10%);
+  border-color: hsl(var(--layer-osm) / 20%);
 }
+
 .layer-badge-grb {
   color: hsl(var(--layer-grb));
-  background: hsl(var(--layer-grb) / 0.1);
-  border-color: hsl(var(--layer-grb) / 0.2);
+  background: hsl(var(--layer-grb) / 10%);
+  border-color: hsl(var(--layer-grb) / 20%);
 }
+
 .layer-badge-knw {
   color: hsl(var(--layer-knw));
-  background: hsl(var(--layer-knw) / 0.1);
-  border-color: hsl(var(--layer-knw) / 0.2);
+  background: hsl(var(--layer-knw) / 10%);
+  border-color: hsl(var(--layer-knw) / 20%);
 }
+
 .layer-badge-picc {
   color: hsl(var(--layer-picc));
-  background: hsl(var(--layer-picc) / 0.1);
-  border-color: hsl(var(--layer-picc) / 0.2);
+  background: hsl(var(--layer-picc) / 10%);
+  border-color: hsl(var(--layer-picc) / 20%);
 }
+
 .layer-badge-urbis {
   color: hsl(var(--layer-urbis));
-  background: hsl(var(--layer-urbis) / 0.1);
-  border-color: hsl(var(--layer-urbis) / 0.2);
+  background: hsl(var(--layer-urbis) / 10%);
+  border-color: hsl(var(--layer-urbis) / 20%);
 }
 
 /* ── Animations ── */
@@ -360,22 +394,27 @@
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 @keyframes fade-in {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
 }
+
 .animate-fade-up {
   animation: fade-up 0.2s ease forwards;
 }
+
 .animate-fade-in {
   animation: fade-in 0.15s ease forwards;
 }
