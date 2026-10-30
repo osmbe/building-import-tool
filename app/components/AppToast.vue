@@ -1,50 +1,50 @@
 <script setup lang="ts">
-import { onBeforeUnmount } from 'vue'
-import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-vue-next'
-import { type ToastType, useToast } from '~/composables/useToast'
+import { onBeforeUnmount } from "vue";
+import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-vue-next";
+import { type ToastType, useToast } from "~/composables/useToast";
 
-const { toasts, removeToast } = useToast()
+const { toasts, removeToast } = useToast();
 
-const timers = new Map<number, ReturnType<typeof setTimeout>>()
+const timers = new Map<number, ReturnType<typeof setTimeout>>();
 
 function startTimer(id: number, duration: number) {
-  if (timers.has(id)) return
+  if (timers.has(id)) return;
   timers.set(
     id,
     setTimeout(() => {
-      removeToast(id)
-      timers.delete(id)
-    }, duration)
-  )
+      removeToast(id);
+      timers.delete(id);
+    }, duration),
+  );
 }
 
 function dismiss(id: number) {
-  const timer = timers.get(id)
+  const timer = timers.get(id);
   if (timer) {
-    clearTimeout(timer)
-    timers.delete(id)
+    clearTimeout(timer);
+    timers.delete(id);
   }
-  removeToast(id)
+  removeToast(id);
 }
 
 onBeforeUnmount(() => {
-  timers.forEach((t) => clearTimeout(t))
-  timers.clear()
-})
+  timers.forEach((t) => clearTimeout(t));
+  timers.clear();
+});
 
 const icons: Record<ToastType, typeof Info> = {
   error: XCircle,
   info: Info,
   success: CheckCircle2,
-  warning: AlertTriangle
-}
+  warning: AlertTriangle,
+};
 
 const accentColor: Record<ToastType, string> = {
-  error: 'hsl(0 68% 56%)',
-  info: 'hsl(192 90% 46%)',
-  success: 'hsl(152 68% 56%)',
-  warning: 'hsl(38 92% 55%)'
-}
+  error: "hsl(0 68% 56%)",
+  info: "hsl(192 90% 46%)",
+  success: "hsl(152 68% 56%)",
+  warning: "hsl(38 92% 55%)",
+};
 </script>
 
 <template>
@@ -63,12 +63,19 @@ const accentColor: Record<ToastType, string> = {
           <span class="toast-accent" />
 
           <!-- Icon -->
-          <component :is="icons[toast.type]" class="toast-icon" :size="18" :stroke-width="2" />
+          <component
+            :is="icons[toast.type]"
+            class="toast-icon"
+            :size="18"
+            :stroke-width="2"
+          />
 
           <!-- Text -->
           <div class="toast-body">
             <p class="toast-title">{{ toast.title }}</p>
-            <p v-if="toast.message" class="toast-message">{{ toast.message }}</p>
+            <p v-if="toast.message" class="toast-message">
+              {{ toast.message }}
+            </p>
           </div>
 
           <!-- Close -->
@@ -77,7 +84,10 @@ const accentColor: Record<ToastType, string> = {
           </button>
 
           <!-- Progress bar -->
-          <span class="toast-progress" :style="{ animationDuration: toast.duration + 'ms' }" />
+          <span
+            class="toast-progress"
+            :style="{ animationDuration: toast.duration + 'ms' }"
+          />
         </div>
       </TransitionGroup>
     </div>

@@ -5,5 +5,5 @@
 </template>
 
 <script setup lang="ts">
-import { DropdownMenuRoot } from 'radix-vue'
+import { DropdownMenuRoot } from "radix-vue";
 </script>

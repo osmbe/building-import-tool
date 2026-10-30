@@ -4,12 +4,19 @@
   >
     <!-- Logo mark -->
     <div class="flex items-center gap-2.5 shrink-0">
-      <div class="w-7 h-7 rounded bg-primary/10 border border-primary/25 flex items-center justify-center">
+      <div
+        class="w-7 h-7 rounded bg-primary/10 border border-primary/25 flex items-center justify-center"
+      >
         <Map class="h-3.5 w-3.5 text-primary" />
       </div>
       <div class="flex items-baseline gap-2">
-        <span class="text-sm font-semibold tracking-tight text-foreground">be2osm</span>
-        <span class="text-[10px] text-muted-foreground font-mono hidden sm:block opacity-60">· belgique → osm</span>
+        <span class="text-sm font-semibold tracking-tight text-foreground"
+          >be2osm</span
+        >
+        <span
+          class="text-[10px] text-muted-foreground font-mono hidden sm:block opacity-60"
+          >· belgique → osm</span
+        >
       </div>
     </div>
 
@@ -43,19 +50,19 @@
 </template>
 
 <script setup lang="ts">
-import { LogIn, Map } from 'lucide-vue-next'
-import { ref } from 'vue'
-import AuthDialog from '~/components/AuthDialog.vue'
-import SearchBar from '~/components/SearchBar.vue'
-import UserMenu from '~/components/UserMenu.vue'
-import { useAuth } from '~/composables/useAuth'
+import { LogIn, Map } from "lucide-vue-next";
+import { ref } from "vue";
+import AuthDialog from "~/components/AuthDialog.vue";
+import SearchBar from "~/components/SearchBar.vue";
+import UserMenu from "~/components/UserMenu.vue";
+import { useAuth } from "~/composables/useAuth";
 
-const emit = defineEmits<{ (e: 'location-select', result: any): void }>()
+const emit = defineEmits<{ (e: "location-select", result: any): void }>();
 
-const { user, isAuthenticated, signIn, signOut, isLoading } = useAuth()
-const openAuth = ref(false)
+const { user, isAuthenticated, signIn, signOut, isLoading } = useAuth();
+const openAuth = ref(false);
 
 function onSelect(result: any) {
-  emit('location-select', result)
+  emit("location-select", result);
 }
 </script>

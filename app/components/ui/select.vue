@@ -5,5 +5,5 @@
 </template>
 
 <script setup lang="ts">
-import { SelectRoot } from 'radix-vue'
+import { SelectRoot } from "radix-vue";
 </script>
