@@ -148,7 +148,7 @@ export default defineEventHandler(async (event) => {
         const osm = await queryOsm(
           `
           SELECT ST_AsGeoJSON(ST_Collect(COALESCE(geom_mercator, ST_Transform(geom, 3857)))) AS geom_collection,
-                 COUNT(*) AS total_osm
+            COUNT(*) AS total_osm
           FROM osm.osm_buildings
           WHERE geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
             AND ST_Intersects(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))

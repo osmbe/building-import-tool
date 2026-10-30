@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   try {
     const tables = (await queryGrb(
       `SELECT n.nspname AS schema FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-       WHERE c.relname = 'schema_migrations' AND c.relkind = 'r' ORDER BY 1`,
+        WHERE c.relname = 'schema_migrations' AND c.relkind = 'r' ORDER BY 1`,
     )) as { schema: string }[];
     const migrations: Record<string, string[]> = {};
     for (const { schema } of tables) {
