@@ -41,7 +41,7 @@ described in [INSTALL.md](INSTALL.md).
 
 ### The candidates contract
 
-Each source has its own columns, ids and address formats. Each one is exposed through the same view shape, the
+Each source has its own columns, IDs and address formats. Each one is exposed through the same view shape, the
 **candidates**: `grb.candidates`, `grb.knw_candidates`, `picc.candidates` and `urbis.candidates` share these
 columns, with the same types and order: `fid`, `source`, `entity`, `source_id`, `source_ref`, `type_code`,
 `type_label`, `survey_date`, `area_m2`, the parent building, the addresses, `details` (source-specific extras as

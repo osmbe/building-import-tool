@@ -1,6 +1,6 @@
 # Architecture
 
-How the data is stored, imported, served and deployed, and why. The README has the overview; this page is for
+How the data is stored, imported, served and deployed, and why. The readme has the overview; this page is for
 changing things.
 
 ## Data model
@@ -19,7 +19,7 @@ The app reads both through two connection pools (`app/server/utils/db.ts`); the 
 | Object                                 | Content                                                                                                                                                                                  |
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `grb.building_polygons`                | GBG (_gebouw aan de grond_) and GBA (_gebouwaanhorigheid_: floors, stairs, canopies, ...) polygons, EPSG:4326. Unique on `(entity, oidn)`: GBG and GBA OIDNs are only unique per entity. |
-| `grb.buildings`                        | per `gebouw_id` (the building registry id, from the RltGbgGebouw relation): polygon count, area and type                                                                                 |
+| `grb.buildings`                        | per `gebouw_id` (the building registry ID, from the RltGbgGebouw relation): polygon count, area and type                                                                                 |
 | `grb.addresses`                        | address points                                                                                                                                                                           |
 | `grb.kunstwerken`                      | KNW structures (bridges, chimneys, silos, wind turbines, ...)                                                                                                                            |
 | `grb.buildings_with_addresses`         | materialized view: one row per polygon, its addresses (joined by geometry, see [GRB_ADDRESS_JOIN.md](GRB_ADDRESS_JOIN.md)), its parent building, geometry in EPSG:3857                   |
@@ -42,9 +42,9 @@ same columns, types and order:
 
 | Column                                                                      | Meaning                                                                                            |
 | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `fid`                                                                       | unique, stable id (the tile feature id)                                                            |
+| `fid`                                                                       | unique, stable ID (the tile feature ID)                                                            |
 | `source`                                                                    | `grb`, `knw`, `picc`, `urbis`                                                                      |
-| `entity`, `source_id`, `source_ref`                                         | the source's own id; `source_ref` is the `source:geometry:ref` value (`Gbg/123`; GRB and KNW only) |
+| `entity`, `source_id`, `source_ref`                                         | the source's own ID; `source_ref` is the `source:geometry:ref` value (`Gbg/123`; GRB and KNW only) |
 | `type_code`, `type_label`                                                   | the source's classification (GRB LBLTYPE, KNW type, PICC nature)                                   |
 | `survey_date`, `origin_label`                                               | when and how the object was surveyed (`YYYY-MM-DD`)                                                |
 | `area_m2`                                                                   | area in m²                                                                                         |

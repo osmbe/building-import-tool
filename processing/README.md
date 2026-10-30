@@ -43,7 +43,7 @@ ordered, prepared by the API (minutes to hours), then downloaded as shapefiles i
 
 | Product   | Content                                                                                                                                                                           |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GBG       | building polygons and `RltGbgGebouw*.dbf` (polygon → building registry id)                                                                                                        |
+| GBG       | building polygons and `RltGbgGebouw*.dbf` (polygon → building registry ID)                                                                                                        |
 | GBA       | building attachments (floors, stairs, canopies, ...)                                                                                                                              |
 | KNW       | structures (bridges, chimneys, silos, ...)                                                                                                                                        |
 | Addresses | address points. The `RltAdresGebouw*.dbf` link files in the same download are not imported: addresses are joined by geometry ([GRB_ADDRESS_JOIN.md](../docs/GRB_ADDRESS_JOIN.md)) |

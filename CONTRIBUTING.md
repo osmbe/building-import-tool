@@ -15,7 +15,7 @@ npm run test:coverage    # unit tests; fails below 95% lines/functions/statement
 npm run build
 ```
 
-Database, imports, tiles and API (from the repository root, needs Docker, python3, curl and node):
+Database, imports, tiles and API (from the repository root, needs Docker, python3, cURL and node):
 
 ```bash
 tests/db/run.sh            # every case (a few minutes; PostGIS runs under amd64 emulation on Apple Silicon)

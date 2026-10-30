@@ -99,7 +99,7 @@ Effort: S. Impact: Medium.
 
 **8. Make the mutually-exclusive layer behavior legible.** Toggling GRB silently disables
 PICC/UrbIS/KNW (`InteractiveMap.vue:1160-1257`). Group these four as a single-select control
-("Source dataset: GRB | KNW | PICC | UrbIS") so exclusivity is visually built in, rather than
+("Source dataset: GRB | KNW | PICC | UrbIS") so exclusivity is visually built-in, rather than
 four independent toggles that mysteriously turn each other off.
 Effort: M. Impact: Medium.
 
@@ -139,7 +139,7 @@ versus what JOSM is for (the actual editing/upload). Effort: S. Impact: Medium.
 concept ("candidates", "source dataset", "match mode"). No em-dashes in UI strings. Audit
 every visible string for clarity (some toasts duplicate help content). Effort: S. Impact: Low/Medium.
 
-### P3 — Nice-to-haves
+### P3 — nice to haves
 
 - "Clear search history" affordance in `SearchBar.vue`.
 - Tooltip lifecycle cleanup so pinned tooltips never show stale data (`:2259-2380`).

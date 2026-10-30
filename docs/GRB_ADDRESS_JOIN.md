@@ -47,7 +47,7 @@ GROUP BY bp.oidn
 This works because:
 
 - Address points in the GRB dataset are geocoded to building locations
-- GIST spatial indexes on both `building_polygons.geom` and `addresses.geom` make the join efficient
+- GIST spatial indices on both `building_polygons.geom` and `addresses.geom` make the join efficient
 - No dependency on matching ID namespaces
 
 ## Impact on Import Workflow

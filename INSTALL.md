@@ -88,7 +88,7 @@ Update the following variables:
 | `DIGITAL_VLAANDEREN_API_KEY`      | API key for GRB data                                                                                                     | `your-api-key`                                   |
 | `DIGITAL_VLAANDEREN_API_BASE_URL` | Digital Vlaanderen API URL                                                                                               | `https://download.api.vlaanderen.be/v2`          |
 | `WEBHOOK_SECRET`                  | Shared with the GitHub secret `WEBHOOK_SECRET`                                                                           | `your-random-webhook-secret`                     |
-| `GH_TOKEN`                        | Classic PAT with `repo` and `read:packages`: deploys fetch the private repo and pull images, restores download artifacts | `ghp_...`                                        |
+| `GH_TOKEN`                        | Classic PAT with `repo` and `read:packages`: deploys fetch the private repository and pull images, restores download artifacts | `ghp_...`                                        |
 
 Don't set `NUXT_IMAGE`, `PROCESSING_IMAGE` or `WEBHOOK_IMAGE`: deploys pin the images through their `:deployed` tags.
 The bootstrap (next step) adds `COMPOSE_PROJECT_NAME` and `COMPOSE_PROJECT_DIR`.
@@ -170,7 +170,7 @@ it starts the workflow, waits, downloads the artifact and restores it.
 The production domain is `buildings.osm.be`. When moving it from the old tool to this one
 (the old tool is kept at `old-buildings-tool.osm.be`; hostname assumed from issue #8):
 
-1. DNS (<https://github.com/osmbe/dns>): point `old-buildings-tool.osm.be` to the old server, and
+1. DNS (<https://github.com/osmbe/DNS>): point `old-buildings-tool.osm.be` to the old server, and
    `buildings.osm.be` to this server (currently `buildings.osm.be` is a CNAME to `grb.byteless.net`).
 2. Reverse proxy (Nginx Proxy Manager): add a host for `old-buildings-tool.osm.be` forwarding to the old
    tool, and change the `buildings.osm.be` host to forward to this stack.

@@ -21,7 +21,7 @@ npx vp fmt                  # format
 ```
 
 `npm run dev` alone has no source data: tiles come through Caddy (`/tiles/...`), and the API needs PostgreSQL.
-The [README](../README.md#getting-started) shows how to run against the test stack's database.
+The [Readme](../README.md#getting-started) shows how to run against the test stack's database.
 
 Configuration comes from environment variables (`nuxt.config.ts`): `POSTGRES_HOST/PORT/USER/PASSWORD`,
 `JWT_SECRET`, `OSM_CLIENT_ID`, `OSM_CLIENT_SECRET`, `OSM_REDIRECT_URI`, and `GIT_SHA` (baked in by CI, reported
@@ -63,7 +63,7 @@ answer HTTP 406 to generic clients.
 
 ## Tests
 
-- `tests/` holds the unit tests. They run without the Nuxt runtime: auto-imports and Nitro globals are stubbed
+- `tests/` holds the unit tests. They run without the Nuxt runtime: autoimports and Nitro globals are stubbed
   with `vi.stubGlobal` before the module under test is imported (`tests/server/nitro.ts`), and the database is
   mocked with `vi.mock('~/server/utils/db')`. Import the test APIs from `vite-plus/test`.
 - Coverage counts `utils/`, `server/` and `composables/`, not components. Keep logic out of `.vue` files.
