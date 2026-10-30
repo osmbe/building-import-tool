@@ -10,12 +10,12 @@ Every source exposes its buildings through the same **candidates contract** (dat
 returns candidates with these properties, and `candidateTags` in `app/utils/candidates.ts` builds the OSM tags from
 them, per `source`. Only the tags below are written: no source property is ever copied into OSM.
 
-| Contract property | Source column | OSM tag |
-|---|---|---|
-| `source`, `type_label` | GRB LBLTYPE, KNW type, PICC nature | `building=yes` (section 2), KNW defaults (section 3) |
-| `survey_date` | GRB OPNDATUM, KNW OPNDATUM, PICC DATE_LEVE | `source:geometry:date` (YYYY-MM-DD) |
-| `source_ref` | GRB entity + OIDN | `source:geometry:ref` (`Gbg/718523`, `Gba/2664`, `Knw/7001`) |
-| `addresses`, `street_names`, `postcodes`, `municipalities`, `address_count` | addresses inside the polygon | `addr:*` (section 4) |
+| Contract property                                                           | Source column                              | OSM tag                                                      |
+| --------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------ |
+| `source`, `type_label`                                                      | GRB LBLTYPE, KNW type, PICC nature         | `building=yes` (section 2), KNW defaults (section 3)         |
+| `survey_date`                                                               | GRB OPNDATUM, KNW OPNDATUM, PICC DATE_LEVE | `source:geometry:date` (YYYY-MM-DD)                          |
+| `source_ref`                                                                | GRB entity + OIDN                          | `source:geometry:ref` (`Gbg/718523`, `Gba/2664`, `Knw/7001`) |
+| `addresses`, `street_names`, `postcodes`, `municipalities`, `address_count` | addresses inside the polygon               | `addr:*` (section 4)                                         |
 
 Tags are written in this order: `building`, `fixme`, the KNW defaults, `source:geometry:date`,
 `source:geometry:ref`, `addr:street`, `addr:housenumber`, `addr:postcode`, `addr:city`. The API integration
@@ -34,15 +34,15 @@ GRB polygons are filtered on their LBLTYPE (issue #53, allow-list `BUILDING_TYPE
 `app/utils/grbExportTags.ts`). The difference API leaves the other types out of the candidates, and the export
 never tags them as buildings:
 
-| GRB LBLTYPE | Entity | OSM tags |
-|-------------|--------|----------|
-| `hoofdgebouw` | GBG (gbg-1) | `building=yes` |
-| `bijgebouw` | GBG (gbg-2) | `building=yes` |
-| `verdieping` | GBA (gba-1) | `building=yes` + `fixme=verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!` |
-| `afdak` | GBA (gba-2) | `building=roof` |
-| `gebouw afgezoomd met virtuele gevels` | GBG (gbg-3) | not exported |
-| every other GBA type (`trap`, `luifel`, `loopbrug`, garage entrances, ...) | GBA | not exported |
-| no label | GBG | `building=yes` |
+| GRB LBLTYPE                                                                | Entity      | OSM tags                                                                                                                        |
+| -------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `hoofdgebouw`                                                              | GBG (gbg-1) | `building=yes`                                                                                                                  |
+| `bijgebouw`                                                                | GBG (gbg-2) | `building=yes`                                                                                                                  |
+| `verdieping`                                                               | GBA (gba-1) | `building=yes` + `fixme=verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!` |
+| `afdak`                                                                    | GBA (gba-2) | `building=roof`                                                                                                                 |
+| `gebouw afgezoomd met virtuele gevels`                                     | GBG (gbg-3) | not exported                                                                                                                    |
+| every other GBA type (`trap`, `luifel`, `loopbrug`, garage entrances, ...) | GBA         | not exported                                                                                                                    |
+| no label                                                                   | GBG         | `building=yes`                                                                                                                  |
 
 PICC and UrbIS buildings always get `building=yes`: the allow-list is GRB only (a PICC nature such as `Batiment`
 is not a GRB type). Refine the generic `building=yes` in JOSM where the actual use is known.
@@ -51,18 +51,18 @@ is not a GRB type). Refine the generic `building=yes` in JOSM where the actual u
 
 KNW structures get no building tag. Their reference is `Knw/<oidn>`. Supported defaults (issue #22):
 
-| KNW Type (`type_code`) | KNW Type (`type_label`) | Default OSM tags |
-|------------------------|-------------------------|------------------|
-| `1` | `overbrugging` | `man_made=bridge` (bridge outline area) |
-| `5` | `pijler` | `man_made=bridge_support` |
-| `7` | `schoorsteen` | `man_made=chimney` |
-| `8` | `koeltoren` | `man_made=cooling_tower` |
-| `9` | `silo, opslagtank` | `man_made=silo` (or `man_made=storage_tank` when the label says opslagtank and not silo) |
-| `11` | `watertoren` | `man_made=water_tower` |
-| `14` | `nutspaal type windturbine` | `power=generator`, `generator:source=wind`, `generator:method=wind_turbine` |
-| `22` | `golfbreker, strandhoofd en lage havendam` | `man_made=breakwater` |
-| `23` | `havendam` | `man_made=breakwater` |
-| `24` | `staketsel` | `man_made=pier` |
+| KNW Type (`type_code`) | KNW Type (`type_label`)                    | Default OSM tags                                                                         |
+| ---------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `1`                    | `overbrugging`                             | `man_made=bridge` (bridge outline area)                                                  |
+| `5`                    | `pijler`                                   | `man_made=bridge_support`                                                                |
+| `7`                    | `schoorsteen`                              | `man_made=chimney`                                                                       |
+| `8`                    | `koeltoren`                                | `man_made=cooling_tower`                                                                 |
+| `9`                    | `silo, opslagtank`                         | `man_made=silo` (or `man_made=storage_tank` when the label says opslagtank and not silo) |
+| `11`                   | `watertoren`                               | `man_made=water_tower`                                                                   |
+| `14`                   | `nutspaal type windturbine`                | `power=generator`, `generator:source=wind`, `generator:method=wind_turbine`              |
+| `22`                   | `golfbreker, strandhoofd en lage havendam` | `man_made=breakwater`                                                                    |
+| `23`                   | `havendam`                                 | `man_made=breakwater`                                                                    |
+| `24`                   | `staketsel`                                | `man_made=pier`                                                                          |
 
 KNW types outside this list are exported without a structure tag and need manual tagging in JOSM.
 

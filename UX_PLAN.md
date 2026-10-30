@@ -21,7 +21,7 @@ the app feel less trustworthy than it is.
 ## Guiding principles for this plan
 
 - Turn **gates into guidance.** Every "you can't do X yet" toast is a prerequisite the UI
-  should make obvious *before* the user clicks, with a one-click path to satisfy it.
+  should make obvious _before_ the user clicks, with a one-click path to satisfy it.
 - **Honesty over polish.** Remove or finish mocked features. A fake "QA Tools" panel
   erodes trust more than an absent one.
 - **State the system's state.** Loading, empty, error, and success each get a distinct,
@@ -38,40 +38,44 @@ the app feel less trustworthy than it is.
 **1. A persistent "Workflow status" strip instead of gating toasts.**
 Replace the three validation toasts in `calculateDifference` (`InteractiveMap.vue:1606,1615,1621`)
 with an always-visible compact checklist near the "Get Difference" button:
+
 - ☐ Source layer on (GRB/KNW/PICC/UrbIS) → click to open the Layers panel
 - ☐ OSM Buildings on
 - ☐ Zoom >= 16 (shows current zoom, with a "Zoom to 16" action)
-Each item flips to ☑ as satisfied; the button enables only when all are met. The user
-sees *why* the button is disabled without clicking it. Keep the toasts only as a fallback.
-Effort: M. Impact: High.
+  Each item flips to ☑ as satisfied; the button enables only when all are met. The user
+  sees _why_ the button is disabled without clicking it. Keep the toasts only as a fallback.
+  Effort: M. Impact: High.
 
 **2. Resolve the mocked QA Tools.** `QAToolsPanel.vue:114-122` fakes progress bars and
 always reports success; `ObjectInfoPanel.vue` "QA Tools" tab embeds it. Decide:
+
 - (a) Remove the QA Tools tab/panel and the "Access QA tools" benefit line in
   `AuthDialog.vue:64-68` until real checks exist, **or**
 - (b) Implement the three checks for real (simplify uses the existing Turf/mapshaper path
   already wired for export; self-intersection via `ST_IsValid`/turf; metadata validation
   against levels/height).
-Recommendation: ship (a) now, schedule (b). Shipping a visible fake is the bigger UX cost.
-Effort: S (remove) / L (build). Impact: High (trust).
+  Recommendation: ship (a) now, schedule (b). Shipping a visible fake is the bigger UX cost.
+  Effort: S (remove) / L (build). Impact: High (trust).
 
 **3. Distinguish "no candidates" from "error" and from "success".** Today both ends call a
 toast (`:1644` info, `:1724` error) and the empty case silently drops the layer
 (`:1647-1654`). Add a small results panel that has three explicit states:
+
 - Success: "N candidates found in view" + count + clear action to export.
 - Empty: "No missing buildings here. Everything in view already matches OSM." with a hint
   to pan/zoom or switch match mode. Not a disappearing toast.
 - Error: inline message with a "Retry" button (no need to re-hunt the Get Difference button).
-Effort: M. Impact: High.
+  Effort: M. Impact: High.
 
 **4. Move JOSM setup out of the error toast into real help.** `getJosmInstructions()`
 (`useJosmExport.ts:245`) is fully written but never shown. Surface it as:
+
 - A small "JOSM not connected" status chip near the export button (green when
   `testJosmConnection` passes, grey otherwise), polled lightly.
 - A "Set up JOSM" link opening a dialog that renders `getJosmInstructions()`.
-Then the export error (`:1744`) can be short and point at that dialog instead of cramming
-8 steps into a toast.
-Effort: M. Impact: High.
+  Then the export error (`:1744`) can be short and point at that dialog instead of cramming
+  8 steps into a toast.
+  Effort: M. Impact: High.
 
 **5. First-run guidance (one-time, dismissible).** On first load (zoom 8, no layers), show a
 lightweight 3-step coachmark or a collapsible "Getting started" card: pick an area, turn on
@@ -151,6 +155,7 @@ every visible string for clarity (some toasts duplicate help content). Effort: S
 - **Phase 3 (robustness):** items 11, 12, 13, 14. ✅ Done (this commit).
 
 ### Implementation notes
+
 - Item 9 was delivered by making the candidate layer clickable (it was not before) and
   routing it through the existing info tooltip, rather than the orphaned ObjectInfoPanel
   (which expects a different `BuildingData` shape and would duplicate the tooltip).

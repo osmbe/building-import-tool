@@ -46,6 +46,7 @@ workflow before the bootstrap:** the old restore script empties the GRB tables a
      keeps serving tiles meanwhile;
    - recreate the Martin servers, Caddy and the app;
    - check readiness, every tile server and one difference request.
+
 4. When the summary says everything answers:
    - Optionally set `APP_URL` (e.g. `https://buildings.osm.be`) for the public readiness check after each deploy.
    - Commit `~/be2osm-bootstrap/be2osm-production-schema.sql` as `tests/db/schemas/be2osm-production.sql`.
@@ -142,12 +143,12 @@ working meanwhile. They need free disk for the copy: check `just db-sizes` first
 
 ## Troubleshooting
 
-| Symptom | Check |
-|---|---|
-| Deploy fails in preflight | The message says which check failed. For local changes: `git -C /opt/docker/buildings status` (commit them upstream, then `git checkout -- .`). |
-| Deploy fails on readiness | `docker logs be2osm-nuxt`; `docker exec be2osm-webhook curl -s http://nuxt-app:3000/api/health/ready`. The release was rolled back. |
-| Image pull fails | Is the CI images job green for that commit? Can `GH_TOKEN` read packages? Try `docker login ghcr.io` on the server. |
-| A migration fails | `docker compose run --rm -T --no-deps processing just db-migrate --status`, then run it by hand to see the error. A `no-transaction` migration can be re-run once the cause is fixed. |
-| "different checksum" | An applied migration file was edited. Restore its original content and add a new migration instead. |
-| Tile server down after a deploy | `docker logs be2osm-grb-tiles`. Martin config rules: CLAUDE.md, Serving. |
-| Webhook not answering | `docker logs be2osm-webhook`; `docker compose up -d --no-deps webhook`. Jobs it was running are marked `interrupted`. |
+| Symptom                         | Check                                                                                                                                                                                 |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deploy fails in preflight       | The message says which check failed. For local changes: `git -C /opt/docker/buildings status` (commit them upstream, then `git checkout -- .`).                                       |
+| Deploy fails on readiness       | `docker logs be2osm-nuxt`; `docker exec be2osm-webhook curl -s http://nuxt-app:3000/api/health/ready`. The release was rolled back.                                                   |
+| Image pull fails                | Is the CI images job green for that commit? Can `GH_TOKEN` read packages? Try `docker login ghcr.io` on the server.                                                                   |
+| A migration fails               | `docker compose run --rm -T --no-deps processing just db-migrate --status`, then run it by hand to see the error. A `no-transaction` migration can be re-run once the cause is fixed. |
+| "different checksum"            | An applied migration file was edited. Restore its original content and add a new migration instead.                                                                                   |
+| Tile server down after a deploy | `docker logs be2osm-grb-tiles`. Martin config rules: CLAUDE.md, Serving.                                                                                                              |
+| Webhook not answering           | `docker logs be2osm-webhook`; `docker compose up -d --no-deps webhook`. Jobs it was running are marked `interrupted`.                                                                 |

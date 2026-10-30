@@ -2,11 +2,11 @@
 
 BE2OSM helps OpenStreetMap contributors import official Belgian building data. It covers all three regions:
 
-| Region | Dataset | Provider |
-|---|---|---|
-| Flanders | [GRB](https://www.vlaanderen.be/digitaal-vlaanderen/onze-oplossingen/basiskaart-vlaanderen-grb) buildings (GBG, GBA) and structures (KNW, *kunstwerken*) | Digitaal Vlaanderen |
-| Wallonia | [PICC](https://geoportail.wallonie.be/catalogue/b795de68-726c-4bdf-a62a-a42686aa5b6f) buildings and ICAR addresses | Service Public de Wallonie |
-| Brussels | [UrbIS](https://datastore.brussels/web/urbis) buildings and addresses | paradigm.brussels |
+| Region   | Dataset                                                                                                                                                  | Provider                   |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| Flanders | [GRB](https://www.vlaanderen.be/digitaal-vlaanderen/onze-oplossingen/basiskaart-vlaanderen-grb) buildings (GBG, GBA) and structures (KNW, _kunstwerken_) | Digitaal Vlaanderen        |
+| Wallonia | [PICC](https://geoportail.wallonie.be/catalogue/b795de68-726c-4bdf-a62a-a42686aa5b6f) buildings and ICAR addresses                                       | Service Public de Wallonie |
+| Brussels | [UrbIS](https://datastore.brussels/web/urbis) buildings and addresses                                                                                    | paradigm.brussels          |
 
 The web app shows a region's official buildings next to the existing OSM buildings and finds the official buildings
 that have no match in OSM. A contributor picks the ones to import and opens them in
@@ -62,12 +62,12 @@ OSM buildings come from the `osmbe` mirror (updated daily), or live from Overpas
 
 ### Keeping the data current
 
-| Source | Full import | Updates |
-|---|---|---|
-| GRB + KNW | GitHub Actions (`grb-import.yml`), published on the server | difference downloads (`grb-update`, manual for now) |
-| PICC | GitHub Actions, one job per province | ArcGIS REST changes since the last import (`picc-update`, manual for now) |
-| UrbIS | GitHub Actions or on the server | monthly full re-download (cron) |
-| OSM | GitHub Actions or on the server (imposm3) | daily Geofabrik diffs (cron) |
+| Source    | Full import                                                | Updates                                                                   |
+| --------- | ---------------------------------------------------------- | ------------------------------------------------------------------------- |
+| GRB + KNW | GitHub Actions (`grb-import.yml`), published on the server | difference downloads (`grb-update`, manual for now)                       |
+| PICC      | GitHub Actions, one job per province                       | ArcGIS REST changes since the last import (`picc-update`, manual for now) |
+| UrbIS     | GitHub Actions or on the server                            | monthly full re-download (cron)                                           |
+| OSM       | GitHub Actions or on the server (imposm3)                  | daily Geofabrik diffs (cron)                                              |
 
 Full imports run on GitHub runners, not on the server. A workflow builds the source's schema in a throwaway
 database and renames it `<schema>_next` in the dump. The server restores it next to the live schema, checks it,
@@ -76,18 +76,18 @@ the live data untouched.
 
 ## Repository map
 
-| Path | What |
-|---|---|
-| [`app/`](app/README.md) | Nuxt 4 SPA and its server API (TypeScript, OpenLayers, Tailwind, shadcn-vue) |
-| [`processing/`](processing/README.md) | processing image, the justfile, SQL migrations, transforms and updates |
-| `config/martin/` | one Martin config per tile server |
-| `caddy/Caddyfile` | routing |
-| `webhook/` | job server (`server.py`) and the job scripts: deploy, restore, import, update |
-| `postgres/` | init scripts of a new database volume (extensions and schemas only) |
-| `scripts/server-bootstrap.sh` | one-time switch of an existing server to the current deploy process |
-| `tests/` | database, import, tile and API integration suite (`tests/db/`), fixtures |
-| `.github/workflows/` | CI and deploy (`ci.yml`), imports and updates per source |
-| `docs/` | runbook, tag mappings, design notes, API references of Digitaal Vlaanderen |
+| Path                                  | What                                                                          |
+| ------------------------------------- | ----------------------------------------------------------------------------- |
+| [`app/`](app/README.md)               | Nuxt 4 SPA and its server API (TypeScript, OpenLayers, Tailwind, shadcn-vue)  |
+| [`processing/`](processing/README.md) | processing image, the justfile, SQL migrations, transforms and updates        |
+| `config/martin/`                      | one Martin config per tile server                                             |
+| `caddy/Caddyfile`                     | routing                                                                       |
+| `webhook/`                            | job server (`server.py`) and the job scripts: deploy, restore, import, update |
+| `postgres/`                           | init scripts of a new database volume (extensions and schemas only)           |
+| `scripts/server-bootstrap.sh`         | one-time switch of an existing server to the current deploy process           |
+| `tests/`                              | database, import, tile and API integration suite (`tests/db/`), fixtures      |
+| `.github/workflows/`                  | CI and deploy (`ci.yml`), imports and updates per source                      |
+| `docs/`                               | runbook, tag mappings, design notes, API references of Digitaal Vlaanderen    |
 
 ## Getting started
 

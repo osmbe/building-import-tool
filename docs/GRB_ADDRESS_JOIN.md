@@ -4,11 +4,11 @@
 
 The GRB data model uses `GEBOUWID` in two different relationship files, but they reference **different ID namespaces**:
 
-| Source File | Product | Column | Distinct IDs | ID Range |
-|---|---|---|---|---|
-| `RltGbgGebouw*.dbf` | GBG (6553) | GEBOUWID | 660,375 | 5.6M - 32M |
-| `RltAdresGebouw*.dbf` | GRB-Adres (10445) | GEBOUWID | 873,207 | 10M - 20.5M |
-| **Overlap** | | | **43,301** (5%) | |
+| Source File           | Product           | Column   | Distinct IDs    | ID Range    |
+| --------------------- | ----------------- | -------- | --------------- | ----------- |
+| `RltGbgGebouw*.dbf`   | GBG (6553)        | GEBOUWID | 660,375         | 5.6M - 32M  |
+| `RltAdresGebouw*.dbf` | GRB-Adres (10445) | GEBOUWID | 873,207         | 10M - 20.5M |
+| **Overlap**           |                   |          | **43,301** (5%) |             |
 
 - `RltGbgGebouw` maps GBG polygon OIDN to a building grouping ID (used to populate `building_polygons.gebouw_id`)
 - `RltAdresGebouw` maps ADRESID to a building ID in the Gebouwenregister (building registry)
@@ -45,6 +45,7 @@ GROUP BY bp.oidn
 ```
 
 This works because:
+
 - Address points in the GRB dataset are geocoded to building locations
 - GIST spatial indexes on both `building_polygons.geom` and `addresses.geom` make the join efficient
 - No dependency on matching ID namespaces

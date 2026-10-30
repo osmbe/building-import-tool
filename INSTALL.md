@@ -9,20 +9,20 @@ This guide covers setting up the Building Import Tool on a fresh Linux server wi
 - GitHub account with access to the private repository
 - GitHub repository secrets configured (Settings → Secrets and variables → Actions):
 
-| Secret | Description |
-|--------|-------------|
-| `OSM_CLIENT_ID` | From OSM OAuth registration |
-| `OSM_CLIENT_SECRET` | From OSM OAuth registration |
-| `OSM_REDIRECT_URI` | OAuth callback URL |
-| `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data from Digital Vlaanderen |
-| `WEBHOOK_SECRET` | Shared secret for the server's webhook (same value as `WEBHOOK_SECRET` in the server `.env`) |
+| Secret                       | Description                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------- |
+| `OSM_CLIENT_ID`              | From OSM OAuth registration                                                                  |
+| `OSM_CLIENT_SECRET`          | From OSM OAuth registration                                                                  |
+| `OSM_REDIRECT_URI`           | OAuth callback URL                                                                           |
+| `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data from Digital Vlaanderen                                                 |
+| `WEBHOOK_SECRET`             | Shared secret for the server's webhook (same value as `WEBHOOK_SECRET` in the server `.env`) |
 
 And these repository variables:
 
-| Variable | Description |
-|----------|-------------|
+| Variable      | Description                                                   |
+| ------------- | ------------------------------------------------------------- |
 | `WEBHOOK_URL` | The server's webhook, e.g. `https://buildings.osm.be/webhook` |
-| `APP_URL` | Optional: public URL checked for readiness after each deploy |
+| `APP_URL`     | Optional: public URL checked for readiness after each deploy  |
 
 These secrets are used by the CI/CD pipeline to build Docker images and run data imports.
 
@@ -72,28 +72,28 @@ nano .env
 
 Update the following variables:
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `POSTGRES_HOST` | Database host (use container name) | `postgres` |
-| `POSTGRES_PORT` | Database port | `5432` |
-| `POSTGRES_USER` | Database username | `be2osm` |
-| `POSTGRES_PASSWORD` | Database password | `secure-password-here` |
-| `POSTGRES_DB` | Database name | `be2osm` |
-| `DOMAIN` | Your domain name | `buildings.osm.be` |
-| `JWT_SECRET` | Random 32+ character string | `your-random-secret-here` |
-| `OSM_CLIENT_ID` | From OSM OAuth registration | `your-client-id` |
-| `OSM_CLIENT_SECRET` | From OSM OAuth registration | `your-client-secret` |
-| `OSM_REDIRECT_URI` | OAuth callback URL | `https://buildings.osm.be/api/auth/osm-callback` |
-| `OSM_REGION` | OSM region to download from Geofabrik | `europe/belgium` |
-| `DIGITAL_VLAANDEREN_API_KEY` | API key for GRB data | `your-api-key` |
-| `DIGITAL_VLAANDEREN_API_BASE_URL` | Digital Vlaanderen API URL | `https://download.api.vlaanderen.be/v2` |
-| `WEBHOOK_SECRET` | Shared with the GitHub secret `WEBHOOK_SECRET` | `your-random-webhook-secret` |
-| `GH_TOKEN` | Classic PAT with `repo` and `read:packages`: deploys fetch the private repo and pull images, restores download artifacts | `ghp_...` |
+| Variable                          | Description                                                                                                              | Example                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| `POSTGRES_HOST`                   | Database host (use container name)                                                                                       | `postgres`                                       |
+| `POSTGRES_PORT`                   | Database port                                                                                                            | `5432`                                           |
+| `POSTGRES_USER`                   | Database username                                                                                                        | `be2osm`                                         |
+| `POSTGRES_PASSWORD`               | Database password                                                                                                        | `secure-password-here`                           |
+| `POSTGRES_DB`                     | Database name                                                                                                            | `be2osm`                                         |
+| `DOMAIN`                          | Your domain name                                                                                                         | `buildings.osm.be`                               |
+| `JWT_SECRET`                      | Random 32+ character string                                                                                              | `your-random-secret-here`                        |
+| `OSM_CLIENT_ID`                   | From OSM OAuth registration                                                                                              | `your-client-id`                                 |
+| `OSM_CLIENT_SECRET`               | From OSM OAuth registration                                                                                              | `your-client-secret`                             |
+| `OSM_REDIRECT_URI`                | OAuth callback URL                                                                                                       | `https://buildings.osm.be/api/auth/osm-callback` |
+| `OSM_REGION`                      | OSM region to download from Geofabrik                                                                                    | `europe/belgium`                                 |
+| `DIGITAL_VLAANDEREN_API_KEY`      | API key for GRB data                                                                                                     | `your-api-key`                                   |
+| `DIGITAL_VLAANDEREN_API_BASE_URL` | Digital Vlaanderen API URL                                                                                               | `https://download.api.vlaanderen.be/v2`          |
+| `WEBHOOK_SECRET`                  | Shared with the GitHub secret `WEBHOOK_SECRET`                                                                           | `your-random-webhook-secret`                     |
+| `GH_TOKEN`                        | Classic PAT with `repo` and `read:packages`: deploys fetch the private repo and pull images, restores download artifacts | `ghp_...`                                        |
 
 Don't set `NUXT_IMAGE`, `PROCESSING_IMAGE` or `WEBHOOK_IMAGE`: deploys pin the images through their `:deployed` tags.
 The bootstrap (next step) adds `COMPOSE_PROJECT_NAME` and `COMPOSE_PROJECT_DIR`.
 
-To register an OSM OAuth application, visit: https://www.openstreetmap.org/oauth2/applications
+To register an OSM OAuth application, visit: <https://www.openstreetmap.org/oauth2/applications>
 
 ## Step 6: Start Services
 
@@ -107,6 +107,7 @@ bash scripts/server-bootstrap.sh
 ```
 
 This starts every service:
+
 - **postgres**: PostgreSQL database with PostGIS
 - **nuxt-app**: Web application (image from GHCR)
 - **grb-tiles**, **osm-tiles**, **picc-tiles**, **urbis-tiles**: vector tile servers (Martin)
@@ -169,12 +170,12 @@ it starts the workflow, waits, downloads the artifact and restores it.
 The production domain is `buildings.osm.be`. When moving it from the old tool to this one
 (the old tool is kept at `old-buildings-tool.osm.be`; hostname assumed from issue #8):
 
-1. DNS (https://github.com/osmbe/dns): point `old-buildings-tool.osm.be` to the old server, and
+1. DNS (<https://github.com/osmbe/dns>): point `old-buildings-tool.osm.be` to the old server, and
    `buildings.osm.be` to this server (currently `buildings.osm.be` is a CNAME to `grb.byteless.net`).
 2. Reverse proxy (Nginx Proxy Manager): add a host for `old-buildings-tool.osm.be` forwarding to the old
    tool, and change the `buildings.osm.be` host to forward to this stack.
 3. Register `https://buildings.osm.be/api/auth/osm-callback` as a redirect URI of the OSM OAuth2
-   application (https://www.openstreetmap.org/oauth2/applications).
+   application (<https://www.openstreetmap.org/oauth2/applications>).
 4. Set `DOMAIN=buildings.osm.be` and `OSM_REDIRECT_URI=https://buildings.osm.be/api/auth/osm-callback`
    in the server `.env` and the GitHub secret `OSM_REDIRECT_URI` (it is baked in at build time), then redeploy.
 

@@ -98,6 +98,7 @@ docker compose up -d        # postgres, nuxt-app, 4× martin, webhook, caddy
 - There is no link between the two databases: the API queries `osmbe` through its own pool. The foreign data wrapper older releases created in `be2osm` (`postgres/04-setup-fdw.sql`, now empty but still mounted) and its cache are dropped by `common/001_drop_osm_fdw`; unused GRB objects (address links, summary views, `import_statistics`) by `grb/007_drop_unused`. `10-fresh-init.sh` checks a fresh and a migrated old database have none of them.
 
 The init scripts `postgres/0*.sql` run only on the **first** container init (`docker-entrypoint-initdb.d`); for `be2osm` they only create extensions and schemas. Every table and view comes from versioned migrations, `processing/sql/migrations/<scope>/NNN_name.sql`, applied by `processing/sql/migrate.sh` (`just db-migrate`):
+
 - Scopes run in order `common`, `grb`, `picc`, `urbis`. Applied versions and file checksums are recorded in `<scope>.schema_migrations` (`public.schema_migrations` for `common`), so the tracking travels with the schema. Never edit an applied migration (the checksum check stops the run); add a new one.
 - A file runs in one transaction unless it has a `-- migrate:no-transaction` line (needed for `CREATE INDEX CONCURRENTLY` or committed batches); such a file must be safe to re-run after a failure. `-- migrate:heavy` marks a migration that runs long on production data: `db-migrate --deploy` (automatic deploys) refuses to start it, so it is run by hand first (docs/RUNBOOK.md). `--status` lists applied and pending migrations.
 - Migrations must work online on the live 5M-row GRB table while tiles and the API read it: constant-default columns, `NOT VALID` then `VALIDATE`, batched updates, concurrent indexes, and views built next to the old one then swapped by rename (see `grb/001`–`003`). Every run takes one advisory lock and a short `lock_timeout`, retried, so DDL never queues behind long readers.
@@ -109,11 +110,13 @@ The init scripts `postgres/0*.sql` run only on the **first** container init (`do
 ### Serving
 
 Caddy (`caddy/Caddyfile`) is the single entry point:
+
 - `/tiles/{grb,osm,picc,urbis}/*` → four Martin vector-tile servers, one per source. Each has its own config in `config/martin/*.yaml`, and that config fixes the table/view, the columns exposed as tile properties, and the zoom range. When you add a property to a tile layer, update both the view and the Martin config. Each config serves only the source's `candidates` (the contract; GRB also `knw_candidates`); `60-martin.sh` checks the catalogs hold nothing else.
 - `/webhook/*` → `webhook/server.py`
 - everything else → Nuxt
 
 Martin config rules (Martin ≥ 1.12 changed its YAML parser; `60-martin.sh` guards these):
+
 - `connection_string` must stay an **unquoted** YAML scalar, or the `${POSTGRES_*}` variables are not substituted.
 - Use the `cache:` section. If the legacy top-level cache size key name appears anywhere in the file, even in a comment, Martin skips variable substitution for the whole file.
 - No dollar signs in comments: older Martin versions substitute inside comments too.
