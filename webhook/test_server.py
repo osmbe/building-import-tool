@@ -7,6 +7,7 @@ Needs flock (util-linux), so it runs in the webhook image: tests/db/cases/05-web
 import http.client
 import json
 import os
+import server
 import shutil
 import tempfile
 import threading
@@ -24,9 +25,6 @@ os.environ.update(
     WEBHOOK_STATE_DIR=STATE,
     DEPLOY_LOCK_WAIT="1",
 )
-
-import server
-
 
 def script(name: str, body: str) -> None:
     with open(os.path.join(SCRIPTS, name), "w") as f:

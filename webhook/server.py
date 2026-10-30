@@ -34,8 +34,8 @@ JOBS_DIR = os.path.join(STATE_DIR, "jobs")
 LOCK_FILE = os.path.join(STATE_DIR, "jobs.lock")
 # How long a job waits for the running one before it gives up as "busy" (seconds)
 LOCK_WAIT = {
-    "deploy": int(os.environ.get("DEPLOY_LOCK_WAIT", 45 * 60)),
-    "default": int(os.environ.get("JOB_LOCK_WAIT", 6 * 3600)),
+    "deploy": int(os.environ.get("DEPLOY_LOCK_WAIT", str(45 * 60))),
+    "default": int(os.environ.get("JOB_LOCK_WAIT", str(6 * 3600))),
 }
 BUSY_EXIT = 75  # flock -E: exit code when the lock wait times out
 LOG_TAIL_LINES = 200
@@ -131,7 +131,7 @@ def _run(job: dict, cmd: list) -> None:
     with open(_log_path(job["id"]), "ab") as log:
         try:
             code = subprocess.run(
-                cmd, stdout=log, stderr=subprocess.STDOUT, env=os.environ.copy()
+                cmd, stdout=log, stderr=subprocess.STDOUT, env=os.environ.copy(), check=False
             ).returncode
         except OSError as error:
             log.write(f"[webhook] cannot start the job: {error}\n".encode())
@@ -265,7 +265,7 @@ def serve(port: int) -> ThreadingHTTPServer:
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("WEBHOOK_PORT", 9000))
+    port = int(os.environ.get("WEBHOOK_PORT", "9000"))
     if not SECRET:
         print(
             "[webhook] WEBHOOK_SECRET is not set: every request will be refused",
