@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'ol/ol.css';
+@import "tailwindcss";
+@import "ol/ol.css";
 
 @theme {
   /* ── Blueprint Cyan palette ── */
@@ -25,8 +25,8 @@
 
   --radius: 0.375rem;
 
-  --font-sans: 'Outfit', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 /* ── Layer color tokens ── */
