@@ -52,6 +52,8 @@ jobs:
           df -h /
 
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Install PostgreSQL 18 client
         run: |
@@ -94,12 +96,14 @@ jobs:
             -e POSTGRES_USER=be2osm \
             -e POSTGRES_PASSWORD=be2osm \
             -e DIGITAL_VLAANDEREN_API_KEY=${{ secrets.DIGITAL_VLAANDEREN_API_KEY }} \
-            -e DIGITAL_VLAANDEREN_API_BASE_URL=${{ vars.DIGITAL_VLAANDEREN_API_BASE_URL }} \
+            -e DIGITAL_VLAANDEREN_API_BASE_URL=${VARS_DIGITAL_VLAANDEREN_API_BASE_URL} \
             -e GRB_DOWNLOAD_PARALLEL=0 \
             -e GRB_DOWNLOAD_MAX_TIME_SEC=7200 \
             -e GRB_DOWNLOAD_MAX_ATTEMPTS=20 \
             -e GRB_DOWNLOAD_RETRY_SLEEP_SEC=90 \
             "$PROCESSING_IMAGE" bash -lc "$JUST_COMMAND"
+        env:
+          VARS_DIGITAL_VLAANDEREN_API_BASE_URL: ${{ vars.DIGITAL_VLAANDEREN_API_BASE_URL }}
 
       # The server restores it next to its live data and swaps it in (processing/scripts/publish-schema.sh)
       - name: Create GRB dump (schema grb_next)
@@ -125,6 +129,8 @@ jobs:
     name: Import GRB & KNW
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Restore the dump on the server (waits for the job)
         if: ${{ vars.WEBHOOK_URL != '' }}
         timeout-minutes: 300
