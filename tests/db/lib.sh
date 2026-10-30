@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Helpers for tests/db/cases/*.sh (sourced by run.sh; every case runs in its own bash process).
 # Every command goes through `docker compose`, so no local psql/ogr2ogr is needed.
 
