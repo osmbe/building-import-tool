@@ -34,13 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  type Provider,
-  type SearchResult,
-  addToSearchHistory,
-  getSearchHistory,
-  searchLocations
-} from '~/composables/useSearch'
+import { type SearchResult, addToSearchHistory, getSearchHistory, searchLocations } from '~/composables/useSearch'
 import { Search, X } from 'lucide-vue-next'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import SearchResults from '~/components/SearchResults.vue'
@@ -48,7 +42,6 @@ import SearchResults from '~/components/SearchResults.vue'
 const emit = defineEmits<{ (e: 'select', result: SearchResult): void }>()
 
 const query = ref('')
-const provider = ref<Provider>('osm')
 const results = ref<SearchResult[]>([])
 const isLoading = ref(false)
 const open = ref(false)
@@ -69,7 +62,7 @@ function clear() {
   results.value = []
 }
 
-watch([query, provider], ([q, p]) => {
+watch([query], ([q]) => {
   if (debounceTimer) clearTimeout(debounceTimer)
 
   if (!q || q.trim().length < 3) {
@@ -82,7 +75,7 @@ watch([query, provider], ([q, p]) => {
 
   debounceTimer = setTimeout(async () => {
     try {
-      const searchResults = await searchLocations(q, p)
+      const searchResults = await searchLocations(q)
       results.value = searchResults
     } catch (e) {
       console.error('Search error:', e)

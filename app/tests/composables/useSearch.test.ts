@@ -65,7 +65,6 @@ describe('searchLocations', () => {
         coordinates: [4.35, 50.85],
         // Nominatim [minLat, maxLat, minLon, maxLon] -> [minLng, minLat, maxLng, maxLat]
         boundingBox: [4.3, 50.8, 4.4, 50.9],
-        provider: 'osm',
         details: { category: 'place', country: 'Belgium', postcode: '1000', region: 'Brussels-Capital' }
       }
     ])
