@@ -189,7 +189,8 @@ services:
     networks:
       - be2osm
 
-  # Webhook service: runs deploys, restores of CI artifacts, imports and updates as jobs (webhook/server.py).
+  # Webhook service: runs deploys, restores of CI artifacts and updates as jobs (webhook/server.py).
+  # Manual full imports are in scripts/import/.
   # Its scripts are read from the checkout; deploy.sh updates the checkout, so it is mounted read-write.
   webhook:
     image: ghcr.io/osmbe/building-import-tool/webhook:main

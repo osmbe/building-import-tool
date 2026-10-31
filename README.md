@@ -82,7 +82,8 @@ the live data untouched.
 | [`processing/`](processing/README.md) | processing image, the justfile, SQL migrations, transforms and updates |
 | `config/martin/` | one Martin config per tile server |
 | `caddy/Caddyfile` | routing |
-| `webhook/` | job server (`server.py`) and the job scripts: deploy, restore, import, update |
+| `webhook/` | job server (`server.py`) and the job scripts: deploy, restore, update |
+| `scripts/import/` | manual full-import scripts for GRB, PICC, UrbIS and OSM |
 | `postgres/` | init scripts of a new database volume (extensions and schemas only) |
 | `scripts/server-bootstrap.sh` | one-time switch of an existing server to the current deploy process |
 | `tests/` | database, import, tile and API integration suite (`tests/db/`), fixtures |
