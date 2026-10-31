@@ -1,12 +1,9 @@
-export type Provider = 'osm'
-
 export interface SearchResult {
   id: string
   displayName: string
   type: 'city' | 'address' | 'building' | 'poi'
   coordinates: [number, number] // [lng, lat]
   boundingBox?: [number, number, number, number] // [minLng, minLat, maxLng, maxLat]
-  provider: Provider
   details?: {
     country?: string
     region?: string
@@ -62,10 +59,7 @@ function determineResultType(osmType: string, osmClass: string): SearchResult['t
 /**
  * Search locations using Nominatim API
  */
-export async function searchLocations(query: string, provider: Provider): Promise<SearchResult[]> {
-  // Only support OSM provider (Nominatim)
-  if (provider !== 'osm') console.warn(`Provider "${provider}" not supported, using OSM Nominatim`)
-
+export async function searchLocations(query: string): Promise<SearchResult[]> {
   if (!query || query.trim().length < 3) return []
 
   try {
@@ -111,7 +105,6 @@ export async function searchLocations(query: string, provider: Provider): Promis
         },
         displayName: result.display_name,
         id: `osm-${result.place_id}`,
-        provider: 'osm',
         type: determineResultType(result.type, result.class)
       }
     })
