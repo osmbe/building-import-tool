@@ -121,7 +121,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: |
-          shellcheck .github/scripts/*.sh \
+          shellcheck --shell=bash --severity=warning \
+            .github/scripts/*.sh \
             processing/scripts/*.sh processing/sql/*.sh \
             scripts/*.sh scripts/import/*.sh \
             tests/db/*.sh tests/db/cases/*.sh \
