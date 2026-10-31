@@ -1,7 +1,6 @@
 #!/bin/bash
 # Local PICC import — runs directly on the server, no GitHub Actions needed.
 # Usage: ./import-picc.sh
-# Can be triggered via webhook POST /import-picc or run directly on the server.
 # Downloads the full Wallonia dataset (FileGDB + addresses) and imports it: the tables are replaced in one
 # transaction and the view refreshed concurrently, so the map keeps the previous data meanwhile.
 set -euo pipefail

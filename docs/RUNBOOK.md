@@ -5,8 +5,8 @@ The moving parts:
 
 - **CI** (`.github/workflows/ci.yml`) tests every push, builds the `nuxt-app`, `processing` and `webhook` images
   (tagged `sha-<commit>`) and, on main, asks the server to deploy that commit.
-- **The webhook** (`webhook/server.py`, container `be2osm-webhook`) runs every server-side job: deploys, restores
-  of CI import artifacts, imports, updates. It runs them one at a time and keeps a record and log of each.
+- **The webhook** (`webhook/server.py`, container `be2osm-webhook`) runs deploys, restores of CI import artifacts
+  and updates one at a time, keeping a record and log of each. Manual full imports are in `scripts/import/`.
 - **Migrations** (`processing/sql/migrations/<scope>/NNN_*.sql`, `just db-migrate`) change the database schema.
 
 ## One-time bootstrap
