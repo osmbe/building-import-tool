@@ -1,4 +1,4 @@
-export type Provider = 'osm' | 'google'
+export type Provider = 'osm'
 
 export interface SearchResult {
   id: string
