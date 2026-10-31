@@ -68,16 +68,18 @@ jobs:
         uses: docker/build-push-action@v7
         id: push
         with:
-          push: ${{ github.event_name != 'pull_request' && matrix.image != 'nuxt-app' }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             OSM_CLIENT_ID=${{ secrets.OSM_CLIENT_ID }}
             OSM_CLIENT_SECRET=${{ secrets.OSM_CLIENT_SECRET }}
             OSM_REDIRECT_URI=${{ secrets.OSM_REDIRECT_URI }}
             GIT_SHA=${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/Dockerfile
+          labels: ${{ steps.meta.outputs.labels }}
+          push: ${{ github.event_name != 'pull_request' && matrix.image != 'nuxt-app' }}
+          tags: ${{ steps.meta.outputs.tags }}
 
       - name: Generate artifact attestation
         uses: actions/attest@v4
