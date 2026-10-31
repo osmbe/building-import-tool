@@ -24,9 +24,6 @@
   --color-ring: hsl(192 90% 46%);
 
   --radius: 0.375rem;
-
-  --font-sans: 'Outfit', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
 /* ── Layer color tokens ── */

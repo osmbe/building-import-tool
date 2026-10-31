@@ -40,14 +40,14 @@ describe('searchLocations', () => {
 
   it('returns nothing for queries shorter than 3 characters without calling Nominatim', async () => {
     const fetchMock = mockFetch([])
-    expect(await searchLocations('', 'osm')).toEqual([])
-    expect(await searchLocations('  ab  ', 'osm')).toEqual([])
+    expect(await searchLocations('')).toEqual([])
+    expect(await searchLocations('  ab  ')).toEqual([])
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('queries Nominatim restricted to Belgium and maps the results', async () => {
     const fetchMock = mockFetch([nominatim()])
-    const results = await searchLocations('  Brussels ', 'osm')
+    const results = await searchLocations('  Brussels ')
 
     const [url, init] = fetchMock.mock.calls[0] ?? []
     const params = new URL(String(url)).searchParams
@@ -65,7 +65,6 @@ describe('searchLocations', () => {
         coordinates: [4.35, 50.85],
         // Nominatim [minLat, maxLat, minLon, maxLon] -> [minLng, minLat, maxLng, maxLat]
         boundingBox: [4.3, 50.8, 4.4, 50.9],
-        provider: 'osm',
         details: { category: 'place', country: 'Belgium', postcode: '1000', region: 'Brussels-Capital' }
       }
     ])
@@ -81,21 +80,14 @@ describe('searchLocations', () => {
       nominatim({ address: { region: 'Flanders' }, class: 'amenity', type: 'cafe' }),
       nominatim({ class: 'place', type: 'hamlet' })
     ])
-    const results = await searchLocations('somewhere', 'osm')
+    const results = await searchLocations('somewhere')
     expect(results.map((r) => r.type)).toEqual(['building', 'address', 'address', 'city', 'city', 'poi', 'poi'])
     expect(results[5]?.details?.region).toBe('Flanders')
   })
 
-  it('warns about unsupported providers and still uses Nominatim', async () => {
-    const fetchMock = mockFetch([])
-    await searchLocations('Gent', 'google')
-    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('"google" not supported'))
-    expect(fetchMock).toHaveBeenCalledOnce()
-  })
-
   it('throws on Nominatim errors', async () => {
     mockFetch([], false, 503)
-    await expect(searchLocations('Gent', 'osm')).rejects.toThrow('Nominatim API error: 503')
+    await expect(searchLocations('Gent')).rejects.toThrow('Nominatim API error: 503')
     expect(console.error).toHaveBeenCalled()
   })
 })
@@ -105,7 +97,6 @@ describe('search history', () => {
     coordinates: [4, 50],
     displayName: id,
     id,
-    provider: 'osm',
     type: 'city'
   })
 

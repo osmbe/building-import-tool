@@ -43,11 +43,6 @@
                 </div>
               </div>
             </div>
-            <span
-              class="text-[9px] font-mono text-muted-foreground/50 ml-2 shrink-0 group-hover:text-muted-foreground/80 transition-colors"
-            >
-              {{ item.provider.toUpperCase() }}
-            </span>
           </button>
         </template>
       </div>
