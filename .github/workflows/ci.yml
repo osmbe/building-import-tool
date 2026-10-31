@@ -125,6 +125,7 @@ jobs:
             processing/scripts/*.sh processing/sql/*.sh \
             scripts/*.sh scripts/import/*.sh \
             tests/db/*.sh tests/db/cases/*.sh \
+            tests/db/bin/gh tests/db/bin/deploy/* tests/fixtures/build.sh \
             webhook/*.sh
 
   justfile:
