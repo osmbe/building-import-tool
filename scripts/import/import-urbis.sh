@@ -1,7 +1,6 @@
 #!/bin/bash
 # Local UrbIS import — runs directly on the server, no GitHub Actions needed.
 # Usage: ./import-urbis.sh
-# Can be triggered via webhook POST /import-urbis or run directly on the server.
 # Downloads the UrbIS GeoPackage and imports it: the tables are replaced in one transaction and the view
 # refreshed concurrently, so the map keeps the previous data meanwhile.
 set -euo pipefail

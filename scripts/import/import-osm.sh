@@ -1,7 +1,6 @@
 #!/bin/bash
 # Local OSM import — runs directly on the server, no GitHub Actions needed.
 # Usage: ./import-osm.sh
-# Can be triggered via webhook POST /import-osm or run directly on the server.
 set -euo pipefail
 
 PROJECT_DIR="${COMPOSE_PROJECT_DIR}"
