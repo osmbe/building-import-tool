@@ -38,7 +38,7 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-  app-lint:
+  app-vp-fmt:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -55,6 +55,23 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - run: npm ci
       - run: npm run fmt
+
+  app-vp-lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
       - run: npm run lint -- --format=github
 
   app-test:
@@ -87,29 +104,41 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
 
-  test-infra:
-    name: Test Infra (workflows, shell scripts, justfile, compose files)
+  actionlint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: actionlint
-        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -no-color
-      - name: shellcheck
-        run: |
-          docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.10.0 -S warning -s bash \
-            webhook/*.sh tests/db/*.sh tests/db/cases/*.sh tests/db/bin/gh tests/db/bin/deploy/* \
-            tests/fixtures/build.sh processing/sql/migrate.sh processing/scripts/*.sh .github/scripts/*.sh scripts/*.sh
-      - name: justfile parses
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq just
-          just --justfile processing/justfile --summary >/dev/null
-      - name: compose files are valid
-        run: |
+      - name: Download actionlint
+        id: get_actionlint
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+        shell: bash
+      - name: Check workflow files
+        run: ${{ steps.get_actionlint.outputs.executable }} -color
+        shell: bash
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: shellcheck **/*.sh
+
+  justfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: extractions/setup-just@v4
+      - run: just --justfile processing/justfile --summary >/dev/null
+
+  docker-compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
           docker compose -f docker-compose.yml config -q
+          docker compose -f docker-compose.local.yml config -q
           docker compose -f docker-compose.test.yml config -q
 
-  test-db:
-    name: Test Database, imports, Martin and API integration
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
