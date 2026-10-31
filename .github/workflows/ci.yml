@@ -120,7 +120,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - run: shellcheck **/*.sh
+      - run: |
+          shellcheck webhook/*.sh tests/db/*.sh tests/db/cases/*.sh tests/db/bin/gh tests/db/bin/deploy/* \
+            tests/fixtures/build.sh processing/sql/migrate.sh processing/scripts/*.sh .github/scripts/*.sh scripts/*.sh
 
   justfile:
     runs-on: ubuntu-latest
