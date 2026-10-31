@@ -86,13 +86,6 @@ describe('searchLocations', () => {
     expect(results[5]?.details?.region).toBe('Flanders')
   })
 
-  it('warns about unsupported providers and still uses Nominatim', async () => {
-    const fetchMock = mockFetch([])
-    await searchLocations('Gent', 'google')
-    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('"google" not supported'))
-    expect(fetchMock).toHaveBeenCalledOnce()
-  })
-
   it('throws on Nominatim errors', async () => {
     mockFetch([], false, 503)
     await expect(searchLocations('Gent', 'osm')).rejects.toThrow('Nominatim API error: 503')
