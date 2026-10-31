@@ -7,9 +7,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { class: 'dark' },
-      link: [
-        { href: 'data:,', rel: 'icon' }
-      ],
+      link: [{ href: 'data:,', rel: 'icon' }],
       meta: [{ content: 'width=device-width, initial-scale=1', name: 'viewport' }],
       title: 'OSMBE - Building Mapping Tool'
     }
