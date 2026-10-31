@@ -1,4 +1,4 @@
-"""Webhook server: runs the server-side jobs (deploys, restores of CI artifacts, imports, updates).
+"""Webhook server: runs the server-side jobs (deploys, restores of CI artifacts, updates).
 
 Every POST route requires the X-Webhook-Secret header and starts a job, answering 202 with
 {"job_id": ..., "status_url": "/jobs/<id>"}. GET /jobs/<id> (same header) returns the job's status
@@ -6,9 +6,9 @@ Every POST route requires the X-Webhook-Secret header and starts a job, answerin
 for the result instead of assuming success. GET /health needs no secret.
 
 Jobs run one at a time: each script runs under one global flock on the state volume, which deploy.sh,
-the restores, imports and updates all share. Job records and logs live in the state directory, so they
-survive a restart of the webhook (a deploy recreates it); a job that was running when the server stopped
-is reported as interrupted.
+the restores and updates all share. Manual full-import scripts are in scripts/import/. Job records and logs
+live in the state directory, so they survive a restart of the webhook (a deploy recreates it); a job that was
+running when the server stopped is reported as interrupted.
 
 The scripts are read from the checkout (<COMPOSE_PROJECT_DIR>/webhook), so they always match the deployed
 code.
