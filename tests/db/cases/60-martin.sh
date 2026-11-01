@@ -6,6 +6,14 @@ for src in grb picc urbis; do fixtures "$src"; done
 just_run grb-import >/dev/null
 just_run picc-import >/dev/null
 just_run urbis-import >/dev/null
+# Give the fixture building two subaddresses so its details carry flats as well as the summarized address.
+psql_db -c "INSERT INTO grb.addresses (oidn, adres_id, street_name, house_number, box_number, postcode, municipality,
+    full_address, geom) VALUES
+ (9002, 80002, 'Kerkstraat', '1', '1', '2000', 'Antwerpen', 'Kerkstraat 1 bus 1',
+    ST_SetSRID(ST_MakePoint(4.40005, 51.20003), 4326)),
+ (9003, 80003, 'Kerkstraat', '1', '2', '2000', 'Antwerpen', 'Kerkstraat 1 bus 2',
+    ST_SetSRID(ST_MakePoint(4.40005, 51.20003), 4326));
+ REFRESH MATERIALIZED VIEW grb.buildings_with_addresses;" >/dev/null
 psql_db -d osmbe -c "INSERT INTO osm.osm_buildings (osm_id, building_type, tags, geom) VALUES
   (42, 'yes', '{\"building\": \"yes\"}', ST_GeomFromText('POLYGON((4.4000 51.2000,4.4001 51.2000,4.4001 51.20007,4.4000 51.20007,4.4000 51.2000))', 4326))" >/dev/null
 
@@ -50,6 +58,15 @@ if curl -fsS "http://127.0.0.1:$(martin_port martin-picc)/candidates/${z}/${x}/$
 else
     fail "martin-picc/candidates tiles carry the details keys"
 fi
+# GRB details: the summarized address and the flat count (only when > 1)
+read -r z x y < <(tile_xyz 4.40005 51.20003 16)
+curl -fsS -o /tmp/grb-tile.$$ "http://127.0.0.1:$(martin_port martin-grb)/candidates/${z}/${x}/${y}"
+for key in street house_numbers flats; do
+    if grep -aq "$key" /tmp/grb-tile.$$; then pass "martin-grb/candidates tiles carry details.$key"; else
+        fail "martin-grb/candidates tiles carry details.$key"
+    fi
+done
+rm -f /tmp/grb-tile.$$
 # Only the contract is served: the per-source layouts (buildings, kunstwerken) are gone
 for svc in martin-grb martin-picc martin-urbis; do
     sources=$(curl -fsS "http://127.0.0.1:$(martin_port "$svc")/catalog" |

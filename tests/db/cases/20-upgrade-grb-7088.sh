@@ -18,6 +18,8 @@ assert_eq "$(sql "SELECT string_agg(entity || '/' || oidn, ',' ORDER BY oidn) FR
 assert_eq "$(sql "SELECT count(*) FROM grb.buildings_with_addresses")" "3" "the view is rebuilt with every polygon"
 assert_eq "$(sql "SELECT address_count FROM grb.buildings_with_addresses WHERE entity = 'Gbg' AND oidn = 2664")" "1" \
     "addresses are still joined per polygon"
+assert_eq "$(sql "SELECT house_numbers FROM grb.buildings_with_addresses WHERE entity = 'Gbg' AND oidn = 2664")" "1" \
+    "an old address without house_number falls back to full_address"
 
 psql_db -c "INSERT INTO grb.building_polygons (entity, oidn, type_label, geom)
   VALUES ('Gba', 2664, 'trap', ST_GeomFromText('POLYGON((4.43 51.20,4.4301 51.20,4.4301 51.2001,4.43 51.2001,4.43 51.20))', 4326))" >/dev/null

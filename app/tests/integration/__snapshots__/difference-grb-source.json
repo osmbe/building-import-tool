@@ -45,7 +45,10 @@
         "postcodes": "2000",
         "municipalities": "Antwerpen",
         "address_count": 1,
-        "details": {}
+        "details": {
+          "street": "Kerkstraat",
+          "house_numbers": "1"
+        }
       }
     }
   ],

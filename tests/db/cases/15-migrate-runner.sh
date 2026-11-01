@@ -47,6 +47,7 @@ assert_true "SELECT $elapsed >= 3" "it waited for the lock (${elapsed}s)"
 assert_true "SELECT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid = 'grb.buildings_with_addresses'::regclass AND attname = 'entity')" \
     "the heavy migration swapped in the new view"
 assert_true "SELECT to_regclass('grb.buildings_with_addresses_v2') IS NULL" "no v2 view is left behind"
+assert_true "SELECT to_regclass('grb.buildings_with_addresses_v3') IS NULL" "no v3 view is left behind"
 assert_eq "$(sql "SELECT string_agg(indexrelid::regclass::text, ',' ORDER BY indexrelid::regclass::text) FROM pg_index WHERE indrelid = 'grb.buildings_with_addresses'::regclass")" \
     "grb.idx_mv_buildings_with_addresses_entity_oidn,grb.idx_mv_buildings_with_addresses_gebouw_id,grb.idx_mv_buildings_with_addresses_geom,grb.idx_mv_buildings_with_addresses_polygon_id,grb.idx_mv_buildings_with_addresses_polygon_type,grb.idx_mv_buildings_with_addresses_postcodes" \
     "the view's indexes have their final names"

@@ -458,7 +458,7 @@
                   </button>
                 </div>
 
-                <!-- Addresses (grouped by base address) -->
+                <!-- Addresses (summarized per polygon; subaddresses are counted in building:flats) -->
                 <div v-if="currentFeature.addresses" class="mb-3">
                   <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
                     Addresses

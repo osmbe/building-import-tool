@@ -19,6 +19,8 @@ assert_eq "$(sql "SELECT count(*) FROM grb.kunstwerken")" "1" "KNW structures ar
 assert_eq "$(sql "SELECT count(*) FROM grb.buildings_with_addresses")" "6" "the view has one row per polygon"
 assert_eq "$(sql "SELECT entity || '/' || oidn || ':' || addresses FROM grb.buildings_with_addresses WHERE address_count > 0")" \
     "Gbg/1001:Kerkstraat 1" "the address is joined to the polygon that contains it"
+assert_eq "$(sql "SELECT entity || '/' || oidn || ':' || house_numbers || ':' || flats FROM grb.buildings_with_addresses WHERE address_count > 0")" \
+    "Gbg/1001:1:1" "the address summary and flat count are populated"
 assert_eq "$(sql "SELECT polygon_count FROM grb.buildings_with_addresses WHERE entity = 'Gbg' AND oidn = 1001")" "2" \
     "parent building stats come from grb.buildings"
 assert_true "SELECT imported_at IS NOT NULL FROM grb.import_meta" "the import time is recorded"

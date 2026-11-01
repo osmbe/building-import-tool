@@ -45,8 +45,9 @@ Each source has its own columns, ids and address formats. Each one is exposed th
 **candidates**: `grb.candidates`, `grb.knw_candidates`, `picc.candidates` and `urbis.candidates` share these
 columns, with the same types and order: `fid`, `source`, `entity`, `source_id`, `source_ref`, `type_code`,
 `type_label`, `survey_date`, `area_m2`, the parent building, the addresses, `details` (source-specific extras as
-jsonb) and `geom` (EPSG:3857). The tiles, the difference API and the JOSM export only read these columns, so the
-app has no per-source column names. Adding a source means writing its candidates view.
+jsonb; GRB carries the summarized `street`, `house_numbers` and `flats`) and `geom` (EPSG:3857). The tiles, the
+difference API and the JOSM export only read these columns, so the app has no per-source column names. Adding a
+source means writing its candidates view.
 
 ### Finding missing buildings
 

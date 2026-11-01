@@ -111,12 +111,15 @@ describe('POST /api/buildings/difference: validation', () => {
     expect(db.queryGrb).not.toHaveBeenCalled()
   })
 
-  it.each([undefined, 0, 2])('asks a page that does not send contract %s to reload (409)', async (contract) => {
-    const { event } = await post({ contract })
-    expect(event.sentError?.statusCode).toBe(409)
-    expect(event.sentError?.statusMessage).toContain('reload the page')
-    expect(db.queryGrb).not.toHaveBeenCalled()
-  })
+  it.each([undefined, 0, CANDIDATES_CONTRACT + 1])(
+    'asks a page that does not send contract %s to reload (409)',
+    async (contract) => {
+      const { event } = await post({ contract })
+      expect(event.sentError?.statusCode).toBe(409)
+      expect(event.sentError?.statusMessage).toContain('reload the page')
+      expect(db.queryGrb).not.toHaveBeenCalled()
+    }
+  )
 })
 
 describe('POST /api/buildings/difference: one query for every source', () => {

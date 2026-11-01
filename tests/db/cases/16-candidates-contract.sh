@@ -57,3 +57,7 @@ assert_eq "$(row urbis.candidates "source_id = '21'")" "urbis | - | 21 | - | - |
     "an UrbIS building: id and addresses"
 assert_eq "$(sql "SELECT details FROM picc.candidates WHERE source_id = '11'")" '{"georef_id": "G-11", "date_modif": "2020-01-01"}' \
     "source-specific extras are in details"
+assert_eq "$(sql "SELECT (details->>'street') || '|' || (details->>'house_numbers') FROM grb.candidates WHERE source_ref = 'Gbg/1001'")" \
+    "Kerkstraat|1" "GRB details carry the summarized address"
+assert_eq "$(sql "SELECT details FROM grb.candidates WHERE source_ref = 'Gba/1001'")" "{}" \
+    "a GRB polygon without addresses has empty details"

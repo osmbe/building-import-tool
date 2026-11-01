@@ -41,7 +41,7 @@ GROUP BY abl.building_object_id::BIGINT  -- wrong ID namespace
 -- New approach (correct): spatial containment
 FROM grb.building_polygons bp
 JOIN grb.addresses a ON ST_Contains(bp.geom, a.geom)
-GROUP BY bp.oidn
+GROUP BY bp.id
 ```
 
 This works because:
@@ -52,3 +52,24 @@ This works because:
 ## Impact on Import Workflow
 
 The address-building links (`RltAdresGebouw*.dbf`, part of the addresses download) are not imported: the materialized view resolves addresses by geometry only. Migration `grb/007_drop_unused` dropped the `grb.address_building_links` table; the analysis above dates from when it was still imported.
+
+## Main addresses, subaddresses and `building:flats`
+
+The view (`grb/008_address_summary.sql`, the current definition) distinguishes two kinds of address rows:
+
+- a **main address** has an empty `box_number`;
+- a **subaddress** (“bus”) has a non-empty `box_number`.
+
+Both stay in `grb.addresses`. Per candidate polygon, the view builds the address value from the main addresses only
+and summarizes their house numbers (`1,1A,3,5` → `1,1A,3-5`). If the main addresses span more than one street, the
+address columns are left empty. Subaddresses are matched to a main address by the same
+`(street_name, house_number)` pair and contribute to `flats` instead:
+
+```text
+flats = count(distinct subaddresses)
+      + count(distinct main addresses without a matching subaddress)
+```
+
+The result is exposed as `details.flats` (only when greater than `1`) and exported as `building:flats` for GRB
+polygons tagged `building=yes`. The address point is still assigned to a polygon by
+`ST_Contains(bp.geom, a.geom)`; `RltAdresGebouw` remains unused.

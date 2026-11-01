@@ -22,7 +22,7 @@ The app reads both through two connection pools (`app/server/utils/db.ts`); the 
 | `grb.buildings` | per `gebouw_id` (the building registry id, from the RltGbgGebouw relation): polygon count, area and type |
 | `grb.addresses` | address points |
 | `grb.kunstwerken` | KNW structures (bridges, chimneys, silos, wind turbines, ...) |
-| `grb.buildings_with_addresses` | materialized view: one row per polygon, its addresses (joined by geometry, see [GRB_ADDRESS_JOIN.md](GRB_ADDRESS_JOIN.md)), its parent building, geometry in EPSG:3857 |
+| `grb.buildings_with_addresses` | materialized view: one row per polygon, its summarized main address and flat count (addresses joined by geometry, see [GRB_ADDRESS_JOIN.md](GRB_ADDRESS_JOIN.md)), its parent building, geometry in EPSG:3857 |
 | `grb.candidates`, `grb.knw_candidates` | the candidates contract (below) |
 
 ### PICC (Wallonia) and UrbIS (Brussels)
@@ -49,8 +49,8 @@ same columns, types and order:
 | `survey_date`, `origin_label` | when and how the object was surveyed (`YYYY-MM-DD`) |
 | `area_m2` | area in m² |
 | `parent_id`, `parent_type_label`, `parent_part_count`, `parent_area_m2` | the GRB building or the UrbIS block it belongs to |
-| `addresses`, `street_names`, `postcodes`, `municipalities`, `address_count` | the addresses inside it |
-| `details` | jsonb, source-specific extras; tiles carry each key as a property |
+| `addresses`, `street_names`, `postcodes`, `municipalities`, `address_count` | the addresses inside it (GRB: main addresses only, summarized; subaddresses count for `flats`) |
+| `details` | jsonb, source-specific extras; tiles carry each key as a property. GRB adds `street`, `house_numbers` and, when greater than 1, `flats` |
 | `geom` | EPSG:3857 |
 
 Everything downstream reads only these columns:
@@ -60,7 +60,7 @@ Everything downstream reads only these columns:
   [GRB_PROPERTY_MAPPINGS.md](GRB_PROPERTY_MAPPINGS.md);
 - the map panels.
 
-The app sends `contract: 1` with every difference request, and the API refuses any other value. A page loaded
+The app sends `contract: 2` with every difference request, and the API refuses any other value. A page loaded
 before a contract change then asks the user to reload, instead of exporting properties it doesn't know.
 `tests/db/cases/16-candidates-contract.sh` checks the shape and contents per source.
 

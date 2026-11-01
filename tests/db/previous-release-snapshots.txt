@@ -5,3 +5,6 @@
 # assertion (not a snapshot) this commit changes on purpose.
 # Empty this list in the commit after the one that needed it.
 #
+difference-grb-source.json
+skip-test: candidates carry the contract properties
+skip-test: exports the picc candidates

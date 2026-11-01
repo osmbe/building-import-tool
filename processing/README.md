@@ -54,7 +54,9 @@ ordered, prepared by the API (minutes to hours), then downloaded as shapefiles i
 3. import the GBG, GBA and KNW polygons (`entity` = `Gbg`/`Gba`, survey dates converted) and set `gebouw_id`;
 4. import the addresses;
 5. aggregate `grb.buildings` per `gebouw_id`;
-6. refresh `grb.buildings_with_addresses`;
+6. refresh `grb.buildings_with_addresses`: it aggregates only main addresses (`box_number` empty), summarizes
+   one-street house numbers (`1,1A,3,5` → `1,1A,3-5`) and counts subaddresses plus main addresses without a subaddress for
+   `building:flats`;
 7. record the time in `grb.import_meta`.
 
 `grb-update` orders the difference since that date. That is a delete file and an add file per entity, applied in

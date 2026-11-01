@@ -170,6 +170,11 @@ describe.skipIf(!PORT)('API against the fixture database', () => {
       expect(refs(response)).toEqual(['Gbg/1001'])
       expectSameCandidates(response, 'difference-grb-source.json', 'grb')
       await expect(normalise(response)).toMatchFileSnapshot('__snapshots__/difference-grb-source.json')
+      const osm = exportXml(response)
+      expect(osm).toContain('<tag k="addr:street" v="Kerkstraat"/>')
+      expect(osm).toContain('<tag k="addr:housenumber" v="1"/>')
+      expect(osm).not.toContain('addr:postcode')
+      expect(osm).not.toContain('addr:city')
     })
 
     it('both mode: a candidate must be unmatched by geometry and by source reference', async () => {
@@ -182,7 +187,7 @@ describe.skipIf(!PORT)('API against the fixture database', () => {
       expect(response.features[0]?.properties).toMatchObject({
         address_count: 1,
         addresses: 'Kerkstraat 1',
-        details: {},
+        details: { house_numbers: '1', street: 'Kerkstraat' },
         entity: 'Gbg',
         parent_id: '5001',
         source: 'grb',

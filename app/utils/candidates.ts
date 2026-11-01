@@ -10,7 +10,7 @@ import { KNW_TAG_MAP_BY_CODE, VERDIEPING_FIXME, isBuildingTypeLabel, isRoofTypeL
  * Version of the contract, sent by the app with every difference request. The API refuses other values, so a page
  * loaded before a contract change asks to be reloaded instead of exporting properties it doesn't know.
  */
-export const CANDIDATES_CONTRACT = 1
+export const CANDIDATES_CONTRACT = 2
 
 export const CANDIDATE_SOURCES = ['grb', 'knw', 'picc', 'urbis'] as const
 export type CandidateSource = (typeof CANDIDATE_SOURCES)[number]
@@ -81,8 +81,26 @@ export const candidateTileUrl = (source: CandidateSource): string =>
 // First entry of a comma-separated aggregate column (e.g. street_names), trimmed.
 const firstListItem = (value: string | null | undefined): string => (String(value ?? '').split(',')[0] ?? '').trim()
 
-/** Tags for the house address, only when the candidate has exactly one address (OSM: one address per object). */
+const detailOf = (props: CandidateProperties, key: string): unknown =>
+  candidateDetail(props as unknown as Record<string, unknown>, key)
+
+const detailString = (props: CandidateProperties, key: string): string => {
+  const value = detailOf(props, key)
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+/**
+ * Tags for the house address. GRB candidates carry the summarized main address of their polygon in `details`
+ * (one street, main house numbers only). Other sources keep the single-address rule (OSM: one address per
+ * object). Postcodes and municipalities stay in the database for the UI, but are never exported (issue #130).
+ */
 const addressTags = (props: CandidateProperties): Record<string, string> => {
+  if (props.source === 'grb') {
+    const street = detailString(props, 'street')
+    const houseNumbers = detailString(props, 'house_numbers')
+    if (street && houseNumbers) return { 'addr:street': street, 'addr:housenumber': houseNumbers }
+  }
+
   const addresses = String(props.addresses ?? '').trim()
   if (Number(props.address_count ?? 0) !== 1 || !addresses) return {}
   const street = firstListItem(props.street_names)
@@ -94,10 +112,6 @@ const addressTags = (props: CandidateProperties): Record<string, string> => {
   const houseNumber = /^\d+(?:\s*[A-Za-z](?![A-Za-z]))?(?:\s*\/\s*\w+)?/.exec(remainder.trim())
   if (street) tags['addr:street'] = street
   if (houseNumber) tags['addr:housenumber'] = houseNumber[0].replace(/\s+/g, '')
-  const postcode = firstListItem(props.postcodes)
-  if (postcode) tags['addr:postcode'] = postcode
-  const city = firstListItem(props.municipalities)
-  if (city) tags['addr:city'] = city
   return tags
 }
 
@@ -118,7 +132,9 @@ const knwTags = (props: CandidateProperties): Record<string, string> => {
  * - KNW: the default tags of its type, no building tag;
  * - PICC and UrbIS: building=yes;
  * - source:geometry:date (survey date) and source:geometry:ref (GRB and KNW reference) when known;
- * - addr:* when the candidate has exactly one address (not for KNW).
+ * - addr:* for GRB when its polygon has main addresses on one street, and for PICC/UrbIS when there is exactly
+ *   one address; never postcode/city (not for KNW);
+ * - building:flats for GRB buildings (building=yes) when details.flats is greater than 1.
  */
 export const candidateTags = (props: CandidateProperties): Record<string, string> => {
   const tags: Record<string, string> = {}
@@ -134,6 +150,10 @@ export const candidateTags = (props: CandidateProperties): Record<string, string
   if (/^\d{4}-\d{2}-\d{2}$/.test(surveyDate)) tags['source:geometry:date'] = surveyDate
   if (props.source_ref) tags['source:geometry:ref'] = props.source_ref
   if (props.source !== 'knw') Object.assign(tags, addressTags(props))
+  if (props.source === 'grb' && tags.building === 'yes') {
+    const flats = Number(detailOf(props, 'flats'))
+    if (Number.isInteger(flats) && flats > 1) tags['building:flats'] = String(flats)
+  }
   return tags
 }
 

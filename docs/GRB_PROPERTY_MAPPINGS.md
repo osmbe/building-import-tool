@@ -15,11 +15,13 @@ them, per `source`. Only the tags below are written: no source property is ever 
 | `source`, `type_label` | GRB LBLTYPE, KNW type, PICC nature | `building=yes` (section 2), KNW defaults (section 3) |
 | `survey_date` | GRB OPNDATUM, KNW OPNDATUM, PICC DATE_LEVE | `source:geometry:date` (YYYY-MM-DD) |
 | `source_ref` | GRB entity + OIDN | `source:geometry:ref` (`Gbg/718523`, `Gba/2664`, `Knw/7001`) |
-| `addresses`, `street_names`, `postcodes`, `municipalities`, `address_count` | addresses inside the polygon | `addr:*` (section 4) |
+| `addresses`, `street_names`, `address_count` | addresses inside the polygon | `addr:*` (section 4) |
+| `details.street`, `details.house_numbers` | GRB summarized main address | `addr:street`, `addr:housenumber` (section 4) |
+| `details.flats` | GRB flats/units in the polygon | `building:flats` (section 4) |
 
 Tags are written in this order: `building`, `fixme`, the KNW defaults, `source:geometry:date`,
-`source:geometry:ref`, `addr:street`, `addr:housenumber`, `addr:postcode`, `addr:city`. The API integration
-tests compare the export of every source with a recorded snapshot (`app/tests/integration/__snapshots__/export-*.osm`).
+`source:geometry:ref`, `addr:street`, `addr:housenumber`, `building:flats`. The API integration tests compare the
+export of every source with a recorded snapshot (`app/tests/integration/__snapshots__/export-*.osm`).
 
 ### source:geometry:ref
 
@@ -68,15 +70,48 @@ KNW types outside this list are exported without a structure tag and need manual
 
 ## 4. Addresses
 
-Addresses are joined to the polygon that contains them (docs/GRB_ADDRESS_JOIN.md). OSM puts one address on one
-object, so `addr:*` tags are written only when the candidate has exactly one address (issue #49), never for KNW:
+Addresses are joined to the polygon that contains them (docs/GRB_ADDRESS_JOIN.md). KNW structures never get an
+address.
 
-- `addr:street`: the first street name;
-- `addr:housenumber`: what follows the street name in the address, when it looks like a house number (`12`,
-  `12A`, `12/3`; a letter suffix is one letter, not the next word);
-- `addr:postcode`, `addr:city`: the first postcode and municipality.
+### GRB: one street, summarized house numbers
 
-Candidates with several addresses are left for manual handling in JOSM.
+A GRB address row is a **main address** when `box_number` is empty and a **subaddress** (“bus”) when it is not.
+Subaddresses stay in the database and count for `building:flats`, but they are not part of `addr:housenumber`.
+
+- If all main addresses of a polygon are on **one street**, the export writes `addr:street` and
+  `addr:housenumber`. Several house numbers on that street are summarized into one value (issue #135):
+  `1,3,5` → `1-5`; `2,4,6` → `2-6`; `1,3` → `1,3`; `1,5` → `1,5`; `1,1A,3,5` → `1,1A,3-5`;
+  `1,2,3,5` stays `1,2,3,5` because it mixes odd and even numbers. Opaque values such as `12/3` are kept
+  verbatim after the numeric summary.
+- If the main addresses span **more than one street**, the polygon gets no `addr:*` tags at all (issue #136);
+  leaving the address for manual handling in JOSM avoids inventing an address.
+- The range notation is an odd/even series, but the same `1-5` text can also be an official address label. JOSM
+  users should check unusual ranges before uploading.
+
+### PICC and UrbIS
+
+PICC and UrbIS keep the older one-address rule (issue #49): `addr:*` is written only when the candidate has exactly
+one address. `addr:housenumber` is what follows the street name when it looks like a house number (`12`, `12A`,
+`12/3`; a letter suffix is one letter, not the next word).
+
+### Postcodes and cities
+
+`addr:postcode` and `addr:city` are **never exported** for any source (issue #130). The values remain in the
+database, the API and the tiles for the map panel and for previous-release compatibility.
+
+### `building:flats`
+
+GRB polygons exported with `building=yes` get `building:flats` when the count is greater than `1`. It is calculated
+per candidate polygon (not summed over the parent building), and is not written for `building=roof` (`afdak`) or
+for filtered-out GRB types. The count is:
+
+- every subaddress, plus
+- every main address that has no matching subaddress (`street` + `house_number`).
+
+A main address with subaddresses therefore contributes its subaddresses, not the main address itself. Duplicate
+address rows count once. The same value is available as `details.flats` in the difference API and as a tile
+property; it is omitted when the count is `0` or `1`. A multi-street polygon can still get `building:flats`, even
+though its `addr:*` tags are omitted.
 
 ## 5. Export workflow
 

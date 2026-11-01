@@ -14,7 +14,5 @@
     <tag k="source:geometry:date" v="2019-05-20"/>
     <tag k="addr:street" v="Rue de Fer"/>
     <tag k="addr:housenumber" v="5"/>
-    <tag k="addr:postcode" v="5000"/>
-    <tag k="addr:city" v="Namur"/>
   </way>
 </osm>

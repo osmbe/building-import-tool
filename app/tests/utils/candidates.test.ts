@@ -154,16 +154,7 @@ describe('candidateTags: references and dates', () => {
           })
         )
       )
-    ).toEqual([
-      'building',
-      'fixme',
-      'source:geometry:date',
-      'source:geometry:ref',
-      'addr:street',
-      'addr:housenumber',
-      'addr:postcode',
-      'addr:city'
-    ])
+    ).toEqual(['building', 'fixme', 'source:geometry:date', 'source:geometry:ref', 'addr:street', 'addr:housenumber'])
   })
 })
 
@@ -205,15 +196,35 @@ describe('candidateTags: KNW default tags (#22)', () => {
 describe('candidateTags: addresses (#49)', () => {
   const single = (props: Partial<CandidateProperties>) => candidateTags(candidate({ address_count: 1, ...props }))
 
-  it('writes the address of a single-address candidate', () => {
-    expect(
-      single({ addresses: 'Kerkstraat 12', municipalities: 'Gent', postcodes: '9000', street_names: 'Kerkstraat' })
-    ).toMatchObject({
-      'addr:city': 'Gent',
-      'addr:housenumber': '12',
-      'addr:postcode': '9000',
-      'addr:street': 'Kerkstraat'
+  it('writes the address of a single-address candidate, without postcode or city (#130)', () => {
+    const tags = single({
+      addresses: 'Kerkstraat 12',
+      municipalities: 'Gent',
+      postcodes: '9000',
+      street_names: 'Kerkstraat'
     })
+    expect(tags).toMatchObject({ 'addr:housenumber': '12', 'addr:street': 'Kerkstraat' })
+    expect(tags).not.toHaveProperty('addr:postcode')
+    expect(tags).not.toHaveProperty('addr:city')
+  })
+
+  it('reads the summarized GRB address from details, regardless of address_count (#135, #136)', () => {
+    const tags = candidateTags(
+      candidate({
+        address_count: 4,
+        addresses: 'Kerkstraat 1,1A,3-5',
+        details: { house_numbers: '1,1A,3-5', street: 'Kerkstraat' },
+        postcodes: '9000',
+        municipalities: 'Gent'
+      })
+    )
+    expect(tags).toMatchObject({ 'addr:housenumber': '1,1A,3-5', 'addr:street': 'Kerkstraat' })
+    expect(tags).not.toHaveProperty('addr:postcode')
+    expect(tags).not.toHaveProperty('addr:city')
+  })
+
+  it('writes no GRB address when the polygon has several streets (empty details)', () => {
+    expect(candidateTags(candidate({ address_count: 0, details: {} }))).not.toHaveProperty('addr:street')
   })
 
   it('writes the address of PICC and UrbIS buildings too', () => {
@@ -249,12 +260,42 @@ describe('candidateTags: addresses (#49)', () => {
     expect(
       single({ addresses: '7', municipalities: 'Gent, Gentbrugge', postcodes: '9000, 9050', street_names: null })
     ).toEqual({
-      'addr:city': 'Gent',
       'addr:housenumber': '7',
-      'addr:postcode': '9000',
       building: 'yes',
       'source:geometry:ref': 'Gbg/1'
     })
+  })
+})
+
+describe('candidateTags: building:flats (#130)', () => {
+  it('writes building:flats for a GRB building=yes when details.flats is greater than 1', () => {
+    expect(candidateTags(candidate({ details: { flats: 3 } }))['building:flats']).toBe('3')
+    expect(candidateTags(candidate({ details: { flats: '2' } }))['building:flats']).toBe('2')
+    expect(candidateTags(candidate({ type_label: 'verdieping', details: { flats: 2 } }))['building:flats']).toBe('2')
+  })
+
+  it.each([null, 0, 1])('does not write building:flats for %s', (flats) => {
+    expect(candidateTags(candidate({ details: { flats } }))).not.toHaveProperty('building:flats')
+  })
+
+  it('does not write building:flats when the GRB type is not exported as building=yes', () => {
+    expect(candidateTags(candidate({ type_label: 'afdak', details: { flats: 3 } })).building).toBe('roof')
+    expect(candidateTags(candidate({ type_label: 'afdak', details: { flats: 3 } }))).not.toHaveProperty(
+      'building:flats'
+    )
+    expect(candidateTags(candidate({ type_label: 'trap', details: { flats: 3 } }))).not.toHaveProperty('building')
+    expect(candidateTags(candidate({ type_label: 'trap', details: { flats: 3 } }))).not.toHaveProperty('building:flats')
+  })
+
+  it('writes building:flats per polygon even when the multi-street address is omitted', () => {
+    const tags = candidateTags(candidate({ address_count: 0, details: { flats: 2 } }))
+    expect(tags).not.toHaveProperty('addr:street')
+    expect(tags['building:flats']).toBe('2')
+  })
+
+  it('does not write building:flats for PICC or UrbIS', () => {
+    expect(candidateTags(picc({ details: { flats: 3 } }))).not.toHaveProperty('building:flats')
+    expect(candidateTags(urbis({ details: { flats: 3 } }))).not.toHaveProperty('building:flats')
   })
 })
 
