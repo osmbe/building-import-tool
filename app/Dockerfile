@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for Nuxt 3 application
 
 # Stage 1: Dependencies
-FROM node:24.22-alpine3.24 AS dependencies
+FROM node:26.13-alpine3.24 AS dependencies
 WORKDIR /app
 
 # Copy package files
@@ -11,7 +11,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --only=production=false
 
 # Stage 2: Build
-FROM node:24.22-alpine3.24 AS builder
+FROM node:26.13-alpine3.24 AS builder
 WORKDIR /app
 
 # Accept build arguments for OSM configuration (public values only, no secrets)
@@ -35,7 +35,7 @@ COPY . .
 RUN npm run build
 
 # Stage 3: Production
-FROM node:24.22-alpine3.24 AS production
+FROM node:26.13-alpine3.24 AS production
 WORKDIR /app
 
 # Install curl for healthchecks
