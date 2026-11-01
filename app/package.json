@@ -21,7 +21,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-vue-next": "^1.0.0",
-    "mapshaper": "^0.7.98",
+    "mapshaper": "^0.7.101",
     "nuxt": "^4.6.3",
     "ol": "^10.11.0",
     "pg": "^8.23.1",
