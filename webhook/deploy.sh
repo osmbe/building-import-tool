@@ -25,18 +25,18 @@ GIT_URL="${DEPLOY_GIT_URL:-https://github.com/${REPO}.git}"
 PREFIX="${IMAGE_PREFIX:-ghcr.io/${REPO,,}}"
 IMAGES=(nuxt-app processing webhook)
 MIN_FREE_GB="${DEPLOY_MIN_FREE_GB:-5}"
-READY_URL="${DEPLOY_READY_URL:-http://nuxt-app:3000/api/health/ready}"
-READY_TIMEOUT="${DEPLOY_READY_TIMEOUT:-180}"
+# READY_URL="${DEPLOY_READY_URL:-http://nuxt-app:3000/api/health/ready}"
+# READY_TIMEOUT="${DEPLOY_READY_TIMEOUT:-180}"
 
 COMPOSE=(docker compose -f "${DIR}/docker-compose.yml" --env-file "${DIR}/.env" --project-name "${PROJECT}" --project-directory "${DIR}")
 
 # Martin service -> its config file
-declare -A MARTIN=(
-    [grb-tiles]=config/martin/grb-config.yaml
-    [osm-tiles]=config/martin/osm-config.yaml
-    [picc-tiles]=config/martin/picc-config.yaml
-    [urbis-tiles]=config/martin/urbis-config.yaml
-)
+# declare -A MARTIN=(
+#     [grb-tiles]=config/martin/grb-config.yaml
+#     [osm-tiles]=config/martin/osm-config.yaml
+#     [picc-tiles]=config/martin/picc-config.yaml
+#     [urbis-tiles]=config/martin/urbis-config.yaml
+# )
 
 log() { echo "[deploy] $*"; }
 die() {
