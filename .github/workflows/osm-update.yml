@@ -1,9 +1,12 @@
+# This currently doesn't work because Imposm state is not stored on the server.
+# Only the database dump is restored by `osm-import.yml` without any reference of Imposm state/cache/...
+
 name: OSM Update
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 4 * * *'  # Daily at 4am UTC
+  # schedule:
+  #   - cron: '0 4 * * *'  # Daily at 4am UTC
 
 jobs:
   trigger-update:

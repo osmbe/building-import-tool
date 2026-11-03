@@ -2,6 +2,8 @@ name: OpenStreetMap (Belgium) Full import
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2am UTC
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
