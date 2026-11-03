@@ -1,0 +1,25 @@
+name: Deploy configuration
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Deploy this commit
+        if: ${{ vars.WEBHOOK_URL != '' }}
+        env:
+          WEBHOOK_URL: ${{ vars.WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        run: |
+          .github/scripts/webhook-job.sh deploy '{"sha": "${{ github.sha }}"}'
