@@ -4,7 +4,7 @@
 set -euo pipefail
 
 PROJECT_DIR="${COMPOSE_PROJECT_DIR}"
-COMPOSE="docker compose -f ${PROJECT_DIR}/docker-compose.yml --env-file ${PROJECT_DIR}/.env --project-name ${COMPOSE_PROJECT_NAME:-building-import-tool-local}"
+COMPOSE="docker compose -f ${PROJECT_DIR}/docker-compose.yml --env-file ${PROJECT_DIR}/.env --project-name ${COMPOSE_PROJECT_NAME:-building-import-tool}"
 
 echo "[import-osm] Starting local OSM import..."
 echo "[import-osm] $(date)"

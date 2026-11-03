@@ -212,7 +212,7 @@ services:
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-building-import-tool-local}
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-building-import-tool}
       # Project dir inside container mirrors the host path so docker compose
       # volume paths resolve identically for both the CLI and the Docker daemon
       COMPOSE_PROJECT_DIR: ${COMPOSE_PROJECT_DIR:-${PWD}}

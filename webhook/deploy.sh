@@ -18,25 +18,25 @@
 set -euo pipefail
 
 DIR="${COMPOSE_PROJECT_DIR:?COMPOSE_PROJECT_DIR is not set}"
-PROJECT="${COMPOSE_PROJECT_NAME:-building-import-tool-local}"
+PROJECT="${COMPOSE_PROJECT_NAME:-building-import-tool}"
 REPO="${GH_REPO:-osmbe/building-import-tool}"
 BRANCH="${DEPLOY_BRANCH:-main}"
 GIT_URL="${DEPLOY_GIT_URL:-https://github.com/${REPO}.git}"
 PREFIX="${IMAGE_PREFIX:-ghcr.io/${REPO,,}}"
 IMAGES=(nuxt-app processing webhook)
 MIN_FREE_GB="${DEPLOY_MIN_FREE_GB:-5}"
-READY_URL="${DEPLOY_READY_URL:-http://nuxt-app:3000/api/health/ready}"
-READY_TIMEOUT="${DEPLOY_READY_TIMEOUT:-180}"
+# READY_URL="${DEPLOY_READY_URL:-http://nuxt-app:3000/api/health/ready}"
+# READY_TIMEOUT="${DEPLOY_READY_TIMEOUT:-180}"
 
-COMPOSE=(docker compose -f "${DIR}/docker-compose.yml" --env-file "${DIR}/.env" --project-name "${PROJECT}"
-    --project-directory "${DIR}")
+COMPOSE=(docker compose -f "${DIR}/docker-compose.yml" --env-file "${DIR}/.env" --project-name "${PROJECT}" --project-directory "${DIR}")
+
 # Martin service -> its config file
-declare -A MARTIN=(
-    [grb-tiles]=config/martin/grb-config.yaml
-    [osm-tiles]=config/martin/osm-config.yaml
-    [picc-tiles]=config/martin/picc-config.yaml
-    [urbis-tiles]=config/martin/urbis-config.yaml
-)
+# declare -A MARTIN=(
+#     [grb-tiles]=config/martin/grb-config.yaml
+#     [osm-tiles]=config/martin/osm-config.yaml
+#     [picc-tiles]=config/martin/picc-config.yaml
+#     [urbis-tiles]=config/martin/urbis-config.yaml
+# )
 
 log() { echo "[deploy] $*"; }
 die() {
@@ -62,6 +62,19 @@ git_fetch() {
 
 image_id() { docker image inspect -f '{{.Id}}' "$1" 2>/dev/null || true; }
 
+RECREATED=()
+rollback() {
+    log "rolling back to ${OLD}"
+    for image in "${IMAGES[@]}"; do
+        [ -z "${PREVIOUS[${image}]}" ] || docker tag "${PREFIX}/${image}:previous" "${PREFIX}/${image}:deployed"
+    done
+    git_owner reset --quiet --hard "${OLD}"
+    for service in "${RECREATED[@]}"; do
+        "${COMPOSE[@]}" up -d --no-deps --force-recreate "${service}"
+    done
+    "${COMPOSE[@]}" up -d --no-deps nuxt-app
+}
+
 # --- 1. preflight -----------------------------------------------------------------------------------------
 log "preflight"
 if grep -Eq '^[[:space:]]*(NUXT|PROCESSING|WEBHOOK)_IMAGE=' "${DIR}/.env" 2>/dev/null; then
@@ -85,87 +98,74 @@ changed() { grep -qxF "$1" <<<"${CHANGED}"; }
 log "deploying ${SHA} (running: ${OLD})"
 
 # --- 3. images --------------------------------------------------------------------------------------------
-TOKEN="${GH_TOKEN:-$(gh auth token 2>/dev/null || true)}"
-if [ -n "${TOKEN}" ]; then
-    printf '%s' "${TOKEN}" | docker login ghcr.io -u x-access-token --password-stdin >/dev/null
-fi
-declare -A PREVIOUS
-for image in "${IMAGES[@]}"; do
-    docker pull --quiet "${PREFIX}/${image}:sha-${SHA}" >/dev/null || die "image ${image}:sha-${SHA} is not available"
-done
-for image in "${IMAGES[@]}"; do
-    PREVIOUS[${image}]="$(image_id "${PREFIX}/${image}:deployed")"
-    [ -z "${PREVIOUS[${image}]}" ] || docker tag "${PREFIX}/${image}:deployed" "${PREFIX}/${image}:previous"
-    docker tag "${PREFIX}/${image}:sha-${SHA}" "${PREFIX}/${image}:deployed"
-done
-
-RECREATED=()
-rollback() {
-    log "rolling back to ${OLD}"
-    for image in "${IMAGES[@]}"; do
-        [ -z "${PREVIOUS[${image}]}" ] || docker tag "${PREFIX}/${image}:previous" "${PREFIX}/${image}:deployed"
-    done
-    git_owner reset --quiet --hard "${OLD}"
-    for service in "${RECREATED[@]}"; do
-        "${COMPOSE[@]}" up -d --no-deps --force-recreate "${service}"
-    done
-    "${COMPOSE[@]}" up -d --no-deps nuxt-app
-}
+# TOKEN="${GH_TOKEN:-$(gh auth token 2>/dev/null || true)}"
+# if [ -n "${TOKEN}" ]; then
+#     printf '%s' "${TOKEN}" | docker login ghcr.io -u x-access-token --password-stdin >/dev/null
+# fi
+# declare -A PREVIOUS
+# for image in "${IMAGES[@]}"; do
+#     docker pull --quiet "${PREFIX}/${image}:sha-${SHA}" >/dev/null || die "image ${image}:sha-${SHA} is not available"
+# done
+# for image in "${IMAGES[@]}"; do
+#     PREVIOUS[${image}]="$(image_id "${PREFIX}/${image}:deployed")"
+#     [ -z "${PREVIOUS[${image}]}" ] || docker tag "${PREFIX}/${image}:deployed" "${PREFIX}/${image}:previous"
+#     docker tag "${PREFIX}/${image}:sha-${SHA}" "${PREFIX}/${image}:deployed"
+# done
 
 # --- 4. checkout ------------------------------------------------------------------------------------------
 git_owner reset --quiet --hard "${SHA}"
 
 # --- 5. migrations ----------------------------------------------------------------------------------------
-log "migrations"
-if ! "${COMPOSE[@]}" run --rm -T --no-deps processing just db-migrate --deploy; then
-    rollback
-    die "migrations failed"
-fi
+# log "migrations"
+# if ! "${COMPOSE[@]}" run --rm -T --no-deps processing just db-migrate --deploy; then
+#     rollback
+#     die "migrations failed"
+# fi
 
 # --- 6. Martin and Caddy ----------------------------------------------------------------------------------
 # Their config files are single-file bind mounts: the container keeps the old file until it is recreated
-for service in "${!MARTIN[@]}"; do
-    if changed "${MARTIN[${service}]}" || changed docker-compose.yml; then
-        log "recreating ${service}"
-        RECREATED+=("${service}")
-        "${COMPOSE[@]}" up -d --no-deps --force-recreate "${service}"
-    fi
-done
-if changed caddy/Caddyfile || changed docker-compose.yml; then
-    log "recreating caddy"
-    RECREATED+=(caddy)
-    "${COMPOSE[@]}" up -d --no-deps --force-recreate caddy
-fi
+# for service in "${!MARTIN[@]}"; do
+#     if changed "${MARTIN[${service}]}" || changed docker-compose.yml; then
+#         log "recreating ${service}"
+#         RECREATED+=("${service}")
+#         "${COMPOSE[@]}" up -d --no-deps --force-recreate "${service}"
+#     fi
+# done
+# if changed caddy/Caddyfile || changed docker-compose.yml; then
+#     log "recreating caddy"
+#     RECREATED+=(caddy)
+#     "${COMPOSE[@]}" up -d --no-deps --force-recreate caddy
+# fi
 
 # --- 7. app and readiness ---------------------------------------------------------------------------------
-log "recreating nuxt-app"
-"${COMPOSE[@]}" up -d --no-deps nuxt-app
-ready=""
-for _ in $(seq 1 "${READY_TIMEOUT}"); do
-    if body="$(curl -fsS --max-time 5 "${READY_URL}" 2>/dev/null)" &&
-        python3 -c 'import json,sys; r=json.loads(sys.argv[1]); sys.exit(0 if r.get("ready") and r.get("sha") == sys.argv[2] else 1)' \
-            "${body}" "${SHA}"; then
-        ready=1
-        break
-    fi
-    sleep 1
-done
-if [ -z "${ready}" ]; then
-    log "last readiness answer: ${body:-none}"
-    rollback
-    die "the app did not report ready on ${SHA} within ${READY_TIMEOUT}s"
-fi
-log "the app is ready on ${SHA}"
+# log "recreating nuxt-app"
+# "${COMPOSE[@]}" up -d --no-deps nuxt-app
+# ready=""
+# for _ in $(seq 1 "${READY_TIMEOUT}"); do
+#     if body="$(curl -fsS --max-time 5 "${READY_URL}" 2>/dev/null)" &&
+#         python3 -c 'import json,sys; r=json.loads(sys.argv[1]); sys.exit(0 if r.get("ready") and r.get("sha") == sys.argv[2] else 1)' \
+#             "${body}" "${SHA}"; then
+#         ready=1
+#         break
+#     fi
+#     sleep 1
+# done
+# if [ -z "${ready}" ]; then
+#     log "last readiness answer: ${body:-none}"
+#     rollback
+#     die "the app did not report ready on ${SHA} within ${READY_TIMEOUT}s"
+# fi
+# log "the app is ready on ${SHA}"
 
 # --- 8. the webhook itself --------------------------------------------------------------------------------
 # Recreating it kills this script, so a detached container does it once this job has finished
-if [ "$(image_id "${PREFIX}/webhook:deployed")" != "${PREVIOUS[webhook]}" ] || changed docker-compose.yml; then
-    log "the webhook will be recreated in a few seconds"
-    docker rm -f be2osm-webhook-recreate >/dev/null 2>&1 || true
-    docker run -d --rm --name be2osm-webhook-recreate \
-        -v /var/run/docker.sock:/var/run/docker.sock -v "${DIR}:${DIR}:ro" \
-        --entrypoint sh "${PREFIX}/webhook:deployed" \
-        -c "sleep 5; $(printf '%q ' "${COMPOSE[@]}") up -d --no-deps webhook" >/dev/null
-fi
+# if [ "$(image_id "${PREFIX}/webhook:deployed")" != "${PREVIOUS[webhook]}" ] || changed docker-compose.yml; then
+#     log "the webhook will be recreated in a few seconds"
+#     docker rm -f be2osm-webhook-recreate >/dev/null 2>&1 || true
+#     docker run -d --rm --name be2osm-webhook-recreate \
+#         -v /var/run/docker.sock:/var/run/docker.sock -v "${DIR}:${DIR}:ro" \
+#         --entrypoint sh "${PREFIX}/webhook:deployed" \
+#         -c "sleep 5; $(printf '%q ' "${COMPOSE[@]}") up -d --no-deps webhook" >/dev/null
+# fi
 
 log "done: ${SHA}"
