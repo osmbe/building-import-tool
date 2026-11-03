@@ -18,7 +18,7 @@
 set -euo pipefail
 
 DIR="${COMPOSE_PROJECT_DIR:?COMPOSE_PROJECT_DIR is not set}"
-PROJECT="${COMPOSE_PROJECT_NAME:-building-import-tool-local}"
+PROJECT="${COMPOSE_PROJECT_NAME:-building-import-tool}"
 REPO="${GH_REPO:-osmbe/building-import-tool}"
 BRANCH="${DEPLOY_BRANCH:-main}"
 GIT_URL="${DEPLOY_GIT_URL:-https://github.com/${REPO}.git}"
