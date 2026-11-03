@@ -1,6 +1,7 @@
 name: Deploy configuration
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
