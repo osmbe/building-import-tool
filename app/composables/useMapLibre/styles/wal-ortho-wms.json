@@ -2,6 +2,7 @@
   "version": 8,
   "sources": {
     "wal-ortho-wms": {
+      "attribution": "© Service Public de Wallonie",
       "type": "raster",
       "tiles": [
         "https://geoservices.wallonie.be/arcgis/services/IMAGERIE/ORTHO_LAST/MapServer/WMSServer?REQUEST=GetMap&SERVICE=WMS&VERSION=1.3.0&FORMAT=image%2Fpng&STYLES=&TRANSPARENT=TRUE&LAYERS=0&WIDTH=256&HEIGHT=256&CRS=EPSG%3A3857&BBOX={bbox-epsg-3857}"
