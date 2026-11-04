@@ -1143,20 +1143,18 @@ const setupMap = () => {
   } as MapOptions)
 
   // Update reactive values when map moves
-  // mapInstance.on('moveend', () => {
-  //   if (!map.value) return
-  //   const view = map.value.getView()
-  //   const zoom = Math.round(view.getZoom() || 13)
-  //   currentZoom.value = zoom
-  //   const center = view.getCenter()
-  //   if (center) {
-  //     const [lon, lat] = toLonLat(center)
-  //     if (lon !== undefined && lat !== undefined) currentCenter.value = [lon, lat]
-  //   }
+  mapInstance.on('moveend', () => {
+    if (!map.value) return
 
-  //   // Handle visibility of building layers based on zoom
-  //   handleZoomBasedLayerVisibility(zoom)
-  // })
+    const zoom = mapInstance.getZoom()
+    currentZoom.value = zoom
+
+    const { lng, lat } = mapInstance.getCenter();
+    currentCenter.value = [lng, lat];
+
+    // Handle visibility of building layers based on zoom
+    handleZoomBasedLayerVisibility(zoom)
+  })
 }
 
 // Handle visibility of building layers based on zoom level
