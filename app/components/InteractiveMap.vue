@@ -85,52 +85,13 @@
               <div class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Basemap</div>
               <div class="grid grid-cols-2 gap-1">
                 <button
+                  v-for="(baselayer, key) in baselayers"
                   class="layer-btn"
-                  :class="currentBaseLayer === 'blank' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('blank')"
-                  title="No background"
+                  :class="currentBaseLayer === key ? 'layer-btn-active' : ''"
+                  @click="switchBaseLayer(key)"
+                  :title="baselayer.title"
                 >
-                  Blank
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'osm' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('osm')"
-                  title="OpenStreetMap Belgium (tile.openstreetmap.be)"
-                >
-                  OSM
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'esri' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('esri')"
-                  title="Esri World Imagery (Maxar/Earthstar) — mosaic, dates vary by area — Belgium only"
-                >
-                  Esri
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'flanders' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('flanders')"
-                  title="Orthophoto Vlaanderen — Digitaal Vlaanderen (OFW, always latest)"
-                >
-                  Flanders <span class="opacity-60">latest</span>
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'brussels' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('brussels')"
-                  title="Ortho UrbIS 2024 (nadir) — geoservices-urbis.irisnet.be"
-                >
-                  Brussels <span class="opacity-60">'24</span>
-                </button>
-                <button
-                  class="layer-btn"
-                  :class="currentBaseLayer === 'wallonia' ? 'layer-btn-active' : ''"
-                  @click="switchBaseLayer('wallonia')"
-                  title="Orthophoto Wallonie 2024 — geoservices.wallonie.be"
-                >
-                  Wallonia <span class="opacity-60">'24</span>
+                  {{ baselayer.label }} <span v-if="baselayer.comment" class="opacity-60">{{ baselayer.comment }}</span>
                 </button>
               </div>
             </div>
@@ -955,8 +916,7 @@ const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
 
 // Use the map layers composable
-// const { map, currentBaseLayer, initializeMap, switchBaseLayer, destroy } = useMapLayers()
-const { map, initializeMap, destroy } = useMapLibre()
+const { map, currentBaseLayer, initializeMap, switchBaseLayer, destroy, baselayers } = useMapLibre()
 
 // OSM Buildings layer state
 const osmBuildingsLayerRef = ref<any>(null)
@@ -1275,7 +1235,7 @@ const handleLoadKNW = () => {
     })
 
     knwStructuresLayerRef.value = knwTileLayer
-    map.value.addLayer(knwTileLayer)
+    // map.value.addLayer(knwTileLayer)
     knwTileLayer.setVisible(false)
   } catch (error) {
     console.error('Failed to load GRB kunstwerken:', error)
@@ -1350,7 +1310,7 @@ const handleLoadOSM = () => {
 
     // Add layer to map
     osmBuildingsLayerRef.value = osmTileLayer
-    map.value.addLayer(osmTileLayer)
+    // map.value.addLayer(osmTileLayer)
 
     // Update UI state
     overlayLayers.value.osmBuildings = true
@@ -1425,7 +1385,7 @@ const handleLoadGRB = () => {
 
     // Add layer to map (hidden by default — user toggles it on)
     grbBuildingsLayerRef.value = grbTileLayer
-    map.value.addLayer(grbTileLayer)
+    // map.value.addLayer(grbTileLayer)
     grbTileLayer.setVisible(false)
   } catch (error) {
     console.error('Failed to load GRB buildings:', error)
@@ -1490,7 +1450,7 @@ const handleLoadPICC = () => {
 
     // Add layer to map (hidden by default — user toggles it on)
     piccBuildingsLayerRef.value = piccTileLayer
-    map.value.addLayer(piccTileLayer)
+    // map.value.addLayer(piccTileLayer)
     piccTileLayer.setVisible(false)
   } catch (error) {
     console.error('Failed to load PICC buildings:', error)
@@ -1553,7 +1513,7 @@ const handleLoadUrbis = () => {
 
     // Add layer to map (hidden by default — user toggles it on)
     urbisBuildingsLayerRef.value = urbisTileLayer
-    map.value.addLayer(urbisTileLayer)
+    // map.value.addLayer(urbisTileLayer)
     urbisTileLayer.setVisible(false)
   } catch (error) {
     console.error('Failed to load UrbIS buildings:', error)
@@ -2001,7 +1961,7 @@ const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
     zIndex: 9
   })
   liveOsmLayerRef.value = layer
-  map.value.addLayer(layer)
+  // map.value.addLayer(layer)
   osmBuildingsLayerRef.value?.setVisible(false)
 }
 

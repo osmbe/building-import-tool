@@ -1,10 +1,12 @@
-import { AttributionControl, Map, type MapOptions, NavigationControl, setWorkerUrl } from 'maplibre-gl';
+import { AttributionControl, Map, type MapOptions, NavigationControl, type RasterSourceSpecification, setWorkerUrl, type SourceSpecification } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+import { baselayers } from './useMapLibre/baselayers';
 
 setWorkerUrl(workerUrl);
 
 export const useMapLibre = () => {
   const map = shallowRef<Map | null>(null)
+  const currentBaseLayer = ref<keyof typeof baselayers>('osmbe')
 
   // Initialize map
   const initializeMap = (target: HTMLElement, options: MapOptions): Map => {
@@ -15,7 +17,6 @@ export const useMapLibre = () => {
 
     const defaultOptions: MapOptions = {
       container: target,
-      style: 'https://tiles.openfreemap.org/styles/liberty',
       center: [0, 0],
       zoom: 1,
       attributionControl: false
@@ -23,11 +24,24 @@ export const useMapLibre = () => {
 
     const mapInstance = new Map({ ...defaultOptions, ...options });
 
+    mapInstance.addControl(new NavigationControl(), 'top-left');
+    mapInstance.addControl(new AttributionControl({ compact: true }), 'top-right');
+
+    Object.keys(baselayers).forEach(key => {
+      if (currentBaseLayer.value === key) {
+        mapInstance.setStyle(baselayers[key]?.style ?? null);
+      }
+    });
+
     map.value = mapInstance;
-    map.value.addControl(new NavigationControl(), 'top-left');
-    map.value.addControl(new AttributionControl({compact: true}), 'top-right');
 
     return mapInstance;
+  }
+
+  const switchBaseLayer = (key: keyof typeof baselayers) => {
+    map.value?.setStyle(baselayers[key]?.style ?? null)
+
+    currentBaseLayer.value = key
   }
 
   // Cleanup
@@ -41,11 +55,14 @@ export const useMapLibre = () => {
   return {
     // State
     map: map as Ref<Map | null>,
-    // currentBaseLayer,
+    currentBaseLayer,
 
     // Methods
     initializeMap,
-    // switchBaseLayer,
-    destroy
+    switchBaseLayer,
+    destroy,
+
+    // Config
+    baselayers
   }
 }
