@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import 'ol/ol.css';
+@import 'maplibre-gl/dist/maplibre-gl.css';
 
 @theme {
   /* ── Blueprint Cyan palette ── */

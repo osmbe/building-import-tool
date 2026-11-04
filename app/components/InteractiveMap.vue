@@ -13,40 +13,6 @@
       <!-- First-run guidance -->
       <GettingStartedCard :has-candidates="candidateBuildingCount > 0" />
 
-      <!-- Top-right: Map Controls Panel -->
-      <div class="absolute right-4 top-4 flex flex-col gap-2 w-44">
-        <div class="glass-panel rounded-lg overflow-hidden">
-          <!-- Header -->
-          <div
-            class="flex items-center justify-between px-2.5 py-2 cursor-pointer select-none"
-            :class="!controlsCollapsed ? 'border-b border-white/[0.05]' : ''"
-            @click="controlsCollapsed = !controlsCollapsed"
-          >
-            <span class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Controls</span>
-            <ChevronDown
-              class="h-3 w-3 text-muted-foreground transition-transform duration-200"
-              :class="controlsCollapsed ? '-rotate-90' : ''"
-            />
-          </div>
-
-          <!-- Collapsible body -->
-          <div v-show="!controlsCollapsed">
-            <!-- Zoom controls -->
-            <div class="flex items-center gap-1 p-2 border-b border-white/[0.05]">
-              <button class="map-icon-btn" @click="zoomIn" title="Zoom in" aria-label="Zoom in">
-                <ZoomIn class="h-3.5 w-3.5" />
-              </button>
-              <button class="map-icon-btn" @click="zoomOut" title="Zoom out" aria-label="Zoom out">
-                <ZoomOut class="h-3.5 w-3.5" />
-              </button>
-              <button class="map-icon-btn" @click="resetView" title="Reset view" aria-label="Reset view">
-                <RotateCcw class="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Bottom-left: Layers Panel -->
       <div class="absolute bottom-4 left-4">
         <div class="glass-panel rounded-lg overflow-hidden">
@@ -974,9 +940,11 @@ import { CANDIDATES_CONTRACT, candidateDetail, candidateDisplayId, candidateTile
 import { useAuth } from '~/composables/useAuth'
 import { useJosmExport } from '~/composables/useJosmExport'
 import { useMapLayers } from '~/composables/useMapLayers'
+import { useMapLibre } from '~/composables/useMapLibre'
 import { useMatchMode } from '~/composables/useMatchMode'
 import { resolveMatchMode, supportsSourceTags } from '~/utils/matchMode'
 import { useToast } from '~/composables/useToast'
+import type { MapOptions } from 'maplibre-gl'
 
 const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
 
@@ -987,7 +955,8 @@ const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
 
 // Use the map layers composable
-const { map, currentBaseLayer, initializeMap, switchBaseLayer, destroy } = useMapLayers()
+// const { map, currentBaseLayer, initializeMap, switchBaseLayer, destroy } = useMapLayers()
+const { map, initializeMap, destroy } = useMapLibre()
 
 // OSM Buildings layer state
 const osmBuildingsLayerRef = ref<any>(null)
@@ -1118,8 +1087,8 @@ const revealLayersPanel = () => {
 
 const zoomToWorkingLevel = () => {
   if (!map.value) return
-  const view = map.value.getView()
-  view.animate({ duration: 600, zoom: Math.max(16, view.getZoom() || 16) })
+  // const view = map.value.getView()
+  // view.animate({ duration: 600, zoom: Math.max(16, view.getZoom() || 16) })
 }
 
 const dismissResults = () => {
@@ -1179,11 +1148,11 @@ watch(
   (loc) => {
     if (!loc || !map.value) return
     const coords = fromLonLat(loc.coordinates)
-    map.value.getView().animate({
-      center: coords,
-      duration: 1000,
-      zoom: 16
-    })
+    // map.value.getView().animate({
+    //   center: coords,
+    //   duration: 1000,
+    //   zoom: 16
+    // })
   }
 )
 
@@ -1211,50 +1180,23 @@ const setupMap = () => {
   const mapInstance = initializeMap(mapRef.value, {
     center: [4.3517, 50.8503],
     zoom: 8
-  })
+  } as MapOptions)
 
   // Update reactive values when map moves
-  mapInstance.on('moveend', () => {
-    if (!map.value) return
-    const view = map.value.getView()
-    const zoom = Math.round(view.getZoom() || 13)
-    currentZoom.value = zoom
-    const center = view.getCenter()
-    if (center) {
-      const [lon, lat] = toLonLat(center)
-      if (lon !== undefined && lat !== undefined) currentCenter.value = [lon, lat]
-    }
+  // mapInstance.on('moveend', () => {
+  //   if (!map.value) return
+  //   const view = map.value.getView()
+  //   const zoom = Math.round(view.getZoom() || 13)
+  //   currentZoom.value = zoom
+  //   const center = view.getCenter()
+  //   if (center) {
+  //     const [lon, lat] = toLonLat(center)
+  //     if (lon !== undefined && lat !== undefined) currentCenter.value = [lon, lat]
+  //   }
 
-    // Handle visibility of building layers based on zoom
-    handleZoomBasedLayerVisibility(zoom)
-  })
-}
-
-const zoomIn = () => {
-  if (!map.value) return
-  const view = map.value.getView()
-  view.animate({
-    duration: 250,
-    zoom: (view.getZoom() || 13) + 1
-  })
-}
-
-const zoomOut = () => {
-  if (!map.value) return
-  const view = map.value.getView()
-  view.animate({
-    duration: 250,
-    zoom: (view.getZoom() || 13) - 1
-  })
-}
-
-const resetView = () => {
-  if (!map.value) return
-  map.value.getView().animate({
-    center: fromLonLat([4.3517, 50.8503]),
-    duration: 1000,
-    zoom: 8
-  })
+  //   // Handle visibility of building layers based on zoom
+  //   handleZoomBasedLayerVisibility(zoom)
+  // })
 }
 
 // Handle visibility of building layers based on zoom level
@@ -1414,9 +1356,9 @@ const handleLoadOSM = () => {
     overlayLayers.value.osmBuildings = true
 
     // Set initial visibility based on current zoom level
-    const currentZoomLevel = Math.round(map.value.getView().getZoom() || 13)
-    const shouldShow = currentZoomLevel >= 16 && overlayLayers.value.osmBuildings
-    osmTileLayer.setVisible(shouldShow)
+    // const currentZoomLevel = Math.round(map.value.getView().getZoom() || 13)
+    // const shouldShow = currentZoomLevel >= 16 && overlayLayers.value.osmBuildings
+    // osmTileLayer.setVisible(shouldShow)
   } catch (error) {
     console.error('Failed to load OSM buildings:', error)
   }
@@ -2027,10 +1969,10 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
 const clearLiveOsmLayer = () => {
   if (liveOsmLayerRef.value && map.value) map.value.removeLayer(liveOsmLayerRef.value)
   liveOsmLayerRef.value = null
-  if (osmBuildingsLayerRef.value)
-    osmBuildingsLayerRef.value.setVisible(
-      overlayLayers.value.osmBuildings && Math.round(map.value?.getView().getZoom() || 0) >= 16
-    )
+  // if (osmBuildingsLayerRef.value)
+  //   osmBuildingsLayerRef.value.setVisible(
+  //     overlayLayers.value.osmBuildings && Math.round(map.value?.getView().getZoom() || 0) >= 16
+  //   )
 }
 
 // Issue #9: draw the fresh Overpass buildings for the view so the map matches the difference results.
@@ -2084,13 +2026,13 @@ const calculateDifference = async () => {
   }
 
   // Check zoom level
-  const view = map.value.getView()
-  const zoom = view.getZoom() || 13
-  const roundedZoom = Math.round(zoom)
-  if (roundedZoom < 16) {
-    toast.warning('Zoom in required', `Please zoom in to at least level 16. Current zoom: ${roundedZoom}`)
-    return
-  }
+  // const view = map.value.getView()
+  // const zoom = view.getZoom() || 13
+  // const roundedZoom = Math.round(zoom)
+  // if (roundedZoom < 16) {
+  //   toast.warning('Zoom in required', `Please zoom in to at least level 16. Current zoom: ${roundedZoom}`)
+  //   return
+  // }
 
   // Check if OSM layer is visible
   if (!overlayLayers.value.osmBuildings) {
@@ -2103,139 +2045,139 @@ const calculateDifference = async () => {
   differenceState.value = 'loading'
   differenceError.value = ''
 
-  try {
-    // Get map extent in Web Mercator (EPSG:3857)
-    const mapExtent = map.value.getView().calculateExtent(map.value.getSize())
+  // try {
+  //   // Get map extent in Web Mercator (EPSG:3857)
+  //   const mapExtent = map.value.getView().calculateExtent(map.value.getSize())
 
-    // Send Web Mercator bounds to API - PostGIS will handle transformation
-    const bounds = [mapExtent[0], mapExtent[1], mapExtent[2], mapExtent[3]]
+  //   // Send Web Mercator bounds to API - PostGIS will handle transformation
+  //   const bounds = [mapExtent[0], mapExtent[1], mapExtent[2], mapExtent[3]]
 
-    // Live mode: refresh the OSM layer from Overpass too (non-fatal; the difference call reports errors)
-    if (useOverpass.value) await refreshLiveOsmLayer(bounds).catch((e) => console.warn('Live OSM layer failed:', e))
-    else clearLiveOsmLayer()
+  //   // Live mode: refresh the OSM layer from Overpass too (non-fatal; the difference call reports errors)
+  //   if (useOverpass.value) await refreshLiveOsmLayer(bounds).catch((e) => console.warn('Live OSM layer failed:', e))
+  //   else clearLiveOsmLayer()
 
-    // Call backend API to calculate difference
-    const response = await $fetch('/api/buildings/difference', {
-      body: {
-        bounds,
-        contract: CANDIDATES_CONTRACT,
-        dataSource,
-        geometryThreshold: geometryThreshold.value,
-        matchMode: resolveMatchMode(matchMode.value, dataSource).mode,
-        useOverpass: useOverpass.value
-      },
-      method: 'POST'
-    })
+  //   // Call backend API to calculate difference
+  //   const response = await $fetch('/api/buildings/difference', {
+  //     body: {
+  //       bounds,
+  //       contract: CANDIDATES_CONTRACT,
+  //       dataSource,
+  //       geometryThreshold: geometryThreshold.value,
+  //       matchMode: resolveMatchMode(matchMode.value, dataSource).mode,
+  //       useOverpass: useOverpass.value
+  //     },
+  //     method: 'POST'
+  //   })
 
-    const candidateGeoJSON = response as any
+  //   const candidateGeoJSON = response as any
 
-    if (!candidateGeoJSON || candidateGeoJSON.features.length === 0) {
-      // Persistent empty state in the results panel rather than a disappearing toast.
-      differenceState.value = 'empty'
+  //   if (!candidateGeoJSON || candidateGeoJSON.features.length === 0) {
+  //     // Persistent empty state in the results panel rather than a disappearing toast.
+  //     differenceState.value = 'empty'
 
-      // Remove existing candidate buildings layer if present
-      if (candidateBuildingsLayerRef.value) {
-        map.value.removeLayer(candidateBuildingsLayerRef.value)
-        candidateBuildingsLayerRef.value = null
-      }
+  //     // Remove existing candidate buildings layer if present
+  //     if (candidateBuildingsLayerRef.value) {
+  //       map.value.removeLayer(candidateBuildingsLayerRef.value)
+  //       candidateBuildingsLayerRef.value = null
+  //     }
 
-      matchingStats.value = null
-      candidateBuildingCount.value = 0
-      candidateCapped.value = false
-      candidateTotalInView.value = 0
-      originalCandidateFeatures.value = []
-      return
-    }
+  //     matchingStats.value = null
+  //     candidateBuildingCount.value = 0
+  //     candidateCapped.value = false
+  //     candidateTotalInView.value = 0
+  //     originalCandidateFeatures.value = []
+  //     return
+  //   }
 
-    // Soft cap on how many candidates we render and export at once. Mass imports need
-    // Review; loading tens of thousands of features also strains the browser. The true
-    // Count is still reported in the stats; the note tells the user what is loaded.
-    const totalCandidates = candidateGeoJSON.features.length
-    candidateTotalInView.value = totalCandidates
-    candidateCapped.value = totalCandidates > CANDIDATE_RENDER_CAP
-    if (candidateCapped.value) candidateGeoJSON.features = candidateGeoJSON.features.slice(0, CANDIDATE_RENDER_CAP)
+  //   // Soft cap on how many candidates we render and export at once. Mass imports need
+  //   // Review; loading tens of thousands of features also strains the browser. The true
+  //   // Count is still reported in the stats; the note tells the user what is loaded.
+  //   const totalCandidates = candidateGeoJSON.features.length
+  //   candidateTotalInView.value = totalCandidates
+  //   candidateCapped.value = totalCandidates > CANDIDATE_RENDER_CAP
+  //   if (candidateCapped.value) candidateGeoJSON.features = candidateGeoJSON.features.slice(0, CANDIDATE_RENDER_CAP)
 
-    // Stamp the source kind on each candidate so the review tooltip and JOSM export
-    // Know what they are looking at (the candidate layer is a single OL layer).
-    const sourceKind =
-      dataSource === 'knw' ? 'knw' : dataSource === 'picc' ? 'picc' : dataSource === 'urbis' ? 'urbis' : 'grb'
-    for (const f of candidateGeoJSON.features) {
-      f.properties = f.properties || {}
-      f.properties._layer_type = sourceKind
-    }
+  //   // Stamp the source kind on each candidate so the review tooltip and JOSM export
+  //   // Know what they are looking at (the candidate layer is a single OL layer).
+  //   const sourceKind =
+  //     dataSource === 'knw' ? 'knw' : dataSource === 'picc' ? 'picc' : dataSource === 'urbis' ? 'urbis' : 'grb'
+  //   for (const f of candidateGeoJSON.features) {
+  //     f.properties = f.properties || {}
+  //     f.properties._layer_type = sourceKind
+  //   }
 
-    // Update matching stats (unmatched reflects the true count missing from OSM)
-    const stats = (candidateGeoJSON as any).stats || {}
-    matchingStats.value = {
-      matched: (stats.totalGrb || 0) - totalCandidates,
-      totalGrb: stats.totalGrb || totalCandidates,
-      totalOsm: stats.totalOsm || 0,
-      unmatched: totalCandidates
-    }
+  //   // Update matching stats (unmatched reflects the true count missing from OSM)
+  //   const stats = (candidateGeoJSON as any).stats || {}
+  //   matchingStats.value = {
+  //     matched: (stats.totalGrb || 0) - totalCandidates,
+  //     totalGrb: stats.totalGrb || totalCandidates,
+  //     totalOsm: stats.totalOsm || 0,
+  //     unmatched: totalCandidates
+  //   }
 
-    // Candidate count reflects what is actually loaded/exportable (post-cap)
-    candidateBuildingCount.value = candidateGeoJSON.features.length
+  //   // Candidate count reflects what is actually loaded/exportable (post-cap)
+  //   candidateBuildingCount.value = candidateGeoJSON.features.length
 
-    // Store original features for simplification
-    originalCandidateFeatures.value = candidateGeoJSON.features
+  //   // Store original features for simplification
+  //   originalCandidateFeatures.value = candidateGeoJSON.features
 
-    // Remove existing candidate buildings layer if present
-    if (candidateBuildingsLayerRef.value) map.value.removeLayer(candidateBuildingsLayerRef.value)
+  //   // Remove existing candidate buildings layer if present
+  //   if (candidateBuildingsLayerRef.value) map.value.removeLayer(candidateBuildingsLayerRef.value)
 
-    // Import OpenLayers modules
-    const { default: VectorLayer } = await import('ol/layer/Vector')
-    const { default: VectorSource } = await import('ol/source/Vector')
-    const { default: GeoJSONFormat } = await import('ol/format/GeoJSON')
+  //   // Import OpenLayers modules
+  //   const { default: VectorLayer } = await import('ol/layer/Vector')
+  //   const { default: VectorSource } = await import('ol/source/Vector')
+  //   const { default: GeoJSONFormat } = await import('ol/format/GeoJSON')
 
-    console.log('Candidate features loaded:', candidateGeoJSON.features.length)
+  //   console.log('Candidate features loaded:', candidateGeoJSON.features.length)
 
-    // Parse GeoJSON and create source
-    const geoJsonFormat = new GeoJSONFormat()
-    const features = geoJsonFormat.readFeatures(candidateGeoJSON, {
-      dataProjection: 'EPSG:4326',
-      featureProjection: 'EPSG:3857'
-    })
+  //   // Parse GeoJSON and create source
+  //   const geoJsonFormat = new GeoJSONFormat()
+  //   const features = geoJsonFormat.readFeatures(candidateGeoJSON, {
+  //     dataProjection: 'EPSG:4326',
+  //     featureProjection: 'EPSG:3857'
+  //   })
 
-    const candidateSource = new VectorSource({ features })
+  //   const candidateSource = new VectorSource({ features })
 
-    // Style function for candidate buildings
-    const candidateStyleFunction = () =>
-      new Style({
-        fill: new Fill({
-          color: hslVar('--layer-candidate', 0.35)
-        }),
-        stroke: new Stroke({
-          color: hslVar('--layer-candidate', 1),
-          width: 2
-        })
-      })
+  //   // Style function for candidate buildings
+  //   const candidateStyleFunction = () =>
+  //     new Style({
+  //       fill: new Fill({
+  //         color: hslVar('--layer-candidate', 0.35)
+  //       }),
+  //       stroke: new Stroke({
+  //         color: hslVar('--layer-candidate', 1),
+  //         width: 2
+  //       })
+  //     })
 
-    // Create vector layer for candidate buildings
-    const candidateLayer = new VectorLayer({
-      properties: {
-        title: 'Candidate Buildings',
-        type: 'overlay'
-      },
-      source: candidateSource,
-      style: candidateStyleFunction,
-      zIndex: 11
-    })
+  //   // Create vector layer for candidate buildings
+  //   const candidateLayer = new VectorLayer({
+  //     properties: {
+  //       title: 'Candidate Buildings',
+  //       type: 'overlay'
+  //     },
+  //     source: candidateSource,
+  //     style: candidateStyleFunction,
+  //     zIndex: 11
+  //   })
 
-    // Add layer to map
-    candidateBuildingsLayerRef.value = candidateLayer
-    map.value.addLayer(candidateLayer)
+  //   // Add layer to map
+  //   candidateBuildingsLayerRef.value = candidateLayer
+  //   map.value.addLayer(candidateLayer)
 
-    // Enable candidate buildings layer
-    overlayLayers.value.candidateBuildings = true
-    differenceState.value = 'success'
-  } catch (error) {
-    console.error('Error calculating difference:', error)
-    differenceState.value = 'error'
-    differenceError.value = apiErrorMessage(error)
-  } finally {
-    // Reset loading state
-    isCalculatingDifference.value = false
-  }
+  //   // Enable candidate buildings layer
+  //   overlayLayers.value.candidateBuildings = true
+  //   differenceState.value = 'success'
+  // } catch (error) {
+  //   console.error('Error calculating difference:', error)
+  //   differenceState.value = 'error'
+  //   differenceError.value = apiErrorMessage(error)
+  // } finally {
+  //   // Reset loading state
+  //   isCalculatingDifference.value = false
+  // }
 }
 
 const exportToJOSM = async () => {
@@ -2915,10 +2857,10 @@ onMounted(() => {
       setupHoverInteraction()
 
       // Check initial zoom level for layer visibility
-      if (map.value) {
-        const initialZoom = Math.round(map.value.getView().getZoom() || 13)
-        handleZoomBasedLayerVisibility(initialZoom)
-      }
+      // if (map.value) {
+      //   const initialZoom = Math.round(map.value.getView().getZoom() || 13)
+      //   handleZoomBasedLayerVisibility(initialZoom)
+      // }
 
       // Automatically load OSM and GRB layers
       setTimeout(() => {
