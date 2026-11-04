@@ -68,5 +68,6 @@ export default defineConfig({
       'one-var': 'allow',
       'prefer-const': 'error'
     }
-  }
+  },
+  ssr: { noExternal: ['maplibre-gl'] }
 })
