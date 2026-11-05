@@ -944,7 +944,7 @@ const piccBuildingsLayerIdRef = ref<string[]>([])
 const urbisBuildingsLayerIdRef = ref<string[]>([])
 
 // Candidate Buildings layer state
-const candidateBuildingsLayerRef = ref<any>(null)
+const candidateBuildingsLayerIdRef = ref<string[]>([])
 const candidateBuildingCount = ref(0)
 
 // Building feature info panel state
@@ -1123,19 +1123,19 @@ watch(
 
 // Watch for match mode changes and refetch candidate buildings if they're already loaded
 watch(matchMode, () => {
-  if (candidateBuildingsLayerRef.value)
+  if (candidateBuildingsLayerIdRef.value.length > 0)
     // Refetch candidate buildings with the new match mode
     calculateDifference()
 })
 
 watch(geometryThreshold, () => {
-  if ((matchMode.value === 'geometry' || matchMode.value === 'both') && candidateBuildingsLayerRef.value)
+  if ((matchMode.value === 'geometry' || matchMode.value === 'both') && candidateBuildingsLayerIdRef.value.length > 0)
     calculateDifference()
 })
 
 watch(useOverpass, (live) => {
   if (!live) clearLiveOsmLayer()
-  if (candidateBuildingsLayerRef.value) calculateDifference()
+  if (candidateBuildingsLayerIdRef.value.length > 0) calculateDifference()
 })
 
 const setupMap = () => {
@@ -1307,7 +1307,7 @@ const toggleCandidateBuildings = (visible: boolean) => {
   overlayLayers.value.candidateBuildings = visible
 
   // Toggle visibility of candidate buildings layer
-  if (candidateBuildingsLayerRef.value) candidateBuildingsLayerRef.value.setVisible(visible)
+  setLayersVisibility(candidateBuildingsLayerIdRef.value, visible)
 }
 
 const toggleOsmBuildings = (visible: boolean) => {
@@ -1719,10 +1719,6 @@ const clearLiveOsmLayer = () => {
 //   if (!map.value) return
 //   const geojson: any = await $fetch('/api/buildings/osm-live', { body: { bounds }, method: 'POST' })
 
-//   const { default: VectorLayer } = await import('ol/layer/Vector')
-//   const { default: VectorSource } = await import('ol/source/Vector')
-//   const { default: GeoJSONFormat } = await import('ol/format/GeoJSON')
-
 //   if (liveOsmLayerRef.value) map.value.removeLayer(liveOsmLayerRef.value)
 
 //   const features = new GeoJSONFormat().readFeatures(geojson, {
@@ -1810,9 +1806,11 @@ const calculateDifference = async () => {
       differenceState.value = 'empty'
 
       // Remove existing candidate buildings layer if present
-      if (candidateBuildingsLayerRef.value) {
-        map.value.removeLayer(candidateBuildingsLayerRef.value)
-        candidateBuildingsLayerRef.value = null
+      if (candidateBuildingsLayerIdRef.value.length > 0) {
+        for (const id of candidateBuildingsLayerIdRef.value) {
+          map.value.removeLayer(id)
+        }
+        candidateBuildingsLayerIdRef.value = []
       }
 
       matchingStats.value = null
@@ -1856,50 +1854,41 @@ const calculateDifference = async () => {
     originalCandidateFeatures.value = candidateGeoJSON.features
 
     // Remove existing candidate buildings layer if present
-    if (candidateBuildingsLayerRef.value) map.value.removeLayer(candidateBuildingsLayerRef.value)
-
-    // Import OpenLayers modules
-    const { default: VectorLayer } = await import('ol/layer/Vector')
-    const { default: VectorSource } = await import('ol/source/Vector')
-    const { default: GeoJSONFormat } = await import('ol/format/GeoJSON')
+    if (candidateBuildingsLayerIdRef.value.length > 0) {
+      for (const id of candidateBuildingsLayerIdRef.value) {
+        map.value.removeLayer(id)
+      }
+    }
 
     console.log('Candidate features loaded:', candidateGeoJSON.features.length)
 
     // Parse GeoJSON and create source
-    const geoJsonFormat = new GeoJSONFormat()
-    const features = geoJsonFormat.readFeatures(candidateGeoJSON, {
-      dataProjection: 'EPSG:4326',
-      featureProjection: 'EPSG:3857'
-    })
-
-    const candidateSource = new VectorSource({ features })
-
-    // Style function for candidate buildings
-    const candidateStyleFunction = () =>
-      new Style({
-        fill: new Fill({
-          color: hslVar('--layer-candidate', 0.35)
-        }),
-        stroke: new Stroke({
-          color: hslVar('--layer-candidate', 1),
-          width: 2
-        })
-      })
+    map.value.addSource('candidates-buildings', {
+      type: 'geojson',
+      data: candidateGeoJSON
+    });
 
     // Create vector layer for candidate buildings
-    const candidateLayer = new VectorLayer({
-      properties: {
-        title: 'Candidate Buildings',
-        type: 'overlay'
-      },
-      source: candidateSource,
-      style: candidateStyleFunction,
-      zIndex: 11
-    })
+    map.value.addLayer({
+        'id': 'candidates-buildings-fill',
+        'type': 'fill',
+        'source': 'candidates-buildings',
+        'paint': {
+            'fill-color': hslVar('--layer-candidate', 0.35)
+        }
+    });
+    map.value.addLayer({
+        'id': 'candidates-buildings-line',
+        'type': 'line',
+        'source': 'candidates-buildings',
+        'paint': {
+            'line-color': hslVar('--layer-candidate', 1),
+            'line-width': 2
+        }
+    }, 'candidates-buildings-fill');
 
     // Add layer to map
-    candidateBuildingsLayerRef.value = candidateLayer
-    map.value.addLayer(candidateLayer)
+    candidateBuildingsLayerIdRef.value = ['candidates-buildings-fill', 'candidates-buildings-line']
 
     // Enable candidate buildings layer
     overlayLayers.value.candidateBuildings = true
