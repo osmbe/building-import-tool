@@ -7,6 +7,10 @@ listen_addresses: "0.0.0.0:3000"
 # CORS settings for web access
 cors: true
 
+# Set `TileJSON` URL path prefix.
+# This overrides the default path prefix for URLs in `TileJSON` responses.
+base_path: /tiles/osm
+
 # Performance settings. Use this `cache:` section, never the legacy top-level cache size key: Martin >= 1.12 skips
 # environment variable substitution in the whole file when that key name appears anywhere in it, even in a comment.
 # Entries expire so tiles pick up re-imported data.
