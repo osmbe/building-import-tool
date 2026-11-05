@@ -905,7 +905,8 @@ import { useMapLibre } from '~/composables/useMapLibre'
 import { useMatchMode } from '~/composables/useMatchMode'
 import { resolveMatchMode, supportsSourceTags } from '~/utils/matchMode'
 import { useToast } from '~/composables/useToast'
-import type { MapOptions } from 'maplibre-gl'
+import type { MapOptions, StyleLayer } from 'maplibre-gl'
+import { hslVar } from '~/lib/utils'
 
 const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
 
@@ -916,10 +917,11 @@ const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
 
 // Use the map layers composable
-const { map, currentBaseLayer, initializeMap, switchBaseLayer, destroy, baselayers } = useMapLibre()
+const { map, currentBaseLayer, initializeMap, switchBaseLayer, loadOSMBuildingsLayer, getZoomLevel,
+  setLayersVisibility, destroy, baselayers } = useMapLibre()
 
 // OSM Buildings layer state
-const osmBuildingsLayerRef = ref<any>(null)
+const osmBuildingsLayerIdRef = ref<string[]>([])
 
 // Live OSM layer (Overpass, issue #9): replaces the tile layer while "Live OSM data" is on
 const liveOsmLayerRef = ref<any>(null)
@@ -1006,7 +1008,7 @@ const hasSourceLayer = computed(() =>
     (urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings)
   )
 )
-const hasOsmLayer = computed(() => Boolean(osmBuildingsLayerRef.value && overlayLayers.value.osmBuildings))
+const hasOsmLayer = computed(() => Boolean(osmBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.osmBuildings))
 const canCalculateDifference = ref(false)
 
 // Difference workflow lifecycle state, surfaced as a persistent results panel
@@ -1163,24 +1165,23 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
   const shouldShowBuildings = zoom >= 16
 
   // Only show/hide existing layers, don't auto-load
-  if (osmBuildingsLayerRef.value)
-    osmBuildingsLayerRef.value.setVisible(
-      shouldShowBuildings && overlayLayers.value.osmBuildings && !liveOsmLayerRef.value
-    )
+  if (osmBuildingsLayerIdRef.value.length > 0) {
+    setLayersVisibility(osmBuildingsLayerIdRef.value, shouldShowBuildings && overlayLayers.value.osmBuildings && !liveOsmLayerRef.value);
+  }
 
-  if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.osmBuildings)
+  // if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.osmBuildings)
 
-  if (grbBuildingsLayerRef.value)
-    grbBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.grbBuildings)
+  // if (grbBuildingsLayerRef.value)
+  //   grbBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.grbBuildings)
 
-  if (knwStructuresLayerRef.value)
-    knwStructuresLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.knwStructures)
+  // if (knwStructuresLayerRef.value)
+  //   knwStructuresLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.knwStructures)
 
-  if (piccBuildingsLayerRef.value)
-    piccBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.piccBuildings)
+  // if (piccBuildingsLayerRef.value)
+  //   piccBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.piccBuildings)
 
-  if (urbisBuildingsLayerRef.value)
-    urbisBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.urbisBuildings)
+  // if (urbisBuildingsLayerRef.value)
+  //   urbisBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.urbisBuildings)
 }
 
 // Handle Load GRB KNW structures using Vector Tiles
@@ -1239,12 +1240,6 @@ const handleLoadKNW = () => {
   }
 }
 
-// Read HSL CSS variable and return color string for OpenLayers
-const hslVar = (name: string, alpha: number): string => {
-  const hsl = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-  return `hsl(${hsl} / ${alpha})`
-}
-
 // Handle Load OSM Buildings using Vector Tiles from Martin
 const handleLoadOSM = () => {
   if (!map.value) {
@@ -1254,60 +1249,14 @@ const handleLoadOSM = () => {
 
   try {
     // Remove existing OSM buildings layer if present
-    if (osmBuildingsLayerRef.value) map.value.removeLayer(osmBuildingsLayerRef.value)
-
-    // Create vector tile source for OSM buildings
-    const osmTileSource = new VectorTileSource({
-      attributions: '© OpenStreetMap contributors',
-      format: new MVT(),
-      maxZoom: 18,
-      minZoom: 10,
-      url: '/tiles/osm/osm_buildings/{z}/{x}/{y}'
-    })
-
-    // Style function for OSM buildings
-    const osmStyleFunction = (feature: any) => {
-      const isHovered = feature.get('hovered')
-      const source = feature.get('source') || ''
-
-      let fillColor = hslVar('--layer-osm', 0.15)
-      let strokeColor = hslVar('--layer-osm', 1)
-
-      if (source.includes('Gbg')) {
-        fillColor = hslVar('--layer-osm-light', 0.15)
-        strokeColor = hslVar('--layer-osm-light', 1)
+    if (osmBuildingsLayerIdRef.value.length > 0) {
+      for (const layerId of osmBuildingsLayerIdRef.value) {
+        map.value.removeLayer(layerId)
       }
-
-      if (isHovered) {
-        fillColor = hslVar('--layer-osm', 0.3)
-        strokeColor = hslVar('--layer-osm-light', 1)
-      }
-
-      return new Style({
-        fill: new Fill({
-          color: fillColor
-        }),
-        stroke: new Stroke({
-          color: strokeColor,
-          width: isHovered ? 3 : 2
-        })
-      })
     }
 
-    // Create vector tile layer
-    const osmTileLayer = new VectorTileLayer({
-      properties: {
-        title: 'OSM Buildings',
-        type: 'overlay'
-      },
-      source: osmTileSource,
-      style: osmStyleFunction,
-      zIndex: 9
-    })
-
     // Add layer to map
-    osmBuildingsLayerRef.value = osmTileLayer
-    // map.value.addLayer(osmTileLayer)
+    osmBuildingsLayerIdRef.value = loadOSMBuildingsLayer(map.value)
 
     // Update UI state
     overlayLayers.value.osmBuildings = true
@@ -1530,9 +1479,9 @@ const toggleOsmBuildings = (visible: boolean) => {
   overlayLayers.value.osmBuildings = visible
 
   // Toggle visibility of OSM buildings layer
-  if (osmBuildingsLayerRef.value) osmBuildingsLayerRef.value.setVisible(visible && !liveOsmLayerRef.value)
+  setLayersVisibility(osmBuildingsLayerIdRef.value, visible && !liveOsmLayerRef.value)
 
-  if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(visible)
+  // if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(visible)
 }
 
 const toggleGrbBuildings = (visible: boolean) => {
@@ -1926,10 +1875,12 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
 const clearLiveOsmLayer = () => {
   if (liveOsmLayerRef.value && map.value) map.value.removeLayer(liveOsmLayerRef.value)
   liveOsmLayerRef.value = null
-  // if (osmBuildingsLayerRef.value)
-  //   osmBuildingsLayerRef.value.setVisible(
-  //     overlayLayers.value.osmBuildings && Math.round(map.value?.getView().getZoom() || 0) >= 16
-  //   )
+
+  if (osmBuildingsLayerIdRef.value.length > 0) {
+    const visible = overlayLayers.value.osmBuildings && getZoomLevel() >= 16
+
+    setLayersVisibility(osmBuildingsLayerIdRef.value, visible)
+  }
 }
 
 // Issue #9: draw the fresh Overpass buildings for the view so the map matches the difference results.
@@ -1959,7 +1910,7 @@ const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
   })
   liveOsmLayerRef.value = layer
   // map.value.addLayer(layer)
-  osmBuildingsLayerRef.value?.setVisible(false)
+  // osmBuildingsLayerRef.value?.setVisible(false)
 }
 
 // Prefer the API's message (e.g. Overpass rate limit) over the generic fetch error text.
@@ -1977,7 +1928,7 @@ const calculateDifference = async () => {
   const dataSource = urbisActive ? 'urbis' : piccActive ? 'picc' : knwActive ? 'knw' : 'grb'
 
   // Check if OSM layer and at least one source layer are loaded
-  if (!osmBuildingsLayerRef.value || (!grbActive && !knwActive && !piccActive && !urbisActive)) {
+  if (osmBuildingsLayerIdRef.value.length === 0 || (!grbActive && !knwActive && !piccActive && !urbisActive)) {
     toast.warning('Layers required', 'Please enable OSM Buildings and a source layer (GRB, KNW, PICC, or UrbIS) first.')
     return
   }
@@ -2822,10 +2773,10 @@ onMounted(() => {
       // Automatically load OSM and GRB layers
       setTimeout(() => {
         handleLoadOSM()
-        handleLoadGRB()
-        handleLoadKNW()
-        handleLoadPICC()
-        handleLoadUrbis()
+        // handleLoadGRB()
+        // handleLoadKNW()
+        // handleLoadPICC()
+        // handleLoadUrbis()
       }, 100)
     }, 50)
   })
