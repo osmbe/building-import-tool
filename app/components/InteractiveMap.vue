@@ -1796,9 +1796,9 @@ const calculateDifference = async () => {
 
       // Remove existing candidate buildings layer if present
       if (candidateBuildingsLayerIdRef.value.length > 0) {
-        for (const id of candidateBuildingsLayerIdRef.value) {
+        for (const id of candidateBuildingsLayerIdRef.value)
           map.value.removeLayer(id)
-        }
+
         candidateBuildingsLayerIdRef.value = []
       }
 
@@ -1843,38 +1843,38 @@ const calculateDifference = async () => {
     originalCandidateFeatures.value = candidateGeoJSON.features
 
     // Remove existing candidate buildings layer if present
-    if (candidateBuildingsLayerIdRef.value.length > 0) {
+    if (candidateBuildingsLayerIdRef.value.length > 0)
       for (const id of candidateBuildingsLayerIdRef.value) {
         map.value.removeLayer(id)
-      }
     }
+
 
     console.log('Candidate features loaded:', candidateGeoJSON.features.length)
 
     // Parse GeoJSON and create source
     map.value.addSource('candidates-buildings', {
-      type: 'geojson',
-      data: candidateGeoJSON
+      data: candidateGeoJSON,
+      type: 'geojson'
     })
 
     // Create vector layer for candidate buildings
     map.value.addLayer({
       id: 'candidates-buildings-fill',
-      type: 'fill',
-      source: 'candidates-buildings',
       paint: {
         'fill-color': hslVar('--layer-candidate', 0.35)
-      }
+      },
+      source: 'candidates-buildings',
+      type: 'fill'
     })
     map.value.addLayer(
       {
         id: 'candidates-buildings-line',
-        type: 'line',
-        source: 'candidates-buildings',
         paint: {
           'line-color': hslVar('--layer-candidate', 1),
           'line-width': 2
-        }
+        },
+        source: 'candidates-buildings',
+        type: 'line'
       },
       'candidates-buildings-fill'
     )
