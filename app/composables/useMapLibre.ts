@@ -55,7 +55,9 @@ export const useMapLibre = () => {
             'grb-buildings',
             'knw-structures',
             'picc-buildings',
-            'urbis-buildings'
+            'urbis-buildings',
+            'osmlive',
+            'candidates-buildings'
           ]
 
           for (const source of overlaySources) {
