@@ -5,7 +5,6 @@ import {
   clearOverpassCache,
   fetchOverpassBuildings,
   lonLatToMercator,
-  mercatorToLonLat,
   overpassHttpError,
   parseOverpassElements,
   stitchRings
@@ -28,23 +27,6 @@ const mockFetch = (elements: any[], ok = true, status = 200) => {
 afterEach(() => {
   clearOverpassCache()
   vi.unstubAllGlobals()
-})
-
-describe('mercatorToLonLat', () => {
-  it('maps the origin to lon/lat 0,0', () => {
-    expect(mercatorToLonLat(0, 0)).toEqual([0, 0])
-  })
-
-  it('maps x = +/- the mercator radius to lon +/-180', () => {
-    const R = 20037508.342789244
-    expect(mercatorToLonLat(R, 0)[0]).toBeCloseTo(180, 6)
-    expect(mercatorToLonLat(-R, 0)[0]).toBeCloseTo(-180, 6)
-  })
-
-  it('maps y = the mercator radius to the mercator latitude limit (~85.05)', () => {
-    const R = 20037508.342789244
-    expect(mercatorToLonLat(0, R)[1]).toBeCloseTo(85.0511, 3)
-  })
 })
 
 describe('fetchOverpassBuildings', () => {
@@ -185,15 +167,6 @@ describe('fetchOverpassBuildings', () => {
     await fetchOverpassBuildings(BBOX_3857)
     await fetchOverpassBuildings(BBOX_3857)
     expect(fn).toHaveBeenCalledTimes(1)
-  })
-})
-
-describe('lonLatToMercator', () => {
-  it('round-trips with mercatorToLonLat', () => {
-    const [x, y] = lonLatToMercator(4.35, 50.85)
-    const [lon, lat] = mercatorToLonLat(x, y)
-    expect(lon).toBeCloseTo(4.35, 8)
-    expect(lat).toBeCloseTo(50.85, 8)
   })
 })
 

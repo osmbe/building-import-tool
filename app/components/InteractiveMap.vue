@@ -882,11 +882,7 @@ import {
   ZoomIn,
   ZoomOut
 } from 'lucide-vue-next'
-import { Fill, Stroke, Style } from 'ol/style'
-import { GeoJSON, MVT } from 'ol/format'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { fromLonLat, toLonLat } from 'ol/proj'
-import Feature from 'ol/Feature'
 import MatchModeControl from '~/components/MatchModeControl.vue'
 import ObjectInfoPanel from '~/components/ObjectInfoPanel.vue'
 import GettingStartedCard from '~/components/GettingStartedCard.vue'
@@ -894,9 +890,6 @@ import JosmHelpDialog from '~/components/JosmHelpDialog.vue'
 import type { BuildingData } from '~/types/buildingData'
 import type { SearchResult } from '~/composables/useSearch'
 import Switch from '~/components/ui/switch.vue'
-import VectorTileLayer from 'ol/layer/VectorTile'
-import VectorTileSource from 'ol/source/VectorTile'
-import { extractFeaturesFromLayer } from '~/utils/openlayers'
 import { CANDIDATES_CONTRACT, candidateDetail, candidateDisplayId } from '~/utils/candidates'
 import { useAuth } from '~/composables/useAuth'
 import { useJosmExport } from '~/composables/useJosmExport'
@@ -1722,34 +1715,34 @@ const clearLiveOsmLayer = () => {
 }
 
 // Issue #9: draw the fresh Overpass buildings for the view so the map matches the difference results.
-const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
-  if (!map.value) return
-  const geojson: any = await $fetch('/api/buildings/osm-live', { body: { bounds }, method: 'POST' })
+// const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
+//   if (!map.value) return
+//   const geojson: any = await $fetch('/api/buildings/osm-live', { body: { bounds }, method: 'POST' })
 
-  const { default: VectorLayer } = await import('ol/layer/Vector')
-  const { default: VectorSource } = await import('ol/source/Vector')
-  const { default: GeoJSONFormat } = await import('ol/format/GeoJSON')
+//   const { default: VectorLayer } = await import('ol/layer/Vector')
+//   const { default: VectorSource } = await import('ol/source/Vector')
+//   const { default: GeoJSONFormat } = await import('ol/format/GeoJSON')
 
-  if (liveOsmLayerRef.value) map.value.removeLayer(liveOsmLayerRef.value)
+//   if (liveOsmLayerRef.value) map.value.removeLayer(liveOsmLayerRef.value)
 
-  const features = new GeoJSONFormat().readFeatures(geojson, {
-    dataProjection: 'EPSG:4326',
-    featureProjection: 'EPSG:3857'
-  })
-  const layer = new VectorLayer({
-    properties: { title: 'OSM Buildings (live)', type: 'overlay' },
-    source: new VectorSource({ features }),
-    style: new Style({
-      fill: new Fill({ color: hslVar('--layer-osm', 0.15) }),
-      stroke: new Stroke({ color: hslVar('--layer-osm', 1), width: 2 })
-    }),
-    visible: overlayLayers.value.osmBuildings,
-    zIndex: 9
-  })
-  liveOsmLayerRef.value = layer
-  // map.value.addLayer(layer)
-  // osmBuildingsLayerRef.value?.setVisible(false)
-}
+//   const features = new GeoJSONFormat().readFeatures(geojson, {
+//     dataProjection: 'EPSG:4326',
+//     featureProjection: 'EPSG:3857'
+//   })
+//   const layer = new VectorLayer({
+//     properties: { title: 'OSM Buildings (live)', type: 'overlay' },
+//     source: new VectorSource({ features }),
+//     style: new Style({
+//       fill: new Fill({ color: hslVar('--layer-osm', 0.15) }),
+//       stroke: new Stroke({ color: hslVar('--layer-osm', 1), width: 2 })
+//     }),
+//     visible: overlayLayers.value.osmBuildings,
+//     zIndex: 9
+//   })
+//   liveOsmLayerRef.value = layer
+//   // map.value.addLayer(layer)
+//   // osmBuildingsLayerRef.value?.setVisible(false)
+// }
 
 // Prefer the API's message (e.g. Overpass rate limit) over the generic fetch error text.
 const apiErrorMessage = (error: any): string =>
@@ -1772,13 +1765,11 @@ const calculateDifference = async () => {
   }
 
   // Check zoom level
-  // const view = map.value.getView()
-  // const zoom = view.getZoom() || 13
-  // const roundedZoom = Math.round(zoom)
-  // if (roundedZoom < 16) {
-  //   toast.warning('Zoom in required', `Please zoom in to at least level 16. Current zoom: ${roundedZoom}`)
-  //   return
-  // }
+  const zoom = getZoomLevel()
+  if (zoom < 16) {
+    toast.warning('Zoom in required', `Please zoom in to at least level 16. Current zoom: ${zoom}`)
+    return
+  }
 
   // Check if OSM layer is visible
   if (!overlayLayers.value.osmBuildings) {
@@ -1791,139 +1782,136 @@ const calculateDifference = async () => {
   differenceState.value = 'loading'
   differenceError.value = ''
 
-  // try {
-  //   // Get map extent in Web Mercator (EPSG:3857)
-  //   const mapExtent = map.value.getView().calculateExtent(map.value.getSize())
+  try {
+    const bounds = map.value.getBounds();
+    const extent = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
 
-  //   // Send Web Mercator bounds to API - PostGIS will handle transformation
-  //   const bounds = [mapExtent[0], mapExtent[1], mapExtent[2], mapExtent[3]]
+    // Live mode: refresh the OSM layer from Overpass too (non-fatal; the difference call reports errors)
+    // if (useOverpass.value) await refreshLiveOsmLayer(extent).catch((e) => console.warn('Live OSM layer failed:', e))
+    // else clearLiveOsmLayer()
 
-  //   // Live mode: refresh the OSM layer from Overpass too (non-fatal; the difference call reports errors)
-  //   if (useOverpass.value) await refreshLiveOsmLayer(bounds).catch((e) => console.warn('Live OSM layer failed:', e))
-  //   else clearLiveOsmLayer()
+    // Call backend API to calculate difference
+    const response = await $fetch('/api/buildings/difference', {
+      body: {
+        bounds: extent,
+        contract: CANDIDATES_CONTRACT,
+        dataSource,
+        geometryThreshold: geometryThreshold.value,
+        matchMode: resolveMatchMode(matchMode.value, dataSource).mode,
+        useOverpass: useOverpass.value
+      },
+      method: 'POST'
+    })
 
-  //   // Call backend API to calculate difference
-  //   const response = await $fetch('/api/buildings/difference', {
-  //     body: {
-  //       bounds,
-  //       contract: CANDIDATES_CONTRACT,
-  //       dataSource,
-  //       geometryThreshold: geometryThreshold.value,
-  //       matchMode: resolveMatchMode(matchMode.value, dataSource).mode,
-  //       useOverpass: useOverpass.value
-  //     },
-  //     method: 'POST'
-  //   })
+    const candidateGeoJSON = response as any
 
-  //   const candidateGeoJSON = response as any
+    if (!candidateGeoJSON || candidateGeoJSON.features.length === 0) {
+      // Persistent empty state in the results panel rather than a disappearing toast.
+      differenceState.value = 'empty'
 
-  //   if (!candidateGeoJSON || candidateGeoJSON.features.length === 0) {
-  //     // Persistent empty state in the results panel rather than a disappearing toast.
-  //     differenceState.value = 'empty'
+      // Remove existing candidate buildings layer if present
+      if (candidateBuildingsLayerRef.value) {
+        map.value.removeLayer(candidateBuildingsLayerRef.value)
+        candidateBuildingsLayerRef.value = null
+      }
 
-  //     // Remove existing candidate buildings layer if present
-  //     if (candidateBuildingsLayerRef.value) {
-  //       map.value.removeLayer(candidateBuildingsLayerRef.value)
-  //       candidateBuildingsLayerRef.value = null
-  //     }
+      matchingStats.value = null
+      candidateBuildingCount.value = 0
+      candidateCapped.value = false
+      candidateTotalInView.value = 0
+      originalCandidateFeatures.value = []
+      return
+    }
 
-  //     matchingStats.value = null
-  //     candidateBuildingCount.value = 0
-  //     candidateCapped.value = false
-  //     candidateTotalInView.value = 0
-  //     originalCandidateFeatures.value = []
-  //     return
-  //   }
+    // Soft cap on how many candidates we render and export at once. Mass imports need
+    // Review; loading tens of thousands of features also strains the browser. The true
+    // Count is still reported in the stats; the note tells the user what is loaded.
+    const totalCandidates = candidateGeoJSON.features.length
+    candidateTotalInView.value = totalCandidates
+    candidateCapped.value = totalCandidates > CANDIDATE_RENDER_CAP
+    if (candidateCapped.value) candidateGeoJSON.features = candidateGeoJSON.features.slice(0, CANDIDATE_RENDER_CAP)
 
-  //   // Soft cap on how many candidates we render and export at once. Mass imports need
-  //   // Review; loading tens of thousands of features also strains the browser. The true
-  //   // Count is still reported in the stats; the note tells the user what is loaded.
-  //   const totalCandidates = candidateGeoJSON.features.length
-  //   candidateTotalInView.value = totalCandidates
-  //   candidateCapped.value = totalCandidates > CANDIDATE_RENDER_CAP
-  //   if (candidateCapped.value) candidateGeoJSON.features = candidateGeoJSON.features.slice(0, CANDIDATE_RENDER_CAP)
+    // Stamp the source kind on each candidate so the review tooltip and JOSM export
+    // Know what they are looking at (the candidate layer is a single OL layer).
+    const sourceKind =
+      dataSource === 'knw' ? 'knw' : dataSource === 'picc' ? 'picc' : dataSource === 'urbis' ? 'urbis' : 'grb'
+    for (const f of candidateGeoJSON.features) {
+      f.properties = f.properties || {}
+      f.properties._layer_type = sourceKind
+    }
 
-  //   // Stamp the source kind on each candidate so the review tooltip and JOSM export
-  //   // Know what they are looking at (the candidate layer is a single OL layer).
-  //   const sourceKind =
-  //     dataSource === 'knw' ? 'knw' : dataSource === 'picc' ? 'picc' : dataSource === 'urbis' ? 'urbis' : 'grb'
-  //   for (const f of candidateGeoJSON.features) {
-  //     f.properties = f.properties || {}
-  //     f.properties._layer_type = sourceKind
-  //   }
+    // Update matching stats (unmatched reflects the true count missing from OSM)
+    const stats = (candidateGeoJSON as any).stats || {}
+    matchingStats.value = {
+      matched: (stats.totalGrb || 0) - totalCandidates,
+      totalGrb: stats.totalGrb || totalCandidates,
+      totalOsm: stats.totalOsm || 0,
+      unmatched: totalCandidates
+    }
 
-  //   // Update matching stats (unmatched reflects the true count missing from OSM)
-  //   const stats = (candidateGeoJSON as any).stats || {}
-  //   matchingStats.value = {
-  //     matched: (stats.totalGrb || 0) - totalCandidates,
-  //     totalGrb: stats.totalGrb || totalCandidates,
-  //     totalOsm: stats.totalOsm || 0,
-  //     unmatched: totalCandidates
-  //   }
+    // Candidate count reflects what is actually loaded/exportable (post-cap)
+    candidateBuildingCount.value = candidateGeoJSON.features.length
 
-  //   // Candidate count reflects what is actually loaded/exportable (post-cap)
-  //   candidateBuildingCount.value = candidateGeoJSON.features.length
+    // Store original features for simplification
+    originalCandidateFeatures.value = candidateGeoJSON.features
 
-  //   // Store original features for simplification
-  //   originalCandidateFeatures.value = candidateGeoJSON.features
+    // Remove existing candidate buildings layer if present
+    if (candidateBuildingsLayerRef.value) map.value.removeLayer(candidateBuildingsLayerRef.value)
 
-  //   // Remove existing candidate buildings layer if present
-  //   if (candidateBuildingsLayerRef.value) map.value.removeLayer(candidateBuildingsLayerRef.value)
+    // Import OpenLayers modules
+    const { default: VectorLayer } = await import('ol/layer/Vector')
+    const { default: VectorSource } = await import('ol/source/Vector')
+    const { default: GeoJSONFormat } = await import('ol/format/GeoJSON')
 
-  //   // Import OpenLayers modules
-  //   const { default: VectorLayer } = await import('ol/layer/Vector')
-  //   const { default: VectorSource } = await import('ol/source/Vector')
-  //   const { default: GeoJSONFormat } = await import('ol/format/GeoJSON')
+    console.log('Candidate features loaded:', candidateGeoJSON.features.length)
 
-  //   console.log('Candidate features loaded:', candidateGeoJSON.features.length)
+    // Parse GeoJSON and create source
+    const geoJsonFormat = new GeoJSONFormat()
+    const features = geoJsonFormat.readFeatures(candidateGeoJSON, {
+      dataProjection: 'EPSG:4326',
+      featureProjection: 'EPSG:3857'
+    })
 
-  //   // Parse GeoJSON and create source
-  //   const geoJsonFormat = new GeoJSONFormat()
-  //   const features = geoJsonFormat.readFeatures(candidateGeoJSON, {
-  //     dataProjection: 'EPSG:4326',
-  //     featureProjection: 'EPSG:3857'
-  //   })
+    const candidateSource = new VectorSource({ features })
 
-  //   const candidateSource = new VectorSource({ features })
+    // Style function for candidate buildings
+    const candidateStyleFunction = () =>
+      new Style({
+        fill: new Fill({
+          color: hslVar('--layer-candidate', 0.35)
+        }),
+        stroke: new Stroke({
+          color: hslVar('--layer-candidate', 1),
+          width: 2
+        })
+      })
 
-  //   // Style function for candidate buildings
-  //   const candidateStyleFunction = () =>
-  //     new Style({
-  //       fill: new Fill({
-  //         color: hslVar('--layer-candidate', 0.35)
-  //       }),
-  //       stroke: new Stroke({
-  //         color: hslVar('--layer-candidate', 1),
-  //         width: 2
-  //       })
-  //     })
+    // Create vector layer for candidate buildings
+    const candidateLayer = new VectorLayer({
+      properties: {
+        title: 'Candidate Buildings',
+        type: 'overlay'
+      },
+      source: candidateSource,
+      style: candidateStyleFunction,
+      zIndex: 11
+    })
 
-  //   // Create vector layer for candidate buildings
-  //   const candidateLayer = new VectorLayer({
-  //     properties: {
-  //       title: 'Candidate Buildings',
-  //       type: 'overlay'
-  //     },
-  //     source: candidateSource,
-  //     style: candidateStyleFunction,
-  //     zIndex: 11
-  //   })
+    // Add layer to map
+    candidateBuildingsLayerRef.value = candidateLayer
+    map.value.addLayer(candidateLayer)
 
-  //   // Add layer to map
-  //   candidateBuildingsLayerRef.value = candidateLayer
-  //   map.value.addLayer(candidateLayer)
-
-  //   // Enable candidate buildings layer
-  //   overlayLayers.value.candidateBuildings = true
-  //   differenceState.value = 'success'
-  // } catch (error) {
-  //   console.error('Error calculating difference:', error)
-  //   differenceState.value = 'error'
-  //   differenceError.value = apiErrorMessage(error)
-  // } finally {
-  //   // Reset loading state
-  //   isCalculatingDifference.value = false
-  // }
+    // Enable candidate buildings layer
+    overlayLayers.value.candidateBuildings = true
+    differenceState.value = 'success'
+  } catch (error) {
+    console.error('Error calculating difference:', error)
+    differenceState.value = 'error'
+    differenceError.value = apiErrorMessage(error)
+  } finally {
+    // Reset loading state
+    isCalculatingDifference.value = false
+  }
 }
 
 const exportToJOSM = async () => {
