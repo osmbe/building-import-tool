@@ -4,6 +4,8 @@ import { baselayers } from './useMapLibre/baselayers';
 import { loadOSMBuildingsLayer } from './useMapLibre/layers/osmBuildings';
 import { loadGrbBuildingsLayer } from './useMapLibre/layers/grbBuildings';
 import { loadKnwStructuresLayer } from './useMapLibre/layers/knwStructures';
+import { loadPiccBuildingsLayer } from './useMapLibre/layers/piccBuildings';
+import { loadUrbisBuildingsLayer } from './useMapLibre/layers/urbisBuildings';
 
 setWorkerUrl(workerUrl);
 
@@ -51,7 +53,7 @@ export const useMapLibre = () => {
         nextStyle.layers = [...nextStyle.layers];
 
         if (typeof previousStyle !== 'undefined') {
-          const overlaySources = ['osm-buildings', 'grb-buildings', 'knw-structures', 'picc-buildings'];
+          const overlaySources = ['osm-buildings', 'grb-buildings', 'knw-structures', 'picc-buildings', 'urbis-buildings'];
 
           for (const source of overlaySources) {
             if (source in previousStyle.sources && !(source in nextStyle.sources)) {
@@ -104,6 +106,8 @@ export const useMapLibre = () => {
     loadOSMBuildingsLayer,
     loadGrbBuildingsLayer,
     loadKnwStructuresLayer,
+    loadPiccBuildingsLayer,
+    loadUrbisBuildingsLayer,
 
     // Config
     baselayers

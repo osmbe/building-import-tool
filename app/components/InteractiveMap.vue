@@ -907,9 +907,6 @@ import { resolveMatchMode, supportsSourceTags } from '~/utils/matchMode'
 import { useToast } from '~/composables/useToast'
 import type { MapOptions, StyleLayer } from 'maplibre-gl'
 import { hslVar } from '~/lib/utils'
-import { loadGrbBuildingsLayer } from '~/composables/useMapLibre/layers/grbBuildings'
-import { loadKnwStructuresLayer } from '~/composables/useMapLibre/layers/knwStructures'
-import { loadPiccBuildingsLayer } from '~/composables/useMapLibre/layers/piccBuildings'
 
 const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
 
@@ -920,7 +917,8 @@ const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
 
 // Use the map layers composable
-const { map, currentBaseLayer, initializeMap, switchBaseLayer, loadOSMBuildingsLayer, getZoomLevel,
+const { map, currentBaseLayer, initializeMap, switchBaseLayer, loadOSMBuildingsLayer,
+  loadGrbBuildingsLayer, loadKnwStructuresLayer, loadPiccBuildingsLayer, loadUrbisBuildingsLayer, getZoomLevel,
   setLayersVisibility, destroy, baselayers } = useMapLibre()
 
 // OSM Buildings layer state
@@ -939,7 +937,7 @@ const knwStructuresLayerIdRef = ref<string[]>([])
 const piccBuildingsLayerIdRef = ref<string[]>([])
 
 // UrbIS Buildings layer state
-const urbisBuildingsLayerRef = ref<any>(null)
+const urbisBuildingsLayerIdRef = ref<string[]>([])
 
 // Candidate Buildings layer state
 const candidateBuildingsLayerRef = ref<any>(null)
@@ -1007,7 +1005,7 @@ const hasSourceLayer = computed(() =>
     (grbBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.grbBuildings) ||
     (knwStructuresLayerIdRef.value.length > 0 && overlayLayers.value.knwStructures) ||
     (piccBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.piccBuildings) ||
-    (urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings)
+    (urbisBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.urbisBuildings)
   )
 )
 const hasOsmLayer = computed(() => Boolean(osmBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.osmBuildings))
@@ -1185,8 +1183,9 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
     setLayersVisibility(piccBuildingsLayerIdRef.value, shouldShowBuildings && overlayLayers.value.piccBuildings)
   }
 
-  // if (urbisBuildingsLayerRef.value)
-  //   urbisBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.urbisBuildings)
+  if (urbisBuildingsLayerIdRef.value.length > 0){
+    setLayersVisibility(urbisBuildingsLayerIdRef.value, shouldShowBuildings && overlayLayers.value.urbisBuildings)
+  }
 }
 
 // Handle Load OSM Buildings using Vector Tiles from Martin
@@ -1300,55 +1299,16 @@ const handleLoadUrbis = () => {
 
   try {
     // Remove existing UrbIS buildings layer if present
-    if (urbisBuildingsLayerRef.value) map.value.removeLayer(urbisBuildingsLayerRef.value)
-
-    // Create vector tile source for UrbIS buildings
-    const urbisTileSource = new VectorTileSource({
-      attributions: '© UrbIS Brussels',
-      format: new MVT(),
-      maxZoom: 18,
-      minZoom: 10,
-      url: candidateTileUrl('urbis')
-    })
-
-    // Style function for UrbIS buildings
-    const urbisStyleFunction = (feature: any) => {
-      const isHovered = feature.get('hovered')
-
-      let fillColor = hslVar('--layer-urbis', 0.15)
-      let strokeColor = hslVar('--layer-urbis', 1)
-
-      if (isHovered) {
-        fillColor = hslVar('--layer-urbis', 0.3)
-        strokeColor = hslVar('--layer-urbis-light', 1)
+    if (urbisBuildingsLayerIdRef.value.length > 0) {
+      for (const layerId of urbisBuildingsLayerIdRef.value) {
+        map.value.removeLayer(layerId)
       }
-
-      return new Style({
-        fill: new Fill({
-          color: fillColor
-        }),
-        stroke: new Stroke({
-          color: strokeColor,
-          width: isHovered ? 3 : 2
-        })
-      })
     }
 
-    // Create vector tile layer
-    const urbisTileLayer = new VectorTileLayer({
-      properties: {
-        title: 'UrbIS Buildings',
-        type: 'overlay'
-      },
-      source: urbisTileSource,
-      style: urbisStyleFunction,
-      zIndex: 12
-    })
-
     // Add layer to map (hidden by default — user toggles it on)
-    urbisBuildingsLayerRef.value = urbisTileLayer
-    // map.value.addLayer(urbisTileLayer)
-    urbisTileLayer.setVisible(false)
+    urbisBuildingsLayerIdRef.value = loadUrbisBuildingsLayer(map.value)
+
+    setLayersVisibility(urbisBuildingsLayerIdRef.value, false)
   } catch (error) {
     console.error('Failed to load UrbIS buildings:', error)
   }
@@ -1383,10 +1343,10 @@ const toggleGrbBuildings = (visible: boolean) => {
     //   overlayLayers.value.piccBuildings = false
     //   if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
     // }
-    if (overlayLayers.value.urbisBuildings) {
-      overlayLayers.value.urbisBuildings = false
-      if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
-    }
+    // if (overlayLayers.value.urbisBuildings) {
+    //   overlayLayers.value.urbisBuildings = false
+    //   if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
+    // }
     // if (overlayLayers.value.knwStructures) {
     //   overlayLayers.value.knwStructures = false
     //   if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
@@ -1404,10 +1364,10 @@ const toggleKnwStructures = (visible: boolean) => {
     //   overlayLayers.value.piccBuildings = false
     //   if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
     // }
-    if (overlayLayers.value.urbisBuildings) {
-      overlayLayers.value.urbisBuildings = false
-      if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
-    }
+    // if (overlayLayers.value.urbisBuildings) {
+    //   overlayLayers.value.urbisBuildings = false
+    //   if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
+    // }
     // if (overlayLayers.value.grbBuildings) {
     //   overlayLayers.value.grbBuildings = false
     //   if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
@@ -1430,18 +1390,17 @@ const togglePiccBuildings = (visible: boolean) => {
     //   overlayLayers.value.knwStructures = false
     //   if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
     // }
-    if (overlayLayers.value.urbisBuildings) {
-      overlayLayers.value.urbisBuildings = false
-      if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
-    }
+    // if (overlayLayers.value.urbisBuildings) {
+    //   overlayLayers.value.urbisBuildings = false
+    //   if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
+    // }
   }
 }
 
 const toggleUrbisBuildings = (visible: boolean) => {
   overlayLayers.value.urbisBuildings = visible
-  const shouldShow = visible && currentZoom.value >= 16
 
-  if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(shouldShow)
+  setLayersVisibility(urbisBuildingsLayerIdRef.value, visible)
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
@@ -1809,7 +1768,7 @@ const calculateDifference = async () => {
   const grbActive = overlayLayers.value.grbBuildings && grbBuildingsLayerIdRef.value.length > 0
   const knwActive = overlayLayers.value.knwStructures && knwStructuresLayerIdRef.value.length > 0
   const piccActive = overlayLayers.value.piccBuildings && piccBuildingsLayerIdRef.value.length > 0
-  const urbisActive = overlayLayers.value.urbisBuildings && urbisBuildingsLayerRef.value
+  const urbisActive = overlayLayers.value.urbisBuildings && urbisBuildingsLayerIdRef.value.length > 0
   const dataSource = urbisActive ? 'urbis' : piccActive ? 'picc' : knwActive ? 'knw' : 'grb'
 
   // Check if OSM layer and at least one source layer are loaded
@@ -2661,7 +2620,7 @@ onMounted(() => {
         handleLoadGRB()
         handleLoadKNW()
         handleLoadPICC()
-        // handleLoadUrbis()
+        handleLoadUrbis()
       }, 100)
     }, 50)
   })
