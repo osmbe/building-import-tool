@@ -17,36 +17,54 @@
 	# Martin GRB Tiles
 	handle /tiles/grb/* {
 		uri strip_prefix /tiles/grb
-		reverse_proxy grb-tiles:3000
+		reverse_proxy grb-tiles:3000 {
+			header_up X-Forwarded-Proto https
+			header_up Host {host}
+		}
 	}
 
 	# Martin OSM Tiles
 	handle /tiles/osm/* {
 		uri strip_prefix /tiles/osm
-		reverse_proxy osm-tiles:3000
+		reverse_proxy osm-tiles:3000 {
+			header_up X-Forwarded-Proto https
+			header_up Host {host}
+		}
 	}
 
 	# Martin PICC Tiles
 	handle /tiles/picc/* {
 		uri strip_prefix /tiles/picc
-		reverse_proxy picc-tiles:3000
+		reverse_proxy picc-tiles:3000 {
+			header_up X-Forwarded-Proto https
+			header_up Host {host}
+		}
 	}
 
 	# Martin UrbIS Tiles
 	handle /tiles/urbis/* {
 		uri strip_prefix /tiles/urbis
-		reverse_proxy urbis-tiles:3000
+		reverse_proxy urbis-tiles:3000 {
+			header_up X-Forwarded-Proto https
+			header_up Host {host}
+		}
 	}
 
 	# Webhook service
 	handle /webhook/* {
 		uri strip_prefix /webhook
-		reverse_proxy webhook:9000
+		reverse_proxy webhook:9000 {
+			header_up X-Forwarded-Proto https
+			header_up Host {host}
+		}
 	}
 
 	# All other routes (including /api/*) go to Nuxt
 	# Nuxt will handle proxying to Rust API where needed
 	handle {
-		reverse_proxy nuxt-app:3000
+		reverse_proxy nuxt-app:3000 {
+			header_up X-Forwarded-Proto https
+			header_up Host {host}
+		}
 	}
 }
