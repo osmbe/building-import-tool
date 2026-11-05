@@ -51,7 +51,7 @@ export const useMapLibre = () => {
         nextStyle.layers = [...nextStyle.layers];
 
         if (typeof previousStyle !== 'undefined') {
-          const overlaySources = ['osm-buildings', 'grb-buildings', 'knw-structures'];
+          const overlaySources = ['osm-buildings', 'grb-buildings', 'knw-structures', 'picc-buildings'];
 
           for (const source of overlaySources) {
             if (source in previousStyle.sources && !(source in nextStyle.sources)) {

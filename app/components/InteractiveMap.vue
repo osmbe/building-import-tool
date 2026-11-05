@@ -909,6 +909,7 @@ import type { MapOptions, StyleLayer } from 'maplibre-gl'
 import { hslVar } from '~/lib/utils'
 import { loadGrbBuildingsLayer } from '~/composables/useMapLibre/layers/grbBuildings'
 import { loadKnwStructuresLayer } from '~/composables/useMapLibre/layers/knwStructures'
+import { loadPiccBuildingsLayer } from '~/composables/useMapLibre/layers/piccBuildings'
 
 const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
 
@@ -935,7 +936,7 @@ const grbBuildingsLayerIdRef = ref<string[]>([])
 const knwStructuresLayerIdRef = ref<string[]>([])
 
 // PICC Buildings layer state
-const piccBuildingsLayerRef = ref<any>(null)
+const piccBuildingsLayerIdRef = ref<string[]>([])
 
 // UrbIS Buildings layer state
 const urbisBuildingsLayerRef = ref<any>(null)
@@ -1005,7 +1006,7 @@ const hasSourceLayer = computed(() =>
   Boolean(
     (grbBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.grbBuildings) ||
     (knwStructuresLayerIdRef.value.length > 0 && overlayLayers.value.knwStructures) ||
-    (piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings) ||
+    (piccBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.piccBuildings) ||
     (urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings)
   )
 )
@@ -1180,8 +1181,9 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
     setLayersVisibility(knwStructuresLayerIdRef.value, shouldShowBuildings && overlayLayers.value.knwStructures)
   }
 
-  // if (piccBuildingsLayerRef.value)
-  //   piccBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.piccBuildings)
+  if (piccBuildingsLayerIdRef.value.length > 0){
+    setLayersVisibility(piccBuildingsLayerIdRef.value, shouldShowBuildings && overlayLayers.value.piccBuildings)
+  }
 
   // if (urbisBuildingsLayerRef.value)
   //   urbisBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.urbisBuildings)
@@ -1274,55 +1276,16 @@ const handleLoadPICC = () => {
 
   try {
     // Remove existing PICC buildings layer if present
-    if (piccBuildingsLayerRef.value) map.value.removeLayer(piccBuildingsLayerRef.value)
-
-    // Create vector tile source for PICC buildings
-    const piccTileSource = new VectorTileSource({
-      attributions: '© PICC Wallonia',
-      format: new MVT(),
-      maxZoom: 18,
-      minZoom: 10,
-      url: candidateTileUrl('picc')
-    })
-
-    // Style function for PICC buildings
-    const piccStyleFunction = (feature: any) => {
-      const isHovered = feature.get('hovered')
-
-      let fillColor = hslVar('--layer-picc', 0.15)
-      let strokeColor = hslVar('--layer-picc', 1)
-
-      if (isHovered) {
-        fillColor = hslVar('--layer-picc', 0.3)
-        strokeColor = hslVar('--layer-picc-light', 1)
+    if (piccBuildingsLayerIdRef.value.length > 0) {
+      for (const layerId of piccBuildingsLayerIdRef.value) {
+        map.value.removeLayer(layerId)
       }
-
-      return new Style({
-        fill: new Fill({
-          color: fillColor
-        }),
-        stroke: new Stroke({
-          color: strokeColor,
-          width: isHovered ? 3 : 2
-        })
-      })
     }
 
-    // Create vector tile layer
-    const piccTileLayer = new VectorTileLayer({
-      properties: {
-        title: 'PICC Buildings',
-        type: 'overlay'
-      },
-      source: piccTileSource,
-      style: piccStyleFunction,
-      zIndex: 11
-    })
-
     // Add layer to map (hidden by default — user toggles it on)
-    piccBuildingsLayerRef.value = piccTileLayer
-    // map.value.addLayer(piccTileLayer)
-    piccTileLayer.setVisible(false)
+    piccBuildingsLayerIdRef.value = loadPiccBuildingsLayer(map.value)
+
+    setLayersVisibility(piccBuildingsLayerIdRef.value, false)
   } catch (error) {
     console.error('Failed to load PICC buildings:', error)
   }
@@ -1416,10 +1379,10 @@ const toggleGrbBuildings = (visible: boolean) => {
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
-    if (overlayLayers.value.piccBuildings) {
-      overlayLayers.value.piccBuildings = false
-      if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
-    }
+    // if (overlayLayers.value.piccBuildings) {
+    //   overlayLayers.value.piccBuildings = false
+    //   if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
+    // }
     if (overlayLayers.value.urbisBuildings) {
       overlayLayers.value.urbisBuildings = false
       if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
@@ -1437,10 +1400,10 @@ const toggleKnwStructures = (visible: boolean) => {
   setLayersVisibility(knwStructuresLayerIdRef.value, visible)
 
   if (visible) {
-    if (overlayLayers.value.piccBuildings) {
-      overlayLayers.value.piccBuildings = false
-      if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
-    }
+    // if (overlayLayers.value.piccBuildings) {
+    //   overlayLayers.value.piccBuildings = false
+    //   if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
+    // }
     if (overlayLayers.value.urbisBuildings) {
       overlayLayers.value.urbisBuildings = false
       if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
@@ -1454,9 +1417,8 @@ const toggleKnwStructures = (visible: boolean) => {
 
 const togglePiccBuildings = (visible: boolean) => {
   overlayLayers.value.piccBuildings = visible
-  const shouldShow = visible && currentZoom.value >= 16
 
-  if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(shouldShow)
+  setLayersVisibility(piccBuildingsLayerIdRef.value, visible)
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
@@ -1491,10 +1453,10 @@ const toggleUrbisBuildings = (visible: boolean) => {
     //   overlayLayers.value.knwStructures = false
     //   if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
     // }
-    if (overlayLayers.value.piccBuildings) {
-      overlayLayers.value.piccBuildings = false
-      if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
-    }
+    // if (overlayLayers.value.piccBuildings) {
+    //   overlayLayers.value.piccBuildings = false
+    //   if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
+    // }
   }
 }
 
@@ -1846,7 +1808,7 @@ const calculateDifference = async () => {
   // Determine which data source is active (GRB, PICC, or UrbIS)
   const grbActive = overlayLayers.value.grbBuildings && grbBuildingsLayerIdRef.value.length > 0
   const knwActive = overlayLayers.value.knwStructures && knwStructuresLayerIdRef.value.length > 0
-  const piccActive = overlayLayers.value.piccBuildings && piccBuildingsLayerRef.value
+  const piccActive = overlayLayers.value.piccBuildings && piccBuildingsLayerIdRef.value.length > 0
   const urbisActive = overlayLayers.value.urbisBuildings && urbisBuildingsLayerRef.value
   const dataSource = urbisActive ? 'urbis' : piccActive ? 'picc' : knwActive ? 'knw' : 'grb'
 
@@ -2698,7 +2660,7 @@ onMounted(() => {
         handleLoadOSM()
         handleLoadGRB()
         handleLoadKNW()
-        // handleLoadPICC()
+        handleLoadPICC()
         // handleLoadUrbis()
       }, 100)
     }, 50)
