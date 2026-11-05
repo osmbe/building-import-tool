@@ -74,10 +74,6 @@ export const CANDIDATE_VIEWS: Record<CandidateSource, string> = {
   urbis: 'urbis.candidates'
 }
 
-/** Vector tile URL template of a source's candidates (Martin, behind Caddy). KNW is served by the GRB server. */
-export const candidateTileUrl = (source: CandidateSource): string =>
-  source === 'knw' ? '/tiles/grb/knw_candidates/{z}/{x}/{y}' : `/tiles/${source}/candidates/{z}/{x}/{y}`
-
 // First entry of a comma-separated aggregate column (e.g. street_names), trimmed.
 const firstListItem = (value: string | null | undefined): string => (String(value ?? '').split(',')[0] ?? '').trim()
 

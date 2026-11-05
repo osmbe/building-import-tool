@@ -18,12 +18,14 @@
     "typecheck": "nuxt prepare && vue-tsc -b --noEmit"
   },
   "dependencies": {
+    "@turf/area": "^7.4.0",
+    "@turf/bbox-polygon": "^7.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-vue-next": "^1.0.0",
+    "maplibre-gl": "^6.16.0",
     "mapshaper": "^0.7.101",
     "nuxt": "^4.6.3",
-    "ol": "^10.11.0",
     "pg": "^8.23.1",
     "radix-vue": "^1.9.17",
     "tailwind-merge": "^3.7.0",

@@ -39,7 +39,7 @@
           <span class="check-mark" :class="zoomReady ? 'check-done' : ''">
             <Check v-if="zoomReady" class="h-2 w-2" />
           </span>
-          <span class="flex-1 text-left" :class="zoomReady ? 'text-emerald-400/80' : ''">Zoom in to ≥ 16</span>
+          <span class="flex-1 text-left" :class="zoomReady ? 'text-emerald-400/80' : ''">Zoom to ≥ 16</span>
           <span v-if="!zoomReady" class="check-action">Zoom</span>
         </button>
       </div>

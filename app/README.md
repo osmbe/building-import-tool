@@ -35,7 +35,7 @@ by readiness).
 | `components/InteractiveMap.vue`                                            | most of the app (about 2700 lines): the OpenLayers map, a vector tile layer per source, selection, the difference request, the info panel, the JOSM export |
 | `components/`                                                              | navigation, search, login dialog, match mode control, JOSM help, info panel, toasts                                                                        |
 | `components/ui/`                                                           | UI primitives (buttons, dialogs, tabs, ...)                                                                                                                |
-| `composables/useMapLayers.ts`                                              | base layers: OSM Belgium, the Flanders, Wallonia and Brussels orthophotos, Esri imagery                                                                    |
+| `composables/useMapLibre.ts`                                               | map related functionalities                                                                                                                                |
 | `composables/useJosmExport.ts`                                             | candidates → OSM XML → `/api/export/upload` → JOSM remote control (`127.0.0.1:8111`)                                                                       |
 | `composables/useAuth.ts`, `useSearch.ts`, `useMatchMode.ts`, `useToast.ts` | OSM login state, Nominatim search, the match mode setting, notifications                                                                                   |
 | `utils/candidates.ts`                                                      | the candidates contract on the app side: columns, views, tile URLs, `candidateTags` (OSM tags per source)                                                  |
@@ -55,7 +55,6 @@ by readiness).
 | `/api/auth/*`                                    | OSM OAuth 2.0 login; the session is a JWT cookie                                                                                                                                                                          |
 | `GET /api/meta/data-dates`                       | when each source was last imported                                                                                                                                                                                        |
 | `GET /api/health`, `GET /api/health/ready`       | liveness; readiness for deploys (commit, migrations, candidates views)                                                                                                                                                    |
-| `GET /api/proxy/brussels-wms`                    | proxy for the UrbIS WMS (tile size and projection fixes)                                                                                                                                                                  |
 
 `server/utils/db.ts` has two pools: `queryGrb` (database `be2osm`) and `queryOsm` (`osmbe`).
 `server/utils/overpass.ts` is the Overpass client; keep its descriptive `User-Agent`, because public instances
