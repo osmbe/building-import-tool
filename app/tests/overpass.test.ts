@@ -9,8 +9,7 @@ import {
   stitchRings
 } from '~/server/utils/overpass'
 
-// Small bbox in Web Mercator (roughly central Belgium); exact values are not asserted.
-const BBOX_3857: [number, number, number, number] = [484000, 6594000, 484200, 6594200]
+const BBOX: [number, number, number, number] = [2.5, 49.5, 6.4, 51.51]
 
 const mockFetch = (elements: any[], ok = true, status = 200) => {
   const fn = vi.fn().mockResolvedValue({
@@ -44,7 +43,7 @@ describe('fetchOverpassBuildings', () => {
       }
     ])
 
-    const result = await fetchOverpassBuildings(BBOX_3857)
+    const result = await fetchOverpassBuildings(BBOX)
     expect(result.totalOsm).toBe(1)
 
     const collection = JSON.parse(result.geomCollection as string)
@@ -74,7 +73,7 @@ describe('fetchOverpassBuildings', () => {
       }
     ])
 
-    const result = await fetchOverpassBuildings(BBOX_3857)
+    const result = await fetchOverpassBuildings(BBOX)
     const ring = JSON.parse(result.geomCollection as string).geometries[0].coordinates[0]
     expect(ring[0]).toEqual(ring[ring.length - 1])
     expect(ring).toHaveLength(5)
@@ -104,7 +103,7 @@ describe('fetchOverpassBuildings', () => {
       }
     ])
 
-    const result = await fetchOverpassBuildings(BBOX_3857)
+    const result = await fetchOverpassBuildings(BBOX)
     expect(result.sourceRefs.sort()).toEqual(['Gba/333', 'Gbg/111', 'Gbg/222'])
   })
 
@@ -119,14 +118,14 @@ describe('fetchOverpassBuildings', () => {
         type: 'way'
       }
     ])
-    const result = await fetchOverpassBuildings(BBOX_3857)
+    const result = await fetchOverpassBuildings(BBOX)
     expect(result.totalOsm).toBe(0)
     expect(result.geomCollection).toBeNull()
   })
 
   it('returns a null collection when Overpass yields no buildings', async () => {
     mockFetch([])
-    const result = await fetchOverpassBuildings(BBOX_3857)
+    const result = await fetchOverpassBuildings(BBOX)
     expect(result).toEqual({
       features: [],
       geomCollection: null,
@@ -138,7 +137,7 @@ describe('fetchOverpassBuildings', () => {
 
   it('POSTs an Overpass QL query containing the converted bbox', async () => {
     const fn = mockFetch([])
-    await fetchOverpassBuildings(BBOX_3857)
+    await fetchOverpassBuildings(BBOX)
 
     expect(fn).toHaveBeenCalledOnce()
     const init = fn.mock.calls[0]?.[1]
@@ -148,14 +147,14 @@ describe('fetchOverpassBuildings', () => {
 
   it('identifies itself with a descriptive User-Agent (public Overpass answers 406 to generic clients)', async () => {
     const fn = mockFetch([])
-    await fetchOverpassBuildings(BBOX_3857)
+    await fetchOverpassBuildings(BBOX)
     const headers = fn.mock.calls[0]?.[1]?.headers as Record<string, string> | undefined
     expect(headers?.['User-Agent']).toMatch(/be2osm/)
   })
 
   it('throws when Overpass returns a non-OK status', async () => {
     mockFetch([], false, 500)
-    await expect(fetchOverpassBuildings(BBOX_3857)).rejects.toMatchObject({
+    await expect(fetchOverpassBuildings(BBOX)).rejects.toMatchObject({
       message: expect.stringMatching(/Overpass request failed \(500\)/),
       statusCode: 502
     })
@@ -163,22 +162,22 @@ describe('fetchOverpassBuildings', () => {
 
   it('reuses a cached result for an identical bbox', async () => {
     const fn = mockFetch([])
-    await fetchOverpassBuildings(BBOX_3857)
-    await fetchOverpassBuildings(BBOX_3857)
+    await fetchOverpassBuildings(BBOX)
+    await fetchOverpassBuildings(BBOX)
     expect(fn).toHaveBeenCalledTimes(1)
   })
 })
 
 describe('bboxAreaKm2', () => {
   it('is roughly 0.04 km2 for a 200 m square', () => {
-    expect(bboxAreaKm2(BBOX_3857)).toBeGreaterThan(0.01)
-    expect(bboxAreaKm2(BBOX_3857)).toBeLessThan(0.05)
+    expect(bboxAreaKm2(BBOX)).toBeGreaterThan(0.01)
+    expect(bboxAreaKm2(BBOX)).toBeLessThan(0.05)
   })
 })
 
 describe('buildOverpassQuery', () => {
   it('queries both ways and relations tagged building', () => {
-    const q = buildOverpassQuery(BBOX_3857)
+    const q = buildOverpassQuery(BBOX)
     expect(q).toContain('way["building"]')
     expect(q).toContain('relation["building"]')
     expect(q).toContain('out geom tags')
