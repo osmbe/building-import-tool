@@ -897,7 +897,7 @@ import Switch from '~/components/ui/switch.vue'
 import VectorTileLayer from 'ol/layer/VectorTile'
 import VectorTileSource from 'ol/source/VectorTile'
 import { extractFeaturesFromLayer } from '~/utils/openlayers'
-import { CANDIDATES_CONTRACT, candidateDetail, candidateDisplayId, candidateTileUrl } from '~/utils/candidates'
+import { CANDIDATES_CONTRACT, candidateDetail, candidateDisplayId } from '~/utils/candidates'
 import { useAuth } from '~/composables/useAuth'
 import { useJosmExport } from '~/composables/useJosmExport'
 import { useMapLayers } from '~/composables/useMapLayers'
@@ -907,6 +907,7 @@ import { resolveMatchMode, supportsSourceTags } from '~/utils/matchMode'
 import { useToast } from '~/composables/useToast'
 import type { MapOptions, StyleLayer } from 'maplibre-gl'
 import { hslVar } from '~/lib/utils'
+import { loadGrbBuildingsLayer } from '~/composables/useMapLibre/layers/grbBuildings'
 
 const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
 
@@ -927,8 +928,7 @@ const osmBuildingsLayerIdRef = ref<string[]>([])
 const liveOsmLayerRef = ref<any>(null)
 
 // GRB Buildings layer state
-const grbBuildingsLayerRef = ref<any>(null)
-const isLoadingGRB = ref(false)
+const grbBuildingsLayerIdRef = ref<string[]>([])
 
 // GRB KNW structures layer state
 const knwStructuresLayerRef = ref<any>(null)
@@ -1002,7 +1002,7 @@ const isCalculatingDifference = ref(false) // Loading state for Get Difference b
 // At least one source layer (GRB, KNW, PICC, or UrbIS) must be loaded and visible.
 const hasSourceLayer = computed(() =>
   Boolean(
-    (grbBuildingsLayerRef.value && overlayLayers.value.grbBuildings) ||
+    (grbBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.grbBuildings) ||
     (knwStructuresLayerRef.value && overlayLayers.value.knwStructures) ||
     (piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings) ||
     (urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings)
@@ -1171,8 +1171,9 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
 
   // if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.osmBuildings)
 
-  // if (grbBuildingsLayerRef.value)
-  //   grbBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.grbBuildings)
+  if (grbBuildingsLayerIdRef.value.length > 0) {
+    setLayersVisibility(grbBuildingsLayerIdRef.value, shouldShowBuildings && overlayLayers.value.grbBuildings);
+  }
 
   // if (knwStructuresLayerRef.value)
   //   knwStructuresLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.knwStructures)
@@ -1278,65 +1279,19 @@ const handleLoadGRB = () => {
   }
 
   try {
-    isLoadingGRB.value = true
-
     // Remove existing GRB buildings layer if present
-    if (grbBuildingsLayerRef.value) map.value.removeLayer(grbBuildingsLayerRef.value)
-
-    // Create vector tile source for GRB buildings
-    const grbTileSource = new VectorTileSource({
-      attributions: '© GRB Buildings',
-      format: new MVT(),
-      maxZoom: 18,
-      minZoom: 10,
-      url: candidateTileUrl('grb')
-    })
-
-    // Style function for GRB buildings
-    const grbStyleFunction = (feature: any) => {
-      const isHovered = feature.get('hovered')
-      const buildingType = feature.get('building_type')
-
-      let fillColor = hslVar('--layer-grb', 0.15)
-      if (buildingType === 'shed') fillColor = hslVar('--layer-grb-dark', 0.15)
-
-      let strokeColor = hslVar('--layer-grb', 1)
-
-      if (isHovered) {
-        fillColor = hslVar('--layer-grb', 0.3)
-        strokeColor = hslVar('--layer-grb-light', 1)
+    if (grbBuildingsLayerIdRef.value.length > 0) {
+      for (const layerId of grbBuildingsLayerIdRef.value) {
+        map.value.removeLayer(layerId)
       }
-
-      return new Style({
-        fill: new Fill({
-          color: fillColor
-        }),
-        stroke: new Stroke({
-          color: strokeColor,
-          width: isHovered ? 3 : 2
-        })
-      })
     }
 
-    // Create vector tile layer
-    const grbTileLayer = new VectorTileLayer({
-      properties: {
-        title: 'GRB Buildings',
-        type: 'overlay'
-      },
-      source: grbTileSource,
-      style: grbStyleFunction,
-      zIndex: 10
-    })
-
     // Add layer to map (hidden by default — user toggles it on)
-    grbBuildingsLayerRef.value = grbTileLayer
-    // map.value.addLayer(grbTileLayer)
-    grbTileLayer.setVisible(false)
+    grbBuildingsLayerIdRef.value = loadGrbBuildingsLayer(map.value)
+
+    setLayersVisibility(grbBuildingsLayerIdRef.value, false)
   } catch (error) {
     console.error('Failed to load GRB buildings:', error)
-  } finally {
-    isLoadingGRB.value = false
   }
 }
 
@@ -1486,9 +1441,8 @@ const toggleOsmBuildings = (visible: boolean) => {
 
 const toggleGrbBuildings = (visible: boolean) => {
   overlayLayers.value.grbBuildings = visible
-  const shouldShow = visible && currentZoom.value >= 16
 
-  if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(shouldShow)
+  setLayersVisibility(grbBuildingsLayerIdRef.value, visible)
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
@@ -1522,10 +1476,10 @@ const toggleKnwStructures = (visible: boolean) => {
       overlayLayers.value.urbisBuildings = false
       if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
     }
-    if (overlayLayers.value.grbBuildings) {
-      overlayLayers.value.grbBuildings = false
-      if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
-    }
+    // if (overlayLayers.value.grbBuildings) {
+    //   overlayLayers.value.grbBuildings = false
+    //   if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
+    // }
   }
 }
 
@@ -1537,10 +1491,10 @@ const togglePiccBuildings = (visible: boolean) => {
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
-    if (overlayLayers.value.grbBuildings) {
-      overlayLayers.value.grbBuildings = false
-      if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
-    }
+    // if (overlayLayers.value.grbBuildings) {
+    //   overlayLayers.value.grbBuildings = false
+    //   if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
+    // }
     if (overlayLayers.value.knwStructures) {
       overlayLayers.value.knwStructures = false
       if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
@@ -1560,10 +1514,10 @@ const toggleUrbisBuildings = (visible: boolean) => {
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
-    if (overlayLayers.value.grbBuildings) {
-      overlayLayers.value.grbBuildings = false
-      if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
-    }
+    // if (overlayLayers.value.grbBuildings) {
+    //   overlayLayers.value.grbBuildings = false
+    //   if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
+    // }
     if (overlayLayers.value.knwStructures) {
       overlayLayers.value.knwStructures = false
       if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
@@ -1921,7 +1875,7 @@ const calculateDifference = async () => {
   if (!map.value) return
 
   // Determine which data source is active (GRB, PICC, or UrbIS)
-  const grbActive = overlayLayers.value.grbBuildings && grbBuildingsLayerRef.value
+  const grbActive = overlayLayers.value.grbBuildings && grbBuildingsLayerIdRef.value.length > 0
   const knwActive = overlayLayers.value.knwStructures && knwStructuresLayerRef.value
   const piccActive = overlayLayers.value.piccBuildings && piccBuildingsLayerRef.value
   const urbisActive = overlayLayers.value.urbisBuildings && urbisBuildingsLayerRef.value
@@ -2773,7 +2727,7 @@ onMounted(() => {
       // Automatically load OSM and GRB layers
       setTimeout(() => {
         handleLoadOSM()
-        // handleLoadGRB()
+        handleLoadGRB()
         // handleLoadKNW()
         // handleLoadPICC()
         // handleLoadUrbis()

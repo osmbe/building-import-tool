@@ -2,6 +2,7 @@ import { AttributionControl, type LayerSpecification, Map, type MapOptions, Navi
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { baselayers } from './useMapLibre/baselayers';
 import { loadOSMBuildingsLayer } from './useMapLibre/layers/osmBuildings';
+import { loadGrbBuildingsLayer } from './useMapLibre/layers/grbBuildings';
 
 setWorkerUrl(workerUrl);
 
@@ -100,6 +101,7 @@ export const useMapLibre = () => {
 
     // Layers methods
     loadOSMBuildingsLayer,
+    loadGrbBuildingsLayer,
 
     // Config
     baselayers
