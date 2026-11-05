@@ -3,6 +3,8 @@
 // Difference tool reflect very recent OSM edits without waiting for the next import.
 
 import { parseOsmSourceRefs } from '../../utils/osmSourceOidn'
+import { area } from '@turf/area'
+import { bboxPolygon } from '@turf/bbox-polygon'
 
 const OVERPASS_ENDPOINT = process.env.OVERPASS_API_URL || 'https://overpass-api.de/api/interpreter'
 const MERCATOR_R = 20037508.342789244
@@ -39,15 +41,6 @@ export function lonLatToMercator(lon: number, lat: number): [number, number] {
   const x = (lon * MERCATOR_R) / 180
   const y = (Math.log(Math.tan(((90 + lat) * Math.PI) / 360)) / (Math.PI / 180)) * (MERCATOR_R / 180)
   return [x, y]
-}
-
-/** Approximate area (km2) of a Web Mercator bbox. */
-export function bboxAreaKm2(bounds: Bounds): number {
-  const [west, south, east, north] = bounds
-  const midLat = ((south + north) / 2) * (Math.PI / 180)
-  const width = Math.abs(east - west) * Math.cos(midLat) * 111.32
-  const height = Math.abs(north - south) * 110.57
-  return width * height
 }
 
 /** Overpass QL for ways and relations tagged building=* inside the bbox (south, west, north, east). */
@@ -297,10 +290,10 @@ export function clearOverpassCache() {
  * bbox from Overpass. Throws OverpassError (with an HTTP status) on failure.
  */
 export async function fetchOverpassBuildings(bounds: Bounds): Promise<OverpassBuildings> {
-  const area = bboxAreaKm2(bounds)
-  if (area > MAX_BBOX_KM2)
+  const areaSquareMeters = area(bboxPolygon(bounds)) / 1e6
+  if (areaSquareMeters > MAX_BBOX_KM2)
     throw new OverpassError(
-      `Live OSM data needs a smaller view (${area.toFixed(1)} km2, max ${MAX_BBOX_KM2} km2). Zoom in.`,
+      `Live OSM data needs a smaller view (${areaSquareMeters.toFixed(1)} km2, max ${MAX_BBOX_KM2} km2). Zoom in.`,
       400
     )
 

@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import {
-  bboxAreaKm2,
   buildOverpassQuery,
   clearOverpassCache,
   fetchOverpassBuildings,
@@ -165,13 +164,6 @@ describe('fetchOverpassBuildings', () => {
     await fetchOverpassBuildings(BBOX)
     await fetchOverpassBuildings(BBOX)
     expect(fn).toHaveBeenCalledTimes(1)
-  })
-})
-
-describe('bboxAreaKm2', () => {
-  it('is roughly 0.04 km2 for a 200 m square', () => {
-    expect(bboxAreaKm2(BBOX)).toBeGreaterThan(0.01)
-    expect(bboxAreaKm2(BBOX)).toBeLessThan(0.05)
   })
 })
 
