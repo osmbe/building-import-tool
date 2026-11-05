@@ -294,8 +294,6 @@
         />
       </div>
 
-      <ObjectInfoPanel :building="activeBuilding" :is-open="panelOpen" @close="panelOpen = false" />
-
       <!-- JOSM setup help -->
       <JosmHelpDialog
         v-model:open="josmHelpOpen"
@@ -879,19 +877,14 @@ import {
   Loader2,
   RotateCcw,
   X,
-  ZoomIn,
-  ZoomOut
 } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import MatchModeControl from '~/components/MatchModeControl.vue'
-import ObjectInfoPanel from '~/components/ObjectInfoPanel.vue'
 import GettingStartedCard from '~/components/GettingStartedCard.vue'
 import JosmHelpDialog from '~/components/JosmHelpDialog.vue'
-import type { BuildingData } from '~/types/buildingData'
 import type { SearchResult } from '~/composables/useSearch'
 import Switch from '~/components/ui/switch.vue'
 import { CANDIDATES_CONTRACT, candidateDetail, candidateDisplayId } from '~/utils/candidates'
-import { useAuth } from '~/composables/useAuth'
 import { useJosmExport } from '~/composables/useJosmExport'
 import { useMapLibre } from '~/composables/useMapLibre'
 import { useMatchMode } from '~/composables/useMatchMode'
@@ -969,7 +962,6 @@ watch(
   }
 )
 
-const controlsCollapsed = ref(false)
 const layersCollapsed = ref(false)
 
 // Overlay layers (can be combined)
@@ -987,8 +979,6 @@ const overlayLayers = ref({
 
 const currentZoom = ref(7)
 const currentCenter = ref<[number, number]>([4.3517, 50.8503])
-const panelOpen = ref(false)
-const activeBuilding = ref<BuildingData | null>(null)
 
 // Matching stats state
 const matchingStats = ref<{
