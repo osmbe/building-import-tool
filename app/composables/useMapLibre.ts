@@ -44,6 +44,9 @@ export const useMapLibre = () => {
     currentBaseLayer.value = key
   }
 
+  // Get current zoom level
+  const getZoomLevel = () => Math.floor(map.value?.getZoom()) + 1
+
   // Cleanup
   const destroy = () => {
     if (map.value) {
@@ -60,6 +63,7 @@ export const useMapLibre = () => {
     // Methods
     initializeMap,
     switchBaseLayer,
+    getZoomLevel,
     destroy,
 
     // Config

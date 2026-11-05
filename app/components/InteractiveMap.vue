@@ -979,7 +979,7 @@ const overlayLayers = ref({
   urbisBuildings: false
 })
 
-const currentZoom = ref(8)
+const currentZoom = ref(7)
 const currentCenter = ref<[number, number]>([4.3517, 50.8503])
 const panelOpen = ref(false)
 const activeBuilding = ref<BuildingData | null>(null)
@@ -1048,8 +1048,7 @@ const revealLayersPanel = () => {
 const zoomToWorkingLevel = () => {
   if (!map.value) return
 
-  const zoom16 = Math.max(16, map.value.getZoom() || 16);
-  map.value.zoomTo(zoom16);
+  map.value.zoomTo(16);
 }
 
 const dismissResults = () => {
@@ -1139,14 +1138,14 @@ const setupMap = () => {
   // Initialize map with composable
   const mapInstance = initializeMap(mapRef.value, {
     center: [4.3517, 50.8503],
-    zoom: 8
+    zoom: 7
   } as MapOptions)
 
   // Update reactive values when map moves
   mapInstance.on('moveend', () => {
     if (!map.value) return
 
-    const zoom = mapInstance.getZoom()
+    const zoom = getZoomLevel();
     currentZoom.value = zoom
 
     const { lng, lat } = mapInstance.getCenter();
@@ -2815,10 +2814,10 @@ onMounted(() => {
       setupHoverInteraction()
 
       // Check initial zoom level for layer visibility
-      // if (map.value) {
-      //   const initialZoom = Math.round(map.value.getView().getZoom() || 13)
-      //   handleZoomBasedLayerVisibility(initialZoom)
-      // }
+      if (map.value) {
+        const initialZoom = Math.round(getZoomLevel() || 13)
+        handleZoomBasedLayerVisibility(initialZoom)
+      }
 
       // Automatically load OSM and GRB layers
       setTimeout(() => {
