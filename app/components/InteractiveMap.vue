@@ -908,6 +908,7 @@ import { useToast } from '~/composables/useToast'
 import type { MapOptions, StyleLayer } from 'maplibre-gl'
 import { hslVar } from '~/lib/utils'
 import { loadGrbBuildingsLayer } from '~/composables/useMapLibre/layers/grbBuildings'
+import { loadKnwStructuresLayer } from '~/composables/useMapLibre/layers/knwStructures'
 
 const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
 
@@ -931,7 +932,7 @@ const liveOsmLayerRef = ref<any>(null)
 const grbBuildingsLayerIdRef = ref<string[]>([])
 
 // GRB KNW structures layer state
-const knwStructuresLayerRef = ref<any>(null)
+const knwStructuresLayerIdRef = ref<string[]>([])
 
 // PICC Buildings layer state
 const piccBuildingsLayerRef = ref<any>(null)
@@ -1003,7 +1004,7 @@ const isCalculatingDifference = ref(false) // Loading state for Get Difference b
 const hasSourceLayer = computed(() =>
   Boolean(
     (grbBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.grbBuildings) ||
-    (knwStructuresLayerRef.value && overlayLayers.value.knwStructures) ||
+    (knwStructuresLayerIdRef.value.length > 0 && overlayLayers.value.knwStructures) ||
     (piccBuildingsLayerRef.value && overlayLayers.value.piccBuildings) ||
     (urbisBuildingsLayerRef.value && overlayLayers.value.urbisBuildings)
   )
@@ -1175,70 +1176,15 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
     setLayersVisibility(grbBuildingsLayerIdRef.value, shouldShowBuildings && overlayLayers.value.grbBuildings);
   }
 
-  // if (knwStructuresLayerRef.value)
-  //   knwStructuresLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.knwStructures)
+  if (knwStructuresLayerIdRef.value.length > 0){
+    setLayersVisibility(knwStructuresLayerIdRef.value, shouldShowBuildings && overlayLayers.value.knwStructures)
+  }
 
   // if (piccBuildingsLayerRef.value)
   //   piccBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.piccBuildings)
 
   // if (urbisBuildingsLayerRef.value)
   //   urbisBuildingsLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.urbisBuildings)
-}
-
-// Handle Load GRB KNW structures using Vector Tiles
-const handleLoadKNW = () => {
-  if (!map.value) {
-    console.error('Map not initialized')
-    return
-  }
-
-  try {
-    if (knwStructuresLayerRef.value) map.value.removeLayer(knwStructuresLayerRef.value)
-
-    const knwTileSource = new VectorTileSource({
-      attributions: '© GRB Kunstwerken',
-      format: new MVT(),
-      maxZoom: 18,
-      minZoom: 10,
-      url: candidateTileUrl('knw')
-    })
-
-    const knwStyleFunction = (feature: any) => {
-      const isHovered = feature.get('hovered')
-
-      let fillColor = hslVar('--layer-knw', 0.14)
-      let strokeColor = hslVar('--layer-knw', 1)
-
-      if (isHovered) {
-        fillColor = hslVar('--layer-knw', 0.28)
-        strokeColor = hslVar('--layer-knw-light', 1)
-      }
-
-      return new Style({
-        fill: new Fill({ color: fillColor }),
-        stroke: new Stroke({
-          color: strokeColor,
-          width: isHovered ? 3 : 2
-        })
-      })
-    }
-
-    const knwTileLayer = new VectorTileLayer({
-      properties: {
-        title: 'GRB Kunstwerken',
-        type: 'overlay'
-      },
-      source: knwTileSource,
-      style: knwStyleFunction,
-      zIndex: 10
-    })
-
-    knwStructuresLayerRef.value = knwTileLayer
-    // map.value.addLayer(knwTileLayer)
-    knwTileLayer.setVisible(false)
-  } catch (error) {
-    console.error('Failed to load GRB kunstwerken:', error)
-  }
 }
 
 // Handle Load OSM Buildings using Vector Tiles from Martin
@@ -1292,6 +1238,30 @@ const handleLoadGRB = () => {
     setLayersVisibility(grbBuildingsLayerIdRef.value, false)
   } catch (error) {
     console.error('Failed to load GRB buildings:', error)
+  }
+}
+
+// Handle Load KNW Structures using Vector Tiles
+const handleLoadKNW = () => {
+  if (!map.value) {
+    console.error('Map not initialized')
+    return
+  }
+
+  try {
+    // Remove existing KNW structures layer if present
+    if (knwStructuresLayerIdRef.value.length > 0) {
+      for (const layerId of knwStructuresLayerIdRef.value) {
+        map.value.removeLayer(layerId)
+      }
+    }
+
+    // Add layer to map (hidden by default — user toggles it on)
+    knwStructuresLayerIdRef.value = loadKnwStructuresLayer(map.value)
+
+    setLayersVisibility(knwStructuresLayerIdRef.value, false)
+  } catch (error) {
+    console.error('Failed to load KNW structures:', error)
   }
 }
 
@@ -1454,18 +1424,17 @@ const toggleGrbBuildings = (visible: boolean) => {
       overlayLayers.value.urbisBuildings = false
       if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
     }
-    if (overlayLayers.value.knwStructures) {
-      overlayLayers.value.knwStructures = false
-      if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
-    }
+    // if (overlayLayers.value.knwStructures) {
+    //   overlayLayers.value.knwStructures = false
+    //   if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
+    // }
   }
 }
 
 const toggleKnwStructures = (visible: boolean) => {
   overlayLayers.value.knwStructures = visible
-  const shouldShow = visible && currentZoom.value >= 16
 
-  if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(shouldShow)
+  setLayersVisibility(knwStructuresLayerIdRef.value, visible)
 
   if (visible) {
     if (overlayLayers.value.piccBuildings) {
@@ -1495,10 +1464,10 @@ const togglePiccBuildings = (visible: boolean) => {
     //   overlayLayers.value.grbBuildings = false
     //   if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
     // }
-    if (overlayLayers.value.knwStructures) {
-      overlayLayers.value.knwStructures = false
-      if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
-    }
+    // if (overlayLayers.value.knwStructures) {
+    //   overlayLayers.value.knwStructures = false
+    //   if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
+    // }
     if (overlayLayers.value.urbisBuildings) {
       overlayLayers.value.urbisBuildings = false
       if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
@@ -1518,10 +1487,10 @@ const toggleUrbisBuildings = (visible: boolean) => {
     //   overlayLayers.value.grbBuildings = false
     //   if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
     // }
-    if (overlayLayers.value.knwStructures) {
-      overlayLayers.value.knwStructures = false
-      if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
-    }
+    // if (overlayLayers.value.knwStructures) {
+    //   overlayLayers.value.knwStructures = false
+    //   if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
+    // }
     if (overlayLayers.value.piccBuildings) {
       overlayLayers.value.piccBuildings = false
       if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
@@ -1876,7 +1845,7 @@ const calculateDifference = async () => {
 
   // Determine which data source is active (GRB, PICC, or UrbIS)
   const grbActive = overlayLayers.value.grbBuildings && grbBuildingsLayerIdRef.value.length > 0
-  const knwActive = overlayLayers.value.knwStructures && knwStructuresLayerRef.value
+  const knwActive = overlayLayers.value.knwStructures && knwStructuresLayerIdRef.value.length > 0
   const piccActive = overlayLayers.value.piccBuildings && piccBuildingsLayerRef.value
   const urbisActive = overlayLayers.value.urbisBuildings && urbisBuildingsLayerRef.value
   const dataSource = urbisActive ? 'urbis' : piccActive ? 'picc' : knwActive ? 'knw' : 'grb'
@@ -2728,7 +2697,7 @@ onMounted(() => {
       setTimeout(() => {
         handleLoadOSM()
         handleLoadGRB()
-        // handleLoadKNW()
+        handleLoadKNW()
         // handleLoadPICC()
         // handleLoadUrbis()
       }, 100)
