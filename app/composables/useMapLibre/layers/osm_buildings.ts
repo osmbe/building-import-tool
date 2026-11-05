@@ -1,14 +1,17 @@
 import type { LayerSpecification, Map, SourceSpecification, StyleLayer } from "maplibre-gl";
 import { hslVar } from "~/lib/utils";
+import { useRuntimeConfig } from "#app";
 
 export const loadOSMBuildingsLayer = (map: Map): string[] => {
+    const config = useRuntimeConfig();
+
     const fillColor = hslVar('--layer-osm', 0.30)
     const strokeColor = hslVar('--layer-osm', 1)
 
     map.addSource('osm_buildings', {
         attribution: '© OpenStreetMap contributors',
         type: 'vector',
-        url: 'https://new.buildings.osm.be/tiles/osm/osm_buildings',
+        url: `${config.public.baseURL}/tiles/osm/osm_buildings`,
     } as SourceSpecification);
 
     map.addLayer({

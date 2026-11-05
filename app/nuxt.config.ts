@@ -33,7 +33,8 @@ export default defineNuxtConfig({
     // Public keys (exposed to client)
     public: {
       osmClientId: process.env.OSM_CLIENT_ID,
-      osmRedirectUri: process.env.OSM_REDIRECT_URI
+      osmRedirectUri: process.env.OSM_REDIRECT_URI,
+      baseURL: process.env.BASE_URL
     }
   },
   ssr: false,
