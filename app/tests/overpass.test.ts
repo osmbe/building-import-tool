@@ -8,7 +8,7 @@ import {
   stitchRings
 } from '~/server/utils/overpass'
 
-const BBOX: [number, number, number, number] = [2.5, 49.5, 6.4, 51.51]
+const BBOX: [number, number, number, number] = [4.3478, 50.8454, 4.3496, 50.8466]
 
 const mockFetch = (elements: any[], ok = true, status = 200) => {
   const fn = vi.fn().mockResolvedValue({
