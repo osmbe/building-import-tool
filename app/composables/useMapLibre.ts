@@ -41,7 +41,27 @@ export const useMapLibre = () => {
 
   // Switch the base layer of the map
   const switchBaseLayer = (key: keyof typeof baselayers) => {
-    map.value?.setStyle(baselayers[key]?.style ?? null)
+    map.value?.setStyle(
+      baselayers[key]?.style ?? null, {
+      // Merge overlay sources + layers into the incoming base style
+      transformStyle: (previousStyle, nextStyle) => {
+        nextStyle.sources = { ...nextStyle.sources };
+        nextStyle.layers = [...nextStyle.layers];
+
+        if (typeof previousStyle !== 'undefined') {
+          const overlaySources = ['osm_buildings'];
+
+          for (const source of overlaySources) {
+            if (source in previousStyle.sources && !(source in nextStyle.sources)) {
+              nextStyle.sources[source] = previousStyle.sources[source];
+              nextStyle.layers.push(...previousStyle.layers.filter(layer => layer.source === source));
+            }
+          }
+        }
+
+        return nextStyle;
+      }
+    })
 
     currentBaseLayer.value = key
   }
