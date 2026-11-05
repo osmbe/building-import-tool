@@ -203,9 +203,9 @@ export function parseOverpassElements(elements: any[]): OverpassBuildings {
   const collection = (project: (p: Ring[]) => Ring[]) =>
     polygons.length > 0
       ? JSON.stringify({
-        geometries: polygons.map((p) => ({ coordinates: project(p.coords), type: 'Polygon' })),
-        type: 'GeometryCollection'
-      })
+          geometries: polygons.map((p) => ({ coordinates: project(p.coords), type: 'Polygon' })),
+          type: 'GeometryCollection'
+        })
       : null
 
   return {

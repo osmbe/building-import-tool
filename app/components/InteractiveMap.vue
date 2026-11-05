@@ -876,7 +876,7 @@ import {
   Landmark,
   Loader2,
   RotateCcw,
-  X,
+  X
 } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import MatchModeControl from '~/components/MatchModeControl.vue'
@@ -1769,7 +1769,7 @@ const calculateDifference = async () => {
   differenceError.value = ''
 
   try {
-    const bounds = map.value.getBounds();
+    const bounds = map.value.getBounds()
     const extent = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
 
     // Live mode: refresh the OSM layer from Overpass too (non-fatal; the difference call reports errors)
@@ -1856,26 +1856,29 @@ const calculateDifference = async () => {
     map.value.addSource('candidates-buildings', {
       type: 'geojson',
       data: candidateGeoJSON
-    });
+    })
 
     // Create vector layer for candidate buildings
     map.value.addLayer({
-        'id': 'candidates-buildings-fill',
-        'type': 'fill',
-        'source': 'candidates-buildings',
-        'paint': {
-            'fill-color': hslVar('--layer-candidate', 0.35)
+      id: 'candidates-buildings-fill',
+      type: 'fill',
+      source: 'candidates-buildings',
+      paint: {
+        'fill-color': hslVar('--layer-candidate', 0.35)
+      }
+    })
+    map.value.addLayer(
+      {
+        id: 'candidates-buildings-line',
+        type: 'line',
+        source: 'candidates-buildings',
+        paint: {
+          'line-color': hslVar('--layer-candidate', 1),
+          'line-width': 2
         }
-    });
-    map.value.addLayer({
-        'id': 'candidates-buildings-line',
-        'type': 'line',
-        'source': 'candidates-buildings',
-        'paint': {
-            'line-color': hslVar('--layer-candidate', 1),
-            'line-width': 2
-        }
-    }, 'candidates-buildings-fill');
+      },
+      'candidates-buildings-fill'
+    )
 
     // Add layer to map
     candidateBuildingsLayerIdRef.value = ['candidates-buildings-fill', 'candidates-buildings-line']
