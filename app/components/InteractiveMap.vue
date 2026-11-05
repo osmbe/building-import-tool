@@ -1199,9 +1199,8 @@ const handleLoadOSM = () => {
     overlayLayers.value.osmBuildings = true
 
     // Set initial visibility based on current zoom level
-    // const currentZoomLevel = Math.round(map.value.getView().getZoom() || 13)
-    // const shouldShow = currentZoomLevel >= 16 && overlayLayers.value.osmBuildings
-    // osmTileLayer.setVisible(shouldShow)
+    const shouldShow = getZoomLevel() >= 16 && overlayLayers.value.osmBuildings
+    setLayersVisibility(osmBuildingsLayerIdRef.value, shouldShow)
   } catch (error) {
     console.error('Failed to load OSM buildings:', error)
   }
@@ -1316,18 +1315,18 @@ const toggleGrbBuildings = (visible: boolean) => {
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
-    // if (overlayLayers.value.piccBuildings) {
-    //   overlayLayers.value.piccBuildings = false
-    //   if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
-    // }
-    // if (overlayLayers.value.urbisBuildings) {
-    //   overlayLayers.value.urbisBuildings = false
-    //   if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
-    // }
-    // if (overlayLayers.value.knwStructures) {
-    //   overlayLayers.value.knwStructures = false
-    //   if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
-    // }
+    if (overlayLayers.value.knwStructures) {
+      overlayLayers.value.knwStructures = false
+      setLayersVisibility(knwStructuresLayerIdRef.value, false)
+    }
+    if (overlayLayers.value.piccBuildings) {
+      overlayLayers.value.piccBuildings = false
+      setLayersVisibility(piccBuildingsLayerIdRef.value, false)
+    }
+    if (overlayLayers.value.urbisBuildings) {
+      overlayLayers.value.urbisBuildings = false
+      setLayersVisibility(urbisBuildingsLayerIdRef.value, false)
+    }
   }
 }
 
@@ -1337,18 +1336,18 @@ const toggleKnwStructures = (visible: boolean) => {
   setLayersVisibility(knwStructuresLayerIdRef.value, visible)
 
   if (visible) {
-    // if (overlayLayers.value.piccBuildings) {
-    //   overlayLayers.value.piccBuildings = false
-    //   if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
-    // }
-    // if (overlayLayers.value.urbisBuildings) {
-    //   overlayLayers.value.urbisBuildings = false
-    //   if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
-    // }
-    // if (overlayLayers.value.grbBuildings) {
-    //   overlayLayers.value.grbBuildings = false
-    //   if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
-    // }
+    if (overlayLayers.value.grbBuildings) {
+      overlayLayers.value.grbBuildings = false
+      setLayersVisibility(grbBuildingsLayerIdRef.value, false)
+    }
+    if (overlayLayers.value.piccBuildings) {
+      overlayLayers.value.piccBuildings = false
+      setLayersVisibility(piccBuildingsLayerIdRef.value, false)
+    }
+    if (overlayLayers.value.urbisBuildings) {
+      overlayLayers.value.urbisBuildings = false
+      setLayersVisibility(urbisBuildingsLayerIdRef.value, false)
+    }
   }
 }
 
@@ -1359,18 +1358,18 @@ const togglePiccBuildings = (visible: boolean) => {
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
-    // if (overlayLayers.value.grbBuildings) {
-    //   overlayLayers.value.grbBuildings = false
-    //   if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
-    // }
-    // if (overlayLayers.value.knwStructures) {
-    //   overlayLayers.value.knwStructures = false
-    //   if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
-    // }
-    // if (overlayLayers.value.urbisBuildings) {
-    //   overlayLayers.value.urbisBuildings = false
-    //   if (urbisBuildingsLayerRef.value) urbisBuildingsLayerRef.value.setVisible(false)
-    // }
+    if (overlayLayers.value.grbBuildings) {
+      overlayLayers.value.grbBuildings = false
+      setLayersVisibility(grbBuildingsLayerIdRef.value, false)
+    }
+    if (overlayLayers.value.knwStructures) {
+      overlayLayers.value.knwStructures = false
+      setLayersVisibility(knwStructuresLayerIdRef.value, false)
+    }
+    if (overlayLayers.value.urbisBuildings) {
+      overlayLayers.value.urbisBuildings = false
+      setLayersVisibility(urbisBuildingsLayerIdRef.value, false)
+    }
   }
 }
 
@@ -1381,18 +1380,18 @@ const toggleUrbisBuildings = (visible: boolean) => {
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
-    // if (overlayLayers.value.grbBuildings) {
-    //   overlayLayers.value.grbBuildings = false
-    //   if (grbBuildingsLayerRef.value) grbBuildingsLayerRef.value.setVisible(false)
-    // }
-    // if (overlayLayers.value.knwStructures) {
-    //   overlayLayers.value.knwStructures = false
-    //   if (knwStructuresLayerRef.value) knwStructuresLayerRef.value.setVisible(false)
-    // }
-    // if (overlayLayers.value.piccBuildings) {
-    //   overlayLayers.value.piccBuildings = false
-    //   if (piccBuildingsLayerRef.value) piccBuildingsLayerRef.value.setVisible(false)
-    // }
+    if (overlayLayers.value.grbBuildings) {
+      overlayLayers.value.grbBuildings = false
+      setLayersVisibility(grbBuildingsLayerIdRef.value, false)
+    }
+    if (overlayLayers.value.knwStructures) {
+      overlayLayers.value.knwStructures = false
+      setLayersVisibility(knwStructuresLayerIdRef.value, false)
+    }
+    if (overlayLayers.value.piccBuildings) {
+      overlayLayers.value.piccBuildings = false
+      setLayersVisibility(piccBuildingsLayerIdRef.value, false)
+    }
   }
 }
 
