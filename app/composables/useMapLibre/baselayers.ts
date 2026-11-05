@@ -1,11 +1,4 @@
-import type {
-  AddLayerObject,
-  BackgroundLayerSpecification,
-  LayerSpecification,
-  RasterSourceSpecification,
-  StyleSpecification,
-  VectorSourceSpecification
-} from 'maplibre-gl'
+import type { StyleSpecification } from 'maplibre-gl'
 import blankStyle from './baselayers/blank.json'
 import bruOrthoWMSStyle from './baselayers/bru-ortho-wms.json'
 import osmbeStyle from './baselayers/osmbe.json'

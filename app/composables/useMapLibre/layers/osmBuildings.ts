@@ -1,4 +1,4 @@
-import type { LayerSpecification, Map, SourceSpecification, StyleLayer } from 'maplibre-gl'
+import type { Map } from 'maplibre-gl'
 import { hslVar } from '~/lib/utils'
 import { useRuntimeConfig } from '#app'
 

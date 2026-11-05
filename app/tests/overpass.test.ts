@@ -4,7 +4,6 @@ import {
   buildOverpassQuery,
   clearOverpassCache,
   fetchOverpassBuildings,
-  lonLatToMercator,
   overpassHttpError,
   parseOverpassElements,
   stitchRings
