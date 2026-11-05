@@ -1,9 +1,9 @@
 import type { AddLayerObject, RasterSourceSpecification, VectorSourceSpecification, BackgroundLayerSpecification, LayerSpecification, StyleSpecification } from "maplibre-gl";
-import blankStyle from "./styles/blank.json"
-import bruOrthoWMSStyle from "./styles/bru-ortho-wms.json";
-import osmbeStyle from "./styles/osmbe.json";
-import vlaOrthoWMTSStyle from "./styles/vla-ortho-wmts.json";
-import walOrthoWMSStyle from "./styles/wal-ortho-wms.json";
+import blankStyle from "./baselayers/blank.json"
+import bruOrthoWMSStyle from "./baselayers/bru-ortho-wms.json";
+import osmbeStyle from "./baselayers/osmbe.json";
+import vlaOrthoWMTSStyle from "./baselayers/vla-ortho-wmts.json";
+import walOrthoWMSStyle from "./baselayers/wal-ortho-wms.json";
 
 type SourceConfig = {
   label: string;
