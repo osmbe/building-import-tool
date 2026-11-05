@@ -24,7 +24,6 @@
     "maplibre-gl": "^6.16.0",
     "mapshaper": "^0.7.101",
     "nuxt": "^4.6.3",
-    "ol": "^10.11.0",
     "pg": "^8.23.1",
     "radix-vue": "^1.9.17",
     "tailwind-merge": "^3.7.0",

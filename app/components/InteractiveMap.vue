@@ -900,7 +900,6 @@ import { extractFeaturesFromLayer } from '~/utils/openlayers'
 import { CANDIDATES_CONTRACT, candidateDetail, candidateDisplayId } from '~/utils/candidates'
 import { useAuth } from '~/composables/useAuth'
 import { useJosmExport } from '~/composables/useJosmExport'
-import { useMapLayers } from '~/composables/useMapLayers'
 import { useMapLibre } from '~/composables/useMapLibre'
 import { useMatchMode } from '~/composables/useMatchMode'
 import { resolveMatchMode, supportsSourceTags } from '~/utils/matchMode'
@@ -917,9 +916,21 @@ const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
 
 // Use the map layers composable
-const { map, currentBaseLayer, initializeMap, switchBaseLayer, loadOSMBuildingsLayer,
-  loadGrbBuildingsLayer, loadKnwStructuresLayer, loadPiccBuildingsLayer, loadUrbisBuildingsLayer, getZoomLevel,
-  setLayersVisibility, destroy, baselayers } = useMapLibre()
+const {
+  map,
+  currentBaseLayer,
+  initializeMap,
+  switchBaseLayer,
+  loadOSMBuildingsLayer,
+  loadGrbBuildingsLayer,
+  loadKnwStructuresLayer,
+  loadPiccBuildingsLayer,
+  loadUrbisBuildingsLayer,
+  getZoomLevel,
+  setLayersVisibility,
+  destroy,
+  baselayers
+} = useMapLibre()
 
 // OSM Buildings layer state
 const osmBuildingsLayerIdRef = ref<string[]>([])
@@ -1050,7 +1061,7 @@ const revealLayersPanel = () => {
 const zoomToWorkingLevel = () => {
   if (!map.value) return
 
-  map.value.zoomTo(15);
+  map.value.zoomTo(15)
 }
 
 const dismissResults = () => {
@@ -1113,7 +1124,7 @@ watch(
     map.value.flyTo({
       center: loc.coordinates,
       zoom: 16
-    });
+    })
   }
 )
 
@@ -1147,11 +1158,11 @@ const setupMap = () => {
   mapInstance.on('moveend', () => {
     if (!map.value) return
 
-    const zoom = getZoomLevel();
+    const zoom = getZoomLevel()
     currentZoom.value = zoom
 
-    const { lng, lat } = mapInstance.getCenter();
-    currentCenter.value = [lng, lat];
+    const { lng, lat } = mapInstance.getCenter()
+    currentCenter.value = [lng, lat]
 
     // Handle visibility of building layers based on zoom
     handleZoomBasedLayerVisibility(zoom)
@@ -1165,27 +1176,25 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
   const shouldShowBuildings = zoom >= 16
 
   // Only show/hide existing layers, don't auto-load
-  if (osmBuildingsLayerIdRef.value.length > 0) {
-    setLayersVisibility(osmBuildingsLayerIdRef.value, shouldShowBuildings && overlayLayers.value.osmBuildings && !liveOsmLayerRef.value);
-  }
+  if (osmBuildingsLayerIdRef.value.length > 0)
+    setLayersVisibility(
+      osmBuildingsLayerIdRef.value,
+      shouldShowBuildings && overlayLayers.value.osmBuildings && !liveOsmLayerRef.value
+    )
 
   // if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.osmBuildings)
 
-  if (grbBuildingsLayerIdRef.value.length > 0) {
-    setLayersVisibility(grbBuildingsLayerIdRef.value, shouldShowBuildings && overlayLayers.value.grbBuildings);
-  }
+  if (grbBuildingsLayerIdRef.value.length > 0)
+    setLayersVisibility(grbBuildingsLayerIdRef.value, shouldShowBuildings && overlayLayers.value.grbBuildings)
 
-  if (knwStructuresLayerIdRef.value.length > 0){
+  if (knwStructuresLayerIdRef.value.length > 0)
     setLayersVisibility(knwStructuresLayerIdRef.value, shouldShowBuildings && overlayLayers.value.knwStructures)
-  }
 
-  if (piccBuildingsLayerIdRef.value.length > 0){
+  if (piccBuildingsLayerIdRef.value.length > 0)
     setLayersVisibility(piccBuildingsLayerIdRef.value, shouldShowBuildings && overlayLayers.value.piccBuildings)
-  }
 
-  if (urbisBuildingsLayerIdRef.value.length > 0){
+  if (urbisBuildingsLayerIdRef.value.length > 0)
     setLayersVisibility(urbisBuildingsLayerIdRef.value, shouldShowBuildings && overlayLayers.value.urbisBuildings)
-  }
 }
 
 // Handle Load OSM Buildings using Vector Tiles from Martin
@@ -1197,11 +1206,8 @@ const handleLoadOSM = () => {
 
   try {
     // Remove existing OSM buildings layer if present
-    if (osmBuildingsLayerIdRef.value.length > 0) {
-      for (const layerId of osmBuildingsLayerIdRef.value) {
-        map.value.removeLayer(layerId)
-      }
-    }
+    if (osmBuildingsLayerIdRef.value.length > 0)
+      for (const layerId of osmBuildingsLayerIdRef.value) map.value.removeLayer(layerId)
 
     // Add layer to map
     osmBuildingsLayerIdRef.value = loadOSMBuildingsLayer(map.value)
@@ -1227,11 +1233,8 @@ const handleLoadGRB = () => {
 
   try {
     // Remove existing GRB buildings layer if present
-    if (grbBuildingsLayerIdRef.value.length > 0) {
-      for (const layerId of grbBuildingsLayerIdRef.value) {
-        map.value.removeLayer(layerId)
-      }
-    }
+    if (grbBuildingsLayerIdRef.value.length > 0)
+      for (const layerId of grbBuildingsLayerIdRef.value) map.value.removeLayer(layerId)
 
     // Add layer to map (hidden by default — user toggles it on)
     grbBuildingsLayerIdRef.value = loadGrbBuildingsLayer(map.value)
@@ -1251,11 +1254,8 @@ const handleLoadKNW = () => {
 
   try {
     // Remove existing KNW structures layer if present
-    if (knwStructuresLayerIdRef.value.length > 0) {
-      for (const layerId of knwStructuresLayerIdRef.value) {
-        map.value.removeLayer(layerId)
-      }
-    }
+    if (knwStructuresLayerIdRef.value.length > 0)
+      for (const layerId of knwStructuresLayerIdRef.value) map.value.removeLayer(layerId)
 
     // Add layer to map (hidden by default — user toggles it on)
     knwStructuresLayerIdRef.value = loadKnwStructuresLayer(map.value)
@@ -1275,11 +1275,8 @@ const handleLoadPICC = () => {
 
   try {
     // Remove existing PICC buildings layer if present
-    if (piccBuildingsLayerIdRef.value.length > 0) {
-      for (const layerId of piccBuildingsLayerIdRef.value) {
-        map.value.removeLayer(layerId)
-      }
-    }
+    if (piccBuildingsLayerIdRef.value.length > 0)
+      for (const layerId of piccBuildingsLayerIdRef.value) map.value.removeLayer(layerId)
 
     // Add layer to map (hidden by default — user toggles it on)
     piccBuildingsLayerIdRef.value = loadPiccBuildingsLayer(map.value)
@@ -1299,11 +1296,8 @@ const handleLoadUrbis = () => {
 
   try {
     // Remove existing UrbIS buildings layer if present
-    if (urbisBuildingsLayerIdRef.value.length > 0) {
-      for (const layerId of urbisBuildingsLayerIdRef.value) {
-        map.value.removeLayer(layerId)
-      }
-    }
+    if (urbisBuildingsLayerIdRef.value.length > 0)
+      for (const layerId of urbisBuildingsLayerIdRef.value) map.value.removeLayer(layerId)
 
     // Add layer to map (hidden by default — user toggles it on)
     urbisBuildingsLayerIdRef.value = loadUrbisBuildingsLayer(map.value)
@@ -2190,11 +2184,6 @@ function sortFeatures(features: any[]): any[] {
   })
 }
 
-const setMapCursor = (cursor: string) => {
-  const target = map.value?.getTargetElement()
-  if (target) target.style.cursor = cursor
-}
-
 // Helper function to parse PostgreSQL hstore tags format
 const parseHstoreTags = (tagsString: string): Record<string, string> => {
   const tags: Record<string, string> = {}
@@ -2401,212 +2390,11 @@ const formatPropertyValue = (value: any): string => {
   return String(value)
 }
 
-// Setup hover interaction for building features
-const setupHoverInteraction = () => {
-  if (!map.value) return
-
-  let currentHoveredFeatureObj: any = null
-  const hoverTimeout: any = null
-  let debounceTimeout: any = null
-
-  // Add click interaction for sticky tooltip
-  map.value.on('click', (evt) => {
-    if (!map.value) return
-
-    const pixel = map.value.getEventPixel(evt.originalEvent)
-
-    const foundFeatures: any[] = []
-    map.value.forEachFeatureAtPixel(
-      pixel,
-      (feature, layer) => {
-        if (
-          layer === osmBuildingsLayerRef.value ||
-          layer === grbBuildingsLayerRef.value ||
-          layer === knwStructuresLayerRef.value ||
-          layer === piccBuildingsLayerRef.value ||
-          layer === urbisBuildingsLayerRef.value ||
-          layer === candidateBuildingsLayerRef.value
-        ) {
-          // Get properties for clicked feature
-          let properties: any
-          try {
-            properties = feature.getProperties()
-          } catch (error) {
-            console.warn('Error getting clicked feature properties:', error)
-            properties = {}
-          }
-
-          // Extract feature ID and add it to properties
-          const featureId = feature.getId() ?? null
-          if (featureId)
-            if (layer === osmBuildingsLayerRef.value) properties.osm_id = featureId
-            else properties.id = featureId
-
-          // Add layer type to distinguish OSM from GRB/PICC features
-          properties._layer_type =
-            layer === osmBuildingsLayerRef.value
-              ? 'osm'
-              : layer === knwStructuresLayerRef.value
-                ? 'knw'
-                : layer === piccBuildingsLayerRef.value
-                  ? 'picc'
-                  : layer === urbisBuildingsLayerRef.value
-                    ? 'urbis'
-                    : layer === candidateBuildingsLayerRef.value
-                      ? properties._layer_type || 'grb'
-                      : 'grb'
-
-          foundFeatures.push(properties)
-        }
-        return false // Continue to collect all features
-      },
-      {
-        hitTolerance: 3
-      }
-    )
-
-    if (foundFeatures.length > 0) {
-      // Make tooltip sticky with all found features
-      clickedFeatures.value = foundFeatures
-      isTooltipSticky.value = true
-    } else
-    // Clicked outside features, close sticky tooltip
-    {
-      closeTooltip()
-    }
-  })
-
-  map.value.on('pointermove', (evt) => {
-    if (!map.value) return
-
-    // Debounce to reduce canvas read operations
-    if (debounceTimeout) clearTimeout(debounceTimeout)
-
-    debounceTimeout = setTimeout(() => {
-      if (!map.value) return
-
-      const pixel = map.value.getEventPixel(evt.originalEvent)
-
-      // Only update cursor if not sticky
-      if (!isTooltipSticky.value) {
-        // No position tracking needed for fixed panel
-      }
-
-      // Clear previous hover state (only if not sticky)
-      if (currentHoveredFeatureObj && !isTooltipSticky.value) {
-        try {
-          if (currentHoveredFeatureObj instanceof Feature) currentHoveredFeatureObj.set('hovered', false)
-        } catch (error) {
-          // Ignore errors when clearing hover state
-        }
-        currentHoveredFeatureObj = null
-        hoveredFeatures.value = []
-        setMapCursor('')
-      }
-
-      // Check if we're hovering over features from building layers (collect all)
-      const foundFeatures: any[] = []
-      let firstFeature: any = null
-
-      map.value.forEachFeatureAtPixel(
-        pixel,
-        (feature, layer) => {
-          if (
-            layer === osmBuildingsLayerRef.value ||
-            layer === grbBuildingsLayerRef.value ||
-            layer === knwStructuresLayerRef.value ||
-            layer === piccBuildingsLayerRef.value ||
-            layer === urbisBuildingsLayerRef.value ||
-            layer === candidateBuildingsLayerRef.value
-          ) {
-            if (!firstFeature) firstFeature = feature
-
-            // Get properties - handle both regular features and vector tile features
-            let properties: any
-            try {
-              // Both Feature and vector tile RenderFeature expose getProperties()
-              properties = feature.getProperties()
-            } catch (error) {
-              console.warn('Error getting feature properties:', error)
-              properties = {}
-            }
-
-            // Extract feature ID and add it to properties
-            const featureId = feature.getId() ?? null
-            if (featureId)
-              if (layer === osmBuildingsLayerRef.value) properties.osm_id = featureId
-              else properties.id = featureId
-
-            // Add layer type to distinguish OSM from GRB/PICC features
-            properties._layer_type =
-              layer === osmBuildingsLayerRef.value
-                ? 'osm'
-                : layer === knwStructuresLayerRef.value
-                  ? 'knw'
-                  : layer === piccBuildingsLayerRef.value
-                    ? 'picc'
-                    : layer === urbisBuildingsLayerRef.value
-                      ? 'urbis'
-                      : layer === candidateBuildingsLayerRef.value
-                        ? properties._layer_type || 'grb'
-                        : 'grb'
-
-            foundFeatures.push(properties)
-          }
-          return false // Continue to collect all features
-        },
-        {
-          hitTolerance: 3
-        }
-      )
-
-      if (foundFeatures.length > 0 && !isTooltipSticky.value) {
-        // Clear previous hover state
-        if (currentHoveredFeatureObj && currentHoveredFeatureObj !== firstFeature)
-          if (currentHoveredFeatureObj instanceof Feature) currentHoveredFeatureObj.set('hovered', false)
-
-        // Set new hover state on first feature
-        if (currentHoveredFeatureObj !== firstFeature) {
-          // Only set hover state for regular features, not vector tile features
-          try {
-            if (firstFeature instanceof Feature && firstFeature.set) firstFeature.set('hovered', true)
-          } catch (error) {
-            // Vector tile features don't support set method
-          }
-          currentHoveredFeatureObj = firstFeature
-
-          hoveredFeatures.value = foundFeatures
-
-          // Change cursor to pointer
-          setMapCursor('pointer')
-        }
-      } else if (!isTooltipSticky.value)
-      // Clear hover state
-      {
-        if (currentHoveredFeatureObj) {
-          try {
-            if (currentHoveredFeatureObj instanceof Feature && currentHoveredFeatureObj.set)
-              currentHoveredFeatureObj.set('hovered', false)
-          } catch (error) {
-            // Vector tile features don't support set method
-          }
-          currentHoveredFeatureObj = null
-          hoveredFeatures.value = []
-
-          // Reset cursor
-          setMapCursor('')
-        }
-      }
-    }, 16) // ~60fps, reduces canvas reads significantly
-  })
-}
-
 onMounted(() => {
   loadDataDates()
   nextTick().then(() => {
     setTimeout(() => {
       setupMap()
-      setupHoverInteraction()
 
       // Check initial zoom level for layer visibility
       if (map.value) {

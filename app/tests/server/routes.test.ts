@@ -219,7 +219,7 @@ describe('POST /api/export/upload', () => {
   })
 
   it('answers 500 when the file cannot be written', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => { })
+    vi.spyOn(console, 'error').mockImplementation(() => {})
     fsMock.writeFile.mockRejectedValue(new Error('EACCES'))
     const error = await expectHttpError((await load())(createEvent({ body: OSM_XML })))
     expect(error.statusCode).toBe(500)

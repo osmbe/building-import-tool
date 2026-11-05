@@ -1,38 +1,41 @@
-import type { LayerSpecification, Map, SourceSpecification, StyleLayer } from "maplibre-gl";
-import { hslVar } from "~/lib/utils";
-import { useRuntimeConfig } from "#app";
+import type { LayerSpecification, Map, SourceSpecification, StyleLayer } from 'maplibre-gl'
+import { hslVar } from '~/lib/utils'
+import { useRuntimeConfig } from '#app'
 
 export const loadGrbBuildingsLayer = (map: Map): string[] => {
-  const config = useRuntimeConfig();
+  const config = useRuntimeConfig()
 
-  const fillColor = hslVar('--layer-grb', 0.30)
+  const fillColor = hslVar('--layer-grb', 0.3)
   const strokeColor = hslVar('--layer-grb', 1)
 
   map.addSource('grb-buildings', {
     type: 'vector',
-    url: `${config.public.baseURL}/tiles/grb/candidates`,
-  } as SourceSpecification);
+    url: `${config.public.baseURL}/tiles/grb/candidates`
+  })
 
   map.addLayer({
     id: 'grb-buildings-fill',
-    source: 'grb-buildings',
-    "source-layer": "candidates",
-    type: "fill",
-    'paint': {
+    paint: {
       'fill-color': fillColor,
-      'fill-opacity': 0.6,
-    }
-  } as LayerSpecification);
-  map.addLayer({
-    id: 'grb-buildings-line',
+      'fill-opacity': 0.6
+    },
     source: 'grb-buildings',
-    "source-layer": "candidates",
-    type: "line",
-    'paint': {
-      'line-color': strokeColor,
-      'line-width': 2,
-    }
-  } as LayerSpecification, "grb-buildings-fill");
+    'source-layer': 'candidates',
+    type: 'fill'
+  })
+  map.addLayer(
+    {
+      id: 'grb-buildings-line',
+      paint: {
+        'line-color': strokeColor,
+        'line-width': 2
+      },
+      source: 'grb-buildings',
+      'source-layer': 'candidates',
+      type: 'line'
+    },
+    'grb-buildings-fill'
+  )
 
   return ['grb-buildings-fill', 'grb-buildings-line']
 }
