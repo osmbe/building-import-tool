@@ -1048,7 +1048,7 @@ const revealLayersPanel = () => {
 const zoomToWorkingLevel = () => {
   if (!map.value) return
 
-  map.value.zoomTo(16);
+  map.value.zoomTo(15);
 }
 
 const dismissResults = () => {
