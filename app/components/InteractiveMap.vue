@@ -1104,16 +1104,15 @@ const canExportToJOSM = computed(
     candidateBuildingCount.value > 0
 )
 
+// Watch for changes in the selected location (via geocoder) and fly the map to the new location
 watch(
   () => selectedLocation,
   (loc) => {
     if (!loc || !map.value) return
-    const coords = fromLonLat(loc.coordinates)
-    // map.value.getView().animate({
-    //   center: coords,
-    //   duration: 1000,
-    //   zoom: 16
-    // })
+    map.value.flyTo({
+      center: loc.coordinates,
+      zoom: 16
+    });
   }
 )
 
