@@ -8,15 +8,15 @@ export const loadOSMBuildingsLayer = (map: Map): string[] => {
     const fillColor = hslVar('--layer-osm', 0.30)
     const strokeColor = hslVar('--layer-osm', 1)
 
-    map.addSource('osm_buildings', {
+    map.addSource('osm-buildings', {
         attribution: '© OpenStreetMap contributors',
         type: 'vector',
         url: `${config.public.baseURL}/tiles/osm/osm_buildings`,
     } as SourceSpecification);
 
     map.addLayer({
-        id: 'osm_buildings-fill',
-        source: 'osm_buildings',
+        id: 'osm-buildings-fill',
+        source: 'osm-buildings',
         "source-layer": "osm_buildings",
         type: "fill",
         'paint': {
@@ -25,15 +25,15 @@ export const loadOSMBuildingsLayer = (map: Map): string[] => {
         }
     } as LayerSpecification);
     map.addLayer({
-        id: 'osm_buildings-line',
-        source: 'osm_buildings',
+        id: 'osm-buildings-line',
+        source: 'osm-buildings',
         "source-layer": "osm_buildings",
         type: "line",
         'paint': {
             'line-color': strokeColor,
             'line-width': 2,
         }
-    } as LayerSpecification, "osm_buildings-fill");
+    } as LayerSpecification, "osm-buildings-fill");
 
-    return ['osm_buildings-fill', 'osm_buildings-line']
+    return ['osm-buildings-fill', 'osm-buildings-line']
 }
