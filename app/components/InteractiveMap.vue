@@ -922,7 +922,7 @@ const {
 const osmBuildingsLayerIdRef = ref<string[]>([])
 
 // Live OSM layer (Overpass, issue #9): replaces the tile layer while "Live OSM data" is on
-const liveOsmLayerRef = ref<any>(null)
+const liveOsmLayerIdRef = ref<string[]>([])
 
 // GRB Buildings layer state
 const grbBuildingsLayerIdRef = ref<string[]>([])
@@ -1162,10 +1162,11 @@ const handleZoomBasedLayerVisibility = (zoom: number) => {
   if (osmBuildingsLayerIdRef.value.length > 0)
     setLayersVisibility(
       osmBuildingsLayerIdRef.value,
-      shouldShowBuildings && overlayLayers.value.osmBuildings && !liveOsmLayerRef.value
+      shouldShowBuildings && overlayLayers.value.osmBuildings && liveOsmLayerIdRef.value.length === 0
     )
 
-  // if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(shouldShowBuildings && overlayLayers.value.osmBuildings)
+  if (liveOsmLayerIdRef.value.length > 0)
+    setLayersVisibility(liveOsmLayerIdRef.value, shouldShowBuildings && overlayLayers.value.osmBuildings)
 
   if (grbBuildingsLayerIdRef.value.length > 0)
     setLayersVisibility(grbBuildingsLayerIdRef.value, shouldShowBuildings && overlayLayers.value.grbBuildings)
@@ -1303,9 +1304,9 @@ const toggleOsmBuildings = (visible: boolean) => {
   overlayLayers.value.osmBuildings = visible
 
   // Toggle visibility of OSM buildings layer
-  setLayersVisibility(osmBuildingsLayerIdRef.value, visible && !liveOsmLayerRef.value)
+  setLayersVisibility(osmBuildingsLayerIdRef.value, visible && liveOsmLayerIdRef.value.length === 0)
 
-  // if (liveOsmLayerRef.value) liveOsmLayerRef.value.setVisible(visible)
+  if (liveOsmLayerIdRef.value.length > 0) setLayersVisibility(liveOsmLayerIdRef.value, visible)
 }
 
 const toggleGrbBuildings = (visible: boolean) => {
@@ -1693,8 +1694,10 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
 // Calculate difference between source (GRB/PICC) and OSM buildings and display them
 // Issue #9: drop the live OSM layer and show the tile layer (Postgres mirror) again.
 const clearLiveOsmLayer = () => {
-  if (liveOsmLayerRef.value && map.value) map.value.removeLayer(liveOsmLayerRef.value)
-  liveOsmLayerRef.value = null
+  if (liveOsmLayerIdRef.value.length > 0 && typeof map.value !== 'undefined' && map.value !== null)
+    liveOsmLayerIdRef.value.forEach((id) => map.value?.removeLayer(id))
+
+  liveOsmLayerIdRef.value = []
 
   if (osmBuildingsLayerIdRef.value.length > 0) {
     const visible = overlayLayers.value.osmBuildings && getZoomLevel() >= 16
@@ -1704,30 +1707,43 @@ const clearLiveOsmLayer = () => {
 }
 
 // Issue #9: draw the fresh Overpass buildings for the view so the map matches the difference results.
-// const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
-//   if (!map.value) return
-//   const geojson: any = await $fetch('/api/buildings/osm-live', { body: { bounds }, method: 'POST' })
+const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
+  if (!map.value) return
+  const geojson: any = await $fetch('/api/buildings/osm-live', { body: { bounds }, method: 'POST' })
 
-//   if (liveOsmLayerRef.value) map.value.removeLayer(liveOsmLayerRef.value)
+  if (liveOsmLayerIdRef.value.length > 0 && map.value)
+    liveOsmLayerIdRef.value.forEach((id) => map.value?.removeLayer(id))
 
-//   const features = new GeoJSONFormat().readFeatures(geojson, {
-//     dataProjection: 'EPSG:4326',
-//     featureProjection: 'EPSG:3857'
-//   })
-//   const layer = new VectorLayer({
-//     properties: { title: 'OSM Buildings (live)', type: 'overlay' },
-//     source: new VectorSource({ features }),
-//     style: new Style({
-//       fill: new Fill({ color: hslVar('--layer-osm', 0.15) }),
-//       stroke: new Stroke({ color: hslVar('--layer-osm', 1), width: 2 })
-//     }),
-//     visible: overlayLayers.value.osmBuildings,
-//     zIndex: 9
-//   })
-//   liveOsmLayerRef.value = layer
-//   // map.value.addLayer(layer)
-//   // osmBuildingsLayerRef.value?.setVisible(false)
-// }
+  map.value.addSource('osmlive', {
+    data: geojson,
+    type: 'geojson'
+  })
+
+  map.value.addLayer({
+    id: 'osmlive-fill',
+    paint: {
+      'fill-color': hslVar('--layer-osm', 0.15)
+    },
+    source: 'osmlive',
+    type: 'fill'
+  })
+  map.value.addLayer(
+    {
+      id: 'osmlive-line',
+      paint: {
+        'line-color': hslVar('--layer-osm', 1),
+        'line-width': 2
+      },
+      source: 'osmlive',
+      type: 'line'
+    },
+    'osmlive-fill'
+  )
+
+  liveOsmLayerIdRef.value = ['osmlive-fill', 'osmlive-line']
+
+  setLayersVisibility(osmBuildingsLayerIdRef.value, false)
+}
 
 // Prefer the API's message (e.g. Overpass rate limit) over the generic fetch error text.
 const apiErrorMessage = (error: any): string =>
@@ -1772,8 +1788,8 @@ const calculateDifference = async () => {
     const extent = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
 
     // Live mode: refresh the OSM layer from Overpass too (non-fatal; the difference call reports errors)
-    // if (useOverpass.value) await refreshLiveOsmLayer(extent).catch((e) => console.warn('Live OSM layer failed:', e))
-    // else clearLiveOsmLayer()
+    if (useOverpass.value) await refreshLiveOsmLayer(extent).catch((e) => console.warn('Live OSM layer failed:', e))
+    else clearLiveOsmLayer()
 
     // Call backend API to calculate difference
     const response = await $fetch('/api/buildings/difference', {
@@ -1796,8 +1812,7 @@ const calculateDifference = async () => {
 
       // Remove existing candidate buildings layer if present
       if (candidateBuildingsLayerIdRef.value.length > 0) {
-        for (const id of candidateBuildingsLayerIdRef.value)
-          map.value.removeLayer(id)
+        for (const id of candidateBuildingsLayerIdRef.value) map.value.removeLayer(id)
 
         candidateBuildingsLayerIdRef.value = []
       }
@@ -1844,10 +1859,7 @@ const calculateDifference = async () => {
 
     // Remove existing candidate buildings layer if present
     if (candidateBuildingsLayerIdRef.value.length > 0)
-      for (const id of candidateBuildingsLayerIdRef.value) {
-        map.value.removeLayer(id)
-    }
-
+      for (const id of candidateBuildingsLayerIdRef.value) map.value.removeLayer(id)
 
     console.log('Candidate features loaded:', candidateGeoJSON.features.length)
 
