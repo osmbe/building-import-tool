@@ -1,7 +1,7 @@
 import { AttributionControl, type LayerSpecification, Map, type MapOptions, NavigationControl, type RasterSourceSpecification, setWorkerUrl, type SourceSpecification, type StyleLayer } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { baselayers } from './useMapLibre/baselayers';
-import { loadOSMBuildingsLayer } from './useMapLibre/layers/osm_buildings';
+import { loadOSMBuildingsLayer } from './useMapLibre/layers/osmBuildings';
 
 setWorkerUrl(workerUrl);
 
