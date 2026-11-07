@@ -1325,11 +1325,14 @@ const calculateDifference = async () => {
     // Store original features for simplification
     originalCandidateFeatures.value = candidateGeoJSON.features
 
-    // Remove existing candidate buildings layer if present
-    if (candidateBuildingsLayerIdRef.value.length > 0)
-      for (const id of candidateBuildingsLayerIdRef.value) map.value.removeLayer(id)
-
     console.log('Candidate features loaded:', candidateGeoJSON.features.length)
+
+    // Remove existing candidate buildings layer if present
+    if (typeof map.value.getSource('candidates-buildings') !== 'undefined') {
+      map.value.removeLayer('candidates-buildings-fill')
+      map.value.removeLayer('candidates-buildings-line')
+      map.value.removeSource('candidates-buildings')
+    }
 
     // Parse GeoJSON and create source
     map.value.addSource('candidates-buildings', {
