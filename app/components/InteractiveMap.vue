@@ -1203,7 +1203,44 @@ const calculateDifference = async () => {
 
   try {
     const bounds = map.value.getBounds()
-    const extent = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
+    const extent: [number, number, number, number] = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
+
+    if (typeof map.value.getLayer('bounding-box-line') !== 'undefined') {
+      map.value.removeLayer('bounding-box-line')
+      map.value.removeSource('bounding-box')
+    }
+
+    map.value.addSource('bounding-box', {
+      data: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [extent[0], extent[1]],
+                [extent[2], extent[1]],
+                [extent[2], extent[3]],
+                [extent[0], extent[3]],
+                [extent[0], extent[1]]
+              ]]
+            },
+            properties: {}
+          }
+        ]
+      },
+      type: 'geojson'
+    })
+    map.value.addLayer({
+      id: 'bounding-box-line',
+      type: 'line',
+      source: 'bounding-box',
+      paint: {
+        'line-color': '#ff0000',
+        'line-width': 3
+      }
+    })
 
     // Live mode: refresh the OSM layer from Overpass too (non-fatal; the difference call reports errors)
     if (useOverpass.value) await refreshLiveOsmLayer(extent).catch((e) => console.warn('Live OSM layer failed:', e))
