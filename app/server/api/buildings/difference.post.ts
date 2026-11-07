@@ -103,7 +103,7 @@ export default defineEventHandler(async (event) => {
     let totalOsm = 0
     if (useGeometry)
       if (overpass) {
-        osmGeometries = overpass.geomCollection3857
+        osmGeometries = overpass.geomCollection
         totalOsm = overpass.totalOsm
       } else {
         const osm = await queryOsm(

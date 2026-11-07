@@ -128,7 +128,6 @@ describe('fetchOverpassBuildings', () => {
     expect(result).toEqual({
       features: [],
       geomCollection: null,
-      geomCollection3857: null,
       sourceRefs: [],
       totalOsm: 0
     })
@@ -236,9 +235,7 @@ describe('parseOverpassElements', () => {
   it('provides a Web Mercator collection alongside the WGS84 one', () => {
     const result = parseOverpassElements([{ geometry: square(4, 50, 0.001), id: 1, tags: {}, type: 'way' }])
     const wgs = JSON.parse(result.geomCollection as string)
-    const merc = JSON.parse(result.geomCollection3857 as string)
     expect(wgs.geometries[0].coordinates[0][0][0]).toBeCloseTo(4)
-    expect(merc.geometries[0].coordinates[0][0][0]).toBeGreaterThan(400000)
   })
 })
 

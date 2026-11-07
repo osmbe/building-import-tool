@@ -66,7 +66,6 @@ const countCall = (): { sql: string; params: unknown[] } => {
 const overpassData = (over: Partial<OverpassBuildings> = {}): OverpassBuildings => ({
   features: [],
   geomCollection: 'LIVE_GC',
-  geomCollection3857: 'LIVE_GC_3857',
   sourceRefs: ['Gbg/9'],
   totalOsm: 4,
   ...over
@@ -209,18 +208,18 @@ describe('POST /api/buildings/difference: geometry matching', () => {
     expect(candidateCall().params).toEqual(BOUNDS)
   })
 
-  it('uses the Web Mercator Overpass collection in live mode', async () => {
+  it('uses the Overpass collection in live mode', async () => {
     fakeDatabases()
     overpass.fetchOverpassBuildings.mockResolvedValue(overpassData())
     const { result } = await post({ dataSource: 'picc', useOverpass: true })
     expect(db.queryOsm).not.toHaveBeenCalled()
-    expect(candidateCall().params).toContain('LIVE_GC_3857')
+    expect(candidateCall().params).toContain('LIVE_GC')
     expect(result.stats.totalOsm).toBe(4)
   })
 
   it('treats an empty Overpass answer as no OSM buildings', async () => {
     fakeDatabases()
-    overpass.fetchOverpassBuildings.mockResolvedValue(overpassData({ geomCollection3857: null, totalOsm: 0 }))
+    overpass.fetchOverpassBuildings.mockResolvedValue(overpassData({ geomCollection: null, totalOsm: 0 }))
     await post({ dataSource: 'grb', useOverpass: true })
     expect(candidateCall().sql).not.toContain('NOT EXISTS')
   })

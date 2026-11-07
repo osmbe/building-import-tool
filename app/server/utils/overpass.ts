@@ -7,7 +7,6 @@ import { area } from '@turf/area'
 import { bboxPolygon } from '@turf/bbox-polygon'
 
 const OVERPASS_ENDPOINT = process.env.OVERPASS_API_URL || 'https://overpass-api.de/api/interpreter'
-const MERCATOR_R = 20037508.342789244
 
 /** Server-side request timeout (ms). The Overpass query itself has a shorter `[timeout:]`. */
 const REQUEST_TIMEOUT_MS = 30_000
@@ -34,13 +33,6 @@ export class OverpassError extends Error {
     this.name = 'OverpassError'
     this.statusCode = statusCode
   }
-}
-
-/** Convert WGS84 lon/lat to Web Mercator (EPSG:3857). */
-export function lonLatToMercator(lon: number, lat: number): [number, number] {
-  const x = (lon * MERCATOR_R) / 180
-  const y = (Math.log(Math.tan(((90 + lat) * Math.PI) / 360)) / (Math.PI / 180)) * (MERCATOR_R / 180)
-  return [x, y]
 }
 
 /** Overpass QL for ways and relations tagged building=* inside the bbox (south, west, north, east). */
@@ -151,8 +143,6 @@ export interface OverpassFeature {
 export interface OverpassBuildings {
   /** GeoJSON GeometryCollection (EPSG:4326) of building footprints, or null if none. */
   geomCollection: string | null
-  /** Same collection in Web Mercator (EPSG:3857), for the PICC / UrbIS queries. */
-  geomCollection3857: string | null
   /** Number of building footprints returned. */
   totalOsm: number
   /** GRB OIDN references found in OSM tags (source:geometry:oidn / source:geometry:ref). */
@@ -192,7 +182,6 @@ export function parseOverpassElements(elements: any[]): OverpassBuildings {
       sourceRefSet.add(id)
   }
 
-  const toMercator = (poly: Ring[]): Ring[] => poly.map((r) => r.map(([lon, lat]) => lonLatToMercator(lon, lat)))
   const collection = (project: (p: Ring[]) => Ring[]) =>
     polygons.length > 0
       ? JSON.stringify({
@@ -213,7 +202,6 @@ export function parseOverpassElements(elements: any[]): OverpassBuildings {
       type: 'Feature'
     })),
     geomCollection: collection((p) => p),
-    geomCollection3857: collection(toMercator),
     sourceRefs: Array.from(sourceRefSet),
     totalOsm: polygons.length
   }
