@@ -134,8 +134,8 @@ export default defineEventHandler(async (event) => {
             tags->>'source:geometry:ref' AS ref,
             tags->>'source:geometry:entity' AS entity
           FROM osm.osm_buildings
-          WHERE geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
-            AND ST_Intersects(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
+          WHERE geom && ST_MakeEnvelope($1, $2, $3, $4, 4326)
+            AND ST_Intersects(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
             AND (tags ? 'source:geometry:oidn' OR tags ? 'source:geometry:ref')
         `,
           [minX, minY, maxX, maxY]
@@ -159,7 +159,7 @@ export default defineEventHandler(async (event) => {
         : 'TRUE'
     const countParams = [...params]
     const view = CANDIDATE_VIEWS[dataSource]
-    const inView = `c.geom && ST_MakeEnvelope($1, $2, $3, $4, 3857) AND ST_Intersects(c.geom, ST_MakeEnvelope($1, $2, $3, $4, 3857))`
+    const inView = `c.geom && ST_MakeEnvelope($1, $2, $3, $4, 4326) AND ST_Intersects(c.geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))`
 
     const conditions = [inView, inScope]
     if (useRefs)
