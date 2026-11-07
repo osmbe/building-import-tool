@@ -90,9 +90,10 @@ export const useMapLibre = () => {
 
   // Cleanup
   const destroy = () => {
-    if (map.value)
-      // Map.value.setTarget(undefined)
-      map.value = null
+    if (map.value === null) return
+
+    map.value.remove()
+    map.value = null
   }
 
   return {
