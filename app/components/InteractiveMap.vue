@@ -1112,10 +1112,13 @@ const mergeFragmentedBuildings = (features: any[]): any[] => {
 // Calculate difference between source (GRB/PICC) and OSM buildings and display them
 // Issue #9: drop the live OSM layer and show the tile layer (Postgres mirror) again.
 const clearLiveOsmLayer = () => {
-  if (liveOsmLayerIdRef.value.length > 0 && typeof map.value !== 'undefined' && map.value !== null)
-    liveOsmLayerIdRef.value.forEach((id) => map.value?.removeLayer(id))
+  if (liveOsmLayerIdRef.value.length > 0 && typeof map.value !== 'undefined' && map.value !== null) {
+    map.value.removeLayer('osmlive-fill')
+    map.value.removeLayer('osmlive-line')
+    map.value.removeSource('osmlive')
 
-  liveOsmLayerIdRef.value = []
+    liveOsmLayerIdRef.value = []
+  }
 
   if (osmBuildingsLayerIdRef.value.length > 0) {
     const visible = overlayLayers.value.osmBuildings && getZoomLevel() >= 16
@@ -1129,8 +1132,11 @@ const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
   if (!map.value) return
   const geojson: any = await $fetch('/api/buildings/osm-live', { body: { bounds }, method: 'POST' })
 
-  if (liveOsmLayerIdRef.value.length > 0 && map.value)
-    liveOsmLayerIdRef.value.forEach((id) => map.value?.removeLayer(id))
+  if (typeof map.value.getSource('osmlive') !== 'undefined') {
+    map.value.removeLayer('osmlive-fill')
+    map.value.removeLayer('osmlive-line')
+    map.value.removeSource('osmlive')
+  }
 
   map.value.addSource('osmlive', {
     data: geojson,
