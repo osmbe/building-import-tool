@@ -1437,20 +1437,23 @@ onMounted(() => {
     setTimeout(() => {
       setupMap()
 
-      // Check initial zoom level for layer visibility
       if (map.value) {
+        // Check initial zoom level for layer visibility
         const initialZoom = Math.round(getZoomLevel() || 13)
         handleZoomBasedLayerVisibility(initialZoom)
-      }
 
-      // Automatically load OSM and GRB layers
-      setTimeout(() => {
-        handleLoadOSM()
-        handleLoadGRB()
-        handleLoadKNW()
-        handleLoadPICC()
-        handleLoadUrbis()
-      }, 100)
+        // Automatically load OSM and GRB layers
+        const initializeOverlays = () => {
+          handleLoadOSM()
+          handleLoadGRB()
+          handleLoadKNW()
+          handleLoadPICC()
+          handleLoadUrbis()
+        }
+
+        if (map.value.isStyleLoaded()) initializeOverlays()
+        else map.value.once('style.load', initializeOverlays)
+      }
     }, 50)
   })
 
