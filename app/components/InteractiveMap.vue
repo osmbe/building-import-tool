@@ -23,7 +23,7 @@
 </template>
 
 <script lang="ts">
-import type { ComputedRef, Ref } from 'vue'
+import type { Ref } from 'vue'
 import type { OverlayLayers as LayerOverlayLayers, SourceKind as LayerSourceKind } from '~/components/LayersPanel.vue'
 import type { useMapLibre as UseMapLibreComposable } from '~/composables/useMapLibre'
 
@@ -36,7 +36,7 @@ export interface MapState {
   layersCollapsed: Ref<boolean>
   map: ReturnType<typeof UseMapLibreComposable>['map']
   overlayLayers: Ref<LayerOverlayLayers>
-  selectedSource: ComputedRef<LayerSourceKind | 'none'>
+  activeSource: Ref<LayerSourceKind | null>
 }
 </script>
 
@@ -74,6 +74,7 @@ const {
 const candidateBuildingCount = ref(0)
 
 const layersCollapsed = ref(false)
+const activeSource = ref<SourceKind | null>(null)
 
 const overlayLayers = ref({
   candidateBuildings: { ids: [] as string[], visible: false },
@@ -104,15 +105,8 @@ for (const layer of Object.values(overlayLayers.value))
     }
   )
 
-const selectedSource = computed<SourceKind | 'none'>(() => {
-  if (overlayLayers.value.grbBuildings.visible === true) return 'grb'
-  if (overlayLayers.value.knwStructures.visible === true) return 'knw'
-  if (overlayLayers.value.piccBuildings.visible === true) return 'picc'
-  if (overlayLayers.value.urbisBuildings.visible === true) return 'urbis'
-  return 'none'
-})
-
 const mapState = {
+  activeSource,
   baselayers,
   candidateBuildingCount,
   currentBaseLayer,
@@ -120,8 +114,7 @@ const mapState = {
   currentZoom,
   layersCollapsed,
   map,
-  overlayLayers,
-  selectedSource
+  overlayLayers
 }
 
 // Watch for changes in the selected location (via geocoder) and fly the map to the new location

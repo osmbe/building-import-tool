@@ -161,7 +161,7 @@
 
     <!-- Match Mode Control -->
     <MatchModeControl
-      :source-supports-tags="supportsSourceTags(selectedSource === 'none' ? 'grb' : selectedSource)"
+      :source-supports-tags="supportsSourceTags(activeSource === null ? 'grb' : activeSource)"
       :map-ready="Boolean(map)"
       :source-layer-enabled="hasSourceLayer"
       :osm-layer-enabled="hasOsmLayer"
@@ -190,7 +190,7 @@ import { CANDIDATES_CONTRACT } from '~/utils/candidates'
 import { hslVar } from '~/lib/utils'
 
 const { mapState } = defineProps<{ mapState: MapState }>()
-const { candidateBuildingCount, currentZoom, layersCollapsed, map, overlayLayers, selectedSource } = mapState
+const { candidateBuildingCount, currentZoom, layersCollapsed, map, overlayLayers, activeSource } = mapState
 
 const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
@@ -279,7 +279,7 @@ const coveragePct = computed(() => {
 
 // Source/combined modes are GRB-only; other sources are matched by geometry (see resolveMatchMode).
 const effectiveMatchMode = computed(
-  () => resolveMatchMode(matchMode.value, selectedSource.value === 'none' ? 'grb' : selectedSource.value).mode
+  () => resolveMatchMode(matchMode.value, activeSource.value === null ? 'grb' : activeSource.value).mode
 )
 
 // Short, human label for what produced the current results (which mode, freshness).

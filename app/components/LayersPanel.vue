@@ -49,9 +49,9 @@
               v-for="opt in sourceOptions"
               :key="opt.key"
               class="layer-btn flex items-center justify-center gap-1.5"
-              :class="selectedSource === opt.key ? 'layer-btn-active' : ''"
+              :class="activeSource === opt.key ? 'layer-btn-active' : ''"
               :title="dataDateTitle(opt.key, opt.label)"
-              @click="selectSource(opt.key)"
+              @click="activeSource = activeSource === opt.key ? null : opt.key"
             >
               <span class="layer-dot" :style="{ color: `hsl(var(${opt.varName}))`, background: 'currentColor' }"></span>
               {{ opt.label }}
@@ -110,7 +110,7 @@ export interface OverlayLayers {
 </script>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import type { MapState } from '~/components/InteractiveMap.vue'
 import { ChevronDown } from 'lucide-vue-next'
 import Switch from '~/components/ui/switch.vue'
@@ -124,7 +124,7 @@ const {
   currentZoom,
   layersCollapsed,
   overlayLayers,
-  selectedSource
+  activeSource
 } = mapState
 
 const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
@@ -142,57 +142,64 @@ const toggleOsmBuildings = (visible: boolean) => {
   overlayLayers.value.osmBuildings.visible = visible
 }
 
-const selectSource = (src: SourceKind) => {
-  // Clicking the active dataset turns it off; otherwise switch to it.
-  const visible = selectedSource.value !== src
+watch(
+  () => activeSource.value,
+  (source) => {
+    switch (source) {
+      case 'grb': {
+        overlayLayers.value.grbBuildings.visible = true
 
-  switch (src) {
-    case 'grb': {
-      overlayLayers.value.grbBuildings.visible = visible
+        // GRB, PICC, and UrbIS are mutually exclusive
+        if (overlayLayers.value.grbBuildings.visible === true) {
+          overlayLayers.value.knwStructures.visible = false
+          overlayLayers.value.piccBuildings.visible = false
+          overlayLayers.value.urbisBuildings.visible = false
+        }
+        break
+      }
+      case 'knw': {
+        overlayLayers.value.knwStructures.visible = true
 
-      // GRB, PICC, and UrbIS are mutually exclusive
-      if (visible === true) {
+        // GRB, PICC, and UrbIS are mutually exclusive
+        if (overlayLayers.value.knwStructures.visible === true) {
+          overlayLayers.value.grbBuildings.visible = false
+          overlayLayers.value.piccBuildings.visible = false
+          overlayLayers.value.urbisBuildings.visible = false
+        }
+        break
+      }
+      case 'picc': {
+        overlayLayers.value.piccBuildings.visible = true
+
+        // GRB, PICC, and UrbIS are mutually exclusive
+        if (overlayLayers.value.piccBuildings.visible === true) {
+          overlayLayers.value.grbBuildings.visible = false
+          overlayLayers.value.knwStructures.visible = false
+          overlayLayers.value.urbisBuildings.visible = false
+        }
+        break
+      }
+      case 'urbis': {
+        overlayLayers.value.urbisBuildings.visible = true
+
+        // GRB, PICC, and UrbIS are mutually exclusive
+        if (overlayLayers.value.urbisBuildings.visible === true) {
+          overlayLayers.value.grbBuildings.visible = false
+          overlayLayers.value.knwStructures.visible = false
+          overlayLayers.value.piccBuildings.visible = false
+        }
+        break
+      }
+      default: {
+        overlayLayers.value.grbBuildings.visible = false
         overlayLayers.value.knwStructures.visible = false
         overlayLayers.value.piccBuildings.visible = false
         overlayLayers.value.urbisBuildings.visible = false
+        break
       }
-      break
-    }
-    case 'knw': {
-      overlayLayers.value.knwStructures.visible = visible
-
-      // GRB, PICC, and UrbIS are mutually exclusive
-      if (visible === true) {
-        overlayLayers.value.grbBuildings.visible = false
-        overlayLayers.value.piccBuildings.visible = false
-        overlayLayers.value.urbisBuildings.visible = false
-      }
-      break
-    }
-    case 'picc': {
-      overlayLayers.value.piccBuildings.visible = visible
-
-      // GRB, PICC, and UrbIS are mutually exclusive
-      if (visible === true) {
-        overlayLayers.value.grbBuildings.visible = false
-        overlayLayers.value.knwStructures.visible = false
-        overlayLayers.value.urbisBuildings.visible = false
-      }
-      break
-    }
-    case 'urbis': {
-      overlayLayers.value.urbisBuildings.visible = visible
-
-      // GRB, PICC, and UrbIS are mutually exclusive
-      if (visible === true) {
-        overlayLayers.value.grbBuildings.visible = false
-        overlayLayers.value.knwStructures.visible = false
-        overlayLayers.value.piccBuildings.visible = false
-      }
-      break
     }
   }
-}
+)
 
 // Import dates of the official datasets, shown as a tooltip on the source buttons (Issue #59)
 const dataDates = ref<Partial<Record<SourceKind, string | null>>>({})
