@@ -34,7 +34,6 @@ export interface MapState {
   currentBaseLayer: ReturnType<typeof UseMapLibreComposable>['currentBaseLayer']
   currentCenter: Ref<[number, number]>
   currentZoom: Ref<number>
-  getZoomLevel: ReturnType<typeof UseMapLibreComposable>['getZoomLevel']
   grbBuildingsLayerIdRef: Ref<string[]>
   knwStructuresLayerIdRef: Ref<string[]>
   layersCollapsed: Ref<boolean>
@@ -135,7 +134,6 @@ const mapState = {
   currentBaseLayer,
   currentCenter,
   currentZoom,
-  getZoomLevel,
   grbBuildingsLayerIdRef,
   knwStructuresLayerIdRef,
   layersCollapsed,

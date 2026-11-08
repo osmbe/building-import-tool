@@ -194,7 +194,6 @@ const {
   candidateBuildingsLayerIdRef,
   candidateBuildingCount,
   currentZoom,
-  getZoomLevel,
   grbBuildingsLayerIdRef,
   knwStructuresLayerIdRef,
   layersCollapsed,
@@ -390,7 +389,7 @@ const clearLiveOsmLayer = () => {
   }
 
   if (osmBuildingsLayerIdRef.value.length > 0) {
-    const visible = overlayLayers.value.osmBuildings && getZoomLevel() >= 16
+    const visible = overlayLayers.value.osmBuildings && currentZoom.value >= 16
 
     setLayersVisibility(osmBuildingsLayerIdRef.value, visible)
   }
@@ -492,9 +491,8 @@ const calculateDifference = async () => {
   }
 
   // Check zoom level
-  const zoom = getZoomLevel()
-  if (zoom < 16) {
-    toast.warning('Zoom in required', `Please zoom in to at least level 16. Current zoom: ${zoom}`)
+  if (currentZoom.value < 16) {
+    toast.warning('Zoom in required', `Please zoom in to at least level 16. Current zoom: ${currentZoom.value}`)
     return
   }
 

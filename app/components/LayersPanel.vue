@@ -122,7 +122,6 @@ const {
   currentBaseLayer,
   currentCenter,
   currentZoom,
-  getZoomLevel,
   grbBuildingsLayerIdRef,
   knwStructuresLayerIdRef,
   layersCollapsed,
@@ -154,7 +153,7 @@ const toggleOsmBuildings = (visible: boolean) => {
   overlayLayers.value.osmBuildings = visible
 
   // Toggle visibility of OSM buildings layer
-  const shouldShow = getZoomLevel() >= 16
+  const shouldShow = currentZoom.value >= 16
   setLayersVisibility(osmBuildingsLayerIdRef.value, shouldShow && visible && liveOsmLayerIdRef.value.length === 0)
 
   if (liveOsmLayerIdRef.value.length > 0) setLayersVisibility(liveOsmLayerIdRef.value, shouldShow && visible)
@@ -172,7 +171,7 @@ const selectSource = (src: SourceKind) => {
 const toggleGrbBuildings = (visible: boolean) => {
   overlayLayers.value.grbBuildings = visible
 
-  const shouldShow = getZoomLevel() >= 16
+  const shouldShow = currentZoom.value >= 16
   setLayersVisibility(grbBuildingsLayerIdRef.value, shouldShow && visible)
 
   // GRB, PICC, and UrbIS are mutually exclusive
@@ -195,7 +194,7 @@ const toggleGrbBuildings = (visible: boolean) => {
 const toggleKnwStructures = (visible: boolean) => {
   overlayLayers.value.knwStructures = visible
 
-  const shouldShow = getZoomLevel() >= 16
+  const shouldShow = currentZoom.value >= 16
   setLayersVisibility(knwStructuresLayerIdRef.value, shouldShow && visible)
 
   if (visible) {
@@ -217,7 +216,7 @@ const toggleKnwStructures = (visible: boolean) => {
 const togglePiccBuildings = (visible: boolean) => {
   overlayLayers.value.piccBuildings = visible
 
-  const shouldShow = getZoomLevel() >= 16
+  const shouldShow = currentZoom.value >= 16
   setLayersVisibility(piccBuildingsLayerIdRef.value, shouldShow && visible)
 
   // GRB, PICC, and UrbIS are mutually exclusive
@@ -240,7 +239,7 @@ const togglePiccBuildings = (visible: boolean) => {
 const toggleUrbisBuildings = (visible: boolean) => {
   overlayLayers.value.urbisBuildings = visible
 
-  const shouldShow = getZoomLevel() >= 16
+  const shouldShow = currentZoom.value >= 16
   setLayersVisibility(urbisBuildingsLayerIdRef.value, shouldShow && visible)
 
   // GRB, PICC, and UrbIS are mutually exclusive
