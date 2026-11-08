@@ -190,15 +190,7 @@ import { CANDIDATES_CONTRACT } from '~/utils/candidates'
 import { hslVar } from '~/lib/utils'
 
 const { mapState } = defineProps<{ mapState: MapState }>()
-const {
-  candidateBuildingCount,
-  currentZoom,
-  layersCollapsed,
-  map,
-  overlayLayers,
-  selectedSource,
-  setLayersVisibility
-} = mapState
+const { candidateBuildingCount, currentZoom, layersCollapsed, map, overlayLayers, selectedSource } = mapState
 
 const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
@@ -380,13 +372,8 @@ const clearLiveOsmLayer = () => {
     map.value.removeLayer('osmlive-line')
     map.value.removeSource('osmlive')
 
+    overlayLayers.value.osmLive.visible = false
     overlayLayers.value.osmLive.ids = []
-  }
-
-  if (overlayLayers.value.osmBuildings.ids.length > 0) {
-    const visible = overlayLayers.value.osmBuildings.visible === true && currentZoom.value >= 16
-
-    setLayersVisibility(overlayLayers.value.osmBuildings.ids, visible)
   }
 }
 
@@ -428,8 +415,7 @@ const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
   )
 
   overlayLayers.value.osmLive.ids = ['osmlive-fill', 'osmlive-line']
-
-  setLayersVisibility(overlayLayers.value.osmLive.ids, false)
+  overlayLayers.value.osmLive.visible = true
 }
 
 // Watch for match mode changes and refetch candidate buildings if they're already loaded

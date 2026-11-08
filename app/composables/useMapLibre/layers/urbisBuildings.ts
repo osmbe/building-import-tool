@@ -3,6 +3,8 @@ import { hslVar } from '~/lib/utils'
 import { useRuntimeConfig } from '#app'
 
 export const loadUrbisBuildingsLayer = (map: Map): string[] => {
+  if (typeof map.getSource('urbis-buildings') !== 'undefined') return ['urbis-buildings-fill', 'urbis-buildings-line']
+
   const config = useRuntimeConfig()
 
   const fillColor = hslVar('--layer-urbis', 0.3)

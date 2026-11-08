@@ -3,6 +3,8 @@ import { hslVar } from '~/lib/utils'
 import { useRuntimeConfig } from '#app'
 
 export const loadKnwStructuresLayer = (map: Map): string[] => {
+  if (typeof map.getSource('knw-structures') !== 'undefined') return ['knw-structures-fill', 'knw-structures-line']
+
   const config = useRuntimeConfig()
 
   const fillColor = hslVar('--layer-knw', 0.3)

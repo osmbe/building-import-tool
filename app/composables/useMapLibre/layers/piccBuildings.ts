@@ -3,6 +3,8 @@ import { hslVar } from '~/lib/utils'
 import { useRuntimeConfig } from '#app'
 
 export const loadPiccBuildingsLayer = (map: Map): string[] => {
+  if (typeof map.getSource('picc-buildings') !== 'undefined') return ['picc-buildings-fill', 'picc-buildings-line']
+
   const config = useRuntimeConfig()
 
   const fillColor = hslVar('--layer-picc', 0.3)

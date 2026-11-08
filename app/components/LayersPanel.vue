@@ -125,7 +125,6 @@ const {
   layersCollapsed,
   overlayLayers,
   selectedSource,
-  setLayersVisibility,
   switchBaseLayer
 } = mapState
 
@@ -138,118 +137,60 @@ const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
 
 const toggleCandidateBuildings = (visible: boolean) => {
   overlayLayers.value.candidateBuildings.visible = visible
-  setLayersVisibility(overlayLayers.value.candidateBuildings.ids, visible)
 }
 
 const toggleOsmBuildings = (visible: boolean) => {
   overlayLayers.value.osmBuildings.visible = visible
-
-  // Toggle visibility of OSM buildings layer
-  const shouldShow = currentZoom.value >= 16
-  setLayersVisibility(
-    overlayLayers.value.osmBuildings.ids,
-    shouldShow && visible && overlayLayers.value.osmLive.ids.length === 0
-  )
-
-  if (overlayLayers.value.osmLive.ids.length > 0)
-    setLayersVisibility(overlayLayers.value.osmLive.ids, shouldShow && visible)
 }
 
 const selectSource = (src: SourceKind) => {
   // Clicking the active dataset turns it off; otherwise switch to it.
-  const turnOn = selectedSource.value !== src
-  if (src === 'grb') toggleGrbBuildings(turnOn)
-  else if (src === 'knw') toggleKnwStructures(turnOn)
-  else if (src === 'picc') togglePiccBuildings(turnOn)
-  else toggleUrbisBuildings(turnOn)
-}
+  const visible = selectedSource.value !== src
 
-const toggleGrbBuildings = (visible: boolean) => {
-  overlayLayers.value.grbBuildings.visible = visible
+  switch (src) {
+    case 'grb': {
+      overlayLayers.value.grbBuildings.visible = visible
 
-  setLayersVisibility(overlayLayers.value.grbBuildings.ids, currentZoom.value >= 16 && visible === true)
-
-  // GRB, PICC, and UrbIS are mutually exclusive
-  if (visible) {
-    if (overlayLayers.value.knwStructures) {
-      overlayLayers.value.knwStructures.visible = false
-      setLayersVisibility(overlayLayers.value.knwStructures.ids, false)
+      // GRB, PICC, and UrbIS are mutually exclusive
+      if (visible === true) {
+        overlayLayers.value.knwStructures.visible = false
+        overlayLayers.value.piccBuildings.visible = false
+        overlayLayers.value.urbisBuildings.visible = false
+      }
+      break
     }
-    if (overlayLayers.value.piccBuildings) {
-      overlayLayers.value.piccBuildings.visible = false
-      setLayersVisibility(overlayLayers.value.piccBuildings.ids, false)
-    }
-    if (overlayLayers.value.urbisBuildings) {
-      overlayLayers.value.urbisBuildings.visible = false
-      setLayersVisibility(overlayLayers.value.urbisBuildings.ids, false)
-    }
-  }
-}
+    case 'knw': {
+      overlayLayers.value.knwStructures.visible = visible
 
-const toggleKnwStructures = (visible: boolean) => {
-  overlayLayers.value.knwStructures.visible = visible
-
-  const shouldShow = currentZoom.value >= 16
-  setLayersVisibility(overlayLayers.value.knwStructures.ids, shouldShow && visible)
-
-  if (visible) {
-    if (overlayLayers.value.grbBuildings) {
-      overlayLayers.value.grbBuildings.visible = false
-      setLayersVisibility(overlayLayers.value.grbBuildings.ids, false)
+      // GRB, PICC, and UrbIS are mutually exclusive
+      if (visible === true) {
+        overlayLayers.value.grbBuildings.visible = false
+        overlayLayers.value.piccBuildings.visible = false
+        overlayLayers.value.urbisBuildings.visible = false
+      }
+      break
     }
-    if (overlayLayers.value.piccBuildings) {
-      overlayLayers.value.piccBuildings.visible = false
-      setLayersVisibility(overlayLayers.value.piccBuildings.ids, false)
-    }
-    if (overlayLayers.value.urbisBuildings) {
-      overlayLayers.value.urbisBuildings.visible = false
-      setLayersVisibility(overlayLayers.value.urbisBuildings.ids, false)
-    }
-  }
-}
+    case 'picc': {
+      overlayLayers.value.piccBuildings.visible = visible
 
-const togglePiccBuildings = (visible: boolean) => {
-  overlayLayers.value.piccBuildings.visible = visible
-
-  const shouldShow = currentZoom.value >= 16
-  setLayersVisibility(overlayLayers.value.piccBuildings.ids, shouldShow && visible)
-
-  // GRB, PICC, and UrbIS are mutually exclusive
-  if (visible) {
-    if (overlayLayers.value.grbBuildings) {
-      overlayLayers.value.grbBuildings.visible = false
-      setLayersVisibility(overlayLayers.value.grbBuildings.ids, false)
+      // GRB, PICC, and UrbIS are mutually exclusive
+      if (visible === true) {
+        overlayLayers.value.grbBuildings.visible = false
+        overlayLayers.value.knwStructures.visible = false
+        overlayLayers.value.urbisBuildings.visible = false
+      }
+      break
     }
-    if (overlayLayers.value.knwStructures) {
-      overlayLayers.value.knwStructures.visible = false
-      setLayersVisibility(overlayLayers.value.knwStructures.ids, false)
-    }
-    if (overlayLayers.value.urbisBuildings) {
-      overlayLayers.value.urbisBuildings.visible = false
-      setLayersVisibility(overlayLayers.value.urbisBuildings.ids, false)
-    }
-  }
-}
+    case 'urbis': {
+      overlayLayers.value.urbisBuildings.visible = visible
 
-const toggleUrbisBuildings = (visible: boolean) => {
-  overlayLayers.value.urbisBuildings.visible = visible
-
-  const shouldShow = currentZoom.value >= 16
-  setLayersVisibility(overlayLayers.value.urbisBuildings.ids, shouldShow && visible)
-
-  // GRB, PICC, and UrbIS are mutually exclusive
-  if (visible) {
-    if (overlayLayers.value.grbBuildings) {
-      overlayLayers.value.grbBuildings.visible = false
-      setLayersVisibility(overlayLayers.value.grbBuildings.ids, false)
-    }
-    if (overlayLayers.value.knwStructures) {
-      overlayLayers.value.knwStructures.visible = false
-      setLayersVisibility(overlayLayers.value.knwStructures.ids, false)
-    }
-    if (overlayLayers.value.piccBuildings) {
-      overlayLayers.value.piccBuildings.visible = false
-      setLayersVisibility(overlayLayers.value.piccBuildings.ids, false)
+      // GRB, PICC, and UrbIS are mutually exclusive
+      if (visible === true) {
+        overlayLayers.value.grbBuildings.visible = false
+        overlayLayers.value.knwStructures.visible = false
+        overlayLayers.value.piccBuildings.visible = false
+      }
+      break
     }
   }
 }

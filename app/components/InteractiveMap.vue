@@ -37,7 +37,6 @@ export interface MapState {
   map: ReturnType<typeof UseMapLibreComposable>['map']
   overlayLayers: Ref<LayerOverlayLayers>
   selectedSource: ComputedRef<LayerSourceKind | 'none'>
-  setLayersVisibility: ReturnType<typeof UseMapLibreComposable>['setLayersVisibility']
   switchBaseLayer: ReturnType<typeof UseMapLibreComposable>['switchBaseLayer']
 }
 </script>
@@ -68,7 +67,6 @@ const {
   loadKnwStructuresLayer,
   loadPiccBuildingsLayer,
   loadUrbisBuildingsLayer,
-  setLayersVisibility,
   switchBaseLayer,
   baselayers,
   destroy
@@ -82,11 +80,23 @@ const overlayLayers = ref({
   candidateBuildings: { ids: [] as string[], visible: false },
   grbBuildings: { ids: [] as string[], visible: false },
   knwStructures: { ids: [] as string[], visible: false },
-  osmBuildings: { ids: [] as string[], visible: false },
+  osmBuildings: { ids: [] as string[], visible: true },
   osmLive: { ids: [] as string[], visible: false },
   piccBuildings: { ids: [] as string[], visible: false },
   urbisBuildings: { ids: [] as string[], visible: false }
 })
+
+for (const layer of Object.values(overlayLayers.value))
+  watch(
+    () => [layer.visible, layer.ids] as const,
+    ([visible, ids]) => {
+      if (!map.value) return
+
+      for (const layerId of ids)
+        if (map.value.getLayer(layerId))
+          map.value.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none')
+    }
+  )
 
 const selectedSource = computed<SourceKind | 'none'>(() => {
   if (overlayLayers.value.grbBuildings.visible === true) return 'grb'
@@ -106,7 +116,6 @@ const mapState = {
   map,
   overlayLayers,
   selectedSource,
-  setLayersVisibility,
   switchBaseLayer
 }
 
@@ -132,46 +141,53 @@ const setupMap = () => {
   } as MapOptions)
 }
 
-const initOverlayLayer = (overlayLayer: { ids: string[]; visible: boolean }, fn: Function, visible: boolean) => {
-  if (!map.value) {
+const initOverlayLayer = (fn: Function, visible: boolean) => {
+  if (typeof map.value === 'undefined' || map.value === null) {
     console.error('Map not initialized')
     return
   }
 
   try {
-    // Remove existing  layer if present
-    if (overlayLayer.ids.length > 0) for (const layerId of overlayLayer.ids) map.value.removeLayer(layerId)
+    const ids = fn(map.value)
 
-    // Add layer to map
-    overlayLayer.ids = fn(map.value)
-    overlayLayer.visible = visible
+    for (const layerId of ids) map.value.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none')
 
-    // Set initial visibility based on current zoom level
-    setLayersVisibility(overlayLayer.ids, visible)
+    return ids
   } catch (error) {
-    console.error('Failed to load OSM buildings:', error)
+    console.error('Failed to load overlay layer:', error)
   }
 }
 
 onMounted(() => {
-  // NextTick().then(() => {
-  //   SetTimeout(() => {
   setupMap()
 
   if (map.value) {
     const initializeOverlays = () => {
-      initOverlayLayer(overlayLayers.value.osmBuildings, loadOSMBuildingsLayer, true)
-      initOverlayLayer(overlayLayers.value.grbBuildings, loadGrbBuildingsLayer, false)
-      initOverlayLayer(overlayLayers.value.knwStructures, loadKnwStructuresLayer, false)
-      initOverlayLayer(overlayLayers.value.piccBuildings, loadPiccBuildingsLayer, false)
-      initOverlayLayer(overlayLayers.value.urbisBuildings, loadUrbisBuildingsLayer, false)
+      overlayLayers.value.osmBuildings.ids = initOverlayLayer(
+        loadOSMBuildingsLayer,
+        overlayLayers.value.osmBuildings.visible
+      )
+      overlayLayers.value.grbBuildings.ids = initOverlayLayer(
+        loadGrbBuildingsLayer,
+        overlayLayers.value.grbBuildings.visible
+      )
+      overlayLayers.value.knwStructures.ids = initOverlayLayer(
+        loadKnwStructuresLayer,
+        overlayLayers.value.knwStructures.visible
+      )
+      overlayLayers.value.piccBuildings.ids = initOverlayLayer(
+        loadPiccBuildingsLayer,
+        overlayLayers.value.piccBuildings.visible
+      )
+      overlayLayers.value.urbisBuildings.ids = initOverlayLayer(
+        loadUrbisBuildingsLayer,
+        overlayLayers.value.urbisBuildings.visible
+      )
     }
 
     if (map.value.isStyleLoaded()) initializeOverlays()
     else map.value.once('style.load', initializeOverlays)
   }
-  //   }, 50)
-  // })
 })
 
 onUnmounted(() => {

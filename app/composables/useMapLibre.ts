@@ -16,10 +16,10 @@ export const useMapLibre = () => {
   const currentCenter = ref<[number, number]>([4.3517, 50.8503])
 
   // Initialize map
-  const initializeMap = (target: HTMLElement, options: MapOptions): Map => {
+  const initializeMap = (target: HTMLElement, options: MapOptions): void => {
     if (map.value) {
       console.warn('Map already initialized')
-      return map.value
+      return
     }
 
     const defaultOptions: MapOptions = {
@@ -49,8 +49,6 @@ export const useMapLibre = () => {
     })
 
     map.value = mapInstance
-
-    return mapInstance
   }
 
   // Switch the base layer of the map
@@ -91,13 +89,6 @@ export const useMapLibre = () => {
     currentBaseLayer.value = key
   }
 
-  // Set Layer visibility
-  const setLayersVisibility = (layersId: string[], visible: boolean) => {
-    if (!map.value || layersId.length === 0) return
-
-    for (const layerId of layersId) map.value.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none')
-  }
-
   // Cleanup
   const destroy = () => {
     if (map.value === null) return
@@ -116,7 +107,6 @@ export const useMapLibre = () => {
     // Methods
     initializeMap,
     switchBaseLayer,
-    setLayersVisibility,
     destroy,
 
     // Layers methods

@@ -3,6 +3,8 @@ import { hslVar } from '~/lib/utils'
 import { useRuntimeConfig } from '#app'
 
 export const loadGrbBuildingsLayer = (map: Map): string[] => {
+  if (typeof map.getSource('grb-buildings') !== 'undefined') return ['grb-buildings-fill', 'grb-buildings-line']
+
   const config = useRuntimeConfig()
 
   const fillColor = hslVar('--layer-grb', 0.3)
