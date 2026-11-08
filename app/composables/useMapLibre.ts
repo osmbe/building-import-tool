@@ -24,7 +24,9 @@ export const useMapLibre = () => {
       attributionControl: false,
       center: [0, 0],
       container: target,
-      zoom: 1
+      hash: true,
+      zoom: 1,
+      zoomSnap: 1
     }
 
     const mapInstance = new Map({ ...defaultOptions, ...options })
