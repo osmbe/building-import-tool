@@ -132,112 +132,24 @@ const setupMap = () => {
   } as MapOptions)
 }
 
-// Handle Load OSM Buildings using Vector Tiles from Martin
-const handleLoadOSM = () => {
+const initOverlayLayer = (overlayLayer: { ids: string[]; visible: boolean }, fn: Function, visible: boolean) => {
   if (!map.value) {
     console.error('Map not initialized')
     return
   }
 
   try {
-    // Remove existing OSM buildings layer if present
-    if (overlayLayers.value.osmBuildings.ids.length > 0)
-      for (const layerId of overlayLayers.value.osmBuildings.ids) map.value.removeLayer(layerId)
+    // Remove existing  layer if present
+    if (overlayLayer.ids.length > 0) for (const layerId of overlayLayer.ids) map.value.removeLayer(layerId)
 
     // Add layer to map
-    overlayLayers.value.osmBuildings.ids = loadOSMBuildingsLayer(map.value)
-
-    // Update UI state
-    overlayLayers.value.osmBuildings.visible = true
+    overlayLayer.ids = fn(map.value)
+    overlayLayer.visible = visible
 
     // Set initial visibility based on current zoom level
-    setLayersVisibility(overlayLayers.value.osmBuildings.ids, true)
+    setLayersVisibility(overlayLayer.ids, visible)
   } catch (error) {
     console.error('Failed to load OSM buildings:', error)
-  }
-}
-
-// Handle Load GRB Buildings using Vector Tiles
-const handleLoadGRB = () => {
-  if (!map.value) {
-    console.error('Map not initialized')
-    return
-  }
-
-  try {
-    // Remove existing GRB buildings layer if present
-    if (overlayLayers.value.grbBuildings.ids.length > 0)
-      for (const layerId of overlayLayers.value.grbBuildings.ids) map.value.removeLayer(layerId)
-
-    // Add layer to map (hidden by default — user toggles it on)
-    overlayLayers.value.grbBuildings.ids = loadGrbBuildingsLayer(map.value)
-
-    setLayersVisibility(overlayLayers.value.grbBuildings.ids, false)
-  } catch (error) {
-    console.error('Failed to load GRB buildings:', error)
-  }
-}
-
-// Handle Load KNW Structures using Vector Tiles
-const handleLoadKNW = () => {
-  if (!map.value) {
-    console.error('Map not initialized')
-    return
-  }
-
-  try {
-    // Remove existing KNW structures layer if present
-    if (overlayLayers.value.knwStructures.ids.length > 0)
-      for (const layerId of overlayLayers.value.knwStructures.ids) map.value.removeLayer(layerId)
-
-    // Add layer to map (hidden by default — user toggles it on)
-    overlayLayers.value.knwStructures.ids = loadKnwStructuresLayer(map.value)
-
-    setLayersVisibility(overlayLayers.value.knwStructures.ids, false)
-  } catch (error) {
-    console.error('Failed to load KNW structures:', error)
-  }
-}
-
-// Handle Load PICC Buildings using Vector Tiles from Martin
-const handleLoadPICC = () => {
-  if (!map.value) {
-    console.error('Map not initialized')
-    return
-  }
-
-  try {
-    // Remove existing PICC buildings layer if present
-    if (overlayLayers.value.piccBuildings.ids.length > 0)
-      for (const layerId of overlayLayers.value.piccBuildings.ids) map.value.removeLayer(layerId)
-
-    // Add layer to map (hidden by default — user toggles it on)
-    overlayLayers.value.piccBuildings.ids = loadPiccBuildingsLayer(map.value)
-
-    setLayersVisibility(overlayLayers.value.piccBuildings.ids, false)
-  } catch (error) {
-    console.error('Failed to load PICC buildings:', error)
-  }
-}
-
-// Handle Load UrbIS Buildings using Vector Tiles from Martin
-const handleLoadUrbis = () => {
-  if (!map.value) {
-    console.error('Map not initialized')
-    return
-  }
-
-  try {
-    // Remove existing UrbIS buildings layer if present
-    if (overlayLayers.value.urbisBuildings.ids.length > 0)
-      for (const layerId of overlayLayers.value.urbisBuildings.ids) map.value.removeLayer(layerId)
-
-    // Add layer to map (hidden by default — user toggles it on)
-    overlayLayers.value.urbisBuildings.ids = loadUrbisBuildingsLayer(map.value)
-
-    setLayersVisibility(overlayLayers.value.urbisBuildings.ids, false)
-  } catch (error) {
-    console.error('Failed to load UrbIS buildings:', error)
   }
 }
 
@@ -247,13 +159,12 @@ onMounted(() => {
   setupMap()
 
   if (map.value) {
-    // Automatically load OSM and GRB layers
     const initializeOverlays = () => {
-      handleLoadOSM()
-      handleLoadGRB()
-      handleLoadKNW()
-      handleLoadPICC()
-      handleLoadUrbis()
+      initOverlayLayer(overlayLayers.value.osmBuildings, loadOSMBuildingsLayer, true)
+      initOverlayLayer(overlayLayers.value.grbBuildings, loadGrbBuildingsLayer, false)
+      initOverlayLayer(overlayLayers.value.knwStructures, loadKnwStructuresLayer, false)
+      initOverlayLayer(overlayLayers.value.piccBuildings, loadPiccBuildingsLayer, false)
+      initOverlayLayer(overlayLayers.value.urbisBuildings, loadUrbisBuildingsLayer, false)
     }
 
     if (map.value.isStyleLoaded()) initializeOverlays()
