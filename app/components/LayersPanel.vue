@@ -82,9 +82,9 @@
           </div>
           <div class="flex items-center justify-between text-[10px]">
             <span class="text-muted-foreground">Center</span>
-            <span class="font-mono text-foreground/55"
-              >{{ currentCenter[1].toFixed(4) }}, {{ currentCenter[0].toFixed(4) }}</span
-            >
+            <span class="font-mono text-foreground/55">
+              {{ currentCenter[0].toFixed(4) }},{{ currentCenter[1].toFixed(4) }}
+            </span>
           </div>
         </div>
       </div>

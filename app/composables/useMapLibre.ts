@@ -12,6 +12,8 @@ setWorkerUrl(workerUrl)
 export const useMapLibre = () => {
   const map = shallowRef<Map | null>(null)
   const currentBaseLayer = ref<keyof typeof baselayers>('osmbe')
+  const currentZoom = ref(7)
+  const currentCenter = ref<[number, number]>([4.3517, 50.8503])
 
   // Initialize map
   const initializeMap = (target: HTMLElement, options: MapOptions): Map => {
@@ -45,7 +47,7 @@ export const useMapLibre = () => {
 
   // Switch the base layer of the map
   const switchBaseLayer = (key: keyof typeof baselayers) => {
-    console.log(map);
+    console.log(map)
     map.value?.setStyle(baselayers[key]?.style ?? null, {
       // Merge overlay sources + layers into the incoming base style
       transformStyle: (previousStyle, nextStyle) => {
@@ -100,6 +102,8 @@ export const useMapLibre = () => {
     // State
     map: map as Ref<Map | null>,
     currentBaseLayer,
+    currentZoom,
+    currentCenter,
 
     // Methods
     initializeMap,

@@ -67,6 +67,8 @@ const mapRef = ref<HTMLElement>()
 const {
   map,
   currentBaseLayer,
+  currentCenter,
+  currentZoom,
   initializeMap,
   loadOSMBuildingsLayer,
   loadGrbBuildingsLayer,
@@ -114,9 +116,6 @@ const overlayLayers = ref({
   piccBuildings: false,
   urbisBuildings: false
 })
-
-const currentZoom = ref(7)
-const currentCenter = ref<[number, number]>([4.3517, 50.8503])
 
 const selectedSource = computed<SourceKind | 'none'>(() => {
   if (overlayLayers.value.grbBuildings) return 'grb'
