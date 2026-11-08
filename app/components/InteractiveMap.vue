@@ -31,8 +31,8 @@ export interface MapState {
   baselayers: ReturnType<typeof UseMapLibreComposable>['baselayers']
   candidateBuildingCount: Ref<number>
   currentBaseLayer: ReturnType<typeof UseMapLibreComposable>['currentBaseLayer']
-  currentCenter: Ref<[number, number]>
-  currentZoom: Ref<number>
+  currentCenter: ReturnType<typeof UseMapLibreComposable>['currentCenter']
+  currentZoom: ReturnType<typeof UseMapLibreComposable>['currentZoom']
   layersCollapsed: Ref<boolean>
   map: ReturnType<typeof UseMapLibreComposable>['map']
   overlayLayers: Ref<LayerOverlayLayers>
