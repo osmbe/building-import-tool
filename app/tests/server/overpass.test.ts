@@ -13,7 +13,7 @@ import {
 
 type Ring = [number, number][]
 
-const BBOX: [number, number, number, number] = [484000, 6594000, 484200, 6594200]
+const BBOX: [number, number, number, number] = [4.3478, 50.8454, 4.3496, 50.8466]
 const SQUARE: Ring = [
   [0, 0],
   [0, 10],

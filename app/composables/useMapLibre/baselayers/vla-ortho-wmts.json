@@ -1,0 +1,27 @@
+{
+  "version": 8,
+  "sources": {
+    "vla-ortho-wmts": {
+      "attribution": "© Digitaal Vlaanderen",
+      "type": "raster",
+      "tiles": [
+        "https://geo.api.vlaanderen.be/OFW/wmts?layer=ofw&style=default&tilematrixset=GoogleMapsVL&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix={z}&TileCol={x}&TileRow={y}"
+      ],
+      "tileSize": 256
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#f8f4f0"
+      }
+    },
+    {
+      "id": "vla-ortho-wmts",
+      "type": "raster",
+      "source": "vla-ortho-wmts"
+    }
+  ]
+}

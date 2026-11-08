@@ -14,18 +14,10 @@ import { type TestHandler, asHandler, createEvent, runtimeConfig, stubNitro } fr
 
 const PORT = process.env.TEST_PG_PORT
 
-/** EPSG:3857 bounds [minX, minY, maxX, maxY] of a lon/lat box. */
-function mercatorBounds(minLon: number, minLat: number, maxLon: number, maxLat: number): number[] {
-  const R = 6378137
-  const x = (lon: number) => (lon * Math.PI * R) / 180
-  const y = (lat: number) => R * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360))
-  return [x(minLon), y(minLat), x(maxLon), y(maxLat)]
-}
-
 const AREAS = {
-  grb: mercatorBounds(4.399, 51.199, 4.412, 51.201),
-  picc: mercatorBounds(4.869, 50.464, 4.873, 50.466),
-  urbis: mercatorBounds(4.349, 50.845, 4.353, 50.847)
+  grb: [4.399, 51.199, 4.412, 51.201],
+  picc: [4.869, 50.464, 4.873, 50.466],
+  urbis: [4.349, 50.845, 4.353, 50.847]
 }
 
 interface Stats {

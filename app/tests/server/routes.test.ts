@@ -172,54 +172,6 @@ describe('POST /api/buildings/osm-live', () => {
   })
 })
 
-describe('GET /api/proxy/brussels-wms', () => {
-  const load = async () => asHandler(await import('~/server/api/proxy/brussels-wms.get'))
-
-  it('clamps tile size, translates EPSG:3857 and drops FORMAT_OPTIONS', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(new Uint8Array([1, 2, 3]), { headers: { 'content-type': 'image/png' }, status: 200 })
-      )
-    vi.stubGlobal('fetch', fetchMock)
-    const event = createEvent({
-      query: { CRS: 'EPSG:3857', FORMAT_OPTIONS: 'dpi:180', LAYERS: 'urbisFR', WIDTH: '512', height: '512' }
-    })
-
-    const body = await (await load())(event)
-
-    const url = new URL(String(fetchMock.mock.calls[0]?.[0]))
-    expect(url.origin + url.pathname).toBe('https://geoservices-urbis.irisnet.be/geowebcache/service/wms')
-    expect(Object.fromEntries(url.searchParams)).toEqual({
-      CRS: 'EPSG:900913',
-      LAYERS: 'urbisFR',
-      WIDTH: '256',
-      height: '256'
-    })
-    expect(event.responseHeaders['Content-Type']).toBe('image/png')
-    expect(Buffer.isBuffer(body)).toBe(true)
-    expect([...(body as Buffer)]).toEqual([1, 2, 3])
-  })
-
-  it('defaults the content type to JPEG', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(new Uint8Array([9]), { status: 200 })))
-    const event = createEvent()
-    await (
-      await load()
-    )(event)
-    expect(event.responseHeaders['Content-Type']).toBe('image/jpeg')
-  })
-
-  it('forwards an upstream error status', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response('nope', { status: 503, statusText: 'Service Unavailable' }))
-    )
-    const error = await expectHttpError((await load())(createEvent()))
-    expect(error).toMatchObject({ statusCode: 503, statusMessage: 'Service Unavailable' })
-  })
-})
-
 describe('POST /api/export/upload', () => {
   const load = async () => asHandler(await import('~/server/api/export/upload.post'))
   const OSM_XML = '<?xml version="1.0"?><osm version="0.6"></osm>'

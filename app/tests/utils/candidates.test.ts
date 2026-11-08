@@ -9,7 +9,6 @@ import {
   candidateDetail,
   candidateDisplayId,
   candidateTags,
-  candidateTileUrl,
   candidateToOsmFeature,
   isCandidateSource
 } from '~/utils/candidates'
@@ -54,9 +53,6 @@ describe('the candidates contract', () => {
       picc: 'picc.candidates',
       urbis: 'urbis.candidates'
     })
-    expect(candidateTileUrl('grb')).toBe('/tiles/grb/candidates/{z}/{x}/{y}')
-    expect(candidateTileUrl('knw')).toBe('/tiles/grb/knw_candidates/{z}/{x}/{y}')
-    expect(candidateTileUrl('urbis')).toBe('/tiles/urbis/candidates/{z}/{x}/{y}')
   })
 
   it('lists the columns of the views (tests/db/cases/16-candidates-contract.sh checks the database side)', () => {

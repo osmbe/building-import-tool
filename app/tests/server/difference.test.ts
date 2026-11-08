@@ -18,7 +18,7 @@ vi.mock('~/server/utils/overpass', async (importOriginal) => ({
   fetchOverpassBuildings: overpass.fetchOverpassBuildings
 }))
 
-const BOUNDS = [484000, 6594000, 484200, 6594200]
+const BOUNDS = [4.3478462, 50.8454442, 4.3496425, 50.8465787]
 const GEOMETRY = '{"type":"Polygon","coordinates":[[[0,0],[0,1],[1,1],[0,0]]]}'
 
 interface Data {
@@ -66,7 +66,6 @@ const countCall = (): { sql: string; params: unknown[] } => {
 const overpassData = (over: Partial<OverpassBuildings> = {}): OverpassBuildings => ({
   features: [],
   geomCollection: 'LIVE_GC',
-  geomCollection3857: 'LIVE_GC_3857',
   sourceRefs: ['Gbg/9'],
   totalOsm: 4,
   ...over
@@ -194,12 +193,12 @@ describe('POST /api/buildings/difference: geometry matching', () => {
     fakeDatabases()
     await post({ dataSource: 'knw', geometryThreshold: 0.8 })
     const { sql, params } = candidateCall()
-    expect(sql).toContain('ST_SetSRID(ST_GeomFromGeoJSON($5), 3857)')
+    expect(sql).toContain('ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON($5), 4326), 3857)')
     expect(sql).toContain('NOT EXISTS')
     expect(sql).toContain('/ NULLIF(ST_Area(c.geom), 0) >= $6')
     expect(sql).toContain('/ NULLIF(ST_Area(o.geom), 0) >= $6')
     expect(params).toEqual([...BOUNDS, 'OSM_GC', 0.8])
-    expect(db.queryOsm.mock.calls[0]?.[0]).toContain('COALESCE(geom_mercator, ST_Transform(geom, 3857))')
+    expect(db.queryOsm.mock.calls[0]?.[0]).toContain('COALESCE(ST_Transform(geom_mercator, 4326), geom)')
   })
 
   it('returns every candidate when there are no OSM buildings in view', async () => {
@@ -209,18 +208,18 @@ describe('POST /api/buildings/difference: geometry matching', () => {
     expect(candidateCall().params).toEqual(BOUNDS)
   })
 
-  it('uses the Web Mercator Overpass collection in live mode', async () => {
+  it('uses the Overpass collection in live mode', async () => {
     fakeDatabases()
     overpass.fetchOverpassBuildings.mockResolvedValue(overpassData())
     const { result } = await post({ dataSource: 'picc', useOverpass: true })
     expect(db.queryOsm).not.toHaveBeenCalled()
-    expect(candidateCall().params).toContain('LIVE_GC_3857')
+    expect(candidateCall().params).toContain('LIVE_GC')
     expect(result.stats.totalOsm).toBe(4)
   })
 
   it('treats an empty Overpass answer as no OSM buildings', async () => {
     fakeDatabases()
-    overpass.fetchOverpassBuildings.mockResolvedValue(overpassData({ geomCollection3857: null, totalOsm: 0 }))
+    overpass.fetchOverpassBuildings.mockResolvedValue(overpassData({ geomCollection: null, totalOsm: 0 }))
     await post({ dataSource: 'grb', useOverpass: true })
     expect(candidateCall().sql).not.toContain('NOT EXISTS')
   })
