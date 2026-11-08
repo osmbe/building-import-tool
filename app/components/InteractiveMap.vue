@@ -73,7 +73,6 @@ const {
   loadKnwStructuresLayer,
   loadPiccBuildingsLayer,
   loadUrbisBuildingsLayer,
-  getZoomLevel,
   setLayersVisibility,
   switchBaseLayer,
   baselayers,
@@ -173,7 +172,7 @@ const setupMap = () => {
   mapInstance.on('moveend', () => {
     if (!map.value) return
 
-    const zoom = getZoomLevel()
+    const zoom = Math.floor(mapInstance.getZoom() ?? 0) + 1
     currentZoom.value = zoom
 
     const { lng, lat } = mapInstance.getCenter()
@@ -232,7 +231,7 @@ const handleLoadOSM = () => {
     overlayLayers.value.osmBuildings = true
 
     // Set initial visibility based on current zoom level
-    const shouldShow = getZoomLevel() >= 16 && overlayLayers.value.osmBuildings
+    const shouldShow = currentZoom.value >= 16 && overlayLayers.value.osmBuildings
     setLayersVisibility(osmBuildingsLayerIdRef.value, shouldShow)
   } catch (error) {
     console.error('Failed to load OSM buildings:', error)
@@ -330,8 +329,7 @@ onMounted(() => {
 
   if (map.value) {
     // Check initial zoom level for layer visibility
-    const initialZoom = Math.round(getZoomLevel() || 13)
-    handleZoomBasedLayerVisibility(initialZoom)
+    handleZoomBasedLayerVisibility(currentZoom.value)
 
     // Automatically load OSM and GRB layers
     const initializeOverlays = () => {

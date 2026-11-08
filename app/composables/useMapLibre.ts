@@ -45,6 +45,7 @@ export const useMapLibre = () => {
 
   // Switch the base layer of the map
   const switchBaseLayer = (key: keyof typeof baselayers) => {
+    console.log(map);
     map.value?.setStyle(baselayers[key]?.style ?? null, {
       // Merge overlay sources + layers into the incoming base style
       transformStyle: (previousStyle, nextStyle) => {
@@ -80,9 +81,6 @@ export const useMapLibre = () => {
     currentBaseLayer.value = key
   }
 
-  // Get current zoom level
-  const getZoomLevel = () => Math.floor(map.value?.getZoom() ?? 0) + 1
-
   // Set Layer visibility
   const setLayersVisibility = (layersId: string[], visible: boolean) => {
     if (!map.value || layersId.length === 0) return
@@ -106,7 +104,6 @@ export const useMapLibre = () => {
     // Methods
     initializeMap,
     switchBaseLayer,
-    getZoomLevel,
     setLayersVisibility,
     destroy,
 
