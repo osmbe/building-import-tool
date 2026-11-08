@@ -108,11 +108,11 @@ export default defineEventHandler(async (event) => {
       } else {
         const osm = await queryOsm(
           `
-          SELECT ST_AsGeoJSON(ST_Collect(COALESCE(geom_mercator, ST_Transform(geom, 3857)))) AS geom_collection,
+          SELECT ST_AsGeoJSON(ST_Collect(COALESCE(ST_Transform(geom_mercator, 4326), geom))) AS geom_collection,
                  COUNT(*) AS total_osm
           FROM osm.osm_buildings
-          WHERE geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326)
-            AND ST_Intersects(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 3857), 4326))
+          WHERE geom && ST_MakeEnvelope($1, $2, $3, $4, 4326)
+            AND ST_Intersects(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
         `,
           [minX, minY, maxX, maxY]
         )
@@ -159,7 +159,7 @@ export default defineEventHandler(async (event) => {
         : 'TRUE'
     const countParams = [...params]
     const view = CANDIDATE_VIEWS[dataSource]
-    const inView = `c.geom && ST_MakeEnvelope($1, $2, $3, $4, 4326) AND ST_Intersects(c.geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))`
+    const inView = `c.geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 4326), 3857) AND ST_Intersects(c.geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, 4326), 3857))`
 
     const conditions = [inView, inScope]
     if (useRefs)
@@ -168,7 +168,7 @@ export default defineEventHandler(async (event) => {
 
     let osmCte = ''
     if (useGeometry && osmGeometries) {
-      osmCte = `WITH osm AS (SELECT (ST_Dump(ST_SetSRID(ST_GeomFromGeoJSON(${param(osmGeometries)}), 3857))).geom AS geom)`
+      osmCte = `WITH osm AS (SELECT (ST_Dump(ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(${param(osmGeometries)}), 4326), 3857))).geom AS geom)`
       const t = param(threshold)
       conditions.push(`NOT EXISTS (
         SELECT 1 FROM osm o
