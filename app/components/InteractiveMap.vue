@@ -37,7 +37,6 @@ export interface MapState {
   map: ReturnType<typeof UseMapLibreComposable>['map']
   overlayLayers: Ref<LayerOverlayLayers>
   selectedSource: ComputedRef<LayerSourceKind | 'none'>
-  switchBaseLayer: ReturnType<typeof UseMapLibreComposable>['switchBaseLayer']
 }
 </script>
 
@@ -86,6 +85,13 @@ const overlayLayers = ref({
   urbisBuildings: { ids: [] as string[], visible: false }
 })
 
+watch(
+  () => currentBaseLayer.value,
+  (baselayer) => {
+    switchBaseLayer(baselayer)
+  }
+)
+
 for (const layer of Object.values(overlayLayers.value))
   watch(
     () => [layer.visible, layer.ids] as const,
@@ -115,8 +121,7 @@ const mapState = {
   layersCollapsed,
   map,
   overlayLayers,
-  selectedSource,
-  switchBaseLayer
+  selectedSource
 }
 
 // Watch for changes in the selected location (via geocoder) and fly the map to the new location

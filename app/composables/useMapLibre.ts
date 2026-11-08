@@ -53,7 +53,6 @@ export const useMapLibre = () => {
 
   // Switch the base layer of the map
   const switchBaseLayer = (key: keyof typeof baselayers) => {
-    console.log(map)
     map.value?.setStyle(baselayers[key]?.style ?? null, {
       // Merge overlay sources + layers into the incoming base style
       transformStyle: (previousStyle, nextStyle) => {
@@ -85,8 +84,6 @@ export const useMapLibre = () => {
         return nextStyle
       }
     })
-
-    currentBaseLayer.value = key
   }
 
   // Cleanup

@@ -70,7 +70,7 @@
               v-for="(baselayer, key) in baselayers"
               class="layer-btn"
               :class="currentBaseLayer === key ? 'layer-btn-active' : ''"
-              @click="switchBaseLayer(key)"
+              @click="currentBaseLayer = key"
               :title="baselayer.title"
             >
               {{ baselayer.label }} <span v-if="baselayer.comment" class="opacity-60">{{ baselayer.comment }}</span>
@@ -124,8 +124,7 @@ const {
   currentZoom,
   layersCollapsed,
   overlayLayers,
-  selectedSource,
-  switchBaseLayer
+  selectedSource
 } = mapState
 
 const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
