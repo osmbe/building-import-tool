@@ -30,6 +30,11 @@ export const baselayers: Record<string, SourceConfig> = {
     label: 'OpenFreeMap',
     style: 'https://tiles.openfreemap.org/styles/liberty'
   },
+  // Shortbread
+  shortbread: {
+    label: 'Shortbread',
+    style: 'https://vector.openstreetmap.org/styles/shortbread/graybeard.json'
+  },
   // Vlaanderen (Flanders) orthophotos
   'vla-ortho-wmts': {
     comment: 'latest',
