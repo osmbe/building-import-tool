@@ -224,23 +224,8 @@ export const useJosmExport = () => {
     if (!response.ok) throw new Error(`JOSM returned status ${response.status}`)
   }
 
-  /**
-   * Get JOSM setup instructions
-   */
-  const getJosmInstructions = (): string[] => [
-    '1. Download and install JOSM from https://josm.openstreetmap.de/',
-    '2. Start JOSM application',
-    '3. Go to Edit → Preferences (or press F12)',
-    '4. Navigate to "Remote Control" in the left panel',
-    '5. Check "Enable remote control"',
-    '6. Optionally check "Load data from API" for automatic data loading',
-    '7. Click OK to save settings',
-    '8. JOSM is now ready to receive data from this application'
-  ]
-
   return {
     exportLayerToJosm,
-    getJosmInstructions,
     josmBaseUrl,
     openAreaInJosm,
     testJosmConnection,

@@ -82,8 +82,18 @@ defineProps<{
   open: boolean
   connected: boolean | null
   testing: boolean
-  instructions: string[]
 }>()
 
 defineEmits<{ (e: 'update:open', value: boolean): void; (e: 'test'): void }>()
+
+const instructions = [
+  'Download and install JOSM from <a href="https://josm.openstreetmap.de/" target="_blank">https://josm.openstreetmap.de/</a>',
+  'Start JOSM application',
+  'Go to Edit → Preferences (or press F12)',
+  'Navigate to "Remote Control" in the left panel',
+  'Check "Enable remote control"',
+  'Optionally check "Load data from API" for automatic data loading',
+  'Click OK to save settings',
+  'JOSM is now ready to receive data from this application'
+]
 </script>
