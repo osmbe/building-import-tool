@@ -40,6 +40,14 @@ export const useMapLibre = () => {
       if (currentBaseLayer.value === key) mapInstance.setStyle(baselayers[key]?.style ?? null)
     })
 
+    mapInstance.on('moveend', () => {
+      const zoom = Math.floor(mapInstance.getZoom() ?? 0) + 1
+      currentZoom.value = zoom
+
+      const { lng, lat } = mapInstance.getCenter()
+      currentCenter.value = [lng, lat]
+    })
+
     map.value = mapInstance
 
     return mapInstance

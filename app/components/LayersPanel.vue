@@ -24,7 +24,10 @@
             </div>
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-mono text-muted-foreground">{{ candidateBuildingCount }}</span>
-              <Switch v-model:checked="overlayLayers.candidateBuildings" @update:checked="toggleCandidateBuildings" />
+              <Switch
+                v-model:checked="overlayLayers.candidateBuildings.visible"
+                @update:checked="toggleCandidateBuildings"
+              />
             </div>
           </div>
           <div class="layer-row">
@@ -32,7 +35,7 @@
               <span class="layer-dot" style="color: hsl(var(--layer-osm)); background: currentColor"></span>
               <span class="text-xs text-foreground/85">OSM Buildings</span>
             </div>
-            <Switch v-model:checked="overlayLayers.osmBuildings" @update:checked="toggleOsmBuildings" />
+            <Switch v-model:checked="overlayLayers.osmBuildings.visible" @update:checked="toggleOsmBuildings" />
           </div>
         </div>
 
@@ -96,15 +99,13 @@
 export type SourceKind = 'grb' | 'knw' | 'picc' | 'urbis'
 
 export interface OverlayLayers {
-  addresses: boolean
-  boundaries: boolean
-  candidateBuildings: boolean
-  conflicts: boolean
-  grbBuildings: boolean
-  knwStructures: boolean
-  osmBuildings: boolean
-  piccBuildings: boolean
-  urbisBuildings: boolean
+  candidateBuildings: { visible: boolean; ids: string[] }
+  grbBuildings: { visible: boolean; ids: string[] }
+  knwStructures: { visible: boolean; ids: string[] }
+  osmBuildings: { visible: boolean; ids: string[] }
+  osmLive: { visible: boolean; ids: string[] }
+  piccBuildings: { visible: boolean; ids: string[] }
+  urbisBuildings: { visible: boolean; ids: string[] }
 }
 </script>
 
@@ -117,22 +118,15 @@ import Switch from '~/components/ui/switch.vue'
 const { mapState } = defineProps<{ mapState: MapState }>()
 const {
   baselayers,
-  candidateBuildingsLayerIdRef,
   candidateBuildingCount,
   currentBaseLayer,
   currentCenter,
   currentZoom,
-  grbBuildingsLayerIdRef,
-  knwStructuresLayerIdRef,
   layersCollapsed,
-  liveOsmLayerIdRef,
-  osmBuildingsLayerIdRef,
   overlayLayers,
-  piccBuildingsLayerIdRef,
   selectedSource,
   setLayersVisibility,
-  switchBaseLayer,
-  urbisBuildingsLayerIdRef
+  switchBaseLayer
 } = mapState
 
 const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
@@ -143,20 +137,22 @@ const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
 ]
 
 const toggleCandidateBuildings = (visible: boolean) => {
-  overlayLayers.value.candidateBuildings = visible
-
-  // Toggle visibility of candidate buildings layer
-  setLayersVisibility(candidateBuildingsLayerIdRef.value, visible)
+  overlayLayers.value.candidateBuildings.visible = visible
+  setLayersVisibility(overlayLayers.value.candidateBuildings.ids, visible)
 }
 
 const toggleOsmBuildings = (visible: boolean) => {
-  overlayLayers.value.osmBuildings = visible
+  overlayLayers.value.osmBuildings.visible = visible
 
   // Toggle visibility of OSM buildings layer
   const shouldShow = currentZoom.value >= 16
-  setLayersVisibility(osmBuildingsLayerIdRef.value, shouldShow && visible && liveOsmLayerIdRef.value.length === 0)
+  setLayersVisibility(
+    overlayLayers.value.osmBuildings.ids,
+    shouldShow && visible && overlayLayers.value.osmLive.ids.length === 0
+  )
 
-  if (liveOsmLayerIdRef.value.length > 0) setLayersVisibility(liveOsmLayerIdRef.value, shouldShow && visible)
+  if (overlayLayers.value.osmLive.ids.length > 0)
+    setLayersVisibility(overlayLayers.value.osmLive.ids, shouldShow && visible)
 }
 
 const selectSource = (src: SourceKind) => {
@@ -169,92 +165,91 @@ const selectSource = (src: SourceKind) => {
 }
 
 const toggleGrbBuildings = (visible: boolean) => {
-  overlayLayers.value.grbBuildings = visible
+  overlayLayers.value.grbBuildings.visible = visible
 
-  const shouldShow = currentZoom.value >= 16
-  setLayersVisibility(grbBuildingsLayerIdRef.value, shouldShow && visible)
+  setLayersVisibility(overlayLayers.value.grbBuildings.ids, currentZoom.value >= 16 && visible === true)
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
     if (overlayLayers.value.knwStructures) {
-      overlayLayers.value.knwStructures = false
-      setLayersVisibility(knwStructuresLayerIdRef.value, false)
+      overlayLayers.value.knwStructures.visible = false
+      setLayersVisibility(overlayLayers.value.knwStructures.ids, false)
     }
     if (overlayLayers.value.piccBuildings) {
-      overlayLayers.value.piccBuildings = false
-      setLayersVisibility(piccBuildingsLayerIdRef.value, false)
+      overlayLayers.value.piccBuildings.visible = false
+      setLayersVisibility(overlayLayers.value.piccBuildings.ids, false)
     }
     if (overlayLayers.value.urbisBuildings) {
-      overlayLayers.value.urbisBuildings = false
-      setLayersVisibility(urbisBuildingsLayerIdRef.value, false)
+      overlayLayers.value.urbisBuildings.visible = false
+      setLayersVisibility(overlayLayers.value.urbisBuildings.ids, false)
     }
   }
 }
 
 const toggleKnwStructures = (visible: boolean) => {
-  overlayLayers.value.knwStructures = visible
+  overlayLayers.value.knwStructures.visible = visible
 
   const shouldShow = currentZoom.value >= 16
-  setLayersVisibility(knwStructuresLayerIdRef.value, shouldShow && visible)
+  setLayersVisibility(overlayLayers.value.knwStructures.ids, shouldShow && visible)
 
   if (visible) {
     if (overlayLayers.value.grbBuildings) {
-      overlayLayers.value.grbBuildings = false
-      setLayersVisibility(grbBuildingsLayerIdRef.value, false)
+      overlayLayers.value.grbBuildings.visible = false
+      setLayersVisibility(overlayLayers.value.grbBuildings.ids, false)
     }
     if (overlayLayers.value.piccBuildings) {
-      overlayLayers.value.piccBuildings = false
-      setLayersVisibility(piccBuildingsLayerIdRef.value, false)
+      overlayLayers.value.piccBuildings.visible = false
+      setLayersVisibility(overlayLayers.value.piccBuildings.ids, false)
     }
     if (overlayLayers.value.urbisBuildings) {
-      overlayLayers.value.urbisBuildings = false
-      setLayersVisibility(urbisBuildingsLayerIdRef.value, false)
+      overlayLayers.value.urbisBuildings.visible = false
+      setLayersVisibility(overlayLayers.value.urbisBuildings.ids, false)
     }
   }
 }
 
 const togglePiccBuildings = (visible: boolean) => {
-  overlayLayers.value.piccBuildings = visible
+  overlayLayers.value.piccBuildings.visible = visible
 
   const shouldShow = currentZoom.value >= 16
-  setLayersVisibility(piccBuildingsLayerIdRef.value, shouldShow && visible)
+  setLayersVisibility(overlayLayers.value.piccBuildings.ids, shouldShow && visible)
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
     if (overlayLayers.value.grbBuildings) {
-      overlayLayers.value.grbBuildings = false
-      setLayersVisibility(grbBuildingsLayerIdRef.value, false)
+      overlayLayers.value.grbBuildings.visible = false
+      setLayersVisibility(overlayLayers.value.grbBuildings.ids, false)
     }
     if (overlayLayers.value.knwStructures) {
-      overlayLayers.value.knwStructures = false
-      setLayersVisibility(knwStructuresLayerIdRef.value, false)
+      overlayLayers.value.knwStructures.visible = false
+      setLayersVisibility(overlayLayers.value.knwStructures.ids, false)
     }
     if (overlayLayers.value.urbisBuildings) {
-      overlayLayers.value.urbisBuildings = false
-      setLayersVisibility(urbisBuildingsLayerIdRef.value, false)
+      overlayLayers.value.urbisBuildings.visible = false
+      setLayersVisibility(overlayLayers.value.urbisBuildings.ids, false)
     }
   }
 }
 
 const toggleUrbisBuildings = (visible: boolean) => {
-  overlayLayers.value.urbisBuildings = visible
+  overlayLayers.value.urbisBuildings.visible = visible
 
   const shouldShow = currentZoom.value >= 16
-  setLayersVisibility(urbisBuildingsLayerIdRef.value, shouldShow && visible)
+  setLayersVisibility(overlayLayers.value.urbisBuildings.ids, shouldShow && visible)
 
   // GRB, PICC, and UrbIS are mutually exclusive
   if (visible) {
     if (overlayLayers.value.grbBuildings) {
-      overlayLayers.value.grbBuildings = false
-      setLayersVisibility(grbBuildingsLayerIdRef.value, false)
+      overlayLayers.value.grbBuildings.visible = false
+      setLayersVisibility(overlayLayers.value.grbBuildings.ids, false)
     }
     if (overlayLayers.value.knwStructures) {
-      overlayLayers.value.knwStructures = false
-      setLayersVisibility(knwStructuresLayerIdRef.value, false)
+      overlayLayers.value.knwStructures.visible = false
+      setLayersVisibility(overlayLayers.value.knwStructures.ids, false)
     }
     if (overlayLayers.value.piccBuildings) {
-      overlayLayers.value.piccBuildings = false
-      setLayersVisibility(piccBuildingsLayerIdRef.value, false)
+      overlayLayers.value.piccBuildings.visible = false
+      setLayersVisibility(overlayLayers.value.piccBuildings.ids, false)
     }
   }
 }

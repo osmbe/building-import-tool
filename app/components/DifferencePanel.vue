@@ -191,20 +191,13 @@ import { hslVar } from '~/lib/utils'
 
 const { mapState } = defineProps<{ mapState: MapState }>()
 const {
-  candidateBuildingsLayerIdRef,
   candidateBuildingCount,
   currentZoom,
-  grbBuildingsLayerIdRef,
-  knwStructuresLayerIdRef,
   layersCollapsed,
-  liveOsmLayerIdRef,
   map,
-  osmBuildingsLayerIdRef,
   overlayLayers,
-  piccBuildingsLayerIdRef,
   selectedSource,
-  setLayersVisibility,
-  urbisBuildingsLayerIdRef
+  setLayersVisibility
 } = mapState
 
 const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
@@ -244,14 +237,16 @@ const simplifyPercent = ref(85)
 
 const hasSourceLayer = computed(() =>
   Boolean(
-    (grbBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.grbBuildings) ||
-    (knwStructuresLayerIdRef.value.length > 0 && overlayLayers.value.knwStructures) ||
-    (piccBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.piccBuildings) ||
-    (urbisBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.urbisBuildings)
+    (overlayLayers.value.grbBuildings.ids.length > 0 && overlayLayers.value.grbBuildings.visible === true) ||
+    (overlayLayers.value.knwStructures.ids.length > 0 && overlayLayers.value.knwStructures.visible === true) ||
+    (overlayLayers.value.piccBuildings.ids.length > 0 && overlayLayers.value.piccBuildings.visible === true) ||
+    (overlayLayers.value.urbisBuildings.ids.length > 0 && overlayLayers.value.urbisBuildings.visible === true)
   )
 )
 
-const hasOsmLayer = computed(() => Boolean(osmBuildingsLayerIdRef.value.length > 0 && overlayLayers.value.osmBuildings))
+const hasOsmLayer = computed(() =>
+  Boolean(overlayLayers.value.osmBuildings.ids.length > 0 && overlayLayers.value.osmBuildings.visible === true)
+)
 
 // JOSM remote-control connection status (null = not checked yet)
 const josmConnected = ref<boolean | null>(null)
@@ -380,18 +375,18 @@ const canExportToJOSM = computed(
 // Calculate difference between source (GRB/PICC) and OSM buildings and display them
 // Issue #9: drop the live OSM layer and show the tile layer (Postgres mirror) again.
 const clearLiveOsmLayer = () => {
-  if (liveOsmLayerIdRef.value.length > 0 && typeof map.value !== 'undefined' && map.value !== null) {
+  if (overlayLayers.value.osmLive.ids.length > 0 && typeof map.value !== 'undefined' && map.value !== null) {
     map.value.removeLayer('osmlive-fill')
     map.value.removeLayer('osmlive-line')
     map.value.removeSource('osmlive')
 
-    liveOsmLayerIdRef.value = []
+    overlayLayers.value.osmLive.ids = []
   }
 
-  if (osmBuildingsLayerIdRef.value.length > 0) {
-    const visible = overlayLayers.value.osmBuildings && currentZoom.value >= 16
+  if (overlayLayers.value.osmBuildings.ids.length > 0) {
+    const visible = overlayLayers.value.osmBuildings.visible === true && currentZoom.value >= 16
 
-    setLayersVisibility(osmBuildingsLayerIdRef.value, visible)
+    setLayersVisibility(overlayLayers.value.osmBuildings.ids, visible)
   }
 }
 
@@ -432,26 +427,29 @@ const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
     'osmlive-fill'
   )
 
-  liveOsmLayerIdRef.value = ['osmlive-fill', 'osmlive-line']
+  overlayLayers.value.osmLive.ids = ['osmlive-fill', 'osmlive-line']
 
-  setLayersVisibility(osmBuildingsLayerIdRef.value, false)
+  setLayersVisibility(overlayLayers.value.osmLive.ids, false)
 }
 
 // Watch for match mode changes and refetch candidate buildings if they're already loaded
 watch(matchMode, () => {
-  if (candidateBuildingsLayerIdRef.value.length > 0)
+  if (overlayLayers.value.candidateBuildings.ids.length > 0)
     // Refetch candidate buildings with the new match mode
     calculateDifference()
 })
 
 watch(geometryThreshold, () => {
-  if ((matchMode.value === 'geometry' || matchMode.value === 'both') && candidateBuildingsLayerIdRef.value.length > 0)
+  if (
+    (matchMode.value === 'geometry' || matchMode.value === 'both') &&
+    overlayLayers.value.candidateBuildings.ids.length > 0
+  )
     calculateDifference()
 })
 
 watch(useOverpass, (live) => {
   if (!live) clearLiveOsmLayer()
-  if (candidateBuildingsLayerIdRef.value.length > 0) calculateDifference()
+  if (overlayLayers.value.candidateBuildings.ids.length > 0) calculateDifference()
 })
 
 // Keyboard shortcuts: G = Get Difference, J = open in JOSM. Ignored while typing.
@@ -478,14 +476,17 @@ const calculateDifference = async () => {
   if (!map.value) return
 
   // Determine which data source is active (GRB, PICC, or UrbIS)
-  const grbActive = overlayLayers.value.grbBuildings && grbBuildingsLayerIdRef.value.length > 0
-  const knwActive = overlayLayers.value.knwStructures && knwStructuresLayerIdRef.value.length > 0
-  const piccActive = overlayLayers.value.piccBuildings && piccBuildingsLayerIdRef.value.length > 0
-  const urbisActive = overlayLayers.value.urbisBuildings && urbisBuildingsLayerIdRef.value.length > 0
+  const grbActive = overlayLayers.value.grbBuildings.visible === true && overlayLayers.value.grbBuildings.ids.length > 0
+  const knwActive =
+    overlayLayers.value.knwStructures.visible === true && overlayLayers.value.knwStructures.ids.length > 0
+  const piccActive =
+    overlayLayers.value.piccBuildings.visible === true && overlayLayers.value.piccBuildings.ids.length > 0
+  const urbisActive =
+    overlayLayers.value.urbisBuildings.visible === true && overlayLayers.value.urbisBuildings.ids.length > 0
   const dataSource = urbisActive ? 'urbis' : piccActive ? 'picc' : knwActive ? 'knw' : 'grb'
 
   // Check if OSM layer and at least one source layer are loaded
-  if (osmBuildingsLayerIdRef.value.length === 0 || (!grbActive && !knwActive && !piccActive && !urbisActive)) {
+  if (overlayLayers.value.osmBuildings.ids.length === 0 || (!grbActive && !knwActive && !piccActive && !urbisActive)) {
     toast.warning('Layers required', 'Please enable OSM Buildings and a source layer (GRB, KNW, PICC, or UrbIS) first.')
     return
   }
@@ -497,7 +498,7 @@ const calculateDifference = async () => {
   }
 
   // Check if OSM layer is visible
-  if (!overlayLayers.value.osmBuildings) {
+  if (!overlayLayers.value.osmBuildings.visible === true) {
     toast.warning('Layer required', 'Please enable the OSM Buildings layer first.')
     return
   }
@@ -579,10 +580,10 @@ const calculateDifference = async () => {
       differenceState.value = 'empty'
 
       // Remove existing candidate buildings layer if present
-      if (candidateBuildingsLayerIdRef.value.length > 0) {
-        for (const id of candidateBuildingsLayerIdRef.value) map.value.removeLayer(id)
+      if (overlayLayers.value.candidateBuildings.ids.length > 0) {
+        for (const id of overlayLayers.value.candidateBuildings.ids) map.value.removeLayer(id)
 
-        candidateBuildingsLayerIdRef.value = []
+        overlayLayers.value.candidateBuildings.ids = []
       }
 
       matchingStats.value = null
@@ -662,11 +663,9 @@ const calculateDifference = async () => {
       'candidates-buildings-fill'
     )
 
-    // Add layer to map
-    candidateBuildingsLayerIdRef.value = ['candidates-buildings-fill', 'candidates-buildings-line']
+    overlayLayers.value.candidateBuildings.ids = ['candidates-buildings-fill', 'candidates-buildings-line']
+    overlayLayers.value.candidateBuildings.visible = true
 
-    // Enable candidate buildings layer
-    overlayLayers.value.candidateBuildings = true
     differenceState.value = 'success'
   } catch (error) {
     console.error('Error calculating difference:', error)
