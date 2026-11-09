@@ -23,8 +23,8 @@
 </template>
 
 <script lang="ts">
+import type { OverlayLayers, SourceKind } from '~/components/LayersPanel.vue'
 import type { Ref } from 'vue'
-import type { OverlayLayers as LayerOverlayLayers, SourceKind as LayerSourceKind } from '~/components/LayersPanel.vue'
 import type { useMapLibre as UseMapLibreComposable } from '~/composables/useMapLibre'
 
 export interface MapState {
@@ -35,24 +35,19 @@ export interface MapState {
   currentZoom: ReturnType<typeof UseMapLibreComposable>['currentZoom']
   layersCollapsed: Ref<boolean>
   map: ReturnType<typeof UseMapLibreComposable>['map']
-  overlayLayers: Ref<LayerOverlayLayers>
-  activeSource: Ref<LayerSourceKind | null>
+  overlayLayers: Ref<OverlayLayers>
+  activeSource: Ref<SourceKind | null>
 }
 </script>
 
 <script setup lang="ts">
+import type { Map, MapOptions } from 'maplibre-gl'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import type { SourceKind } from '~/components/LayersPanel.vue'
+import DifferencePanel from '~/components/DifferencePanel.vue'
 import GettingStartedCard from '~/components/GettingStartedCard.vue'
+import LayersPanel from '~/components/LayersPanel.vue'
 import type { SearchResult } from '~/composables/useSearch'
 import { useMapLibre } from '~/composables/useMapLibre'
-import type { MapOptions } from 'maplibre-gl'
-import LayersPanel from '~/components/LayersPanel.vue'
-import DifferencePanel from '~/components/DifferencePanel.vue'
-
-const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
-
-const mapRef = ref<HTMLElement>()
 
 // Use the map layers composable
 const {
@@ -71,40 +66,33 @@ const {
   destroy
 } = useMapLibre()
 
+// Props passed to the component
+const { selectedLocation } = defineProps<{ selectedLocation: SearchResult | null }>()
+
+// Map container reference
+const mapRef = ref<HTMLElement>()
+
+// Candidate building count reference
 const candidateBuildingCount = ref(0)
 
+// Layers panel state
 const layersCollapsed = ref(false)
+
+// Active source reference
 const activeSource = ref<SourceKind | null>(null)
 
-const overlayLayers = ref({
-  candidateBuildings: { ids: [] as string[], visible: false },
-  grbBuildings: { ids: [] as string[], visible: false },
-  knwStructures: { ids: [] as string[], visible: false },
-  osmBuildings: { ids: [] as string[], visible: true },
-  osmLive: { ids: [] as string[], visible: false },
-  piccBuildings: { ids: [] as string[], visible: false },
-  urbisBuildings: { ids: [] as string[], visible: false }
+// Overlay layers state reference
+const overlayLayers: Ref<OverlayLayers> = ref({
+  candidateBuildings: { ids: [], visible: false },
+  grbBuildings: { ids: [], visible: false },
+  knwStructures: { ids: [], visible: false },
+  osmBuildings: { ids: [], visible: true },
+  osmLive: { ids: [], visible: false },
+  piccBuildings: { ids: [], visible: false },
+  urbisBuildings: { ids: [], visible: false }
 })
 
-watch(
-  () => currentBaseLayer.value,
-  (baselayer) => {
-    switchBaseLayer(baselayer)
-  }
-)
-
-for (const layer of Object.values(overlayLayers.value))
-  watch(
-    () => [layer.visible, layer.ids] as const,
-    ([visible, ids]) => {
-      if (!map.value) return
-
-      for (const layerId of ids)
-        if (map.value.getLayer(layerId))
-          map.value.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none')
-    }
-  )
-
+// Initialize map state object
 const mapState = {
   activeSource,
   baselayers,
@@ -116,6 +104,27 @@ const mapState = {
   map,
   overlayLayers
 }
+
+// Watch for changes in the current base layer and update the map accordingly
+watch(
+  () => currentBaseLayer.value,
+  (baselayer) => {
+    switchBaseLayer(baselayer)
+  }
+)
+
+// Watch for changes in the overlay layers and update the map accordingly
+for (const layer of Object.values(overlayLayers.value))
+  watch(
+    () => [layer.visible, layer.ids] as const,
+    ([visible, ids]) => {
+      if (!map.value) return
+
+      for (const layerId of ids)
+        if (map.value.getLayer(layerId))
+          map.value.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none')
+    }
+  )
 
 // Watch for changes in the selected location (via geocoder) and fly the map to the new location
 watch(
@@ -129,7 +138,8 @@ watch(
   }
 )
 
-const setupMap = () => {
+// Setup the map on component mount
+const setupMap = (): void => {
   if (!mapRef.value) return
 
   // Initialize map with composable
@@ -139,10 +149,11 @@ const setupMap = () => {
   } as MapOptions)
 }
 
-const initOverlayLayer = (fn: Function, visible: boolean) => {
+// Initialize overlay layer on the map
+const initOverlayLayer = (fn: (map: Map) => string[], visible: boolean): string[] => {
   if (typeof map.value === 'undefined' || map.value === null) {
     console.error('Map not initialized')
-    return
+    return []
   }
 
   try {
@@ -154,13 +165,16 @@ const initOverlayLayer = (fn: Function, visible: boolean) => {
   } catch (error) {
     console.error('Failed to load overlay layer:', error)
   }
+
+  return []
 }
 
+// Setup map and overlay layers when the component is mounted
 onMounted(() => {
   setupMap()
 
   if (map.value) {
-    const initializeOverlays = () => {
+    const initializeOverlays = (): void => {
       overlayLayers.value.osmBuildings.ids = initOverlayLayer(
         loadOSMBuildingsLayer,
         overlayLayers.value.osmBuildings.visible
@@ -188,6 +202,7 @@ onMounted(() => {
   }
 })
 
+// Cleanup map and overlay layers when the component is unmounted
 onUnmounted(() => {
   destroy()
 })

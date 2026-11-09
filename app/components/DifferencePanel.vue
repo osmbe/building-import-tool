@@ -178,20 +178,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import type { MapState } from '~/components/InteractiveMap.vue'
 import { CircleAlert, ExternalLink, Loader2, RotateCcw, X } from 'lucide-vue-next'
-import MatchModeControl from '~/components/MatchModeControl.vue'
-import JosmHelpDialog from '~/components/JosmHelpDialog.vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { resolveMatchMode, supportsSourceTags } from '~/utils/matchMode'
+import { CANDIDATES_CONTRACT } from '~/utils/candidates'
+import JosmHelpDialog from '~/components/JosmHelpDialog.vue'
+import type { MapState } from '~/components/InteractiveMap.vue'
+import MatchModeControl from '~/components/MatchModeControl.vue'
+import { hslVar } from '~/lib/utils'
 import { useMatchMode } from '~/composables/useMatchMode'
 import { useToast } from '~/composables/useToast'
-import { CANDIDATES_CONTRACT } from '~/utils/candidates'
-import { hslVar } from '~/lib/utils'
 
+// Props and state for the difference panel component
 const { mapState } = defineProps<{ mapState: MapState }>()
+
+// Destructure map state for easier access within the component
 const { candidateBuildingCount, currentZoom, layersCollapsed, map, overlayLayers, activeSource } = mapState
 
+// Composables for match mode and JOSM export
 const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
 const { exportLayerToJosm, testJosmConnection } = useJosmExport()
@@ -205,8 +209,10 @@ const matchingStats = ref<{
 } | null>(null)
 
 // Candidate buildings state
-const originalCandidateFeatures = ref<any[]>([]) // Store original features for reset
-const isCalculatingDifference = ref(false) // Loading state for Get Difference button
+// Store original features for reset
+const originalCandidateFeatures = ref<any[]>([])
+// Loading state for Get Difference button
+const isCalculatingDifference = ref(false)
 
 // Workflow prerequisites (issue: turn gates into visible guidance).
 // At least one source layer (GRB, KNW, PICC, or UrbIS) must be loaded and visible.
@@ -245,7 +251,7 @@ const josmConnected = ref<boolean | null>(null)
 const josmTesting = ref(false)
 const josmHelpOpen = ref(false)
 
-const checkJosm = async () => {
+const checkJosm = async (): Promise<void> => {
   josmTesting.value = true
   try {
     josmConnected.value = await testJosmConnection()
@@ -256,34 +262,34 @@ const checkJosm = async () => {
   }
 }
 
-const revealLayersPanel = () => {
+const revealLayersPanel = (): void => {
   layersCollapsed.value = false
 }
 
-const zoomToWorkingLevel = () => {
+const zoomToWorkingLevel = (): void => {
   if (!map.value) return
 
   map.value.zoomTo(15)
 }
 
-const dismissResults = () => {
+const dismissResults = (): void => {
   differenceState.value = 'idle'
   matchingStats.value = null
 }
 
-const coveragePct = computed(() => {
-  const s = matchingStats.value
-  if (!s || !s.totalGrb) return 0
-  return Math.round((s.matched / s.totalGrb) * 100)
+const coveragePct = computed((): number => {
+  const stat = matchingStats.value
+  if (!stat || !stat.totalGrb) return 0
+  return Math.round((stat.matched / stat.totalGrb) * 100)
 })
 
 // Source/combined modes are GRB-only; other sources are matched by geometry (see resolveMatchMode).
 const effectiveMatchMode = computed(
-  () => resolveMatchMode(matchMode.value, activeSource.value === null ? 'grb' : activeSource.value).mode
+  (): string => resolveMatchMode(matchMode.value, activeSource.value === null ? 'grb' : activeSource.value).mode
 )
 
 // Short, human label for what produced the current results (which mode, freshness).
-const matchSummary = computed(() => {
+const matchSummary = computed((): string => {
   const pct = Math.round(geometryThreshold.value * 100)
   const mode =
     effectiveMatchMode.value === 'source'
@@ -295,7 +301,7 @@ const matchSummary = computed(() => {
   return `${mode} · ${freshness}`
 })
 
-const exportToJOSM = async () => {
+const exportToJOSM = async (): Promise<void> => {
   if (!map.value) return
 
   // Check if we have candidate buildings data
@@ -366,7 +372,7 @@ const canExportToJOSM = computed(
 
 // Calculate difference between source (GRB/PICC) and OSM buildings and display them
 // Issue #9: drop the live OSM layer and show the tile layer (Postgres mirror) again.
-const clearLiveOsmLayer = () => {
+const clearLiveOsmLayer = (): void => {
   if (overlayLayers.value.osmLive.ids.length > 0 && typeof map.value !== 'undefined' && map.value !== null) {
     map.value.removeLayer('osmlive-fill')
     map.value.removeLayer('osmlive-line')
@@ -378,7 +384,7 @@ const clearLiveOsmLayer = () => {
 }
 
 // Issue #9: draw the fresh Overpass buildings for the view so the map matches the difference results.
-const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
+const refreshLiveOsmLayer = async (bounds: (number | undefined)[]): Promise<void> => {
   if (!map.value) return
   const geojson: any = await $fetch('/api/buildings/osm-live', { body: { bounds }, method: 'POST' })
 
@@ -418,47 +424,11 @@ const refreshLiveOsmLayer = async (bounds: (number | undefined)[]) => {
   overlayLayers.value.osmLive.visible = true
 }
 
-// Watch for match mode changes and refetch candidate buildings if they're already loaded
-watch(matchMode, () => {
-  if (overlayLayers.value.candidateBuildings.ids.length > 0)
-    // Refetch candidate buildings with the new match mode
-    calculateDifference()
-})
-
-watch(geometryThreshold, () => {
-  if (
-    (matchMode.value === 'geometry' || matchMode.value === 'both') &&
-    overlayLayers.value.candidateBuildings.ids.length > 0
-  )
-    calculateDifference()
-})
-
-watch(useOverpass, (live) => {
-  if (!live) clearLiveOsmLayer()
-  if (overlayLayers.value.candidateBuildings.ids.length > 0) calculateDifference()
-})
-
-// Keyboard shortcuts: G = Get Difference, J = open in JOSM. Ignored while typing.
-const handleKeydown = (e: KeyboardEvent) => {
-  if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return
-  const target = e.target as HTMLElement | null
-  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
-
-  const key = e.key.toLowerCase()
-  if (key === 'g' && canCalculateDifference.value && !isCalculatingDifference.value) {
-    e.preventDefault()
-    calculateDifference()
-  } else if (key === 'j' && canExportToJOSM.value) {
-    e.preventDefault()
-    exportToJOSM()
-  }
-}
-
 // Prefer the API's message (e.g. Overpass rate limit) over the generic fetch error text.
 const apiErrorMessage = (error: any): string =>
   error?.data?.statusMessage || error?.statusMessage || (error instanceof Error ? error.message : String(error))
 
-const calculateDifference = async () => {
+const calculateDifference = async (): Promise<void> => {
   if (!map.value) return
 
   // Determine which data source is active (GRB, PICC, or UrbIS)
@@ -543,7 +513,8 @@ const calculateDifference = async () => {
     })
 
     // Live mode: refresh the OSM layer from Overpass too (non-fatal; the difference call reports errors)
-    if (useOverpass.value) await refreshLiveOsmLayer(extent).catch((e) => console.warn('Live OSM layer failed:', e))
+    if (useOverpass.value)
+      await refreshLiveOsmLayer(extent).catch((error) => console.warn('Live OSM layer failed:', error))
     else clearLiveOsmLayer()
 
     // Call backend API to calculate difference
@@ -592,9 +563,9 @@ const calculateDifference = async () => {
     // Know what they are looking at (the candidate layer is a single OL layer).
     const sourceKind =
       dataSource === 'knw' ? 'knw' : dataSource === 'picc' ? 'picc' : dataSource === 'urbis' ? 'urbis' : 'grb'
-    for (const f of candidateGeoJSON.features) {
-      f.properties = f.properties || {}
-      f.properties._layer_type = sourceKind
+    for (const feature of candidateGeoJSON.features) {
+      feature.properties = feature.properties || {}
+      feature.properties._layer_type = sourceKind
     }
 
     // Update matching stats (unmatched reflects the true count missing from OSM)
@@ -663,6 +634,45 @@ const calculateDifference = async () => {
   }
 }
 
+// Keyboard shortcuts: G = Get Difference, J = open in JOSM. Ignored while typing.
+const handleKeydown = (e: KeyboardEvent): void => {
+  if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return
+  const target = e.target as HTMLElement | null
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+
+  const key = e.key.toLowerCase()
+  if (key === 'g' && canCalculateDifference.value && !isCalculatingDifference.value) {
+    e.preventDefault()
+    calculateDifference()
+  } else if (key === 'j' && canExportToJOSM.value) {
+    e.preventDefault()
+    exportToJOSM()
+  }
+}
+
+// Watch for match mode changes and refetch candidate buildings if they're already loaded
+watch(matchMode, (): void => {
+  if (overlayLayers.value.candidateBuildings.ids.length > 0)
+    // Refetch candidate buildings with the new match mode
+    calculateDifference()
+})
+
+// Watch for geometry threshold changes and refetch candidate buildings if necessary
+watch(geometryThreshold, (): void => {
+  if (
+    (matchMode.value === 'geometry' || matchMode.value === 'both') &&
+    overlayLayers.value.candidateBuildings.ids.length > 0
+  )
+    calculateDifference()
+})
+
+// Watch for useOverpass changes and refetch candidate buildings if necessary
+watch(useOverpass, (live): void => {
+  if (!live) clearLiveOsmLayer()
+  if (overlayLayers.value.candidateBuildings.ids.length > 0) calculateDifference()
+})
+
+// Handle actions when the component is mounted
 onMounted(() => {
   // One quiet probe so the JOSM status chip reflects reality on load.
   checkJosm()
@@ -670,6 +680,7 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
 })
 
+// Handle actions when the component is unmounted
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })

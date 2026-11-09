@@ -24,10 +24,7 @@
             </div>
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-mono text-muted-foreground">{{ candidateBuildingCount }}</span>
-              <Switch
-                v-model:checked="overlayLayers.candidateBuildings.visible"
-                @update:checked="toggleCandidateBuildings"
-              />
+              <Switch v-model:checked="overlayLayers.candidateBuildings.visible" />
             </div>
           </div>
           <div class="layer-row">
@@ -35,7 +32,7 @@
               <span class="layer-dot" style="color: hsl(var(--layer-osm)); background: currentColor"></span>
               <span class="text-xs text-foreground/85">OSM Buildings</span>
             </div>
-            <Switch v-model:checked="overlayLayers.osmBuildings.visible" @update:checked="toggleOsmBuildings" />
+            <Switch v-model:checked="overlayLayers.osmBuildings.visible" />
           </div>
         </div>
 
@@ -98,24 +95,31 @@
 <script lang="ts">
 export type SourceKind = 'grb' | 'knw' | 'picc' | 'urbis'
 
+export interface OverlayLayer {
+  visible: boolean
+  ids: string[]
+}
 export interface OverlayLayers {
-  candidateBuildings: { visible: boolean; ids: string[] }
-  grbBuildings: { visible: boolean; ids: string[] }
-  knwStructures: { visible: boolean; ids: string[] }
-  osmBuildings: { visible: boolean; ids: string[] }
-  osmLive: { visible: boolean; ids: string[] }
-  piccBuildings: { visible: boolean; ids: string[] }
-  urbisBuildings: { visible: boolean; ids: string[] }
+  candidateBuildings: OverlayLayer
+  grbBuildings: OverlayLayer
+  knwStructures: OverlayLayer
+  osmBuildings: OverlayLayer
+  osmLive: OverlayLayer
+  piccBuildings: OverlayLayer
+  urbisBuildings: OverlayLayer
 }
 </script>
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import type { MapState } from '~/components/InteractiveMap.vue'
 import { ChevronDown } from 'lucide-vue-next'
+import type { MapState } from '~/components/InteractiveMap.vue'
 import Switch from '~/components/ui/switch.vue'
 
+// Props and state for the layers panel component
 const { mapState } = defineProps<{ mapState: MapState }>()
+
+// Destructure map state for easier access within the component
 const {
   baselayers,
   candidateBuildingCount,
@@ -127,6 +131,7 @@ const {
   activeSource
 } = mapState
 
+// Source options for the overlay layers
 const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
   { key: 'grb', label: 'GRB', varName: '--layer-grb' },
   { key: 'knw', label: 'KNW', varName: '--layer-knw' },
@@ -134,83 +139,44 @@ const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
   { key: 'urbis', label: 'UrbIS', varName: '--layer-urbis' }
 ]
 
-const toggleCandidateBuildings = (visible: boolean) => {
-  overlayLayers.value.candidateBuildings.visible = visible
-}
-
-const toggleOsmBuildings = (visible: boolean) => {
-  overlayLayers.value.osmBuildings.visible = visible
-}
-
+// Watch for changes in the active source and update overlay layers accordingly
 watch(
   () => activeSource.value,
   (source) => {
+    overlayLayers.value.grbBuildings.visible = false
+    overlayLayers.value.knwStructures.visible = false
+    overlayLayers.value.piccBuildings.visible = false
+    overlayLayers.value.urbisBuildings.visible = false
+
     switch (source) {
-      case 'grb': {
+      case 'grb':
         overlayLayers.value.grbBuildings.visible = true
-
-        // GRB, PICC, and UrbIS are mutually exclusive
-        if (overlayLayers.value.grbBuildings.visible === true) {
-          overlayLayers.value.knwStructures.visible = false
-          overlayLayers.value.piccBuildings.visible = false
-          overlayLayers.value.urbisBuildings.visible = false
-        }
         break
-      }
-      case 'knw': {
+      case 'knw':
         overlayLayers.value.knwStructures.visible = true
-
-        // GRB, PICC, and UrbIS are mutually exclusive
-        if (overlayLayers.value.knwStructures.visible === true) {
-          overlayLayers.value.grbBuildings.visible = false
-          overlayLayers.value.piccBuildings.visible = false
-          overlayLayers.value.urbisBuildings.visible = false
-        }
         break
-      }
-      case 'picc': {
+      case 'picc':
         overlayLayers.value.piccBuildings.visible = true
-
-        // GRB, PICC, and UrbIS are mutually exclusive
-        if (overlayLayers.value.piccBuildings.visible === true) {
-          overlayLayers.value.grbBuildings.visible = false
-          overlayLayers.value.knwStructures.visible = false
-          overlayLayers.value.urbisBuildings.visible = false
-        }
         break
-      }
-      case 'urbis': {
+      case 'urbis':
         overlayLayers.value.urbisBuildings.visible = true
-
-        // GRB, PICC, and UrbIS are mutually exclusive
-        if (overlayLayers.value.urbisBuildings.visible === true) {
-          overlayLayers.value.grbBuildings.visible = false
-          overlayLayers.value.knwStructures.visible = false
-          overlayLayers.value.piccBuildings.visible = false
-        }
         break
-      }
-      default: {
-        overlayLayers.value.grbBuildings.visible = false
-        overlayLayers.value.knwStructures.visible = false
-        overlayLayers.value.piccBuildings.visible = false
-        overlayLayers.value.urbisBuildings.visible = false
+      default:
         break
-      }
     }
   }
 )
 
 // Import dates of the official datasets, shown as a tooltip on the source buttons (Issue #59)
 const dataDates = ref<Partial<Record<SourceKind, string | null>>>({})
-const dataDateTitle = (src: SourceKind, label: string) => {
+const dataDateTitle = (src: SourceKind, label: string): string => {
   const iso = dataDates.value[src]
   if (!iso) return label
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return label
   return `${label} data imported on ${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
 }
-const loadDataDates = async () => {
+const loadDataDates = async (): Promise<void> => {
   try {
     dataDates.value = await $fetch<Record<SourceKind, string | null>>('/api/meta/data-dates')
   } catch (error) {
@@ -218,6 +184,7 @@ const loadDataDates = async () => {
   }
 }
 
+// Load data dates when the component is mounted
 onMounted(() => {
   loadDataDates()
 })
