@@ -186,6 +186,7 @@ import JosmHelpDialog from '~/components/JosmHelpDialog.vue'
 import type { MapState } from '~/components/InteractiveMap.vue'
 import MatchModeControl from '~/components/MatchModeControl.vue'
 import { hslVar } from '~/lib/utils'
+import { useLayersPanel } from '~/composables/useLayerPanel'
 import { useMatchMode } from '~/composables/useMatchMode'
 import { useToast } from '~/composables/useToast'
 
@@ -193,12 +194,13 @@ import { useToast } from '~/composables/useToast'
 const { mapState } = defineProps<{ mapState: MapState }>()
 
 // Destructure map state for easier access within the component
-const { candidateBuildingCount, currentZoom, layersCollapsed, map, overlayLayers, activeSource } = mapState
+const { candidateBuildingCount, currentZoom, map, overlayLayers, activeSource } = mapState
 
 // Composables for match mode and JOSM export
 const { matchMode, geometryThreshold, useOverpass } = useMatchMode()
 const toast = useToast()
 const { exportLayerToJosm, testJosmConnection } = useJosmExport()
+const { collapsed: layersPanelCollapsed } = useLayersPanel()
 
 // Matching stats state
 const matchingStats = ref<{
@@ -263,7 +265,7 @@ const checkJosm = async (): Promise<void> => {
 }
 
 const revealLayersPanel = (): void => {
-  layersCollapsed.value = false
+  layersPanelCollapsed.value = false
 }
 
 const zoomToWorkingLevel = (): void => {

@@ -33,7 +33,6 @@ export interface MapState {
   currentBaseLayer: ReturnType<typeof UseMapLibreComposable>['currentBaseLayer']
   currentCenter: ReturnType<typeof UseMapLibreComposable>['currentCenter']
   currentZoom: ReturnType<typeof UseMapLibreComposable>['currentZoom']
-  layersCollapsed: Ref<boolean>
   map: ReturnType<typeof UseMapLibreComposable>['map']
   overlayLayers: Ref<OverlayLayers>
   activeSource: Ref<SourceKind | null>
@@ -75,9 +74,6 @@ const mapRef = ref<HTMLElement>()
 // Candidate building count reference
 const candidateBuildingCount = ref(0)
 
-// Layers panel state
-const layersCollapsed = ref(false)
-
 // Active source reference
 const activeSource = ref<SourceKind | null>(null)
 
@@ -100,7 +96,6 @@ const mapState = {
   currentBaseLayer,
   currentCenter,
   currentZoom,
-  layersCollapsed,
   map,
   overlayLayers
 }

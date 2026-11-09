@@ -4,18 +4,18 @@
       <!-- Header -->
       <div
         class="flex items-center justify-between px-3 py-2.5 cursor-pointer select-none"
-        :class="!layersCollapsed ? 'border-b border-white/[0.05]' : ''"
-        @click="layersCollapsed = !layersCollapsed"
+        :class="!layersPanelCollapsed ? 'border-b border-white/[0.05]' : ''"
+        @click="layersPanelCollapsed = !layersPanelCollapsed"
       >
         <h3 class="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Layers</h3>
         <ChevronDown
           class="h-3 w-3 text-muted-foreground transition-transform duration-200"
-          :class="layersCollapsed ? '-rotate-90' : ''"
+          :class="layersPanelCollapsed ? '-rotate-90' : ''"
         />
       </div>
 
       <!-- Collapsible body -->
-      <div v-show="!layersCollapsed" class="p-3 min-w-[220px]">
+      <div v-show="!layersPanelCollapsed" class="p-3 min-w-[220px]">
         <div class="space-y-2.5">
           <div class="layer-row">
             <div class="flex items-center gap-2">
@@ -115,9 +115,13 @@ import { onMounted, ref, watch } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
 import type { MapState } from '~/components/InteractiveMap.vue'
 import Switch from '~/components/ui/switch.vue'
+import { useLayersPanel } from '~/composables/useLayerPanel'
 
 // Props and state for the layers panel component
 const { mapState } = defineProps<{ mapState: MapState }>()
+
+// Layers panel collapsed state
+const { collapsed: layersPanelCollapsed } = useLayersPanel()
 
 // Destructure map state for easier access within the component
 const {
@@ -126,7 +130,6 @@ const {
   currentBaseLayer,
   currentCenter,
   currentZoom,
-  layersCollapsed,
   overlayLayers,
   activeSource
 } = mapState
