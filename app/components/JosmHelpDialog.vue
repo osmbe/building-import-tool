@@ -87,7 +87,7 @@ defineProps<{
 defineEmits<{ (e: 'update:open', value: boolean): void; (e: 'test'): void }>()
 
 const instructions = [
-'Download and install JOSM from https://josm.openstreetmap.de/'
+  'Download and install JOSM from https://josm.openstreetmap.de/',
   'Start JOSM application',
   'Go to Edit → Preferences (or press F12)',
   'Navigate to "Remote Control" in the left panel',
