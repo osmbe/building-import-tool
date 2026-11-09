@@ -128,7 +128,7 @@ watch(
     if (!loc || !map.value) return
     map.value.flyTo({
       center: loc.coordinates,
-      zoom: 16
+      zoom: 17
     })
   }
 )

@@ -271,7 +271,7 @@ const revealLayersPanel = (): void => {
 const zoomToWorkingLevel = (): void => {
   if (!map.value) return
 
-  map.value.zoomTo(15)
+  map.value.zoomTo(17 - 1)
 }
 
 const dismissResults = (): void => {
@@ -450,8 +450,8 @@ const calculateDifference = async (): Promise<void> => {
   }
 
   // Check zoom level
-  if (currentZoom.value < 16) {
-    toast.warning('Zoom in required', `Please zoom in to at least level 16. Current zoom: ${currentZoom.value}`)
+  if (currentZoom.value < 17) {
+    toast.warning('Zoom in required', `Please zoom in to at least level 17. Current zoom: ${currentZoom.value}`)
     return
   }
 
