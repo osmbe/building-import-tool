@@ -3,12 +3,15 @@ import { hslVar } from '~/lib/utils'
 import { useRuntimeConfig } from '#app'
 
 export const loadPiccBuildingsLayer = (map: Map): string[] => {
+  if (typeof map.getSource('picc-buildings') !== 'undefined') return ['picc-buildings-fill', 'picc-buildings-line']
+
   const config = useRuntimeConfig()
 
   const fillColor = hslVar('--layer-picc', 0.3)
   const strokeColor = hslVar('--layer-picc', 1)
 
   map.addSource('picc-buildings', {
+    minzoom: 15,
     type: 'vector',
     url: `${config.public.baseURL}/tiles/picc/candidates`
   })

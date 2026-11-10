@@ -39,7 +39,7 @@
           <span class="check-mark" :class="zoomReady ? 'check-done' : ''">
             <Check v-if="zoomReady" class="h-2 w-2" />
           </span>
-          <span class="flex-1 text-left" :class="zoomReady ? 'text-emerald-400/80' : ''">Zoom to ≥ 16</span>
+          <span class="flex-1 text-left" :class="zoomReady ? 'text-emerald-400/80' : ''">Zoom to ≥ 17</span>
           <span v-if="!zoomReady" class="check-action">Zoom</span>
         </button>
       </div>
@@ -175,7 +175,7 @@ const tagsUnavailableMessage = 'Source and Both modes need GRB data (PICC, UrbIS
 
 const { matchMode, geometryThreshold, useOverpass, setMatchMode, setGeometryThreshold, setUseOverpass } = useMatchMode()
 const collapsed = ref(false)
-const zoomReady = computed(() => props.zoom >= 16)
+const zoomReady = computed(() => props.zoom >= 17)
 const canCalculateDifference = computed(
   () => props.mapReady && props.sourceLayerEnabled && props.osmLayerEnabled && zoomReady.value
 )

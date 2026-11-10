@@ -3,6 +3,8 @@ import { hslVar } from '~/lib/utils'
 import { useRuntimeConfig } from '#app'
 
 export const loadOSMBuildingsLayer = (map: Map): string[] => {
+  if (typeof map.getSource('osm-buildings') !== 'undefined') return ['osm-buildings-fill', 'osm-buildings-line']
+
   const config = useRuntimeConfig()
 
   const fillColor = hslVar('--layer-osm', 0.3)
@@ -10,6 +12,7 @@ export const loadOSMBuildingsLayer = (map: Map): string[] => {
 
   map.addSource('osm-buildings', {
     attribution: '© OpenStreetMap contributors',
+    minzoom: 15,
     type: 'vector',
     url: `${config.public.baseURL}/tiles/osm/osm_buildings`
   })

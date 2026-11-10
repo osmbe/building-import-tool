@@ -12,12 +12,14 @@ setWorkerUrl(workerUrl)
 export const useMapLibre = () => {
   const map = shallowRef<Map | null>(null)
   const currentBaseLayer = ref<keyof typeof baselayers>('osmbe')
+  const currentZoom = ref(7)
+  const currentCenter = ref<[number, number]>([4.3517, 50.8503])
 
   // Initialize map
-  const initializeMap = (target: HTMLElement, options: MapOptions): Map => {
+  const initializeMap = (target: HTMLElement, options: MapOptions): void => {
     if (map.value) {
       console.warn('Map already initialized')
-      return map.value
+      return
     }
 
     const defaultOptions: MapOptions = {
@@ -25,6 +27,7 @@ export const useMapLibre = () => {
       center: [0, 0],
       container: target,
       hash: true,
+      minZoom: 7,
       zoom: 1,
       zoomSnap: 1
     }
@@ -38,9 +41,15 @@ export const useMapLibre = () => {
       if (currentBaseLayer.value === key) mapInstance.setStyle(baselayers[key]?.style ?? null)
     })
 
-    map.value = mapInstance
+    mapInstance.on('moveend', () => {
+      const zoom = Math.floor(mapInstance.getZoom() ?? 0) + 1
+      currentZoom.value = zoom
 
-    return mapInstance
+      const { lng, lat } = mapInstance.getCenter()
+      currentCenter.value = [lng, lat]
+    })
+
+    map.value = mapInstance
   }
 
   // Switch the base layer of the map
@@ -76,18 +85,6 @@ export const useMapLibre = () => {
         return nextStyle
       }
     })
-
-    currentBaseLayer.value = key
-  }
-
-  // Get current zoom level
-  const getZoomLevel = () => Math.floor(map.value?.getZoom() ?? 0) + 1
-
-  // Set Layer visibility
-  const setLayersVisibility = (layersId: string[], visible: boolean) => {
-    if (!map.value || layersId.length === 0) return
-
-    for (const layerId of layersId) map.value.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none')
   }
 
   // Cleanup
@@ -102,12 +99,12 @@ export const useMapLibre = () => {
     // State
     map: map as Ref<Map | null>,
     currentBaseLayer,
+    currentZoom,
+    currentCenter,
 
     // Methods
     initializeMap,
     switchBaseLayer,
-    getZoomLevel,
-    setLayersVisibility,
     destroy,
 
     // Layers methods

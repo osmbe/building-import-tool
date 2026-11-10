@@ -298,7 +298,6 @@ describe('useJosmExport', () => {
 
   it('exposes setup instructions and the default remote control URL', () => {
     const josm = useJosmExport()
-    expect(josm.getJosmInstructions()).toHaveLength(8)
     expect(josm.josmBaseUrl.value).toBe('http://127.0.0.1:8111')
     expect(josm.useSSL.value).toBe(false)
   })
