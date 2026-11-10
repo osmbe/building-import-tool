@@ -11,6 +11,7 @@ export const loadPiccBuildingsLayer = (map: Map): string[] => {
   const strokeColor = hslVar('--layer-picc', 1)
 
   map.addSource('picc-buildings', {
+    minzoom: 15,
     type: 'vector',
     url: `${config.public.baseURL}/tiles/picc/candidates`
   })

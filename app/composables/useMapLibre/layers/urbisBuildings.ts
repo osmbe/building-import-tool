@@ -11,6 +11,7 @@ export const loadUrbisBuildingsLayer = (map: Map): string[] => {
   const strokeColor = hslVar('--layer-urbis', 1)
 
   map.addSource('urbis-buildings', {
+    minzoom: 15,
     type: 'vector',
     url: `${config.public.baseURL}/tiles/urbis/candidates`
   })

@@ -11,6 +11,7 @@ export const loadKnwStructuresLayer = (map: Map): string[] => {
   const strokeColor = hslVar('--layer-knw', 1)
 
   map.addSource('knw-structures', {
+    minzoom: 15,
     type: 'vector',
     url: `${config.public.baseURL}/tiles/grb/knw_candidates`
   })

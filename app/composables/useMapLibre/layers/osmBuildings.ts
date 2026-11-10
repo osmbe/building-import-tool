@@ -12,6 +12,7 @@ export const loadOSMBuildingsLayer = (map: Map): string[] => {
 
   map.addSource('osm-buildings', {
     attribution: '© OpenStreetMap contributors',
+    minzoom: 15,
     type: 'vector',
     url: `${config.public.baseURL}/tiles/osm/osm_buildings`
   })

@@ -27,6 +27,7 @@ export const useMapLibre = () => {
       center: [0, 0],
       container: target,
       hash: true,
+      minZoom: 7,
       zoom: 1,
       zoomSnap: 1
     }

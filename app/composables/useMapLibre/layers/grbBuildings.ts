@@ -11,6 +11,7 @@ export const loadGrbBuildingsLayer = (map: Map): string[] => {
   const strokeColor = hslVar('--layer-grb', 1)
 
   map.addSource('grb-buildings', {
+    minzoom: 15,
     type: 'vector',
     url: `${config.public.baseURL}/tiles/grb/candidates`
   })
