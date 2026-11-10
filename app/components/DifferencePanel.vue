@@ -373,21 +373,9 @@ const canExportToJOSM = computed(
 )
 
 // Calculate difference between source (GRB/PICC) and OSM buildings and display them
-// Issue #9: drop the live OSM layer and show the tile layer (Postgres mirror) again.
-const clearLiveOsmLayer = (): void => {
-  if (overlayLayers.value.osmLive.ids.length > 0 && typeof map.value !== 'undefined' && map.value !== null) {
-    map.value.removeLayer('osmlive-fill')
-    map.value.removeLayer('osmlive-line')
-    map.value.removeSource('osmlive')
-
-    overlayLayers.value.osmLive.visible = false
-    overlayLayers.value.osmLive.ids = []
-  }
-}
-
-// Issue #9: draw the fresh Overpass buildings for the view so the map matches the difference results.
 const refreshLiveOsmLayer = async (bounds: (number | undefined)[]): Promise<void> => {
   if (!map.value) return
+
   const geojson: any = await $fetch('/api/buildings/osm-live', { body: { bounds }, method: 'POST' })
 
   if (typeof map.value.getSource('osmlive') !== 'undefined') {
@@ -423,7 +411,20 @@ const refreshLiveOsmLayer = async (bounds: (number | undefined)[]): Promise<void
   )
 
   overlayLayers.value.osmLive.ids = ['osmlive-fill', 'osmlive-line']
+  overlayLayers.value.osmBuildings.visible = false
   overlayLayers.value.osmLive.visible = true
+}
+
+const clearLiveOsmLayer = (): void => {
+  if (overlayLayers.value.osmLive.ids.length > 0 && typeof map.value !== 'undefined' && map.value !== null) {
+    map.value.removeLayer('osmlive-fill')
+    map.value.removeLayer('osmlive-line')
+    map.value.removeSource('osmlive')
+
+    overlayLayers.value.osmLive.visible = false
+    overlayLayers.value.osmBuildings.visible = true
+    overlayLayers.value.osmLive.ids = []
+  }
 }
 
 // Prefer the API's message (e.g. Overpass rate limit) over the generic fetch error text.
