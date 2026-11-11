@@ -103,7 +103,7 @@
 
 <script setup lang="ts">
 import type { MapState } from '~/components/InteractiveMap.vue'
-import { X } from 'lucide-vue-next'
+import { Building2, X } from 'lucide-vue-next'
 import UiInfoPanelOsmBuilding from '~/components/ui/info-panel/osm-building.vue'
 import UiInfoPanelKnwStructure from '~/components/ui/info-panel/knw-structure.vue'
 import UiInfoPanelPiccBuilding from '~/components/ui/info-panel/picc-building.vue'
