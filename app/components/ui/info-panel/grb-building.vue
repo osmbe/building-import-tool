@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Feature, MapGeoJSONFeature } from 'maplibre-gl'
+import type { MapGeoJSONFeature } from 'maplibre-gl'
 import { Building2, X } from 'lucide-vue-next'
 import { formatArea } from '~/lib/utils'
 
