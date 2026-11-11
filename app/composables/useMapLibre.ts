@@ -113,8 +113,6 @@ export const useMapLibre = () => {
       (evt) => {
         if (typeof evt.features === 'undefined' || evt.features.length === 0) return
 
-        console.log('Clicked features:', evt.features[0], evt.features[0]?.toJSON())
-
         clickedFeatures.value = evt.features
 
         if (typeof evt.features[0]?.id !== 'undefined') currentClickedFeature.value = evt.features[0]
