@@ -11,3 +11,22 @@ export function hslVar(name: string, alpha: number): string {
 
   return `hsl(${hsl} / ${alpha})`
 }
+
+// Helper function to format area
+export function formatArea(area: number): string {
+  if (!area) return '—'
+
+  if (area >= 10000) return `${(area / 10000).toFixed(2)} ha`
+
+  return `${area.toFixed(2)} m²`
+}
+
+// Helper to parse semicolon-separated lists
+export function parseSemicolonList(value: string | undefined): string[] {
+  if (!value) return []
+
+  return value
+    .split(';')
+    .map((s) => s.trim())
+    .filter(Boolean)
+}

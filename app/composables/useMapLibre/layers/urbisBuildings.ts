@@ -20,7 +20,7 @@ export const loadUrbisBuildingsLayer = (map: Map): string[] => {
     id: 'urbis-buildings-fill',
     paint: {
       'fill-color': fillColor,
-      'fill-opacity': 0.6
+      'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0.5]
     },
     source: 'urbis-buildings',
     'source-layer': 'candidates',

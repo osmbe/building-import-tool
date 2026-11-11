@@ -16,8 +16,11 @@
       <!-- Bottom-left: Layers Panel -->
       <LayersPanel :map-state="mapState"></LayersPanel>
 
-      <!-- Bottom-right: Match Mode + Stats stacked -->
+      <!-- Bottom-right: Match Mode + Stats (stacked) Panels -->
       <DifferencePanel :map-state="mapState"></DifferencePanel>
+
+      <!-- Top-right: Info Panel -->
+      <InfoPanel :map-state="mapState"></InfoPanel>
     </div>
   </div>
 </template>
@@ -26,16 +29,18 @@
 import type { OverlayLayers, SourceKind } from '~/components/LayersPanel.vue'
 import type { Ref } from 'vue'
 import type { useMapLibre as UseMapLibreComposable } from '~/composables/useMapLibre'
+import InfoPanel from '~/components/InfoPanel.vue'
 
 export interface MapState {
+  activeSource: Ref<SourceKind | null>
   baselayers: ReturnType<typeof UseMapLibreComposable>['baselayers']
   candidateBuildingCount: Ref<number>
+  clickedFeatures: ReturnType<typeof UseMapLibreComposable>['clickedFeatures']
   currentBaseLayer: ReturnType<typeof UseMapLibreComposable>['currentBaseLayer']
   currentCenter: ReturnType<typeof UseMapLibreComposable>['currentCenter']
   currentZoom: ReturnType<typeof UseMapLibreComposable>['currentZoom']
   map: ReturnType<typeof UseMapLibreComposable>['map']
   overlayLayers: Ref<OverlayLayers>
-  activeSource: Ref<SourceKind | null>
 }
 </script>
 
@@ -54,6 +59,7 @@ const {
   currentBaseLayer,
   currentCenter,
   currentZoom,
+  clickedFeatures,
   initializeMap,
   loadOSMBuildingsLayer,
   loadGrbBuildingsLayer,
@@ -93,6 +99,7 @@ const mapState = {
   activeSource,
   baselayers,
   candidateBuildingCount,
+  clickedFeatures,
   currentBaseLayer,
   currentCenter,
   currentZoom,

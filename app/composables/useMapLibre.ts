@@ -1,4 +1,11 @@
-import { AttributionControl, Map, type MapOptions, NavigationControl, setWorkerUrl } from 'maplibre-gl'
+import {
+  AttributionControl,
+  Map,
+  type MapGeoJSONFeature,
+  type MapOptions,
+  NavigationControl,
+  setWorkerUrl
+} from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { baselayers } from './useMapLibre/baselayers'
 import { loadOSMBuildingsLayer } from './useMapLibre/layers/osmBuildings'
@@ -14,6 +21,9 @@ export const useMapLibre = () => {
   const currentBaseLayer = ref<keyof typeof baselayers>('osmbe')
   const currentZoom = ref(7)
   const currentCenter = ref<[number, number]>([4.3517, 50.8503])
+  const currentHoveredFeature = shallowRef<MapGeoJSONFeature | undefined>(undefined)
+  const currentClickedFeature = shallowRef<MapGeoJSONFeature | undefined>(undefined)
+  const clickedFeatures = shallowRef<MapGeoJSONFeature[]>([])
 
   // Initialize map
   const initializeMap = (target: HTMLElement, options: MapOptions): void => {
@@ -48,6 +58,68 @@ export const useMapLibre = () => {
       const { lng, lat } = mapInstance.getCenter()
       currentCenter.value = [lng, lat]
     })
+
+    mapInstance.on(
+      'mousemove',
+      ['osm-buildings-fill', 'grb-buildings-fill', 'picc-buildings-fill', 'urbis-buildings-fill'],
+      (evt) => {
+        if (typeof evt.features !== 'undefined' && evt.features.length > 0) {
+          if (typeof currentHoveredFeature.value !== 'undefined') {
+            mapInstance.setFeatureState(
+              {
+                id: currentHoveredFeature.value.id,
+                source: currentHoveredFeature.value.source,
+                sourceLayer: currentHoveredFeature.value.sourceLayer
+              },
+              { hover: false }
+            )
+            mapInstance.getCanvas().style.cursor = ''
+          }
+
+          if (typeof evt.features[0]?.id !== 'undefined') {
+            currentHoveredFeature.value = evt.features[0]
+            mapInstance.setFeatureState(
+              { id: evt.features[0].id, source: evt.features[0].source, sourceLayer: evt.features[0].sourceLayer },
+              { hover: true }
+            )
+            mapInstance.getCanvas().style.cursor = 'pointer'
+          }
+        }
+      }
+    )
+
+    mapInstance.on(
+      'mouseleave',
+      ['osm-buildings-fill', 'grb-buildings-fill', 'picc-buildings-fill', 'urbis-buildings-fill'],
+      () => {
+        if (typeof currentHoveredFeature.value !== 'undefined')
+          mapInstance.setFeatureState(
+            {
+              id: currentHoveredFeature.value.id,
+              source: currentHoveredFeature.value.source,
+              sourceLayer: currentHoveredFeature.value.sourceLayer
+            },
+            { hover: false }
+          )
+
+        currentHoveredFeature.value = undefined
+        mapInstance.getCanvas().style.cursor = ''
+      }
+    )
+
+    mapInstance.on(
+      'click',
+      ['osm-buildings-fill', 'grb-buildings-fill', 'picc-buildings-fill', 'urbis-buildings-fill'],
+      (evt) => {
+        if (typeof evt.features === 'undefined' || evt.features.length === 0) return
+
+        console.log('Clicked features:', evt.features[0], evt.features[0]?.toJSON())
+
+        clickedFeatures.value = evt.features
+
+        if (typeof evt.features[0]?.id !== 'undefined') currentClickedFeature.value = evt.features[0]
+      }
+    )
 
     map.value = mapInstance
   }
@@ -101,6 +173,9 @@ export const useMapLibre = () => {
     currentBaseLayer,
     currentZoom,
     currentCenter,
+    currentHoveredFeature,
+    currentClickedFeature,
+    clickedFeatures,
 
     // Methods
     initializeMap,
