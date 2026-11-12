@@ -10,7 +10,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { baselayers } from './useMapLibre/baselayers'
 import { loadOSMBuildingsLayer } from './useMapLibre/layers/osmBuildings'
 import { loadGrbBuildingsLayer } from './useMapLibre/layers/grbBuildings'
-import { loadKnwStructuresLayer } from './useMapLibre/layers/knwStructures'
+// import { loadKnwStructuresLayer } from './useMapLibre/layers/knwStructures'
 import { loadPiccBuildingsLayer } from './useMapLibre/layers/piccBuildings'
 import { loadUrbisBuildingsLayer } from './useMapLibre/layers/urbisBuildings'
 
@@ -134,7 +134,7 @@ export const useMapLibre = () => {
           const overlaySources = [
             'osm-buildings',
             'grb-buildings',
-            'knw-structures',
+            // 'knw-structures',
             'picc-buildings',
             'urbis-buildings',
             'osmlive',
@@ -183,7 +183,7 @@ export const useMapLibre = () => {
     // Layers methods
     loadOSMBuildingsLayer,
     loadGrbBuildingsLayer,
-    loadKnwStructuresLayer,
+    // loadKnwStructuresLayer,
     loadPiccBuildingsLayer,
     loadUrbisBuildingsLayer,
 

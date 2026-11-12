@@ -137,7 +137,7 @@ const {
 // Source options for the overlay layers
 const sourceOptions: { key: SourceKind; label: string; varName: string }[] = [
   { key: 'grb', label: 'GRB', varName: '--layer-grb' },
-  { key: 'knw', label: 'KNW', varName: '--layer-knw' },
+  // { key: 'knw', label: 'KNW', varName: '--layer-knw' },
   { key: 'picc', label: 'PICC', varName: '--layer-picc' },
   { key: 'urbis', label: 'UrbIS', varName: '--layer-urbis' }
 ]
@@ -147,7 +147,7 @@ watch(
   () => activeSource.value,
   (source) => {
     overlayLayers.value.grbBuildings.visible = false
-    overlayLayers.value.knwStructures.visible = false
+    // overlayLayers.value.knwStructures.visible = false
     overlayLayers.value.piccBuildings.visible = false
     overlayLayers.value.urbisBuildings.visible = false
 
@@ -155,9 +155,9 @@ watch(
       case 'grb':
         overlayLayers.value.grbBuildings.visible = true
         break
-      case 'knw':
-        overlayLayers.value.knwStructures.visible = true
-        break
+      // case 'knw':
+      //   overlayLayers.value.knwStructures.visible = true
+      //   break
       case 'picc':
         overlayLayers.value.piccBuildings.visible = true
         break
