@@ -63,7 +63,7 @@ const {
   initializeMap,
   loadOSMBuildingsLayer,
   loadGrbBuildingsLayer,
-  loadKnwStructuresLayer,
+  // loadKnwStructuresLayer,
   loadPiccBuildingsLayer,
   loadUrbisBuildingsLayer,
   switchBaseLayer,
@@ -185,10 +185,10 @@ onMounted(() => {
         loadGrbBuildingsLayer,
         overlayLayers.value.grbBuildings.visible
       )
-      overlayLayers.value.knwStructures.ids = initOverlayLayer(
-        loadKnwStructuresLayer,
-        overlayLayers.value.knwStructures.visible
-      )
+      // overlayLayers.value.knwStructures.ids = initOverlayLayer(
+      //   loadKnwStructuresLayer,
+      //   overlayLayers.value.knwStructures.visible
+      // )
       overlayLayers.value.piccBuildings.ids = initOverlayLayer(
         loadPiccBuildingsLayer,
         overlayLayers.value.piccBuildings.visible
