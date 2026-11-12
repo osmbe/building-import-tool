@@ -20,7 +20,7 @@ export const loadGrbBuildingsLayer = (map: Map): string[] => {
     id: 'grb-buildings-fill',
     paint: {
       'fill-color': fillColor,
-      'fill-opacity': 0.6
+      'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0.5]
     },
     source: 'grb-buildings',
     'source-layer': 'candidates',
