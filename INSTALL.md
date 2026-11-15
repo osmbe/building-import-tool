@@ -133,7 +133,7 @@ Verify via public domain:
 
 ```bash
 curl -f https://buildings.osm.be/api/health
-curl -f https://buildings.osm.be/tiles/grb/health
+curl -f https://buildings.osm.be/tiles/be2osm/health
 curl -f https://buildings.osm.be/tiles/osm/health
 ```
 

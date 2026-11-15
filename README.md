@@ -20,7 +20,7 @@ described in [INSTALL.md](INSTALL.md).
 
 ```
                        ┌──────────────── one server, docker compose ────────────────┐
- browser ── HTTPS ──▶  │ Caddy ─┬─ /tiles/{grb,osm,picc,urbis}/* ─▶ 4× Martin ─┐    │
+ browser ── HTTPS ──▶  │ Caddy ─┬─ /tiles/{be2osm,osm}/* ─▶ 2× Martin ─────────┐    │
                        │        ├─ /webhook/*  ─▶ webhook (jobs) ─┐            │    │
                        │        └─ everything else ─▶ Nuxt app ───┼────────────┤    │
                        │                                          ▼            ▼    │
