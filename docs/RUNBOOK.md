@@ -138,7 +138,7 @@ working meanwhile. They need free disk for the copy: check `just db-sizes` first
   run the GRB Import workflow again.
 - **Stale tiles:** Martin caches tiles in memory (512 MB, 1 h). Restores recreate the source's tile server; after an
   update or a change by hand, recreate it to see the new data right away:
-  `docker compose up -d --no-deps --force-recreate grb-tiles`.
+  `docker compose up -d --no-deps --force-recreate be2osm-tiles`.
 
 ## Troubleshooting
 
@@ -149,5 +149,5 @@ working meanwhile. They need free disk for the copy: check `just db-sizes` first
 | Image pull fails | Is the CI images job green for that commit? Can `GH_TOKEN` read packages? Try `docker login ghcr.io` on the server. |
 | A migration fails | `docker compose run --rm -T --no-deps processing just db-migrate --status`, then run it by hand to see the error. A `no-transaction` migration can be re-run once the cause is fixed. |
 | "different checksum" | An applied migration file was edited. Restore its original content and add a new migration instead. |
-| Tile server down after a deploy | `docker logs be2osm-grb-tiles`. Martin config rules: CLAUDE.md, Serving. |
+| Tile server down after a deploy | `docker logs be2osm-tiles`. Martin config rules: CLAUDE.md, Serving. |
 | Webhook not answering | `docker logs be2osm-webhook`; `docker compose up -d --no-deps webhook`. Jobs it was running are marked `interrupted`. |
