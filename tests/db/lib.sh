@@ -142,15 +142,13 @@ martin_up() {
 }
 
 martin_down() {
-    "${COMPOSE[@]}" --profile martin rm -sf martin-grb martin-osm martin-picc martin-urbis >/dev/null 2>&1 || true
+    "${COMPOSE[@]}" --profile martin rm -sf martin-be2osm martin-osm >/dev/null 2>&1 || true
 }
 
 martin_port() {
     case "$1" in
-    martin-grb) echo "${TEST_MARTIN_GRB_PORT:-53001}" ;;
+    martin-be2osm) echo "${TEST_MARTIN_BE2OSM_PORT:-53001}" ;;
     martin-osm) echo "${TEST_MARTIN_OSM_PORT:-53002}" ;;
-    martin-picc) echo "${TEST_MARTIN_PICC_PORT:-53003}" ;;
-    martin-urbis) echo "${TEST_MARTIN_URBIS_PORT:-53004}" ;;
     esac
 }
 
