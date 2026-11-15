@@ -51,10 +51,6 @@ else
     fail "martin-be2osm/picc_candidates tiles carry the details keys"
 fi
 # Only the contract is served: the per-source layouts (buildings, kunstwerken) are gone
-for svc in martin-be2osm; do
-    sources=$(curl -fsS "http://127.0.0.1:$(martin_port "$svc")/catalog" |
-        python3 -c "import json,sys; print(' '.join(sorted(json.load(sys.stdin)['tiles'])))")
-    case "$svc" in martin-be2osm) expected="grb_candidates knw_candidates picc_candidates urbis_candidates" ;; *) expected="candidates" ;; esac
-    assert_eq "$sources" "$expected" "$svc serves only the candidates contract"
-done
+sources=$(curl -fsS "http://127.0.0.1:$(martin_port martin-be2osm)/catalog" | python3 -c "import json,sys; print(' '.join(sorted(json.load(sys.stdin)['tiles'])))")
+assert_eq "$sources" "grb_candidates knw_candidates picc_candidates urbis_candidates" "martin-be2osm serves only the candidates contract"
 martin_down
