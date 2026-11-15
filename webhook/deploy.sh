@@ -131,7 +131,7 @@ git_owner reset --quiet --hard "${SHA}"
 #         "${COMPOSE[@]}" up -d --no-deps --force-recreate "${service}"
 #     fi
 # done
-# if changed caddy/Caddyfile || changed docker-compose.yml; then
+# if changed config/caddy/Caddyfile || changed docker-compose.yml; then
 #     log "recreating caddy"
 #     RECREATED+=(caddy)
 #     "${COMPOSE[@]}" up -d --no-deps --force-recreate caddy

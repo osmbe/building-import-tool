@@ -222,7 +222,7 @@ services:
     image: caddy:2-alpine
     container_name: be2osm-caddy
     volumes:
-      - /opt/building-import-tool/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
+      - /opt/building-import-tool/config/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
       - caddy_data:/data
     depends_on:
       nuxt-app:

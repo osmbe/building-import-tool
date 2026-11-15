@@ -31,7 +31,7 @@ commit() { # <message> <file> <content>
 git init -q --bare -b main "$ORIGIN"
 git init -q -b main "$WORK"
 echo ".env" >"$WORK/.gitignore"
-for f in docker-compose.yml caddy/Caddyfile config/martin/{grb,osm,picc,urbis}-config.yaml; do
+for f in docker-compose.yml config/caddy/Caddyfile config/martin/{grb,osm,picc,urbis}-config.yaml; do
     mkdir -p "$WORK/$(dirname "$f")" && echo "v1" >"$WORK/$f"
 done
 A=$(commit "A" README v1)
