@@ -13,7 +13,7 @@ export const loadUrbisBuildingsLayer = (map: Map): string[] => {
   map.addSource('urbis-buildings', {
     minzoom: 15,
     type: 'vector',
-    url: `${config.public.baseURL}/tiles/urbis/candidates`
+    url: `${config.public.baseURL}/tiles/be2osm/urbis_candidates`
   })
 
   map.addLayer({
@@ -23,7 +23,7 @@ export const loadUrbisBuildingsLayer = (map: Map): string[] => {
       'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0.5]
     },
     source: 'urbis-buildings',
-    'source-layer': 'candidates',
+    'source-layer': 'urbis_candidates',
     type: 'fill'
   })
   map.addLayer(
@@ -34,7 +34,7 @@ export const loadUrbisBuildingsLayer = (map: Map): string[] => {
         'line-width': 2
       },
       source: 'urbis-buildings',
-      'source-layer': 'candidates',
+      'source-layer': 'urbis_candidates',
       type: 'line'
     },
     'urbis-buildings-fill'
