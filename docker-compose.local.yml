@@ -193,13 +193,9 @@ services:
     depends_on:
       nuxt-app:
         condition: service_healthy
-      grb-tiles:
+      be2osm-tiles:
         condition: service_healthy
       osm-tiles:
-        condition: service_healthy
-      picc-tiles:
-        condition: service_healthy
-      urbis-tiles:
         condition: service_healthy
       webhook:
         condition: service_started
