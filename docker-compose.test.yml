@@ -92,10 +92,10 @@ services:
       postgres:
         condition: service_healthy
 
-  martin-grb:
+  martin-be2osm:
     <<: *martin
     volumes:
-      - ${MARTIN_CONFIG_DIR:-./config/martin}/grb-config.yaml:/config.yaml:ro
+      - ${MARTIN_CONFIG_DIR:-./config/martin}/be2osm-config.yaml:/config.yaml:ro
     ports:
       - "${TEST_MARTIN_GRB_PORT:-53001}:3000"
 
@@ -105,20 +105,6 @@ services:
       - ${MARTIN_CONFIG_DIR:-./config/martin}/osm-config.yaml:/config.yaml:ro
     ports:
       - "${TEST_MARTIN_OSM_PORT:-53002}:3000"
-
-  martin-picc:
-    <<: *martin
-    volumes:
-      - ${MARTIN_CONFIG_DIR:-./config/martin}/picc-config.yaml:/config.yaml:ro
-    ports:
-      - "${TEST_MARTIN_PICC_PORT:-53003}:3000"
-
-  martin-urbis:
-    <<: *martin
-    volumes:
-      - ${MARTIN_CONFIG_DIR:-./config/martin}/urbis-config.yaml:/config.yaml:ro
-    ports:
-      - "${TEST_MARTIN_URBIS_PORT:-53004}:3000"
 
 volumes:
   testdata:
