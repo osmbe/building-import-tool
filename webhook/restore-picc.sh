@@ -39,6 +39,6 @@ bash "${DIR}/processing/scripts/publish-schema.sh" picc "${DUMP_FILE}"
 if [ "${RESTART_TILES:-1}" = 1 ]; then
     docker compose -f "${DIR}/docker-compose.yml" --env-file "${DIR}/.env" \
         --project-name "${COMPOSE_PROJECT_NAME:-building-import-tool}" --project-directory "${DIR}" \
-        up -d --no-deps --force-recreate picc-tiles
+        up -d --no-deps --force-recreate be2osm-tiles
 fi
 echo "[restore-picc] Done."

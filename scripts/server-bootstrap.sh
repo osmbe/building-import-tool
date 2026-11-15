@@ -219,7 +219,7 @@ info "applying every pending migration (the GRB view rebuild takes about 30 minu
 
 # --- 9. services -------------------------------------------------------------------------------------------
 say "9. Services"
-"${COMPOSE[@]}" up -d --no-deps --force-recreate grb-tiles osm-tiles picc-tiles urbis-tiles
+"${COMPOSE[@]}" up -d --no-deps --force-recreate be2osm-tiles osm-tiles
 "${COMPOSE[@]}" up -d --no-deps nuxt-app
 "${COMPOSE[@]}" up -d --no-deps --force-recreate caddy
 info "Martin servers, nuxt-app and Caddy recreated"
@@ -238,7 +238,7 @@ if grep -q "\"sha\":\"$SHA\"" <<<"$ready"; then info "app ready: $ready"; else
     warn "the app does not report $SHA: ${ready:-no answer}"
     ok=0
 fi
-for tiles in grb-tiles osm-tiles picc-tiles urbis-tiles; do
+for tiles in be2osm-tiles osm-tiles; do
     if catalog="$(in_webhook curl -fsS --max-time 10 "http://$tiles:3000/catalog")" && grep -q '"tiles"' <<<"$catalog"; then
         info "$tiles: $(grep -o '"[a-z_]*candidates"\|"osm_buildings"' <<<"$catalog" | sort -u | tr '\n' ' ')"
     else

@@ -63,8 +63,8 @@ check "the checkout is at B" head_is "$B"
 # check "the three images of B are pulled" called "pull --quiet $PREFIX/webhook:sha-$B"
 # check "they are tagged :deployed" deployed nuxt-app "$B"
 # check "migrations run with --deploy" called "run --rm -T --no-deps processing just db-migrate --deploy"
-# check "the GRB Martin server is recreated" called "up -d --no-deps --force-recreate grb-tiles"
-check "the other Martin servers are not" not_called "osm-tiles"
+# check "the GRB Martin server is recreated" called "up -d --no-deps --force-recreate be2osm-tiles"
+check "the other Martin servers are not" not_called "be2osm-tiles"
 check "Caddy is not recreated" not_called "caddy"
 # check "nuxt-app is recreated" called "up -d --no-deps nuxt-app"
 # check "the webhook is recreated from a helper (its image is new)" called "run -d --rm --name be2osm-webhook-recreate"
@@ -73,7 +73,7 @@ echo "  deploy of the head of main (C), no sha given"
 deploy
 check "succeeds" [ $? = 0 ] || echo "$OUT"
 check "the checkout is at C" head_is "$C"
-check "no Martin server is recreated" not_called "tiles"
+check "no Martin server is recreated" not_called "be2osm-tiles"
 # check "the previous images are kept as :previous" [ -f "/tmp/state/tags/$(tr '/:' '__' <<<"$PREFIX/nuxt-app:previous")" ]
 # check "the webhook is recreated again (new image)" called "be2osm-webhook-recreate"
 
@@ -118,7 +118,7 @@ FAKE_READY_FAIL=1 deploy "$A"
 # check "the checkout is back at C" head_is "$C"
 # check "the images are back to C" deployed nuxt-app "$C"
 # check "the recreated Martin server is recreated again with the old config" \
-#     [ "$(grep -c "force-recreate grb-tiles" /tmp/state/docker.log)" = 2 ]
+#     [ "$(grep -c "force-recreate be2osm-tiles" /tmp/state/docker.log)" = 2 ]
 # check "the app is restarted on the previous image" [ "$(cat /tmp/state/nuxt-running)" = "sha256:nuxt-app:sha-$C" ]
 
 exit "$FAILURES"

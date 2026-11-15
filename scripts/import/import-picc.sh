@@ -12,6 +12,6 @@ echo "[import-picc] Starting local PICC import..."
 echo "[import-picc] $(date)"
 
 ${COMPOSE} run --rm --no-deps processing just picc-full
-${COMPOSE} up -d --no-deps --force-recreate picc-tiles
+${COMPOSE} up -d --no-deps --force-recreate be2osm-tiles
 
 echo "[import-picc] Done. $(date)"
