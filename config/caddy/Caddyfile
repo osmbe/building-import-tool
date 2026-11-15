@@ -14,10 +14,10 @@
 		level INFO
 	}
 
-	# Martin GRB Tiles
-	handle /tiles/grb/* {
-		uri strip_prefix /tiles/grb
-		reverse_proxy grb-tiles:3000 {
+	# Martin GRB, PICC, UrbIS Tiles
+	handle /tiles/be2osm/* {
+		uri strip_prefix /tiles/be2osm
+		reverse_proxy be2osm-tiles:3000 {
 			header_up X-Forwarded-Proto https
 			header_up Host {host}
 		}
@@ -27,24 +27,6 @@
 	handle /tiles/osm/* {
 		uri strip_prefix /tiles/osm
 		reverse_proxy osm-tiles:3000 {
-			header_up X-Forwarded-Proto https
-			header_up Host {host}
-		}
-	}
-
-	# Martin PICC Tiles
-	handle /tiles/picc/* {
-		uri strip_prefix /tiles/picc
-		reverse_proxy picc-tiles:3000 {
-			header_up X-Forwarded-Proto https
-			header_up Host {host}
-		}
-	}
-
-	# Martin UrbIS Tiles
-	handle /tiles/urbis/* {
-		uri strip_prefix /tiles/urbis
-		reverse_proxy urbis-tiles:3000 {
 			header_up X-Forwarded-Proto https
 			header_up Host {host}
 		}
