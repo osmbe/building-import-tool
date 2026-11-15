@@ -29,8 +29,8 @@ psql_db -d osmbe -f - <"$PREVIOUS_DIR/tests/fixtures/osm/buildings.sql" >/dev/nu
 
 # The previous release's Martin configs: every server starts and serves its sources
 export MARTIN_CONFIG_DIR="$PREVIOUS_DIR/config/martin"
-martin_up martin-grb martin-osm martin-picc martin-urbis
-for svc in martin-grb martin-osm martin-picc martin-urbis; do
+martin_up martin-be2osm martin-osm
+for svc in martin-be2osm martin-osm; do
     port=$(martin_port "$svc")
     if catalog=$(curl -fsS "http://127.0.0.1:${port}/catalog" 2>/dev/null) && [ "$catalog" != '{"tiles":{}}' ]; then
         pass "$svc (previous config) serves its catalog"

@@ -13,7 +13,7 @@ export const loadKnwStructuresLayer = (map: Map): string[] => {
   map.addSource('knw-structures', {
     minzoom: 15,
     type: 'vector',
-    url: `${config.public.baseURL}/tiles/grb/knw_candidates`
+    url: `${config.public.baseURL}/tiles/be2osm/knw_candidates`
   })
 
   map.addLayer({

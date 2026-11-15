@@ -20,7 +20,7 @@ described in [INSTALL.md](INSTALL.md).
 
 ```
                        ┌──────────────── one server, docker compose ────────────────┐
- browser ── HTTPS ──▶  │ Caddy ─┬─ /tiles/{grb,osm,picc,urbis}/* ─▶ 4× Martin ─┐    │
+ browser ── HTTPS ──▶  │ Caddy ─┬─ /tiles/{be2osm,osm}/* ─▶ 2× Martin ─────────┐    │
                        │        ├─ /webhook/*  ─▶ webhook (jobs) ─┐            │    │
                        │        └─ everything else ─▶ Nuxt app ───┼────────────┤    │
                        │                                          ▼            ▼    │
@@ -80,8 +80,8 @@ the live data untouched.
 |---|---|
 | [`app/`](app/README.md) | Nuxt 4 SPA and its server API (TypeScript, OpenLayers, Tailwind, shadcn-vue) |
 | [`processing/`](processing/README.md) | processing image, the justfile, SQL migrations, transforms and updates |
+| `config/caddy/Caddyfile` | routing |
 | `config/martin/` | one Martin config per tile server |
-| `caddy/Caddyfile` | routing |
 | `webhook/` | job server (`server.py`) and the job scripts: deploy, restore, update |
 | `scripts/import/` | manual full-import scripts for GRB, PICC, UrbIS and OSM |
 | `postgres/` | init scripts of a new database volume (extensions and schemas only) |

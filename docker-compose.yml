@@ -60,10 +60,10 @@ services:
     networks:
       - be2osm
 
-  # Martin Tile Server - GRB Data
-  grb-tiles:
+  # Martin Tile Server - GRB, PICC, UrbIS Data
+  be2osm-tiles:
     image: ghcr.io/maplibre/martin:1.16.1
-    container_name: be2osm-grb-tiles
+    container_name: be2osm-tiles
     command: ["--config", "/config.yaml"]
     environment:
       POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
@@ -71,7 +71,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - /opt/building-import-tool/config/martin/grb-config.yaml:/config.yaml:ro,Z
+      - /opt/building-import-tool/config/martin/be2osm-config.yaml:/config.yaml:ro,Z
     depends_on:
       postgres:
         condition: service_healthy
@@ -96,54 +96,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - /opt/building-import-tool/config/martin/osm-config.yaml:/config.yaml:ro,Z
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - be2osm
-
-  # Martin Tile Server - PICC Data (Wallonia)
-  picc-tiles:
-    image: ghcr.io/maplibre/martin:1.16.1
-    container_name: be2osm-picc-tiles
-    command: ["--config", "/config.yaml"]
-    environment:
-      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
-      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - /opt/building-import-tool/config/martin/picc-config.yaml:/config.yaml:ro,Z
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - be2osm
-
-  # Martin Tile Server - UrbIS Data (Brussels)
-  urbis-tiles:
-    image: ghcr.io/maplibre/martin:1.16.1
-    container_name: be2osm-urbis-tiles
-    command: ["--config", "/config.yaml"]
-    environment:
-      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
-      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - /opt/building-import-tool/config/martin/urbis-config.yaml:/config.yaml:ro,Z
     depends_on:
       postgres:
         condition: service_healthy
@@ -222,18 +174,14 @@ services:
     image: caddy:2-alpine
     container_name: be2osm-caddy
     volumes:
-      - /opt/building-import-tool/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
+      - /opt/building-import-tool/config/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
       - caddy_data:/data
     depends_on:
       nuxt-app:
         condition: service_healthy
-      grb-tiles:
+      be2osm-tiles:
         condition: service_healthy
       osm-tiles:
-        condition: service_healthy
-      picc-tiles:
-        condition: service_healthy
-      urbis-tiles:
         condition: service_healthy
       webhook:
         condition: service_started

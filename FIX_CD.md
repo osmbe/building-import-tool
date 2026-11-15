@@ -151,9 +151,7 @@ From anywhere:
 ```bash
 curl -s https://new.buildings.osm.be/api/health/ready
 #  → {"ready":true,"sha":"<latest main commit>","migrations":{"grb":[...],"picc":[...],"urbis":[...],"common":[...]}}
-curl -s https://new.buildings.osm.be/tiles/grb/catalog     # → "candidates" and "knw_candidates"
-curl -s https://new.buildings.osm.be/tiles/picc/catalog    # → "candidates"
-curl -s https://new.buildings.osm.be/tiles/urbis/catalog   # → "candidates"
+curl -s https://new.buildings.osm.be/tiles/be2osm/catalog # → "grb_candidates", "knw_candidates", "picc_candidates", and "urbis_candidates"
 curl -s https://new.buildings.osm.be/api/meta/data-dates   # → a date for each source imported since the upgrade
 ```
 

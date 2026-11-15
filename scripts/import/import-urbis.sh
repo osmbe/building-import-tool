@@ -12,6 +12,6 @@ echo "[import-urbis] Starting local UrbIS import..."
 echo "[import-urbis] $(date)"
 
 ${COMPOSE} run --rm --no-deps processing just urbis-full
-${COMPOSE} up -d --no-deps --force-recreate urbis-tiles
+${COMPOSE} up -d --no-deps --force-recreate be2osm-tiles
 
 echo "[import-urbis] Done. $(date)"

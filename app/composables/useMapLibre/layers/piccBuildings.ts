@@ -13,7 +13,7 @@ export const loadPiccBuildingsLayer = (map: Map): string[] => {
   map.addSource('picc-buildings', {
     minzoom: 15,
     type: 'vector',
-    url: `${config.public.baseURL}/tiles/picc/candidates`
+    url: `${config.public.baseURL}/tiles/be2osm/picc_candidates`
   })
 
   map.addLayer({
@@ -23,7 +23,7 @@ export const loadPiccBuildingsLayer = (map: Map): string[] => {
       'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0.5]
     },
     source: 'picc-buildings',
-    'source-layer': 'candidates',
+    'source-layer': 'picc_candidates',
     type: 'fill'
   })
   map.addLayer(
@@ -34,7 +34,7 @@ export const loadPiccBuildingsLayer = (map: Map): string[] => {
         'line-width': 2
       },
       source: 'picc-buildings',
-      'source-layer': 'candidates',
+      'source-layer': 'picc_candidates',
       type: 'line'
     },
     'picc-buildings-fill'

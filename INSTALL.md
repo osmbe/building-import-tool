@@ -109,7 +109,7 @@ bash scripts/server-bootstrap.sh
 This starts every service:
 - **postgres**: PostgreSQL database with PostGIS
 - **nuxt-app**: Web application (image from GHCR)
-- **grb-tiles**, **osm-tiles**, **picc-tiles**, **urbis-tiles**: vector tile servers (Martin)
+- **be2osm-tiles** and **osm-tiles**: vector tile servers (Martin)
 - **webhook**: runs deploys, restores, imports and updates for GitHub Actions
 - **caddy**: Reverse proxy
 
@@ -133,7 +133,7 @@ Verify via public domain:
 
 ```bash
 curl -f https://buildings.osm.be/api/health
-curl -f https://buildings.osm.be/tiles/grb/health
+curl -f https://buildings.osm.be/tiles/be2osm/health
 curl -f https://buildings.osm.be/tiles/osm/health
 ```
 

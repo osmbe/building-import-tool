@@ -9,7 +9,7 @@ just_run urbis-import >/dev/null
 psql_db -d osmbe -c "INSERT INTO osm.osm_buildings (osm_id, building_type, tags, geom) VALUES
   (42, 'yes', '{\"building\": \"yes\"}', ST_GeomFromText('POLYGON((4.4000 51.2000,4.4001 51.2000,4.4001 51.20007,4.4000 51.20007,4.4000 51.2000))', 4326))" >/dev/null
 
-martin_up martin-grb martin-osm martin-picc martin-urbis
+martin_up martin-be2osm martin-osm
 
 check_martin() { # <service> <source> <lon> <lat> <required properties...>
     local svc="$1" src="$2" lon="$3" lat="$4"
@@ -39,22 +39,18 @@ check_martin martin-osm osm_buildings 4.40005 51.20003 osm_id tags
 # The candidates contract: the same properties for every source
 CONTRACT=(fid source entity source_id source_ref type_code type_label survey_date origin_label area_m2 parent_id
     parent_type_label parent_part_count parent_area_m2 addresses street_names postcodes municipalities address_count)
-check_martin martin-grb candidates 4.40005 51.20003 "${CONTRACT[@]}"
-check_martin martin-grb knw_candidates 4.40505 51.20003 "${CONTRACT[@]}"
-check_martin martin-picc candidates 4.87005 50.46503 "${CONTRACT[@]}"
-check_martin martin-urbis candidates 4.35005 50.84603 "${CONTRACT[@]}"
+check_martin martin-be2osm grb_candidates 4.40005 51.20003 "${CONTRACT[@]}"
+check_martin martin-be2osm knw_candidates 4.40505 51.20003 "${CONTRACT[@]}"
+check_martin martin-be2osm picc_candidates 4.87005 50.46503 "${CONTRACT[@]}"
+check_martin martin-be2osm urbis_candidates 4.35005 50.84603 "${CONTRACT[@]}"
 # details (jsonb) reaches the tiles as one property per key
 read -r z x y < <(tile_xyz 4.87005 50.46503 16)
-if curl -fsS "http://127.0.0.1:$(martin_port martin-picc)/candidates/${z}/${x}/${y}" | grep -aq georef_id; then
-    pass "martin-picc/candidates tiles carry the details keys"
+if curl -fsS "http://127.0.0.1:$(martin_port martin-be2osm)/picc_candidates/${z}/${x}/${y}" | grep -aq georef_id; then
+    pass "martin-be2osm/picc_candidates tiles carry the details keys"
 else
-    fail "martin-picc/candidates tiles carry the details keys"
+    fail "martin-be2osm/picc_candidates tiles carry the details keys"
 fi
 # Only the contract is served: the per-source layouts (buildings, kunstwerken) are gone
-for svc in martin-grb martin-picc martin-urbis; do
-    sources=$(curl -fsS "http://127.0.0.1:$(martin_port "$svc")/catalog" |
-        python3 -c "import json,sys; print(' '.join(sorted(json.load(sys.stdin)['tiles'])))")
-    case "$svc" in martin-grb) expected="candidates knw_candidates" ;; *) expected="candidates" ;; esac
-    assert_eq "$sources" "$expected" "$svc serves only the candidates contract"
-done
+sources=$(curl -fsS "http://127.0.0.1:$(martin_port martin-be2osm)/catalog" | python3 -c "import json,sys; print(' '.join(sorted(json.load(sys.stdin)['tiles'])))")
+assert_eq "$sources" "grb_candidates knw_candidates picc_candidates urbis_candidates" "martin-be2osm serves only the candidates contract"
 martin_down

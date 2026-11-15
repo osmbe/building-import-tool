@@ -108,8 +108,8 @@ The init scripts `postgres/0*.sql` run only on the **first** container init (`do
 
 ### Serving
 
-Caddy (`caddy/Caddyfile`) is the single entry point:
-- `/tiles/{grb,osm,picc,urbis}/*` → four Martin vector-tile servers, one per source. Each has its own config in `config/martin/*.yaml`, and that config fixes the table/view, the columns exposed as tile properties, and the zoom range. When you add a property to a tile layer, update both the view and the Martin config. Each config serves only the source's `candidates` (the contract; GRB also `knw_candidates`); `60-martin.sh` checks the catalogs hold nothing else.
+Caddy (`config/caddy/Caddyfile`) is the single entry point:
+- `/tiles/be2osm/*` → four Martin vector-tile servers, one per source. Each has its own config in `config/martin/*.yaml`, and that config fixes the table/view, the columns exposed as tile properties, and the zoom range. When you add a property to a tile layer, update both the view and the Martin config. Each config serves only the source's `candidates` (the contract; GRB also `knw_candidates`); `60-martin.sh` checks the catalogs hold nothing else.
 - `/webhook/*` → `webhook/server.py`
 - everything else → Nuxt
 

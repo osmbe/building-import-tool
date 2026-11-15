@@ -32,10 +32,8 @@ COMPOSE=(docker compose -f "${DIR}/docker-compose.yml" --env-file "${DIR}/.env" 
 
 # Martin service -> its config file
 # declare -A MARTIN=(
-#     [grb-tiles]=config/martin/grb-config.yaml
+#     [be2osm-tiles]=config/martin/be2osm-config.yaml
 #     [osm-tiles]=config/martin/osm-config.yaml
-#     [picc-tiles]=config/martin/picc-config.yaml
-#     [urbis-tiles]=config/martin/urbis-config.yaml
 # )
 
 log() { echo "[deploy] $*"; }
@@ -131,7 +129,7 @@ git_owner reset --quiet --hard "${SHA}"
 #         "${COMPOSE[@]}" up -d --no-deps --force-recreate "${service}"
 #     fi
 # done
-# if changed caddy/Caddyfile || changed docker-compose.yml; then
+# if changed config/caddy/Caddyfile || changed docker-compose.yml; then
 #     log "recreating caddy"
 #     RECREATED+=(caddy)
 #     "${COMPOSE[@]}" up -d --no-deps --force-recreate caddy

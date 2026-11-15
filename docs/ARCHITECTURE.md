@@ -109,10 +109,10 @@ The materialized views are then refreshed `CONCURRENTLY`, so readers keep the ol
 
 ## Serving
 
-Caddy (`caddy/Caddyfile`) is the only entry point. TLS terminates upstream, in Nginx Proxy Manager.
+Caddy (`config/caddy/Caddyfile`) is the only entry point. TLS terminates upstream, in Nginx Proxy Manager.
 
 - `/tiles/<source>/*` goes to that source's Martin server. Each server's config (`config/martin/*.yaml`) fixes the
-  view, the properties and the zoom range (10–22); GRB, PICC and UrbIS serve only their `candidates` source(s).
+  view, the properties and the zoom range (10–22); BE2OSM serves GRB, PICC, and UrbIS `candidates` source(s).
 - `/webhook/*` goes to the job server.
 - Everything else goes to Nuxt.
 
