@@ -156,15 +156,15 @@ describe('POST /api/buildings/difference: one query for every source', () => {
       dataSource: 'grb',
       matchMode: 'geometry',
       total: 1,
-      totalGrb: 12,
-      totalOsm: 5
+      totalOsm: 5,
+      totalSource: 12
     })
   })
 
   it('counts 0 when the count or the OSM query return nothing', async () => {
     fakeDatabases({ count: [], osmCollection: null, osmTotal: null })
     const { result } = await post({ dataSource: 'urbis' })
-    expect(result.stats).toMatchObject({ totalGrb: 0, totalOsm: 0 })
+    expect(result.stats).toMatchObject({ totalOsm: 0, totalSource: 0 })
   })
 
   it('applies the GRB building type allow-list (issue #53) to the candidates and the count, for GRB only', async () => {
