@@ -56,7 +56,7 @@
       <div v-else-if="differenceState === 'success' && matchingStats" class="space-y-1.5 text-[11px]">
         <div class="flex items-center justify-between">
           <span class="text-muted-foreground">Source total</span>
-          <span class="font-mono text-foreground/65">{{ matchingStats.totalGrb }}</span>
+          <span class="font-mono text-foreground/65">{{ matchingStats.totalSource }}</span>
         </div>
         <div class="flex items-center justify-between">
           <span class="text-muted-foreground">OSM total</span>
@@ -189,6 +189,7 @@ import { hslVar } from '~/lib/utils'
 import { useLayersPanel } from '~/composables/useLayerPanel'
 import { useMatchMode } from '~/composables/useMatchMode'
 import { useToast } from '~/composables/useToast'
+import type { DifferenceResponse } from '~/server/api/buildings/difference.post'
 
 // Props and state for the difference panel component
 const { mapState } = defineProps<{ mapState: MapState }>()
@@ -204,7 +205,8 @@ const { collapsed: layersPanelCollapsed } = useLayersPanel()
 
 // Matching stats state
 const matchingStats = ref<{
-  totalGrb: number
+  dataSource: string
+  totalSource: number
   totalOsm: number
   matched: number
   unmatched: number
@@ -281,8 +283,8 @@ const dismissResults = (): void => {
 
 const coveragePct = computed((): number => {
   const stat = matchingStats.value
-  if (!stat || !stat.totalGrb) return 0
-  return Math.round((stat.matched / stat.totalGrb) * 100)
+  if (!stat || !stat.totalSource) return 0
+  return Math.round((stat.matched / stat.totalSource) * 100)
 })
 
 // Source/combined modes are GRB-only; other sources are matched by geometry (see resolveMatchMode).
@@ -336,22 +338,32 @@ const exportToJOSM = async (): Promise<void> => {
     console.log(`Exporting ${allFeatures.length} candidate buildings to JOSM`)
 
     // Export to JOSM - ALL features from the candidate layer
-    const hasKnwCandidates = allFeatures.some((feature: any) => {
-      const layerType = String(feature?.properties?._layer_type || '').toLowerCase()
-      const entity = String(feature?.properties?.entity || '').toLowerCase()
-      return layerType === 'knw' || entity === 'knw'
-    })
-
-    const result = await exportLayerToJosm(
-      allFeatures,
-      hasKnwCandidates ? 'GRB Candidate Structures (KNW)' : 'GRB Candidate Buildings',
-      {
-        includeMeta: false,
-        simplify: simplifyOnExport.value,
-        simplifyPercent: simplifyPercent.value,
-        uploadToBackend: false
+    let title
+    switch (matchingStats.value?.dataSource) {
+      case 'grb':
+        title = 'GRB Candidate Buildings'
+        break
+      case 'knw':
+        title = 'KNW Candidate Structures'
+        break
+      case 'picc':
+        title = 'PICC Candidate Buildings'
+        break
+      case 'urbis':
+        title = 'UrbIS Candidate Buildings'
+        break
+      default: {
+        toast.warning('Nothing to export', 'No buildings available to export.')
+        return
       }
-    )
+    }
+
+    const result = await exportLayerToJosm(allFeatures, title, {
+      includeMeta: false,
+      simplify: simplifyOnExport.value,
+      simplifyPercent: simplifyPercent.value,
+      uploadToBackend: false
+    })
 
     console.log('✅ Export successful')
     toast.success(
@@ -533,7 +545,7 @@ const calculateDifference = async (): Promise<void> => {
       method: 'POST'
     })
 
-    const candidateGeoJSON = response as any
+    const candidateGeoJSON = response as DifferenceResponse
 
     if (!candidateGeoJSON || candidateGeoJSON.features.length === 0) {
       // Persistent empty state in the results panel rather than a disappearing toast.
@@ -562,21 +574,13 @@ const calculateDifference = async (): Promise<void> => {
     candidateCapped.value = totalCandidates > CANDIDATE_RENDER_CAP
     if (candidateCapped.value) candidateGeoJSON.features = candidateGeoJSON.features.slice(0, CANDIDATE_RENDER_CAP)
 
-    // Stamp the source kind on each candidate so the review tooltip and JOSM export
-    // Know what they are looking at (the candidate layer is a single OL layer).
-    const sourceKind =
-      dataSource === 'knw' ? 'knw' : dataSource === 'picc' ? 'picc' : dataSource === 'urbis' ? 'urbis' : 'grb'
-    for (const feature of candidateGeoJSON.features) {
-      feature.properties = feature.properties || {}
-      feature.properties._layer_type = sourceKind
-    }
-
     // Update matching stats (unmatched reflects the true count missing from OSM)
     const stats = (candidateGeoJSON as any).stats || {}
     matchingStats.value = {
-      matched: (stats.totalGrb || 0) - totalCandidates,
-      totalGrb: stats.totalGrb || totalCandidates,
+      dataSource: stats.dataSource || dataSource,
+      matched: (stats.totalSource || 0) - totalCandidates,
       totalOsm: stats.totalOsm || 0,
+      totalSource: stats.totalSource || totalCandidates,
       unmatched: totalCandidates
     }
 

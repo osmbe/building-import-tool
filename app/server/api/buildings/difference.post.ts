@@ -4,6 +4,18 @@ import { CANDIDATES_CONTRACT, CANDIDATE_COLUMNS, CANDIDATE_VIEWS, isCandidateSou
 import { type OsmSourceOidnInput, collectOsmSourceRefs } from '~/utils/osmSourceOidn'
 import { type OverpassBuildings, OverpassError, fetchOverpassBuildings } from '~/server/utils/overpass'
 
+export type DifferenceResponse = GeoJSON.FeatureCollection & {
+  stats: {
+    bounds: [number, number, number, number]
+    dataSource: string
+    matchMode: string
+    total: number
+    totalSource: number
+    totalOsm: number
+    unmatched?: number
+  }
+}
+
 // Official buildings in view that have no match in OSM, for every source through the candidates contract
 // (grb.candidates, grb.knw_candidates, picc.candidates, urbis.candidates: utils/candidates.ts). Every feature
 // Carries the contract properties.
@@ -13,7 +25,7 @@ import { type OverpassBuildings, OverpassError, fetchOverpassBuildings } from '~
 //   And of which the candidate covers at least as much (both directions, in EPSG:3857);
 // - source (GRB only): matched by an OSM building in view that references it (source:geometry:ref "Gbg/123");
 // - both: a candidate must be unmatched in both ways.
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<DifferenceResponse | undefined> => {
   try {
     const body = await readBody(event)
     const {
@@ -195,21 +207,23 @@ export default defineEventHandler(async (event) => {
     // Every object is already in OSM (no candidate rows) and in source mode
     const count = await queryGrb(`SELECT COUNT(*) AS n FROM ${view} c WHERE ${inView} AND ${inScope}`, countParams)
 
-    const features = rows.map(({ geometry, ...properties }: { geometry: string } & Record<string, unknown>) => ({
-      geometry: JSON.parse(geometry),
-      properties,
-      type: 'Feature'
-    }))
+    const features: GeoJSON.Feature[] = rows.map(
+      ({ geometry, ...properties }: { geometry: string } & Record<string, unknown>) => ({
+        geometry: JSON.parse(geometry),
+        properties,
+        type: 'Feature'
+      })
+    )
 
     return {
       features,
       stats: {
-        bounds,
+        bounds: bounds as [number, number, number, number],
         dataSource,
         matchMode,
         total: features.length,
-        totalGrb: Number(count[0]?.n ?? 0),
-        totalOsm
+        totalOsm,
+        totalSource: Number(count[0]?.n ?? 0)
       },
       type: 'FeatureCollection'
     }
