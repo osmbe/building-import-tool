@@ -55,7 +55,7 @@
     "dataSource": "urbis",
     "matchMode": "geometry",
     "total": 1,
-    "totalGrb": 2,
-    "totalOsm": 1
+    "totalOsm": 1,
+    "totalSource": 2
   }
 }

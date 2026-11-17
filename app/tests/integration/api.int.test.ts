@@ -22,7 +22,7 @@ const AREAS = {
 
 interface Stats {
   total: number
-  totalGrb: number
+  totalSource: number
   totalOsm: number
   dataSource: string
   matchMode: string
@@ -151,7 +151,7 @@ describe.skipIf(!PORT)('API against the fixture database', () => {
       const response = await post({ bounds: AREAS.grb, dataSource: 'grb', matchMode: 'geometry' })
       // Gbg/1001 is matched by OSM 101; Gbg/1003 (virtual facades) and Gba/2001 (trap) are not building types
       expect(refs(response)).toEqual(['Gba/1001', 'Gbg/1002'])
-      expect(response.stats).toMatchObject({ totalGrb: 3, totalOsm: 3 })
+      expect(response.stats).toMatchObject({ totalOsm: 3, totalSource: 3 })
       expectSameCandidates(response, 'difference-grb-geometry.json', 'grb')
       await expect(normalise(response)).toMatchFileSnapshot('__snapshots__/difference-grb-geometry.json')
     })

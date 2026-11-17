@@ -101,7 +101,7 @@
     "dataSource": "grb",
     "matchMode": "geometry",
     "total": 2,
-    "totalGrb": 3,
-    "totalOsm": 3
+    "totalOsm": 3,
+    "totalSource": 3
   }
 }

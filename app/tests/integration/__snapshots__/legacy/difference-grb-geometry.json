@@ -1,7 +1,7 @@
 {
   "stats": {
     "total": 2,
-    "totalGrb": 3,
+    "totalSource": 3,
     "totalOsm": 3,
     "dataSource": "grb",
     "matchMode": "geometry"
