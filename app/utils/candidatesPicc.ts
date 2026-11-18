@@ -1,6 +1,4 @@
-import type { CandidateProperties } from './candidates'
-
-export function tags(): Record<string, string> {
+export function piccTags(): Record<string, string> {
   return {
     building: 'yes'
   }

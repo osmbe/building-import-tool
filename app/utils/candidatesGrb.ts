@@ -15,7 +15,7 @@ export const ROOF_TYPE_LABELS = ['afdak']
 export const VERDIEPING_FIXME =
   'verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!'
 
-export function tags(props: CandidateProperties): Record<string, string> {
+export function grbTags(props: CandidateProperties): Record<string, string> {
   const tags: Record<string, string> = {}
 
   const label = String(props.type_label ?? '')

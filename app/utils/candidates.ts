@@ -1,7 +1,7 @@
-import { tags as grbTags } from '~/utils/candidatesGrb'
-import { tags as knwTags } from '~/utils/candidatesKnw'
-import { tags as piccTags } from '~/utils/candidatesPicc'
-import { tags as urbisTags } from '~/utils/candidatesUrbis'
+import { grbTags } from '~/utils/candidatesGrb'
+import { knwTags } from '~/utils/candidatesKnw'
+import { piccTags } from '~/utils/candidatesPicc'
+import { urbisTags } from '~/utils/candidatesUrbis'
 
 // The candidates contract: every source exposes its buildings with the same properties, in the database views
 // Grb.candidates, grb.knw_candidates, picc.candidates and urbis.candidates (processing/sql/migrations/grb/

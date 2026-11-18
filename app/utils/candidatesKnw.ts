@@ -17,7 +17,7 @@ const KNW_TAG_MAP_BY_CODE: Record<string, Record<string, string>> = {
   '24': { man_made: 'pier' }
 }
 
-export function tags(props: CandidateProperties): Record<string, string> {
+export function knwTags(props: CandidateProperties): Record<string, string> {
   const code = String(props.type_code ?? '').trim()
   const label = String(props.type_label ?? '')
     .toLowerCase()
