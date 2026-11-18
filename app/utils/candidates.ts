@@ -127,10 +127,10 @@ export const candidateToOsmFeature = (feature: GeoJSON.Feature): GeoJSON.Feature
       tags = { ...tags, ...knwTags(feature.properties as CandidateProperties) }
       break
     case 'picc':
-      tags = { ...tags, ...piccTags(feature.properties as CandidateProperties) }
+      tags = { ...tags, ...piccTags() }
       break
     case 'urbis':
-      tags = { ...tags, ...urbisTags(feature.properties as CandidateProperties) }
+      tags = { ...tags, ...urbisTags() }
       break
   }
 

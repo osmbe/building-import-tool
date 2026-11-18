@@ -23,8 +23,8 @@ export function tags(props: CandidateProperties): Record<string, string> {
     .toLowerCase()
     .trim()
 
-  if (code === '9') 
+  if (code === '9')
     return { man_made: label.includes('opslagtank') && !label.includes('silo') ? 'storage_tank' : 'silo' }
-  
+
   return { ...KNW_TAG_MAP_BY_CODE[code] }
 }
