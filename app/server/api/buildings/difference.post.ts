@@ -1,5 +1,5 @@
 import { queryGrb, queryOsm } from '~/server/utils/db'
-import { BUILDING_TYPE_LABELS } from '~/utils/grbExportTags'
+import { BUILDING_TYPE_LABELS } from '~/utils/candidatesGrb'
 import { CANDIDATES_CONTRACT, CANDIDATE_COLUMNS, CANDIDATE_VIEWS, isCandidateSource } from '~/utils/candidates'
 import { type OsmSourceOidnInput, collectOsmSourceRefs } from '~/utils/osmSourceOidn'
 import { type OverpassBuildings, OverpassError, fetchOverpassBuildings } from '~/server/utils/overpass'
