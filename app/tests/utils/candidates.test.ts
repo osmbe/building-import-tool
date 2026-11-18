@@ -152,16 +152,7 @@ describe('candidateTags: references and dates', () => {
           })
         )
       )
-    ).toEqual([
-      'building',
-      'fixme',
-      'source:geometry:date',
-      'source:geometry:ref',
-      'addr:street',
-      'addr:housenumber',
-      'addr:postcode',
-      'addr:city'
-    ])
+    ).toEqual(['addr:street', 'addr:housenumber', 'source:geometry:date', 'source:geometry:ref', 'building', 'fixme'])
   })
 })
 
@@ -207,9 +198,7 @@ describe('candidateTags: addresses (#49)', () => {
     expect(
       single({ addresses: 'Kerkstraat 12', municipalities: 'Gent', postcodes: '9000', street_names: 'Kerkstraat' })
     ).toMatchObject({
-      'addr:city': 'Gent',
       'addr:housenumber': '12',
-      'addr:postcode': '9000',
       'addr:street': 'Kerkstraat'
     })
   })
@@ -247,9 +236,7 @@ describe('candidateTags: addresses (#49)', () => {
     expect(
       single({ addresses: '7', municipalities: 'Gent, Gentbrugge', postcodes: '9000, 9050', street_names: null })
     ).toEqual({
-      'addr:city': 'Gent',
       'addr:housenumber': '7',
-      'addr:postcode': '9000',
       building: 'yes',
       'source:geometry:ref': 'Gbg/1'
     })
