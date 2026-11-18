@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs'
-import type { Feature } from 'geojson'
 import { describe, expect, it } from 'vite-plus/test'
 import {
   CANDIDATES_CONTRACT,
@@ -8,11 +7,10 @@ import {
   type CandidateProperties,
   candidateDetail,
   candidateDisplayId,
-  candidateTags,
   candidateToOsmFeature,
   isCandidateSource
 } from '~/utils/candidates'
-import { VERDIEPING_FIXME } from '~/utils/grbExportTags'
+import { VERDIEPING_FIXME } from '~/utils/candidatesGrb'
 
 const candidate = (props: Partial<CandidateProperties>): CandidateProperties => ({
   address_count: 0,
@@ -37,6 +35,10 @@ const candidate = (props: Partial<CandidateProperties>): CandidateProperties => 
   type_label: 'hoofdgebouw',
   ...props
 })
+
+const candidateTags = (props: CandidateProperties): Record<string, string> =>
+  candidateToOsmFeature({ geometry: { coordinates: [0, 0], type: 'Point' }, properties: props, type: 'Feature' })
+    .properties as Record<string, string>
 
 const knw = (props: Partial<CandidateProperties>) =>
   candidate({ entity: 'Knw', source: 'knw', source_id: '1', source_ref: 'Knw/1', type_label: null, ...props })
@@ -256,7 +258,7 @@ describe('candidateTags: addresses (#49)', () => {
 
 describe('candidateToOsmFeature', () => {
   it('replaces the properties with the tags and keeps the geometry', () => {
-    const input: Feature = {
+    const input: GeoJSON.Feature = {
       geometry: { coordinates: [4, 51], type: 'Point' },
       properties: candidate({ source_ref: 'Gbg/7' }),
       type: 'Feature'
