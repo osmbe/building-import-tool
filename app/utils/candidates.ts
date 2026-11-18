@@ -1,5 +1,7 @@
-import type { Feature } from 'geojson'
-import { KNW_TAG_MAP_BY_CODE, VERDIEPING_FIXME, isBuildingTypeLabel, isRoofTypeLabel } from '~/utils/grbExportTags'
+import { grbTags } from '~/utils/candidatesGrb'
+import { knwTags } from '~/utils/candidatesKnw'
+import { piccTags } from '~/utils/candidatesPicc'
+import { urbisTags } from '~/utils/candidatesUrbis'
 
 // The candidates contract: every source exposes its buildings with the same properties, in the database views
 // Grb.candidates, grb.knw_candidates, picc.candidates and urbis.candidates (processing/sql/migrations/grb/
@@ -78,11 +80,14 @@ export const CANDIDATE_VIEWS: Record<CandidateSource, string> = {
 const firstListItem = (value: string | null | undefined): string => (String(value ?? '').split(',')[0] ?? '').trim()
 
 /** Tags for the house address, only when the candidate has exactly one address (OSM: one address per object). */
-const addressTags = (props: CandidateProperties): Record<string, string> => {
+export const addressTags = (props: CandidateProperties): Record<string, string> => {
   const addresses = String(props.addresses ?? '').trim()
   if (Number(props.address_count ?? 0) !== 1 || !addresses) return {}
+
   const street = firstListItem(props.street_names)
+
   const tags: Record<string, string> = {}
+
   // The house number is what follows the street name, kept only when it looks like one ("12", "12A", "12/3").
   // A letter suffix must be a single letter, not the start of the next word ("12 Main Street").
   let remainder = addresses
@@ -90,54 +95,45 @@ const addressTags = (props: CandidateProperties): Record<string, string> => {
   const houseNumber = /^\d+(?:\s*[A-Za-z](?![A-Za-z]))?(?:\s*\/\s*\w+)?/.exec(remainder.trim())
   if (street) tags['addr:street'] = street
   if (houseNumber) tags['addr:housenumber'] = houseNumber[0].replace(/\s+/g, '')
-  const postcode = firstListItem(props.postcodes)
-  if (postcode) tags['addr:postcode'] = postcode
-  const city = firstListItem(props.municipalities)
-  if (city) tags['addr:city'] = city
+
   return tags
 }
 
-/** Default tags of a KNW structure type (issue #22): type 9 is a silo, or a storage tank when its label says so. */
-const knwTags = (props: CandidateProperties): Record<string, string> => {
-  const code = String(props.type_code ?? '').trim()
-  if (code === '9') {
-    const label = String(props.type_label ?? '').toLowerCase()
-    return { man_made: label.includes('opslagtank') && !label.includes('silo') ? 'storage_tank' : 'silo' }
-  }
-  return { ...KNW_TAG_MAP_BY_CODE[code] }
-}
-
-/**
- * The OSM tags of a candidate, per source (docs/GRB_PROPERTY_MAPPINGS.md, issues #22, #49 and #53):
- * - GRB: building=yes for the building types only (gbg-1, gbg-2, gba-1); building=roof for gba-2 (afdak);
- *   a verdieping (gba-1) gets a fixme;
- * - KNW: the default tags of its type, no building tag;
- * - PICC and UrbIS: building=yes;
- * - source:geometry:date (survey date) and source:geometry:ref (GRB and KNW reference) when known;
- * - addr:* when the candidate has exactly one address (not for KNW).
- */
-export const candidateTags = (props: CandidateProperties): Record<string, string> => {
+export const sourceGeometryTags = (props: CandidateProperties): Record<string, string> => {
   const tags: Record<string, string> = {}
-  const typeLabel = String(props.type_label ?? '')
-    .toLowerCase()
-    .trim()
-  if (props.source === 'knw') Object.assign(tags, knwTags(props))
-  else if (props.source === 'grb' && isRoofTypeLabel(typeLabel)) tags.building = 'roof'
-  else if (props.source !== 'grb' || isBuildingTypeLabel(typeLabel)) tags.building = 'yes'
 
-  if (props.source === 'grb' && typeLabel === 'verdieping') tags.fixme = VERDIEPING_FIXME
   const surveyDate = String(props.survey_date ?? '').slice(0, 10)
+
   if (/^\d{4}-\d{2}-\d{2}$/.test(surveyDate)) tags['source:geometry:date'] = surveyDate
   if (props.source_ref) tags['source:geometry:ref'] = props.source_ref
-  if (props.source !== 'knw') Object.assign(tags, addressTags(props))
+
   return tags
 }
 
 /** A candidate feature with its OSM tags as properties, ready for the OSM XML export. */
-export const candidateToOsmFeature = (feature: Feature): Feature => ({
-  ...feature,
-  properties: candidateTags(feature.properties as CandidateProperties)
-})
+export const candidateToOsmFeature = (feature: GeoJSON.Feature): GeoJSON.Feature => {
+  let tags: Record<string, string> = {}
+
+  switch (feature.properties?.source) {
+    case 'grb':
+      tags = { ...tags, ...grbTags(feature.properties as CandidateProperties) }
+      break
+    case 'knw':
+      tags = { ...tags, ...knwTags(feature.properties as CandidateProperties) }
+      break
+    case 'picc':
+      tags = { ...tags, ...piccTags(feature.properties as CandidateProperties) }
+      break
+    case 'urbis':
+      tags = { ...tags, ...urbisTags(feature.properties as CandidateProperties) }
+      break
+  }
+
+  return {
+    ...feature,
+    properties: tags
+  }
+}
 
 /** Short id shown for a candidate: the GRB building (gebouw_id) when known, else the source id. */
 export const candidateDisplayId = (props: Pick<CandidateProperties, 'source' | 'parent_id' | 'source_id'>): string =>
