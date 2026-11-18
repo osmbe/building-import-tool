@@ -31,7 +31,5 @@ export function grbTags(props: CandidateProperties): Record<string, string> {
 
   if (label === 'verdieping') tags.fixme = VERDIEPING_FIXME
 
-  console.log(label, tags)
-
   return tags
 }

@@ -112,8 +112,6 @@ export const sourceGeometryTags = (props: CandidateProperties): Record<string, s
 
 /** A candidate feature with its OSM tags as properties, ready for the OSM XML export. */
 export const candidateToOsmFeature = (feature: GeoJSON.Feature): GeoJSON.Feature => {
-  console.log('Feature properties:', feature.properties)
-
   let tags: Record<string, string> = {}
 
   switch (feature.properties?.source) {
