@@ -2,6 +2,7 @@
 // (utils/candidates.ts, candidateTags).
 
 import type { CandidateProperties } from './candidates'
+import { addressTags, sourceGeometryTags } from './candidates'
 
 // GRB polygon type labels (LBLTYPE) that may be exported as a building (issue #53). Allow-list:
 // - GBG: only gbg-1 "hoofdgebouw" and gbg-2 "bijgebouw" (NOT gbg-3 "gebouw afgezoomd met virtuele gevels").
@@ -16,7 +17,10 @@ export const VERDIEPING_FIXME =
   'verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!'
 
 export function grbTags(props: CandidateProperties): Record<string, string> {
-  const tags: Record<string, string> = {}
+  const tags: Record<string, string> = {
+    ...addressTags(props),
+    ...sourceGeometryTags(props)
+  }
 
   const label = String(props.type_label ?? '')
     .toLowerCase()

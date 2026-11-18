@@ -80,7 +80,7 @@ export const CANDIDATE_VIEWS: Record<CandidateSource, string> = {
 const firstListItem = (value: string | null | undefined): string => (String(value ?? '').split(',')[0] ?? '').trim()
 
 /** Tags for the house address, only when the candidate has exactly one address (OSM: one address per object). */
-const addressTags = (props: CandidateProperties): Record<string, string> => {
+export const addressTags = (props: CandidateProperties): Record<string, string> => {
   const addresses = String(props.addresses ?? '').trim()
   if (Number(props.address_count ?? 0) !== 1 || !addresses) return {}
 
@@ -99,7 +99,7 @@ const addressTags = (props: CandidateProperties): Record<string, string> => {
   return tags
 }
 
-const sourceGeometryTags = (props: CandidateProperties): Record<string, string> => {
+export const sourceGeometryTags = (props: CandidateProperties): Record<string, string> => {
   const tags: Record<string, string> = {}
 
   const surveyDate = String(props.survey_date ?? '').slice(0, 10)
@@ -114,10 +114,7 @@ const sourceGeometryTags = (props: CandidateProperties): Record<string, string> 
 export const candidateToOsmFeature = (feature: GeoJSON.Feature): GeoJSON.Feature => {
   console.log('Feature properties:', feature.properties)
 
-  let tags: Record<string, string> = {
-    ...addressTags(feature.properties as CandidateProperties),
-    ...sourceGeometryTags(feature.properties as CandidateProperties)
-  }
+  let tags: Record<string, string> = {}
 
   switch (feature.properties?.source) {
     case 'grb':
@@ -127,10 +124,10 @@ export const candidateToOsmFeature = (feature: GeoJSON.Feature): GeoJSON.Feature
       tags = { ...tags, ...knwTags(feature.properties as CandidateProperties) }
       break
     case 'picc':
-      tags = { ...tags, ...piccTags() }
+      tags = { ...tags, ...piccTags(feature.properties as CandidateProperties) }
       break
     case 'urbis':
-      tags = { ...tags, ...urbisTags() }
+      tags = { ...tags, ...urbisTags(feature.properties as CandidateProperties) }
       break
   }
 

@@ -1,4 +1,5 @@
 import type { CandidateProperties } from './candidates'
+import { sourceGeometryTags } from './candidates'
 
 const KNW_TAG_MAP_BY_CODE: Record<string, Record<string, string>> = {
   // Overbrugging outlines are bridge areas; bridge=yes belongs on the crossing way, not the outline.
@@ -23,8 +24,12 @@ export function knwTags(props: CandidateProperties): Record<string, string> {
     .toLowerCase()
     .trim()
 
-  if (code === '9')
-    return { man_made: label.includes('opslagtank') && !label.includes('silo') ? 'storage_tank' : 'silo' }
+  let tags: Record<string, string> = {
+    ...sourceGeometryTags(props)
+  }
 
-  return { ...KNW_TAG_MAP_BY_CODE[code] }
+  if (code === '9') tags.man_made = label.includes('opslagtank') && !label.includes('silo') ? 'storage_tank' : 'silo'
+  else tags = { ...tags, ...KNW_TAG_MAP_BY_CODE[code] }
+
+  return tags
 }
