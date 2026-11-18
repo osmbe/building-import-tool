@@ -10,8 +10,8 @@
     <nd ref="-3"/>
     <nd ref="-4"/>
     <nd ref="-1"/>
-    <tag k="man_made" v="chimney"/>
     <tag k="source:geometry:date" v="2022-01-10"/>
     <tag k="source:geometry:ref" v="Knw/7001"/>
+    <tag k="man_made" v="chimney"/>
   </way>
 </osm>
