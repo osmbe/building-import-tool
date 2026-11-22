@@ -13,6 +13,6 @@
     <tag k="addr:street" v="Rue de Fer"/>
     <tag k="addr:housenumber" v="5"/>
     <tag k="source:geometry:date" v="2019-05-20"/>
-    <tag k="building" v="yes"/>
+    <tag k="building" v="house"/>
   </way>
 </osm>

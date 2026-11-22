@@ -10,14 +10,13 @@ import {
   candidateToOsmFeature,
   isCandidateSource
 } from '~/utils/candidates'
-import { VERDIEPING_FIXME } from '~/utils/candidatesGrb'
 
 const candidate = (props: Partial<CandidateProperties>): CandidateProperties => ({
   address_count: 0,
   addresses: '',
   area_m2: 10,
   details: {},
-  entity: 'Gbg',
+  entity: null,
   fid: 1,
   municipalities: '',
   origin_label: null,
@@ -28,11 +27,11 @@ const candidate = (props: Partial<CandidateProperties>): CandidateProperties => 
   postcodes: '',
   source: 'grb',
   source_id: '1',
-  source_ref: 'Gbg/1',
+  source_ref: null,
   street_names: '',
   survey_date: null,
   type_code: null,
-  type_label: 'hoofdgebouw',
+  type_label: null,
   ...props
 })
 
@@ -40,12 +39,14 @@ const candidateTags = (props: CandidateProperties): Record<string, string> =>
   candidateToOsmFeature({ geometry: { coordinates: [0, 0], type: 'Point' }, properties: props, type: 'Feature' })
     .properties as Record<string, string>
 
+const grb = (props: Partial<CandidateProperties> = {}) =>
+  candidate({ entity: 'Gbg', source: 'grb', source_id: '1', source_ref: 'Gbg/1', type_label: 'hoofdgebouw', ...props })
 const knw = (props: Partial<CandidateProperties>) =>
-  candidate({ entity: 'Knw', source: 'knw', source_id: '1', source_ref: 'Knw/1', type_label: null, ...props })
+  candidate({ entity: 'Knw', source: 'knw', source_id: '1', source_ref: 'Knw/1', ...props })
 const picc = (props: Partial<CandidateProperties> = {}) =>
-  candidate({ entity: null, source: 'picc', source_id: '11', source_ref: null, type_code: 'BAT', ...props })
+  candidate({ entity: null, source: 'picc', source_id: '11', type_code: 'BAT', type_label: 'Habitation', ...props })
 const urbis = (props: Partial<CandidateProperties> = {}) =>
-  candidate({ entity: null, source: 'urbis', source_id: '21', source_ref: null, type_label: null, ...props })
+  candidate({ entity: null, source: 'urbis', source_id: '21', ...props })
 
 describe('the candidates contract', () => {
   it('names the view and the tile source of every source', () => {
@@ -81,8 +82,8 @@ describe('the candidates contract', () => {
   })
 
   it('shows the GRB building id, else the source id', () => {
-    expect(candidateDisplayId(candidate({ parent_id: '5001' }))).toBe('5001')
-    expect(candidateDisplayId(candidate({ source_id: '1003' }))).toBe('1003')
+    expect(candidateDisplayId(grb({ parent_id: '5001' }))).toBe('5001')
+    expect(candidateDisplayId(grb({ source_id: '1003' }))).toBe('1003')
     expect(candidateDisplayId(picc({ parent_id: 'x' }))).toBe('11')
   })
 })
@@ -90,58 +91,84 @@ describe('the candidates contract', () => {
 describe('candidateTags: buildings (#53)', () => {
   it('tags GRB building types as building=yes', () => {
     for (const type_label of ['hoofdgebouw', 'Bijgebouw', 'verdieping', null])
-      expect(candidateTags(candidate({ type_label })).building).toBe('yes')
+      expect(candidateTags(grb({ type_label })).building).toBe('yes')
   })
 
   it.each(['gebouw afgezoomd met virtuele gevels', 'trap', 'loopbrug', 'luifel', 'verheven garagetoegang'])(
     'does not tag the GRB type "%s" as a building',
     (type_label) => {
-      const tags = candidateTags(candidate({ type_label }))
+      const tags = candidateTags(grb({ type_label }))
       expect(tags.building).toBeUndefined()
       expect(tags.fixme).toBeUndefined()
     }
   )
 
   it('tags the GRB type "afdak" (gba-2) as building=roof, without a fixme', () => {
-    expect(candidateTags(candidate({ type_label: 'afdak' })).building).toBe('roof')
-    expect(candidateTags(candidate({ type_label: ' Afdak ' })).building).toBe('roof')
-    expect(candidateTags(candidate({ type_label: 'afdak' })).fixme).toBeUndefined()
+    expect(candidateTags(grb({ type_label: 'afdak' })).building).toBe('roof')
+    expect(candidateTags(grb({ type_label: ' Afdak ' })).building).toBe('roof')
+    expect(candidateTags(grb({ type_label: 'afdak' })).fixme).toBeUndefined()
   })
 
   it('flags a verdieping for manual correction, case-insensitively', () => {
-    expect(candidateTags(candidate({ type_label: 'VERDIEPING' })).fixme).toBe(VERDIEPING_FIXME)
+    expect(candidateTags(grb({ type_label: 'VERDIEPING' })).fixme).toBe(
+      'verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!'
+    )
   })
 
-  it('tags PICC and UrbIS buildings whatever their type label (the GRB allow-list is GRB only)', () => {
-    expect(candidateTags(picc({ type_label: 'Batiment' })).building).toBe('yes')
-    expect(candidateTags(picc({ type_label: 'verdieping' })).fixme).toBeUndefined()
-    expect(candidateTags(picc({ type_label: 'afdak' })).building).toBe('yes')
+  it('tags PICC buildings whatever their type label', () => {
+    expect(candidateTags(picc({ type_code: 'ADM', type_label: 'Administration' })).building).toBe('public')
+    expect(candidateTags(picc({ type_code: 'ANE', type_label: 'Annexe' })).building).toBe('yes')
+    expect(candidateTags(picc({ type_code: 'BAT', type_label: 'Habitation' })).building).toBe('house')
+    expect(candidateTags(picc({ type_code: 'BUI', type_label: 'Building' })).building).toBe('yes')
+    expect(candidateTags(picc({ type_code: 'CEE', type_label: "Château d'eau" })).building).toBe('water_tower')
+    expect(candidateTags(picc({ type_code: 'CHT', type_label: 'Château' })).building).toBe('castle')
+    expect(candidateTags(picc({ type_code: 'CUL', type_label: 'Culture, sport ou loisir' })).building).toBe('public')
+    expect(candidateTags(picc({ type_code: 'FRM', type_label: 'Agricole' })).building).toBe('farm')
+    expect(candidateTags(picc({ type_code: 'HDV', type_label: 'Maison communale' })).building).toBe('townhall')
+    expect(candidateTags(picc({ type_code: 'HOP', type_label: 'Hôpital' })).building).toBe('hospital')
+    expect(candidateTags(picc({ type_code: 'IDS', type_label: 'Industriel' })).building).toBe('industrial')
+    expect(candidateTags(picc({ type_code: 'LDC', type_label: 'Lieu de culte' })).building).toBe('yes')
+    expect(candidateTags(picc({ type_code: 'MAG', type_label: 'Commerce ou service' })).building).toBe('commercial')
+    expect(candidateTags(picc({ type_code: 'MDR', type_label: 'Maison de repos' })).building).toBe('yes')
+    expect(candidateTags(picc({ type_code: 'POL', type_label: 'Police' })).building).toBe('police')
+    expect(candidateTags(picc({ type_code: 'POM', type_label: 'Pompier' })).building).toBe('fire_station')
+    expect(candidateTags(picc({ type_code: 'PRI', type_label: 'Prison' })).building).toBe('prison')
+    expect(candidateTags(picc({ type_code: 'SCO', type_label: 'Scolaire' })).building).toBe('school')
+    expect(candidateTags(picc({ type_code: 'SCF', type_label: 'Scolaire fondamental' })).building).toBe('school')
+    expect(candidateTags(picc({ type_code: 'SCS', type_label: 'Scolaire secondaire' })).building).toBe('school')
+    expect(candidateTags(picc({ type_code: 'SCU', type_label: 'Scolaire supérieur' })).building).toBe('university')
+    expect(candidateTags(picc({ type_code: 'SDE', type_label: "Station d'épuration" })).building).toBe('yes')
+    expect(candidateTags(picc({ type_code: 'STS', type_label: 'Station service' })).building).toBe('yes')
+    expect(candidateTags(picc({ type_code: 'TRG', type_label: 'Gare' })).building).toBe('train_station')
+  })
+
+  it('tags UrbIS buildings whatever their type label', () => {
     expect(candidateTags(urbis()).building).toBe('yes')
   })
 })
 
 describe('candidateTags: references and dates', () => {
   it('writes the source reference (GRB entity per polygon, KNW)', () => {
-    expect(candidateTags(candidate({ source_ref: 'Gba/2664' }))['source:geometry:ref']).toBe('Gba/2664')
+    expect(candidateTags(grb({ source_ref: 'Gba/2664' }))['source:geometry:ref']).toBe('Gba/2664')
     expect(candidateTags(knw({ source_ref: 'Knw/99' }))['source:geometry:ref']).toBe('Knw/99')
     expect(candidateTags(picc())).not.toHaveProperty('source:geometry:ref')
   })
 
   it('writes the survey date of every source, date-only (#49)', () => {
-    expect(candidateTags(candidate({ survey_date: '2023-03-15' }))['source:geometry:date']).toBe('2023-03-15')
+    expect(candidateTags(grb({ survey_date: '2023-03-15' }))['source:geometry:date']).toBe('2023-03-15')
     expect(candidateTags(picc({ survey_date: '2019-05-20T00:00:00' }))['source:geometry:date']).toBe('2019-05-20')
     expect(candidateTags(knw({ survey_date: '2022-01-10' }))['source:geometry:date']).toBe('2022-01-10')
   })
 
   it.each(['unknown', '03/2023', '2023-3-5'])('leaves out a malformed survey date (%s)', (survey_date) => {
-    expect(candidateTags(candidate({ survey_date }))).not.toHaveProperty('source:geometry:date')
+    expect(candidateTags(grb({ survey_date }))).not.toHaveProperty('source:geometry:date')
   })
 
   it('exports only OSM tags, in a stable order', () => {
     expect(
       Object.keys(
         candidateTags(
-          candidate({
+          grb({
             address_count: 1,
             addresses: 'Kerkstraat 1',
             municipalities: 'Antwerpen',
@@ -192,7 +219,7 @@ describe('candidateTags: KNW default tags (#22)', () => {
 })
 
 describe('candidateTags: addresses (#49)', () => {
-  const single = (props: Partial<CandidateProperties>) => candidateTags(candidate({ address_count: 1, ...props }))
+  const single = (props: Partial<CandidateProperties>) => candidateTags(grb({ address_count: 1, ...props }))
 
   it('writes the address of a single-address candidate', () => {
     expect(
@@ -247,7 +274,7 @@ describe('candidateToOsmFeature', () => {
   it('replaces the properties with the tags and keeps the geometry', () => {
     const input: GeoJSON.Feature = {
       geometry: { coordinates: [4, 51], type: 'Point' },
-      properties: candidate({ source_ref: 'Gbg/7' }),
+      properties: grb({ source_ref: 'Gbg/7' }),
       type: 'Feature'
     }
     const out = candidateToOsmFeature(input)
