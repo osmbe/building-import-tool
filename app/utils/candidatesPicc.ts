@@ -16,34 +16,31 @@ export function piccTags(props: CandidateProperties): Record<string, string> {
     case 'adm':
       tags.building = 'public' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dpublic
       break
-    // Agricole
-    case 'frm':
-      tags.building = 'farm' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dfarm
-      break
-    // Château
-    case 'cht':
-      tags.building = 'castle' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dcastle
+    // Habitation
+    case 'bat':
+      tags.building = 'house' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dhouse
       break
     // Château d'eau
     case 'cee':
       tags.building = 'water_tower' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dwater_tower
       tags.man_made = 'water_tower' // https://wiki.openstreetmap.org/wiki/Tag:man_made%3Dwater_tower
       break
-    // Commerce ou service
-    case 'mag':
-      tags.building = 'commercial' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dcommercial
+    // Château
+    case 'cht':
+      tags.building = 'castle' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dcastle
       break
     // Culture, sport ou loisir
     case 'cul':
       tags.building = 'public' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dpublic
       break
-    // Gare
-    case 'trg':
-      tags.building = 'train_station' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dtrain_station
+    // Agricole
+    case 'frm':
+      tags.building = 'farm' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dfarm
       break
-    // Habitation
-    case 'bat':
-      tags.building = 'house' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dhouse
+    // Maison communale
+    case 'hdv':
+      tags.building = 'townhall' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dtownhall
+      tags.amenity = 'townhall' // https://wiki.openstreetmap.org/wiki/Tag:amenity%3Dtownhall
       break
     // Hôpital
     case 'hop':
@@ -53,13 +50,9 @@ export function piccTags(props: CandidateProperties): Record<string, string> {
     case 'ids':
       tags.building = 'industrial' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dindustrial
       break
-    // Lieu de culte
-    // case 'ldc':
-    //   break
-    // Maison communale / Hôtel de ville
-    case 'hdv':
-      tags.building = 'townhall' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dtownhall
-      tags.amenity = 'townhall' // https://wiki.openstreetmap.org/wiki/Tag:amenity%3Dtownhall
+    // Commerce ou service
+    case 'mag':
+      tags.building = 'commercial' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dcommercial
       break
     // Police
     case 'pol':
@@ -87,10 +80,16 @@ export function piccTags(props: CandidateProperties): Record<string, string> {
     case 'scu':
       tags.building = 'university' // https://wiki.openstreetmap.org/wiki/Tag:building%3Duniversity
       break
+    // Gare
+    case 'trg':
+      tags.building = 'train_station' // https://wiki.openstreetmap.org/wiki/Tag:building%3Dtrain_station
+      break
     // Annexe
     case 'ane':
     // Building
     case 'bui':
+    // Lieu de culte
+    case 'ldc':
     // Maison de repos
     case 'mdr':
     // Station d'épuration
