@@ -10,7 +10,6 @@ import {
   candidateToOsmFeature,
   isCandidateSource
 } from '~/utils/candidates'
-import { VERDIEPING_FIXME } from '~/utils/candidatesGrb'
 
 const candidate = (props: Partial<CandidateProperties>): CandidateProperties => ({
   address_count: 0,
@@ -109,7 +108,9 @@ describe('candidateTags: buildings (#53)', () => {
   })
 
   it('flags a verdieping for manual correction, case-insensitively', () => {
-    expect(candidateTags(candidate({ type_label: 'VERDIEPING' })).fixme).toBe(VERDIEPING_FIXME)
+    expect(candidateTags(candidate({ type_label: 'VERDIEPING' })).fixme).toBe(
+      'verdieping, correct the building tag, add building:level and building:min_level before upload in JOSM!'
+    )
   })
 
   it('tags PICC and UrbIS buildings whatever their type label (the GRB allow-list is GRB only)', () => {

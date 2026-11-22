@@ -1,5 +1,4 @@
 import { queryGrb, queryOsm } from '~/server/utils/db'
-import { BUILDING_TYPE_LABELS } from '~/utils/candidatesGrb'
 import { CANDIDATES_CONTRACT, CANDIDATE_COLUMNS, CANDIDATE_VIEWS, isCandidateSource } from '~/utils/candidates'
 import { type OsmSourceOidnInput, collectOsmSourceRefs } from '~/utils/osmSourceOidn'
 import { type OverpassBuildings, OverpassError, fetchOverpassBuildings } from '~/server/utils/overpass'
@@ -167,7 +166,7 @@ export default defineEventHandler(async (event): Promise<DifferenceResponse | un
     // Bijgebouw) and gba-1 (verdieping, exported with a fixme) are building candidates; unlabelled polygons stay.
     const inScope =
       dataSource === 'grb'
-        ? `(coalesce(lower(c.type_label), '') = '' OR lower(c.type_label) = ANY(${param([...BUILDING_TYPE_LABELS])}::text[]))`
+        ? `(coalesce(lower(c.type_label), '') = '' OR lower(c.type_label) = ANY(${param(['hoofdgebouw', 'bijgebouw', 'verdieping'])}::text[]))`
         : 'TRUE'
     const countParams = [...params]
     const view = CANDIDATE_VIEWS[dataSource]
